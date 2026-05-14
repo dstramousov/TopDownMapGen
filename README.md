@@ -13,9 +13,13 @@
 
 ---
 
-## 0. Пример
+## 0. Примеры
 
 <img width="2560" height="1536" alt="layer_base_map" src="https://github.com/user-attachments/assets/044f8224-dcf6-4dc9-b6c2-0673ff3ee2e7" />
+
+---
+
+<img width="2560" height="1536" alt="layer_all_debug" src="https://github.com/user-attachments/assets/c95a354e-0cd8-47d0-9eb7-4ff68ca12446" />
 
 
 ---
