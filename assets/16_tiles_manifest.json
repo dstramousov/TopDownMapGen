@@ -1,0 +1,102 @@
+{
+  "version": "tiles_v0_2",
+  "tile_size_px": 16,
+  "tiles": [
+    {
+      "symbol": "+",
+      "name": "grass",
+      "filename": "tiles/grass_plus.png",
+      "walkable": true,
+      "movement_cost": 1,
+      "description": "Grass, fully walkable."
+    },
+    {
+      "symbol": ".",
+      "name": "old_road",
+      "filename": "tiles/old_road_dot.png",
+      "walkable": true,
+      "movement_cost": 1,
+      "description": "Old overgrown road / forest trail."
+    },
+    {
+      "symbol": "T",
+      "name": "tree",
+      "filename": "tiles/tree_T.png",
+      "walkable": false,
+      "movement_cost": null,
+      "description": "Tree blocker."
+    },
+    {
+      "symbol": "b",
+      "name": "bush",
+      "filename": "tiles/bush_b.png",
+      "walkable": true,
+      "movement_cost": 2,
+      "description": "Bush, walkable slow concealment."
+    },
+    {
+      "symbol": "f",
+      "name": "flower",
+      "filename": "tiles/flower_f.png",
+      "walkable": true,
+      "movement_cost": 1,
+      "description": "Flower decorative walkable tile."
+    },
+    {
+      "symbol": "m",
+      "name": "mushroom",
+      "filename": "tiles/mushroom_m.png",
+      "walkable": true,
+      "movement_cost": 1,
+      "description": "Mushroom decorative walkable tile."
+    },
+    {
+      "symbol": "w",
+      "name": "water",
+      "filename": "tiles/water_w.png",
+      "walkable": true,
+      "movement_cost": 3,
+      "description": "Water / puddle, walkable slow tile."
+    },
+    {
+      "symbol": "c",
+      "name": "cracked_ground",
+      "filename": "tiles/cracked_ground_c.png",
+      "walkable": true,
+      "movement_cost": 1,
+      "description": "Cracked ground / old stone."
+    },
+    {
+      "symbol": "#",
+      "name": "ruin_wall",
+      "filename": "tiles/ruin_wall_hash.png",
+      "walkable": false,
+      "movement_cost": null,
+      "description": "Ruin wall blocker."
+    },
+    {
+      "symbol": "R",
+      "name": "ruin_floor",
+      "filename": "tiles/ruin_floor_R.png",
+      "walkable": true,
+      "movement_cost": 1,
+      "description": "Ruin floor."
+    },
+    {
+      "symbol": "S",
+      "name": "start",
+      "filename": "tiles/start_S.png",
+      "walkable": true,
+      "movement_cost": 1,
+      "description": "Player start marker."
+    },
+    {
+      "symbol": "G",
+      "name": "goal",
+      "filename": "tiles/goal_G.png",
+      "walkable": true,
+      "movement_cost": 1,
+      "description": "Goal marker."
+    }
+  ]
+}

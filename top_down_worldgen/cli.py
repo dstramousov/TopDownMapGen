@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+import argparse
+import logging
+from pathlib import Path
+
+from .pipeline import WorldgenPipeline
+
+
+LOGGER = logging.getLogger(__name__)
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(description="Generate top-down world map.")
+    parser.add_argument("--config", required=True, type=Path)
+    parser.add_argument("-o", "--out", required=True, type=Path)
+    parser.add_argument("--render-tile-size", type=int, choices=[16, 32], default=16)
+    parser.add_argument("--no-render", action="store_true")
+    parser.add_argument("--log-file", type=Path, default=None)
+    parser.add_argument("--profile-performance", action="store_true")
+    return parser.parse_args()
+
+
+def configure_logging(log_file: Path | None) -> None:
+    """Configure logging."""
+    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    if log_file is not None:
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+        handlers.append(logging.FileHandler(log_file, encoding="utf-8"))
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s", handlers=handlers)
+
+
+def main() -> int:
+    """Run CLI entrypoint."""
+    args = parse_args()
+    configure_logging(args.log_file)
+    try:
+        project_root = Path(__file__).resolve().parent.parent
+        result = WorldgenPipeline(project_root).run(
+            config_path=args.config,
+            output_map=args.out,
+            tile_size_px=args.render_tile_size,
+            render=not args.no_render,
+            log_file=args.log_file,
+        )
+        LOGGER.info("Generated map: %s", result.outputs.generated_map)
+        LOGGER.info("Runtime tactical map: %s", result.outputs.tactical_map)
+        LOGGER.info("Debug tactical map: %s", result.outputs.tactical_map_debug)
+        if not args.no_render:
+            LOGGER.info("Rendered debug layers in: %s", result.outputs.output_dir)
+        if args.profile_performance:
+            LOGGER.info("engine_time_ms=%.2f", result.metrics["engine_time_ms"])
+            LOGGER.info("tactical_time_ms=%.2f", result.metrics["tactical_time_ms"])
+            LOGGER.info("render_time_ms=%.2f", result.metrics["render_time_ms"])
+            LOGGER.info("total_time_ms=%.2f", result.metrics["total_time_ms"])
+        return 0
+    except Exception as exc:
+        LOGGER.error("%s", exc)
+        return 1

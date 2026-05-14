@@ -1,0 +1,9 @@
+{
+  "seed": "random",
+  "map_width_tiles": 160,
+  "map_height_tiles": 96,
+  "chunk_width_tiles": 16,
+  "chunk_height_tiles": 16,
+  "biome_profile": "forest_ruins",
+  "objective_profile": "survival"
+}
