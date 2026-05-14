@@ -23,6 +23,7 @@ from .manifest import (
 from .paths import OutputPaths
 from .render.layers import LayerRenderer
 from .tactical.fallback import FallbackPositionBuilder
+from .tactical.grid import attach_tile_grid
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
 from .utils.json_io import read_json, write_json
@@ -157,7 +158,8 @@ class WorldgenPipeline:
                 runtime_data,
                 debug_data,
             )
-            runtime_data["version"] = "0.19-runtime"
+            runtime_data = attach_tile_grid(runtime_data, rows)
+            runtime_data["version"] = "0.20-runtime"
             debug_data["version"] = "0.19-debug"
 
             write_json(runtime_data, outputs.tactical_map)

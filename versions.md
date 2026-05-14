@@ -31,3 +31,10 @@
 - Добавлен CLI-флаг `--no-debug-images` для отключения тяжёлых PNG debug-слоёв без отключения базового render.
 - Manifest помечает primary outputs и debug-only artifacts для автоматической обработки результата.
 - Версия проекта поднята до `0.0.5`.
+
+## v0.0.5 -> v0.0.6
+
+- `tactical_map.json` стал самодостаточным: в секцию `map` добавлены `tile_grid`, `tile_grid_format` и `tile_counts`.
+- Добавлена валидация прямоугольности ASCII-карты и соответствия размеров tactical metadata.
+- Версия схемы runtime tactical map обновлена до `tactical-map-v0.20`.
+- Версия проекта поднята до `0.0.6`.

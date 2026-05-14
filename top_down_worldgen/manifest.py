@@ -9,7 +9,7 @@ from .utils.json_io import write_json
 
 MANIFEST_SCHEMA_VERSION = "generation-manifest-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
-TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.19"
+TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.20"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.19"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v1"
@@ -74,7 +74,7 @@ def build_manifest(
     ]
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,
-        "generator_version": "0.0.5",
+        "generator_version": "0.0.6",
         "seed": seed,
         "profile": profile,
         "dimensions": {
