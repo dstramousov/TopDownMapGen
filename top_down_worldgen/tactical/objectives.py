@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 
 from top_down_worldgen.constants import OBJECTIVE_PROFILES
+from top_down_worldgen.logging_utils import timed_stage
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,27 +59,33 @@ class ObjectiveProfileSelector:
         Returns:
             Updated runtime and debug data.
         """
-        candidates = [
-            spawn for spawn in debug_data.get("enemy_spawn_zones", [])
-            if isinstance(spawn, dict)
-        ]
-        selected = self._select_spawns(candidates)
-        runtime_updated = dict(runtime_data)
-        debug_updated = dict(debug_data)
+        with timed_stage(
+            LOGGER,
+            "ObjectiveProfileSelector.apply",
+            objective_profile=self._objective_profile,
+        ) as metrics:
+            candidates = [
+                spawn for spawn in debug_data.get("enemy_spawn_zones", [])
+                if isinstance(spawn, dict)
+            ]
+            selected = self._select_spawns(candidates)
+            runtime_updated = dict(runtime_data)
+            debug_updated = dict(debug_data)
 
-        debug_updated["enemy_spawn_candidates"] = candidates
-        debug_updated["enemy_spawn_zones"] = selected
-        runtime_updated["enemy_spawn_zones"] = self._runtime_spawns(selected)
+            debug_updated["enemy_spawn_candidates"] = candidates
+            debug_updated["enemy_spawn_zones"] = selected
+            runtime_updated["enemy_spawn_zones"] = self._runtime_spawns(selected)
 
-        info = {
-            "objective_profile": self._objective_profile,
-            "candidate_spawn_count": len(candidates),
-            "selected_spawn_count": len(selected),
-            "spawn_selection_policy": self._policy_name(),
-        }
-        runtime_updated["objective"] = info
-        debug_updated["objective"] = info
-        return runtime_updated, debug_updated
+            info = {
+                "objective_profile": self._objective_profile,
+                "candidate_spawn_count": len(candidates),
+                "selected_spawn_count": len(selected),
+                "spawn_selection_policy": self._policy_name(),
+            }
+            runtime_updated["objective"] = info
+            debug_updated["objective"] = info
+            metrics.update(info)
+            return runtime_updated, debug_updated
 
     def _select_spawns(self, candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
         grouped: dict[str, list[dict[str, Any]]] = {}

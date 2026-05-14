@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
@@ -7,12 +8,16 @@ from typing import Any
 
 from .config import PublicConfig
 from .legacy_runner import LegacyEngineRunner
+from .logging_utils import timed_stage
 from .paths import OutputPaths
 from .render.layers import LayerRenderer
 from .tactical.fallback import FallbackPositionBuilder
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
 from .utils.json_io import read_json, write_json
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,40 +60,97 @@ class WorldgenPipeline:
             PipelineResult.
         """
         started = perf_counter()
-        config = PublicConfig.from_file(config_path)
-        outputs = OutputPaths.from_output_map(output_map)
-        outputs.output_dir.mkdir(parents=True, exist_ok=True)
+        LOGGER.info(
+            "Pipeline requested config=%s output_map=%s tile_size_px=%s render=%s",
+            config_path,
+            output_map,
+            tile_size_px,
+            render,
+        )
 
-        config.write_engine_config(outputs.engine_config)
+        with timed_stage(LOGGER, "pipeline.load_config", config_path=config_path) as metrics:
+            config = PublicConfig.from_file(config_path)
+            metrics.update(
+                {
+                    "seed": config.seed,
+                    "map_width_tiles": config.map_width_tiles,
+                    "map_height_tiles": config.map_height_tiles,
+                    "chunk_width_tiles": config.chunk_width_tiles,
+                    "chunk_height_tiles": config.chunk_height_tiles,
+                    "biome_profile": config.biome_profile,
+                    "objective_profile": config.objective_profile,
+                },
+            )
+
+        with timed_stage(LOGGER, "pipeline.prepare_outputs", output_map=output_map) as metrics:
+            outputs = OutputPaths.from_output_map(output_map)
+            outputs.output_dir.mkdir(parents=True, exist_ok=True)
+            config.write_engine_config(outputs.engine_config)
+            metrics.update(
+                {
+                    "output_dir": outputs.output_dir,
+                    "engine_config": outputs.engine_config,
+                },
+            )
 
         engine_started = perf_counter()
-        LegacyEngineRunner(self._project_root / "top_down_worldgen" / "legacy" / "engine.py").run(
-            config_path=outputs.engine_config,
-            map_out=outputs.generated_map,
-            tactical_out=outputs.raw_tactical_map,
-            log_file=log_file,
-        )
+        with timed_stage(LOGGER, "pipeline.legacy_engine") as metrics:
+            LegacyEngineRunner(self._project_root / "top_down_worldgen" / "legacy" / "engine.py").run(
+                config_path=outputs.engine_config,
+                map_out=outputs.generated_map,
+                tactical_out=outputs.raw_tactical_map,
+                log_file=log_file,
+            )
+            rows = outputs.generated_map.read_text(encoding="utf-8").splitlines()
+            metrics.update(
+                {
+                    "map_rows": len(rows),
+                    "map_cols": len(rows[0]) if rows else 0,
+                    "raw_tactical_map": outputs.raw_tactical_map,
+                },
+            )
         engine_time_ms = (perf_counter() - engine_started) * 1000.0
 
         tactical_started = perf_counter()
-        raw_data = read_json(outputs.raw_tactical_map)
-        runtime_data, debug_data = TacticalOptimizer().optimize(raw_data)
-        runtime_data, debug_data = FallbackPositionBuilder().add(runtime_data, debug_data)
-        runtime_data, debug_data = ObjectiveProfileSelector(config.objective_profile).apply(runtime_data, debug_data)
-        runtime_data["version"] = "0.19-runtime"
-        debug_data["version"] = "0.19-debug"
+        with timed_stage(LOGGER, "pipeline.tactical_processing") as metrics:
+            raw_data = read_json(outputs.raw_tactical_map)
+            LOGGER.info(
+                "Raw tactical counts combat_zones=%s cover_points=%s choke_points=%s "
+                "flank_routes=%s enemy_spawn_zones=%s",
+                len(raw_data.get("combat_zones", [])),
+                len(raw_data.get("cover_points", [])),
+                len(raw_data.get("choke_points", [])),
+                len(raw_data.get("flank_routes", [])),
+                len(raw_data.get("enemy_spawn_zones", [])),
+            )
+            runtime_data, debug_data = TacticalOptimizer().optimize(raw_data)
+            runtime_data, debug_data = FallbackPositionBuilder().add(runtime_data, debug_data)
+            runtime_data, debug_data = ObjectiveProfileSelector(config.objective_profile).apply(
+                runtime_data,
+                debug_data,
+            )
+            runtime_data["version"] = "0.19-runtime"
+            debug_data["version"] = "0.19-debug"
 
-        write_json(runtime_data, outputs.tactical_map)
-        write_json(debug_data, outputs.tactical_map_debug)
+            write_json(runtime_data, outputs.tactical_map)
+            write_json(debug_data, outputs.tactical_map_debug)
+            metrics.update(
+                {
+                    "runtime_combat_zones": len(runtime_data.get("combat_zones", [])),
+                    "runtime_cover_points": len(runtime_data.get("cover_points", [])),
+                    "runtime_choke_points": len(runtime_data.get("choke_points", [])),
+                    "runtime_flank_routes": len(runtime_data.get("flank_routes", [])),
+                    "runtime_enemy_spawn_zones": len(runtime_data.get("enemy_spawn_zones", [])),
+                    "runtime_fallback_positions": len(runtime_data.get("fallback_positions", [])),
+                },
+            )
         tactical_time_ms = (perf_counter() - tactical_started) * 1000.0
 
         render_time_ms = 0.0
         if render:
             render_started = perf_counter()
-            LayerRenderer(self._project_root / "assets", tile_size_px).render_all(
-                outputs.generated_map,
-                outputs.tactical_map_debug,
-                {
+            with timed_stage(LOGGER, "pipeline.render_layers", tile_size_px=tile_size_px) as metrics:
+                render_outputs = {
                     "base": outputs.layer_base_map,
                     "combat": outputs.layer_combat_zones,
                     "cover": outputs.layer_cover_points,
@@ -97,9 +159,21 @@ class WorldgenPipeline:
                     "spawn": outputs.layer_enemy_spawn_zones,
                     "fallback": outputs.layer_fallback_positions,
                     "all": outputs.layer_all_debug,
-                },
-            )
+                }
+                LayerRenderer(self._project_root / "assets", tile_size_px).render_all(
+                    outputs.generated_map,
+                    outputs.tactical_map_debug,
+                    render_outputs,
+                )
+                metrics.update(
+                    {
+                        "rendered_layers": len(render_outputs),
+                        "output_dir": outputs.output_dir,
+                    },
+                )
             render_time_ms = (perf_counter() - render_started) * 1000.0
+        else:
+            LOGGER.info("Render skipped by CLI flag")
 
         total_time_ms = (perf_counter() - started) * 1000.0
         rows = outputs.generated_map.read_text(encoding="utf-8").splitlines()
@@ -130,7 +204,11 @@ class WorldgenPipeline:
             "original_cover_points": optimization.get("original_cover_points"),
             "selected_cover_points": optimization.get("selected_cover_points"),
         }
-        outputs.metrics.write_text(self._format_metrics(metrics), encoding="utf-8")
+        with timed_stage(LOGGER, "pipeline.write_metrics", metrics_path=outputs.metrics) as log_metrics:
+            outputs.metrics.write_text(self._format_metrics(metrics), encoding="utf-8")
+            log_metrics.update({"metrics_count": len(metrics)})
+
+        LOGGER.info("Pipeline completed total_time_ms=%.2f", total_time_ms)
         return PipelineResult(metrics=metrics, outputs=outputs)
 
     @staticmethod

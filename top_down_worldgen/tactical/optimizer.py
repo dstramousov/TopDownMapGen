@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
+
+from top_down_worldgen.logging_utils import timed_stage
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,25 +42,41 @@ class TacticalOptimizer:
         Returns:
             Runtime and debug tactical maps.
         """
-        selected_cover = self._select_cover_points(raw_data)
-        selected_cover_ids = {str(point.get("id")) for point in selected_cover}
+        with timed_stage(
+            LOGGER,
+            "TacticalOptimizer.optimize",
+            raw_combat_zones=len(raw_data.get("combat_zones", [])),
+            raw_cover_points=len(raw_data.get("cover_points", [])),
+            raw_flank_routes=len(raw_data.get("flank_routes", [])),
+            raw_enemy_spawn_zones=len(raw_data.get("enemy_spawn_zones", [])),
+        ) as metrics:
+            selected_cover = self._select_cover_points(raw_data)
+            selected_cover_ids = {str(point.get("id")) for point in selected_cover}
 
-        debug_data = dict(raw_data)
-        debug_data["cover_points"] = selected_cover
-        debug_data["combat_zones"] = self._rewrite_combat_zones(
-            raw_data.get("combat_zones", []),
-            selected_cover_ids,
-        )
-        debug_data["flank_routes"] = self._limit_flank_routes(raw_data.get("flank_routes", []))
-        debug_data["enemy_spawn_zones"] = self._filter_enemy_spawns(
-            raw_data.get("enemy_spawn_zones", []),
-            selected_cover_ids,
-        )
-        debug_data["optimization"] = self._summary(raw_data, debug_data, selected_cover)
-        debug_data["version"] = "0.19-debug-optimized"
+            debug_data = dict(raw_data)
+            debug_data["cover_points"] = selected_cover
+            debug_data["combat_zones"] = self._rewrite_combat_zones(
+                raw_data.get("combat_zones", []),
+                selected_cover_ids,
+            )
+            debug_data["flank_routes"] = self._limit_flank_routes(raw_data.get("flank_routes", []))
+            debug_data["enemy_spawn_zones"] = self._filter_enemy_spawns(
+                raw_data.get("enemy_spawn_zones", []),
+                selected_cover_ids,
+            )
+            debug_data["optimization"] = self._summary(raw_data, debug_data, selected_cover)
+            debug_data["version"] = "0.19-debug-optimized"
 
-        runtime_data = self._runtime_data(debug_data)
-        return runtime_data, debug_data
+            runtime_data = self._runtime_data(debug_data)
+            metrics.update(
+                {
+                    "selected_cover_points": len(selected_cover),
+                    "selected_combat_zones": len(debug_data.get("combat_zones", [])),
+                    "selected_flank_routes": len(debug_data.get("flank_routes", [])),
+                    "selected_enemy_spawn_zones": len(debug_data.get("enemy_spawn_zones", [])),
+                },
+            )
+            return runtime_data, debug_data
 
     def _select_cover_points(self, raw_data: dict[str, Any]) -> list[dict[str, Any]]:
         cover_points = [

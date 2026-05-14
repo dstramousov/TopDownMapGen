@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from .constants import ENGINE_CONFIG_FIELDS, OBJECTIVE_PROFILES
+from .logging_utils import timed_stage
 from .utils.json_io import read_json, write_json
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,20 +35,37 @@ class PublicConfig:
         Returns:
             PublicConfig instance.
         """
-        data = read_json(path)
-        objective_profile = str(data.get("objective_profile", "clear_map"))
-        if objective_profile not in OBJECTIVE_PROFILES:
-            objective_profile = "clear_map"
+        with timed_stage(LOGGER, "PublicConfig.from_file", path=path) as metrics:
+            data = read_json(path)
+            objective_profile = str(data.get("objective_profile", "clear_map"))
+            if objective_profile not in OBJECTIVE_PROFILES:
+                LOGGER.warning(
+                    "Unknown objective_profile=%s, falling back to clear_map",
+                    objective_profile,
+                )
+                objective_profile = "clear_map"
 
-        return cls(
-            seed=data.get("seed", "random"),
-            map_width_tiles=int(data["map_width_tiles"]),
-            map_height_tiles=int(data["map_height_tiles"]),
-            chunk_width_tiles=int(data["chunk_width_tiles"]),
-            chunk_height_tiles=int(data["chunk_height_tiles"]),
-            biome_profile=str(data["biome_profile"]),
-            objective_profile=objective_profile,
-        )
+            config = cls(
+                seed=data.get("seed", "random"),
+                map_width_tiles=int(data["map_width_tiles"]),
+                map_height_tiles=int(data["map_height_tiles"]),
+                chunk_width_tiles=int(data["chunk_width_tiles"]),
+                chunk_height_tiles=int(data["chunk_height_tiles"]),
+                biome_profile=str(data["biome_profile"]),
+                objective_profile=objective_profile,
+            )
+            metrics.update(
+                {
+                    "seed": config.seed,
+                    "map_width_tiles": config.map_width_tiles,
+                    "map_height_tiles": config.map_height_tiles,
+                    "chunk_width_tiles": config.chunk_width_tiles,
+                    "chunk_height_tiles": config.chunk_height_tiles,
+                    "biome_profile": config.biome_profile,
+                    "objective_profile": config.objective_profile,
+                },
+            )
+            return config
 
     def to_engine_dict(self) -> dict[str, Any]:
         """Convert config to legacy engine-compatible dictionary.
@@ -59,7 +81,9 @@ class PublicConfig:
             "chunk_height_tiles": self.chunk_height_tiles,
             "biome_profile": self.biome_profile,
         }
-        return {key: value for key, value in data.items() if key in ENGINE_CONFIG_FIELDS}
+        output = {key: value for key, value in data.items() if key in ENGINE_CONFIG_FIELDS}
+        LOGGER.debug("Engine config fields created count=%s", len(output))
+        return output
 
     def write_engine_config(self, path: Path) -> None:
         """Write sanitized legacy-engine config.
@@ -67,4 +91,7 @@ class PublicConfig:
         Args:
             path: Output config path.
         """
-        write_json(self.to_engine_dict(), path)
+        with timed_stage(LOGGER, "PublicConfig.write_engine_config", path=path) as metrics:
+            engine_config = self.to_engine_dict()
+            write_json(engine_config, path)
+            metrics.update({"field_count": len(engine_config)})

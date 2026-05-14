@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import logging
 import subprocess
 import sys
 from pathlib import Path
+
+from .logging_utils import timed_stage
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class LegacyEngineRunner:
@@ -48,15 +54,35 @@ class LegacyEngineRunner:
         if log_file is not None:
             command.extend(["--log-file", str(log_file)])
 
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(
-                "Legacy engine failed\n"
-                f"STDOUT:\n{result.stdout}\n"
-                f"STDERR:\n{result.stderr}"
+        with timed_stage(
+            LOGGER,
+            "LegacyEngineRunner.run",
+            engine_path=self._engine_path,
+            config_path=config_path,
+            map_out=map_out,
+            tactical_out=tactical_out,
+        ) as metrics:
+            LOGGER.debug("Legacy command: %s", " ".join(command))
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                check=False,
             )
+            metrics.update(
+                {
+                    "returncode": result.returncode,
+                    "stdout_chars": len(result.stdout),
+                    "stderr_chars": len(result.stderr),
+                },
+            )
+            if result.stdout:
+                LOGGER.debug("Legacy stdout:\n%s", result.stdout)
+            if result.stderr:
+                LOGGER.debug("Legacy stderr:\n%s", result.stderr)
+            if result.returncode != 0:
+                raise RuntimeError(
+                    "Legacy engine failed\n"
+                    f"STDOUT:\n{result.stdout}\n"
+                    f"STDERR:\n{result.stderr}"
+                )

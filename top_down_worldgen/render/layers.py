@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
+
+from top_down_worldgen.logging_utils import timed_stage
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class LayerRenderer:
@@ -51,18 +57,43 @@ class LayerRenderer:
             tactical_debug_path: Debug tactical map path.
             outputs: Output layer paths by name.
         """
-        rows = self._read_rows(map_path)
-        data = json.loads(tactical_debug_path.read_text(encoding="utf-8"))
-        base = self._render_base(rows)
-        base.save(outputs["base"])
+        with timed_stage(
+            LOGGER,
+            "LayerRenderer.render_all",
+            map_path=map_path,
+            tactical_debug_path=tactical_debug_path,
+            tile_size_px=self._tile_size_px,
+        ) as metrics:
+            rows = self._read_rows(map_path)
+            data = json.loads(tactical_debug_path.read_text(encoding="utf-8"))
+            base = self._render_base(rows)
+            base.save(outputs["base"])
 
-        self._save_overlay(base, data, outputs["combat"], {"combat"})
-        self._save_overlay(base, data, outputs["cover"], {"cover"})
-        self._save_overlay(base, data, outputs["choke"], {"choke"})
-        self._save_overlay(base, data, outputs["flank"], {"flank"})
-        self._save_overlay(base, data, outputs["spawn"], {"spawn"})
-        self._save_overlay(base, data, outputs["fallback"], {"fallback"})
-        self._save_overlay(base, data, outputs["all"], {"combat", "cover", "choke", "flank", "spawn", "fallback"})
+            overlay_specs = {
+                "combat": {"combat"},
+                "cover": {"cover"},
+                "choke": {"choke"},
+                "flank": {"flank"},
+                "spawn": {"spawn"},
+                "fallback": {"fallback"},
+                "all": {"combat", "cover", "choke", "flank", "spawn", "fallback"},
+            }
+            for name, layers in overlay_specs.items():
+                self._save_overlay(base, data, outputs[name], layers)
+
+            metrics.update(
+                {
+                    "map_rows": len(rows),
+                    "map_cols": len(rows[0]) if rows else 0,
+                    "combat_zones": len(data.get("combat_zones", [])),
+                    "cover_points": len(data.get("cover_points", [])),
+                    "choke_points": len(data.get("choke_points", [])),
+                    "flank_routes": len(data.get("flank_routes", [])),
+                    "enemy_spawn_zones": len(data.get("enemy_spawn_zones", [])),
+                    "fallback_positions": len(data.get("fallback_positions", [])),
+                    "rendered_layers": len(outputs),
+                },
+            )
 
     def _save_overlay(
         self,
@@ -202,16 +233,28 @@ class LayerRenderer:
             draw.polygon(points, fill=(115, 255, 120, 210), outline=(255, 255, 255, 235))
 
     def _load_tiles(self) -> dict[str, Image.Image]:
-        tiles: dict[str, Image.Image] = {}
-        for symbol, filename in self.TILE_FILES.items():
-            path = self._tiles_dir / filename
-            if not path.exists():
-                raise FileNotFoundError(path)
-            image = Image.open(path).convert("RGBA")
-            if image.size != (self._tile_size_px, self._tile_size_px):
-                image = image.resize((self._tile_size_px, self._tile_size_px), Image.Resampling.NEAREST)
-            tiles[symbol] = image
-        return tiles
+        with timed_stage(
+            LOGGER,
+            "LayerRenderer._load_tiles",
+            tiles_dir=self._tiles_dir,
+            tile_size_px=self._tile_size_px,
+        ) as metrics:
+            tiles: dict[str, Image.Image] = {}
+            resized_count = 0
+            for symbol, filename in self.TILE_FILES.items():
+                path = self._tiles_dir / filename
+                if not path.exists():
+                    raise FileNotFoundError(path)
+                image = Image.open(path).convert("RGBA")
+                if image.size != (self._tile_size_px, self._tile_size_px):
+                    image = image.resize(
+                        (self._tile_size_px, self._tile_size_px),
+                        Image.Resampling.NEAREST,
+                    )
+                    resized_count += 1
+                tiles[symbol] = image
+            metrics.update({"tiles_loaded": len(tiles), "tiles_resized": resized_count})
+            return tiles
 
     @staticmethod
     def _read_rows(map_path: Path) -> list[str]:

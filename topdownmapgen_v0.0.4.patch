@@ -1,0 +1,988 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 04901fb..c62b3e2 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "top-down-worldgen"
+-version = "0.0.3"
++version = "0.0.4"
+ description = "Seed-based procedural map generator for top-down games."
+ readme = "README.md"
+ requires-python = ">=3.12"
+diff --git a/tests/test_logging_utils.py b/tests/test_logging_utils.py
+new file mode 100644
+index 0000000..a612c76
+--- /dev/null
++++ b/tests/test_logging_utils.py
+@@ -0,0 +1,21 @@
++import logging
++
++from top_down_worldgen.logging_utils import format_kv, timed_stage
++
++
++def test_format_kv() -> None:
++    """Ensure key-value metrics are formatted compactly."""
++    assert format_kv({"created": 2, "duration_ms": 1.5}) == "created=2 duration_ms=1.5"
++
++
++def test_timed_stage_logs_done(caplog) -> None:  # type: ignore[no-untyped-def]
++    """Ensure timed stage writes final metrics."""
++    logger = logging.getLogger("tests.logging_utils")
++
++    with caplog.at_level(logging.INFO):
++        with timed_stage(logger, "unit.stage") as metrics:
++            metrics["items"] = 3
++
++    assert "START unit.stage" in caplog.text
++    assert "DONE unit.stage" in caplog.text
++    assert "items=3" in caplog.text
+diff --git a/tests/test_smoke.py b/tests/test_smoke.py
+index 8734b02..5d320ae 100644
+--- a/tests/test_smoke.py
++++ b/tests/test_smoke.py
+@@ -6,7 +6,7 @@ from top_down_worldgen.config import PublicConfig
+ 
+ def test_package_version() -> None:
+     """Ensure package exposes the current version."""
+-    assert __version__ == "0.0.3"
++    assert __version__ == "0.0.4"
+ 
+ 
+ def test_default_config_can_be_loaded() -> None:
+diff --git a/top_down_worldgen/__init__.py b/top_down_worldgen/__init__.py
+index 21ba59e..c508817 100644
+--- a/top_down_worldgen/__init__.py
++++ b/top_down_worldgen/__init__.py
+@@ -1,3 +1,3 @@
+ """Top-down procedural world generation package."""
+ 
+-__version__ = "0.0.3"
++__version__ = "0.0.4"
+diff --git a/top_down_worldgen/cli.py b/top_down_worldgen/cli.py
+index 3c4201e..cdefba4 100644
+--- a/top_down_worldgen/cli.py
++++ b/top_down_worldgen/cli.py
+@@ -4,6 +4,7 @@ import argparse
+ import logging
+ from pathlib import Path
+ 
++from .logging_utils import timed_stage
+ from .pipeline import WorldgenPipeline
+ 
+ 
+@@ -19,31 +20,53 @@ def parse_args() -> argparse.Namespace:
+     parser.add_argument("--no-render", action="store_true")
+     parser.add_argument("--log-file", type=Path, default=None)
+     parser.add_argument("--profile-performance", action="store_true")
++    parser.add_argument("--verbose", action="store_true")
+     return parser.parse_args()
+ 
+ 
+-def configure_logging(log_file: Path | None) -> None:
+-    """Configure logging."""
++def configure_logging(log_file: Path | None, verbose: bool = False) -> None:
++    """Configure logging.
++
++    Args:
++        log_file: Optional log file path.
++        verbose: Whether to enable debug-level logging.
++    """
+     handlers: list[logging.Handler] = [logging.StreamHandler()]
+     if log_file is not None:
+         log_file.parent.mkdir(parents=True, exist_ok=True)
+         handlers.append(logging.FileHandler(log_file, encoding="utf-8"))
+-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s", handlers=handlers)
++    level = logging.DEBUG if verbose else logging.INFO
++    logging.basicConfig(
++        level=level,
++        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
++        handlers=handlers,
++    )
++    logging.getLogger("PIL").setLevel(logging.WARNING)
+ 
+ 
+ def main() -> int:
+     """Run CLI entrypoint."""
+     args = parse_args()
+-    configure_logging(args.log_file)
++    configure_logging(args.log_file, args.verbose)
+     try:
+         project_root = Path(__file__).resolve().parent.parent
+-        result = WorldgenPipeline(project_root).run(
+-            config_path=args.config,
+-            output_map=args.out,
+-            tile_size_px=args.render_tile_size,
+-            render=not args.no_render,
+-            log_file=args.log_file,
++        LOGGER.info(
++            "CLI args config=%s out=%s render=%s tile_size_px=%s log_file=%s verbose=%s",
++            args.config,
++            args.out,
++            not args.no_render,
++            args.render_tile_size,
++            args.log_file,
++            args.verbose,
+         )
++        with timed_stage(LOGGER, "cli.main"):
++            result = WorldgenPipeline(project_root).run(
++                config_path=args.config,
++                output_map=args.out,
++                tile_size_px=args.render_tile_size,
++                render=not args.no_render,
++                log_file=args.log_file,
++            )
+         LOGGER.info("Generated map: %s", result.outputs.generated_map)
+         LOGGER.info("Runtime tactical map: %s", result.outputs.tactical_map)
+         LOGGER.info("Debug tactical map: %s", result.outputs.tactical_map_debug)
+diff --git a/top_down_worldgen/config.py b/top_down_worldgen/config.py
+index aca2df9..c23c227 100644
+--- a/top_down_worldgen/config.py
++++ b/top_down_worldgen/config.py
+@@ -1,13 +1,18 @@
+ from __future__ import annotations
+ 
++import logging
+ from dataclasses import dataclass
+ from pathlib import Path
+ from typing import Any
+ 
+ from .constants import ENGINE_CONFIG_FIELDS, OBJECTIVE_PROFILES
++from .logging_utils import timed_stage
+ from .utils.json_io import read_json, write_json
+ 
+ 
++LOGGER = logging.getLogger(__name__)
++
++
+ @dataclass(frozen=True, slots=True)
+ class PublicConfig:
+     """Public generator configuration."""
+@@ -30,20 +35,37 @@ class PublicConfig:
+         Returns:
+             PublicConfig instance.
+         """
+-        data = read_json(path)
+-        objective_profile = str(data.get("objective_profile", "clear_map"))
+-        if objective_profile not in OBJECTIVE_PROFILES:
+-            objective_profile = "clear_map"
++        with timed_stage(LOGGER, "PublicConfig.from_file", path=path) as metrics:
++            data = read_json(path)
++            objective_profile = str(data.get("objective_profile", "clear_map"))
++            if objective_profile not in OBJECTIVE_PROFILES:
++                LOGGER.warning(
++                    "Unknown objective_profile=%s, falling back to clear_map",
++                    objective_profile,
++                )
++                objective_profile = "clear_map"
+ 
+-        return cls(
+-            seed=data.get("seed", "random"),
+-            map_width_tiles=int(data["map_width_tiles"]),
+-            map_height_tiles=int(data["map_height_tiles"]),
+-            chunk_width_tiles=int(data["chunk_width_tiles"]),
+-            chunk_height_tiles=int(data["chunk_height_tiles"]),
+-            biome_profile=str(data["biome_profile"]),
+-            objective_profile=objective_profile,
+-        )
++            config = cls(
++                seed=data.get("seed", "random"),
++                map_width_tiles=int(data["map_width_tiles"]),
++                map_height_tiles=int(data["map_height_tiles"]),
++                chunk_width_tiles=int(data["chunk_width_tiles"]),
++                chunk_height_tiles=int(data["chunk_height_tiles"]),
++                biome_profile=str(data["biome_profile"]),
++                objective_profile=objective_profile,
++            )
++            metrics.update(
++                {
++                    "seed": config.seed,
++                    "map_width_tiles": config.map_width_tiles,
++                    "map_height_tiles": config.map_height_tiles,
++                    "chunk_width_tiles": config.chunk_width_tiles,
++                    "chunk_height_tiles": config.chunk_height_tiles,
++                    "biome_profile": config.biome_profile,
++                    "objective_profile": config.objective_profile,
++                },
++            )
++            return config
+ 
+     def to_engine_dict(self) -> dict[str, Any]:
+         """Convert config to legacy engine-compatible dictionary.
+@@ -59,7 +81,9 @@ class PublicConfig:
+             "chunk_height_tiles": self.chunk_height_tiles,
+             "biome_profile": self.biome_profile,
+         }
+-        return {key: value for key, value in data.items() if key in ENGINE_CONFIG_FIELDS}
++        output = {key: value for key, value in data.items() if key in ENGINE_CONFIG_FIELDS}
++        LOGGER.debug("Engine config fields created count=%s", len(output))
++        return output
+ 
+     def write_engine_config(self, path: Path) -> None:
+         """Write sanitized legacy-engine config.
+@@ -67,4 +91,7 @@ class PublicConfig:
+         Args:
+             path: Output config path.
+         """
+-        write_json(self.to_engine_dict(), path)
++        with timed_stage(LOGGER, "PublicConfig.write_engine_config", path=path) as metrics:
++            engine_config = self.to_engine_dict()
++            write_json(engine_config, path)
++            metrics.update({"field_count": len(engine_config)})
+diff --git a/top_down_worldgen/legacy_runner.py b/top_down_worldgen/legacy_runner.py
+index 3d0fb35..55faa18 100644
+--- a/top_down_worldgen/legacy_runner.py
++++ b/top_down_worldgen/legacy_runner.py
+@@ -1,9 +1,15 @@
+ from __future__ import annotations
+ 
++import logging
+ import subprocess
+ import sys
+ from pathlib import Path
+ 
++from .logging_utils import timed_stage
++
++
++LOGGER = logging.getLogger(__name__)
++
+ 
+ class LegacyEngineRunner:
+     """Runs the legacy core map generator directly."""
+@@ -48,15 +54,35 @@ class LegacyEngineRunner:
+         if log_file is not None:
+             command.extend(["--log-file", str(log_file)])
+ 
+-        result = subprocess.run(
+-            command,
+-            capture_output=True,
+-            text=True,
+-            check=False,
+-        )
+-        if result.returncode != 0:
+-            raise RuntimeError(
+-                "Legacy engine failed\n"
+-                f"STDOUT:\n{result.stdout}\n"
+-                f"STDERR:\n{result.stderr}"
++        with timed_stage(
++            LOGGER,
++            "LegacyEngineRunner.run",
++            engine_path=self._engine_path,
++            config_path=config_path,
++            map_out=map_out,
++            tactical_out=tactical_out,
++        ) as metrics:
++            LOGGER.debug("Legacy command: %s", " ".join(command))
++            result = subprocess.run(
++                command,
++                capture_output=True,
++                text=True,
++                check=False,
++            )
++            metrics.update(
++                {
++                    "returncode": result.returncode,
++                    "stdout_chars": len(result.stdout),
++                    "stderr_chars": len(result.stderr),
++                },
+             )
++            if result.stdout:
++                LOGGER.debug("Legacy stdout:\n%s", result.stdout)
++            if result.stderr:
++                LOGGER.debug("Legacy stderr:\n%s", result.stderr)
++            if result.returncode != 0:
++                raise RuntimeError(
++                    "Legacy engine failed\n"
++                    f"STDOUT:\n{result.stdout}\n"
++                    f"STDERR:\n{result.stderr}"
++                )
+diff --git a/top_down_worldgen/logging_utils.py b/top_down_worldgen/logging_utils.py
+new file mode 100644
+index 0000000..7dd86ad
+--- /dev/null
++++ b/top_down_worldgen/logging_utils.py
+@@ -0,0 +1,91 @@
++from __future__ import annotations
++
++import logging
++from collections.abc import Iterator, Mapping
++from contextlib import contextmanager
++from time import perf_counter
++from typing import Any
++
++
++LOGGER = logging.getLogger(__name__)
++
++
++def format_kv(values: Mapping[str, Any]) -> str:
++    """Format key-value metrics for compact log output.
++
++    Args:
++        values: Metrics to format.
++
++    Returns:
++        Space-separated key-value pairs.
++    """
++    return " ".join(f"{key}={value}" for key, value in values.items())
++
++
++def count_items(value: Any) -> int:
++    """Return a safe item count for common container values.
++
++    Args:
++        value: Value to count.
++
++    Returns:
++        Item count, or zero for non-container values.
++    """
++    if isinstance(value, dict | list | tuple | set):
++        return len(value)
++    return 0
++
++
++def json_summary(data: Mapping[str, Any]) -> dict[str, Any]:
++    """Build a compact summary for a JSON-like mapping.
++
++    Args:
++        data: JSON-like mapping to summarize.
++
++    Returns:
++        Top-level key and collection-size summary.
++    """
++    summary: dict[str, Any] = {"keys": len(data)}
++    for key, value in data.items():
++        if isinstance(value, dict | list | tuple | set):
++            summary[f"{key}_count"] = len(value)
++    return summary
++
++
++@contextmanager
++def timed_stage(
++    logger: logging.Logger,
++    name: str,
++    *,
++    level: int = logging.INFO,
++    **start_metrics: Any,
++) -> Iterator[dict[str, Any]]:
++    """Log stage start, completion, duration, and final metrics.
++
++    Args:
++        logger: Logger instance.
++        name: Stage name.
++        level: Logging level.
++        **start_metrics: Metrics logged at stage start.
++
++    Yields:
++        Mutable metrics dictionary logged at stage completion.
++    """
++    if start_metrics:
++        logger.log(level, "START %s %s", name, format_kv(start_metrics))
++    else:
++        logger.log(level, "START %s", name)
++
++    started = perf_counter()
++    end_metrics: dict[str, Any] = {}
++    try:
++        yield end_metrics
++    except Exception:
++        duration_ms = (perf_counter() - started) * 1000.0
++        logger.exception("FAIL %s duration_ms=%.2f", name, duration_ms)
++        raise
++    duration_ms = (perf_counter() - started) * 1000.0
++    if end_metrics:
++        logger.log(level, "DONE %s duration_ms=%.2f %s", name, duration_ms, format_kv(end_metrics))
++    else:
++        logger.log(level, "DONE %s duration_ms=%.2f", name, duration_ms)
+diff --git a/top_down_worldgen/pipeline.py b/top_down_worldgen/pipeline.py
+index dc954ab..66b1de4 100644
+--- a/top_down_worldgen/pipeline.py
++++ b/top_down_worldgen/pipeline.py
+@@ -1,5 +1,6 @@
+ from __future__ import annotations
+ 
++import logging
+ from dataclasses import dataclass
+ from pathlib import Path
+ from time import perf_counter
+@@ -7,6 +8,7 @@ from typing import Any
+ 
+ from .config import PublicConfig
+ from .legacy_runner import LegacyEngineRunner
++from .logging_utils import timed_stage
+ from .paths import OutputPaths
+ from .render.layers import LayerRenderer
+ from .tactical.fallback import FallbackPositionBuilder
+@@ -15,6 +17,9 @@ from .tactical.optimizer import TacticalOptimizer
+ from .utils.json_io import read_json, write_json
+ 
+ 
++LOGGER = logging.getLogger(__name__)
++
++
+ @dataclass(frozen=True, slots=True)
+ class PipelineResult:
+     """Pipeline result summary."""
+@@ -55,40 +60,97 @@ class WorldgenPipeline:
+             PipelineResult.
+         """
+         started = perf_counter()
+-        config = PublicConfig.from_file(config_path)
+-        outputs = OutputPaths.from_output_map(output_map)
+-        outputs.output_dir.mkdir(parents=True, exist_ok=True)
++        LOGGER.info(
++            "Pipeline requested config=%s output_map=%s tile_size_px=%s render=%s",
++            config_path,
++            output_map,
++            tile_size_px,
++            render,
++        )
+ 
+-        config.write_engine_config(outputs.engine_config)
++        with timed_stage(LOGGER, "pipeline.load_config", config_path=config_path) as metrics:
++            config = PublicConfig.from_file(config_path)
++            metrics.update(
++                {
++                    "seed": config.seed,
++                    "map_width_tiles": config.map_width_tiles,
++                    "map_height_tiles": config.map_height_tiles,
++                    "chunk_width_tiles": config.chunk_width_tiles,
++                    "chunk_height_tiles": config.chunk_height_tiles,
++                    "biome_profile": config.biome_profile,
++                    "objective_profile": config.objective_profile,
++                },
++            )
++
++        with timed_stage(LOGGER, "pipeline.prepare_outputs", output_map=output_map) as metrics:
++            outputs = OutputPaths.from_output_map(output_map)
++            outputs.output_dir.mkdir(parents=True, exist_ok=True)
++            config.write_engine_config(outputs.engine_config)
++            metrics.update(
++                {
++                    "output_dir": outputs.output_dir,
++                    "engine_config": outputs.engine_config,
++                },
++            )
+ 
+         engine_started = perf_counter()
+-        LegacyEngineRunner(self._project_root / "top_down_worldgen" / "legacy" / "engine.py").run(
+-            config_path=outputs.engine_config,
+-            map_out=outputs.generated_map,
+-            tactical_out=outputs.raw_tactical_map,
+-            log_file=log_file,
+-        )
++        with timed_stage(LOGGER, "pipeline.legacy_engine") as metrics:
++            LegacyEngineRunner(self._project_root / "top_down_worldgen" / "legacy" / "engine.py").run(
++                config_path=outputs.engine_config,
++                map_out=outputs.generated_map,
++                tactical_out=outputs.raw_tactical_map,
++                log_file=log_file,
++            )
++            rows = outputs.generated_map.read_text(encoding="utf-8").splitlines()
++            metrics.update(
++                {
++                    "map_rows": len(rows),
++                    "map_cols": len(rows[0]) if rows else 0,
++                    "raw_tactical_map": outputs.raw_tactical_map,
++                },
++            )
+         engine_time_ms = (perf_counter() - engine_started) * 1000.0
+ 
+         tactical_started = perf_counter()
+-        raw_data = read_json(outputs.raw_tactical_map)
+-        runtime_data, debug_data = TacticalOptimizer().optimize(raw_data)
+-        runtime_data, debug_data = FallbackPositionBuilder().add(runtime_data, debug_data)
+-        runtime_data, debug_data = ObjectiveProfileSelector(config.objective_profile).apply(runtime_data, debug_data)
+-        runtime_data["version"] = "0.19-runtime"
+-        debug_data["version"] = "0.19-debug"
+-
+-        write_json(runtime_data, outputs.tactical_map)
+-        write_json(debug_data, outputs.tactical_map_debug)
++        with timed_stage(LOGGER, "pipeline.tactical_processing") as metrics:
++            raw_data = read_json(outputs.raw_tactical_map)
++            LOGGER.info(
++                "Raw tactical counts combat_zones=%s cover_points=%s choke_points=%s "
++                "flank_routes=%s enemy_spawn_zones=%s",
++                len(raw_data.get("combat_zones", [])),
++                len(raw_data.get("cover_points", [])),
++                len(raw_data.get("choke_points", [])),
++                len(raw_data.get("flank_routes", [])),
++                len(raw_data.get("enemy_spawn_zones", [])),
++            )
++            runtime_data, debug_data = TacticalOptimizer().optimize(raw_data)
++            runtime_data, debug_data = FallbackPositionBuilder().add(runtime_data, debug_data)
++            runtime_data, debug_data = ObjectiveProfileSelector(config.objective_profile).apply(
++                runtime_data,
++                debug_data,
++            )
++            runtime_data["version"] = "0.19-runtime"
++            debug_data["version"] = "0.19-debug"
++
++            write_json(runtime_data, outputs.tactical_map)
++            write_json(debug_data, outputs.tactical_map_debug)
++            metrics.update(
++                {
++                    "runtime_combat_zones": len(runtime_data.get("combat_zones", [])),
++                    "runtime_cover_points": len(runtime_data.get("cover_points", [])),
++                    "runtime_choke_points": len(runtime_data.get("choke_points", [])),
++                    "runtime_flank_routes": len(runtime_data.get("flank_routes", [])),
++                    "runtime_enemy_spawn_zones": len(runtime_data.get("enemy_spawn_zones", [])),
++                    "runtime_fallback_positions": len(runtime_data.get("fallback_positions", [])),
++                },
++            )
+         tactical_time_ms = (perf_counter() - tactical_started) * 1000.0
+ 
+         render_time_ms = 0.0
+         if render:
+             render_started = perf_counter()
+-            LayerRenderer(self._project_root / "assets", tile_size_px).render_all(
+-                outputs.generated_map,
+-                outputs.tactical_map_debug,
+-                {
++            with timed_stage(LOGGER, "pipeline.render_layers", tile_size_px=tile_size_px) as metrics:
++                render_outputs = {
+                     "base": outputs.layer_base_map,
+                     "combat": outputs.layer_combat_zones,
+                     "cover": outputs.layer_cover_points,
+@@ -97,9 +159,21 @@ class WorldgenPipeline:
+                     "spawn": outputs.layer_enemy_spawn_zones,
+                     "fallback": outputs.layer_fallback_positions,
+                     "all": outputs.layer_all_debug,
+-                },
+-            )
++                }
++                LayerRenderer(self._project_root / "assets", tile_size_px).render_all(
++                    outputs.generated_map,
++                    outputs.tactical_map_debug,
++                    render_outputs,
++                )
++                metrics.update(
++                    {
++                        "rendered_layers": len(render_outputs),
++                        "output_dir": outputs.output_dir,
++                    },
++                )
+             render_time_ms = (perf_counter() - render_started) * 1000.0
++        else:
++            LOGGER.info("Render skipped by CLI flag")
+ 
+         total_time_ms = (perf_counter() - started) * 1000.0
+         rows = outputs.generated_map.read_text(encoding="utf-8").splitlines()
+@@ -130,7 +204,11 @@ class WorldgenPipeline:
+             "original_cover_points": optimization.get("original_cover_points"),
+             "selected_cover_points": optimization.get("selected_cover_points"),
+         }
+-        outputs.metrics.write_text(self._format_metrics(metrics), encoding="utf-8")
++        with timed_stage(LOGGER, "pipeline.write_metrics", metrics_path=outputs.metrics) as log_metrics:
++            outputs.metrics.write_text(self._format_metrics(metrics), encoding="utf-8")
++            log_metrics.update({"metrics_count": len(metrics)})
++
++        LOGGER.info("Pipeline completed total_time_ms=%.2f", total_time_ms)
+         return PipelineResult(metrics=metrics, outputs=outputs)
+ 
+     @staticmethod
+diff --git a/top_down_worldgen/render/layers.py b/top_down_worldgen/render/layers.py
+index 848dddb..8611430 100644
+--- a/top_down_worldgen/render/layers.py
++++ b/top_down_worldgen/render/layers.py
+@@ -1,11 +1,17 @@
+ from __future__ import annotations
+ 
+ import json
++import logging
+ from pathlib import Path
+ from typing import Any
+ 
+ from PIL import Image, ImageDraw, ImageFont
+ 
++from top_down_worldgen.logging_utils import timed_stage
++
++
++LOGGER = logging.getLogger(__name__)
++
+ 
+ class LayerRenderer:
+     """Renders all debug map layers from final tactical data."""
+@@ -51,18 +57,43 @@ class LayerRenderer:
+             tactical_debug_path: Debug tactical map path.
+             outputs: Output layer paths by name.
+         """
+-        rows = self._read_rows(map_path)
+-        data = json.loads(tactical_debug_path.read_text(encoding="utf-8"))
+-        base = self._render_base(rows)
+-        base.save(outputs["base"])
+-
+-        self._save_overlay(base, data, outputs["combat"], {"combat"})
+-        self._save_overlay(base, data, outputs["cover"], {"cover"})
+-        self._save_overlay(base, data, outputs["choke"], {"choke"})
+-        self._save_overlay(base, data, outputs["flank"], {"flank"})
+-        self._save_overlay(base, data, outputs["spawn"], {"spawn"})
+-        self._save_overlay(base, data, outputs["fallback"], {"fallback"})
+-        self._save_overlay(base, data, outputs["all"], {"combat", "cover", "choke", "flank", "spawn", "fallback"})
++        with timed_stage(
++            LOGGER,
++            "LayerRenderer.render_all",
++            map_path=map_path,
++            tactical_debug_path=tactical_debug_path,
++            tile_size_px=self._tile_size_px,
++        ) as metrics:
++            rows = self._read_rows(map_path)
++            data = json.loads(tactical_debug_path.read_text(encoding="utf-8"))
++            base = self._render_base(rows)
++            base.save(outputs["base"])
++
++            overlay_specs = {
++                "combat": {"combat"},
++                "cover": {"cover"},
++                "choke": {"choke"},
++                "flank": {"flank"},
++                "spawn": {"spawn"},
++                "fallback": {"fallback"},
++                "all": {"combat", "cover", "choke", "flank", "spawn", "fallback"},
++            }
++            for name, layers in overlay_specs.items():
++                self._save_overlay(base, data, outputs[name], layers)
++
++            metrics.update(
++                {
++                    "map_rows": len(rows),
++                    "map_cols": len(rows[0]) if rows else 0,
++                    "combat_zones": len(data.get("combat_zones", [])),
++                    "cover_points": len(data.get("cover_points", [])),
++                    "choke_points": len(data.get("choke_points", [])),
++                    "flank_routes": len(data.get("flank_routes", [])),
++                    "enemy_spawn_zones": len(data.get("enemy_spawn_zones", [])),
++                    "fallback_positions": len(data.get("fallback_positions", [])),
++                    "rendered_layers": len(outputs),
++                },
++            )
+ 
+     def _save_overlay(
+         self,
+@@ -202,16 +233,28 @@ class LayerRenderer:
+             draw.polygon(points, fill=(115, 255, 120, 210), outline=(255, 255, 255, 235))
+ 
+     def _load_tiles(self) -> dict[str, Image.Image]:
+-        tiles: dict[str, Image.Image] = {}
+-        for symbol, filename in self.TILE_FILES.items():
+-            path = self._tiles_dir / filename
+-            if not path.exists():
+-                raise FileNotFoundError(path)
+-            image = Image.open(path).convert("RGBA")
+-            if image.size != (self._tile_size_px, self._tile_size_px):
+-                image = image.resize((self._tile_size_px, self._tile_size_px), Image.Resampling.NEAREST)
+-            tiles[symbol] = image
+-        return tiles
++        with timed_stage(
++            LOGGER,
++            "LayerRenderer._load_tiles",
++            tiles_dir=self._tiles_dir,
++            tile_size_px=self._tile_size_px,
++        ) as metrics:
++            tiles: dict[str, Image.Image] = {}
++            resized_count = 0
++            for symbol, filename in self.TILE_FILES.items():
++                path = self._tiles_dir / filename
++                if not path.exists():
++                    raise FileNotFoundError(path)
++                image = Image.open(path).convert("RGBA")
++                if image.size != (self._tile_size_px, self._tile_size_px):
++                    image = image.resize(
++                        (self._tile_size_px, self._tile_size_px),
++                        Image.Resampling.NEAREST,
++                    )
++                    resized_count += 1
++                tiles[symbol] = image
++            metrics.update({"tiles_loaded": len(tiles), "tiles_resized": resized_count})
++            return tiles
+ 
+     @staticmethod
+     def _read_rows(map_path: Path) -> list[str]:
+diff --git a/top_down_worldgen/tactical/fallback.py b/top_down_worldgen/tactical/fallback.py
+index edbcae4..f0b4c88 100644
+--- a/top_down_worldgen/tactical/fallback.py
++++ b/top_down_worldgen/tactical/fallback.py
+@@ -1,9 +1,16 @@
+ from __future__ import annotations
+ 
++import logging
+ from dataclasses import dataclass
+ from typing import Any
+ 
+ 
++from top_down_worldgen.logging_utils import timed_stage
++
++
++LOGGER = logging.getLogger(__name__)
++
++
+ @dataclass(frozen=True, slots=True)
+ class FallbackConfig:
+     """Configuration for fallback position generation."""
+@@ -41,19 +48,32 @@ class FallbackPositionBuilder:
+         Returns:
+             Updated runtime and debug data.
+         """
+-        fallbacks = self._build(debug_data)
+-        runtime_updated = dict(runtime_data)
+-        debug_updated = dict(debug_data)
+-        runtime_updated["fallback_positions"] = self._runtime_fallbacks(fallbacks)
+-        debug_updated["fallback_positions"] = fallbacks
+-        info = {
+-            "max_fallbacks_per_zone": self._config.max_fallbacks_per_zone,
+-            "min_cover_quality": self._config.min_cover_quality,
+-            "fallback_count": len(fallbacks),
+-        }
+-        runtime_updated["fallback_generation"] = info
+-        debug_updated["fallback_generation"] = info
+-        return runtime_updated, debug_updated
++        with timed_stage(
++            LOGGER,
++            "FallbackPositionBuilder.add",
++            combat_zones=len(debug_data.get("combat_zones", [])),
++            cover_points=len(debug_data.get("cover_points", [])),
++            flank_routes=len(debug_data.get("flank_routes", [])),
++        ) as metrics:
++            fallbacks = self._build(debug_data)
++            runtime_updated = dict(runtime_data)
++            debug_updated = dict(debug_data)
++            runtime_updated["fallback_positions"] = self._runtime_fallbacks(fallbacks)
++            debug_updated["fallback_positions"] = fallbacks
++            info = {
++                "max_fallbacks_per_zone": self._config.max_fallbacks_per_zone,
++                "min_cover_quality": self._config.min_cover_quality,
++                "fallback_count": len(fallbacks),
++            }
++            runtime_updated["fallback_generation"] = info
++            debug_updated["fallback_generation"] = info
++            metrics.update(
++                {
++                    "fallback_positions": len(fallbacks),
++                    "runtime_fallback_positions": len(runtime_updated["fallback_positions"]),
++                },
++            )
++            return runtime_updated, debug_updated
+ 
+     def _build(self, data: dict[str, Any]) -> list[dict[str, Any]]:
+         cover_by_id = {
+diff --git a/top_down_worldgen/tactical/objectives.py b/top_down_worldgen/tactical/objectives.py
+index 078f379..1d3ff66 100644
+--- a/top_down_worldgen/tactical/objectives.py
++++ b/top_down_worldgen/tactical/objectives.py
+@@ -1,9 +1,14 @@
+ from __future__ import annotations
+ 
++import logging
+ from dataclasses import dataclass
+ from typing import Any
+ 
+ from top_down_worldgen.constants import OBJECTIVE_PROFILES
++from top_down_worldgen.logging_utils import timed_stage
++
++
++LOGGER = logging.getLogger(__name__)
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+@@ -54,27 +59,33 @@ class ObjectiveProfileSelector:
+         Returns:
+             Updated runtime and debug data.
+         """
+-        candidates = [
+-            spawn for spawn in debug_data.get("enemy_spawn_zones", [])
+-            if isinstance(spawn, dict)
+-        ]
+-        selected = self._select_spawns(candidates)
+-        runtime_updated = dict(runtime_data)
+-        debug_updated = dict(debug_data)
+-
+-        debug_updated["enemy_spawn_candidates"] = candidates
+-        debug_updated["enemy_spawn_zones"] = selected
+-        runtime_updated["enemy_spawn_zones"] = self._runtime_spawns(selected)
+-
+-        info = {
+-            "objective_profile": self._objective_profile,
+-            "candidate_spawn_count": len(candidates),
+-            "selected_spawn_count": len(selected),
+-            "spawn_selection_policy": self._policy_name(),
+-        }
+-        runtime_updated["objective"] = info
+-        debug_updated["objective"] = info
+-        return runtime_updated, debug_updated
++        with timed_stage(
++            LOGGER,
++            "ObjectiveProfileSelector.apply",
++            objective_profile=self._objective_profile,
++        ) as metrics:
++            candidates = [
++                spawn for spawn in debug_data.get("enemy_spawn_zones", [])
++                if isinstance(spawn, dict)
++            ]
++            selected = self._select_spawns(candidates)
++            runtime_updated = dict(runtime_data)
++            debug_updated = dict(debug_data)
++
++            debug_updated["enemy_spawn_candidates"] = candidates
++            debug_updated["enemy_spawn_zones"] = selected
++            runtime_updated["enemy_spawn_zones"] = self._runtime_spawns(selected)
++
++            info = {
++                "objective_profile": self._objective_profile,
++                "candidate_spawn_count": len(candidates),
++                "selected_spawn_count": len(selected),
++                "spawn_selection_policy": self._policy_name(),
++            }
++            runtime_updated["objective"] = info
++            debug_updated["objective"] = info
++            metrics.update(info)
++            return runtime_updated, debug_updated
+ 
+     def _select_spawns(self, candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+         grouped: dict[str, list[dict[str, Any]]] = {}
+diff --git a/top_down_worldgen/tactical/optimizer.py b/top_down_worldgen/tactical/optimizer.py
+index eaa33de..e9ec032 100644
+--- a/top_down_worldgen/tactical/optimizer.py
++++ b/top_down_worldgen/tactical/optimizer.py
+@@ -1,9 +1,15 @@
+ from __future__ import annotations
+ 
++import logging
+ from collections import defaultdict
+ from dataclasses import dataclass
+ from typing import Any
+ 
++from top_down_worldgen.logging_utils import timed_stage
++
++
++LOGGER = logging.getLogger(__name__)
++
+ 
+ @dataclass(frozen=True, slots=True)
+ class OptimizerConfig:
+@@ -36,25 +42,41 @@ class TacticalOptimizer:
+         Returns:
+             Runtime and debug tactical maps.
+         """
+-        selected_cover = self._select_cover_points(raw_data)
+-        selected_cover_ids = {str(point.get("id")) for point in selected_cover}
+-
+-        debug_data = dict(raw_data)
+-        debug_data["cover_points"] = selected_cover
+-        debug_data["combat_zones"] = self._rewrite_combat_zones(
+-            raw_data.get("combat_zones", []),
+-            selected_cover_ids,
+-        )
+-        debug_data["flank_routes"] = self._limit_flank_routes(raw_data.get("flank_routes", []))
+-        debug_data["enemy_spawn_zones"] = self._filter_enemy_spawns(
+-            raw_data.get("enemy_spawn_zones", []),
+-            selected_cover_ids,
+-        )
+-        debug_data["optimization"] = self._summary(raw_data, debug_data, selected_cover)
+-        debug_data["version"] = "0.19-debug-optimized"
+-
+-        runtime_data = self._runtime_data(debug_data)
+-        return runtime_data, debug_data
++        with timed_stage(
++            LOGGER,
++            "TacticalOptimizer.optimize",
++            raw_combat_zones=len(raw_data.get("combat_zones", [])),
++            raw_cover_points=len(raw_data.get("cover_points", [])),
++            raw_flank_routes=len(raw_data.get("flank_routes", [])),
++            raw_enemy_spawn_zones=len(raw_data.get("enemy_spawn_zones", [])),
++        ) as metrics:
++            selected_cover = self._select_cover_points(raw_data)
++            selected_cover_ids = {str(point.get("id")) for point in selected_cover}
++
++            debug_data = dict(raw_data)
++            debug_data["cover_points"] = selected_cover
++            debug_data["combat_zones"] = self._rewrite_combat_zones(
++                raw_data.get("combat_zones", []),
++                selected_cover_ids,
++            )
++            debug_data["flank_routes"] = self._limit_flank_routes(raw_data.get("flank_routes", []))
++            debug_data["enemy_spawn_zones"] = self._filter_enemy_spawns(
++                raw_data.get("enemy_spawn_zones", []),
++                selected_cover_ids,
++            )
++            debug_data["optimization"] = self._summary(raw_data, debug_data, selected_cover)
++            debug_data["version"] = "0.19-debug-optimized"
++
++            runtime_data = self._runtime_data(debug_data)
++            metrics.update(
++                {
++                    "selected_cover_points": len(selected_cover),
++                    "selected_combat_zones": len(debug_data.get("combat_zones", [])),
++                    "selected_flank_routes": len(debug_data.get("flank_routes", [])),
++                    "selected_enemy_spawn_zones": len(debug_data.get("enemy_spawn_zones", [])),
++                },
++            )
++            return runtime_data, debug_data
+ 
+     def _select_cover_points(self, raw_data: dict[str, Any]) -> list[dict[str, Any]]:
+         cover_points = [
+diff --git a/top_down_worldgen/utils/json_io.py b/top_down_worldgen/utils/json_io.py
+index c10db01..8111e0e 100644
+--- a/top_down_worldgen/utils/json_io.py
++++ b/top_down_worldgen/utils/json_io.py
+@@ -1,9 +1,15 @@
+ from __future__ import annotations
+ 
+ import json
++import logging
+ from pathlib import Path
+ from typing import Any
+ 
++from top_down_worldgen.logging_utils import json_summary, timed_stage
++
++
++LOGGER = logging.getLogger(__name__)
++
+ 
+ def read_json(path: Path) -> dict[str, Any]:
+     """Read a JSON object from disk.
+@@ -17,10 +23,12 @@ def read_json(path: Path) -> dict[str, Any]:
+     Raises:
+         ValueError: If the file does not contain a JSON object.
+     """
+-    data = json.loads(path.read_text(encoding="utf-8"))
+-    if not isinstance(data, dict):
+-        raise ValueError(f"Expected JSON object in {path}")
+-    return data
++    with timed_stage(LOGGER, "read_json", path=path) as metrics:
++        data = json.loads(path.read_text(encoding="utf-8"))
++        if not isinstance(data, dict):
++            raise ValueError(f"Expected JSON object in {path}")
++        metrics.update(json_summary(data))
++        return data
+ 
+ 
+ def write_json(data: dict[str, Any], path: Path) -> None:
+@@ -30,8 +38,8 @@ def write_json(data: dict[str, Any], path: Path) -> None:
+         data: JSON object.
+         path: Output file path.
+     """
+-    path.parent.mkdir(parents=True, exist_ok=True)
+-    path.write_text(
+-        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+-        encoding="utf-8",
+-    )
++    with timed_stage(LOGGER, "write_json", path=path) as metrics:
++        path.parent.mkdir(parents=True, exist_ok=True)
++        serialized = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
++        path.write_text(serialized, encoding="utf-8")
++        metrics.update(json_summary(data) | {"bytes": len(serialized.encode("utf-8"))})
+diff --git a/versions.md b/versions.md
+index 5da92b6..1357343 100644
+--- a/versions.md
++++ b/versions.md
+@@ -17,3 +17,10 @@
+ - Удалены преждевременные настройки `mypy`, `coverage`, расширенные classifiers/keywords и неиспользуемый блок `tool.top_down_worldgen`.
+ - Версия проекта поднята до `0.0.3`.
+ - Smoke-тест версии обновлён под новую patch-version.
++
++## v0.0.3 -> v0.0.4
++
++- Добавлен общий `timed_stage` для логирования старта, завершения и времени выполнения процедур.
++- Добавлен флаг `--verbose` для подробного DEBUG-логирования.
++- Расширено логирование CLI, pipeline, legacy runner, JSON I/O, tactical optimizer, fallback builder, objective selector и renderer.
++- Версия проекта поднята до `0.0.4`.

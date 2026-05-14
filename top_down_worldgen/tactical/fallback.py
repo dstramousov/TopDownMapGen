@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
+
+
+from top_down_worldgen.logging_utils import timed_stage
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,19 +48,32 @@ class FallbackPositionBuilder:
         Returns:
             Updated runtime and debug data.
         """
-        fallbacks = self._build(debug_data)
-        runtime_updated = dict(runtime_data)
-        debug_updated = dict(debug_data)
-        runtime_updated["fallback_positions"] = self._runtime_fallbacks(fallbacks)
-        debug_updated["fallback_positions"] = fallbacks
-        info = {
-            "max_fallbacks_per_zone": self._config.max_fallbacks_per_zone,
-            "min_cover_quality": self._config.min_cover_quality,
-            "fallback_count": len(fallbacks),
-        }
-        runtime_updated["fallback_generation"] = info
-        debug_updated["fallback_generation"] = info
-        return runtime_updated, debug_updated
+        with timed_stage(
+            LOGGER,
+            "FallbackPositionBuilder.add",
+            combat_zones=len(debug_data.get("combat_zones", [])),
+            cover_points=len(debug_data.get("cover_points", [])),
+            flank_routes=len(debug_data.get("flank_routes", [])),
+        ) as metrics:
+            fallbacks = self._build(debug_data)
+            runtime_updated = dict(runtime_data)
+            debug_updated = dict(debug_data)
+            runtime_updated["fallback_positions"] = self._runtime_fallbacks(fallbacks)
+            debug_updated["fallback_positions"] = fallbacks
+            info = {
+                "max_fallbacks_per_zone": self._config.max_fallbacks_per_zone,
+                "min_cover_quality": self._config.min_cover_quality,
+                "fallback_count": len(fallbacks),
+            }
+            runtime_updated["fallback_generation"] = info
+            debug_updated["fallback_generation"] = info
+            metrics.update(
+                {
+                    "fallback_positions": len(fallbacks),
+                    "runtime_fallback_positions": len(runtime_updated["fallback_positions"]),
+                },
+            )
+            return runtime_updated, debug_updated
 
     def _build(self, data: dict[str, Any]) -> list[dict[str, Any]]:
         cover_by_id = {
