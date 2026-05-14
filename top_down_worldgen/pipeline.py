@@ -9,6 +9,17 @@ from typing import Any
 from .config import PublicConfig
 from .legacy_runner import LegacyEngineRunner
 from .logging_utils import timed_stage
+from .manifest import (
+    ASCII_MAP_SCHEMA_VERSION,
+    ENGINE_CONFIG_SCHEMA_VERSION,
+    METRICS_SCHEMA_VERSION,
+    PNG_LAYER_SCHEMA_VERSION,
+    TACTICAL_DEBUG_SCHEMA_VERSION,
+    TACTICAL_MAP_SCHEMA_VERSION,
+    OutputArtifact,
+    build_manifest,
+    write_manifest,
+)
 from .paths import OutputPaths
 from .render.layers import LayerRenderer
 from .tactical.fallback import FallbackPositionBuilder
@@ -45,6 +56,7 @@ class WorldgenPipeline:
         output_map: Path,
         tile_size_px: int,
         render: bool,
+        debug_images: bool,
         log_file: Path | None,
     ) -> PipelineResult:
         """Run the complete generation pipeline.
@@ -53,7 +65,8 @@ class WorldgenPipeline:
             config_path: Public config path.
             output_map: ASCII map output path.
             tile_size_px: Render tile size.
-            render: Whether to render PNG debug layers.
+            render: Whether to render PNG layers.
+            debug_images: Whether to render PNG debug overlays.
             log_file: Optional legacy engine log path.
 
         Returns:
@@ -61,14 +74,19 @@ class WorldgenPipeline:
         """
         started = perf_counter()
         LOGGER.info(
-            "Pipeline requested config=%s output_map=%s tile_size_px=%s render=%s",
+            "Pipeline requested config=%s output_map=%s tile_size_px=%s render=%s debug_images=%s",
             config_path,
             output_map,
             tile_size_px,
             render,
+            debug_images,
         )
 
-        with timed_stage(LOGGER, "pipeline.load_config", config_path=config_path) as metrics:
+        with timed_stage(
+            LOGGER,
+            "pipeline.load_config",
+            config_path=config_path,
+        ) as metrics:
             config = PublicConfig.from_file(config_path)
             metrics.update(
                 {
@@ -82,7 +100,11 @@ class WorldgenPipeline:
                 },
             )
 
-        with timed_stage(LOGGER, "pipeline.prepare_outputs", output_map=output_map) as metrics:
+        with timed_stage(
+            LOGGER,
+            "pipeline.prepare_outputs",
+            output_map=output_map,
+        ) as metrics:
             outputs = OutputPaths.from_output_map(output_map)
             outputs.output_dir.mkdir(parents=True, exist_ok=True)
             config.write_engine_config(outputs.engine_config)
@@ -95,7 +117,8 @@ class WorldgenPipeline:
 
         engine_started = perf_counter()
         with timed_stage(LOGGER, "pipeline.legacy_engine") as metrics:
-            LegacyEngineRunner(self._project_root / "top_down_worldgen" / "legacy" / "engine.py").run(
+            engine_path = self._project_root / "top_down_worldgen" / "legacy" / "engine.py"
+            LegacyEngineRunner(engine_path).run(
                 config_path=outputs.engine_config,
                 map_out=outputs.generated_map,
                 tactical_out=outputs.raw_tactical_map,
@@ -124,8 +147,13 @@ class WorldgenPipeline:
                 len(raw_data.get("enemy_spawn_zones", [])),
             )
             runtime_data, debug_data = TacticalOptimizer().optimize(raw_data)
-            runtime_data, debug_data = FallbackPositionBuilder().add(runtime_data, debug_data)
-            runtime_data, debug_data = ObjectiveProfileSelector(config.objective_profile).apply(
+            runtime_data, debug_data = FallbackPositionBuilder().add(
+                runtime_data,
+                debug_data,
+            )
+            runtime_data, debug_data = ObjectiveProfileSelector(
+                config.objective_profile,
+            ).apply(
                 runtime_data,
                 debug_data,
             )
@@ -140,16 +168,25 @@ class WorldgenPipeline:
                     "runtime_cover_points": len(runtime_data.get("cover_points", [])),
                     "runtime_choke_points": len(runtime_data.get("choke_points", [])),
                     "runtime_flank_routes": len(runtime_data.get("flank_routes", [])),
-                    "runtime_enemy_spawn_zones": len(runtime_data.get("enemy_spawn_zones", [])),
-                    "runtime_fallback_positions": len(runtime_data.get("fallback_positions", [])),
+                    "runtime_enemy_spawn_zones": len(
+                        runtime_data.get("enemy_spawn_zones", []),
+                    ),
+                    "runtime_fallback_positions": len(
+                        runtime_data.get("fallback_positions", []),
+                    ),
                 },
             )
         tactical_time_ms = (perf_counter() - tactical_started) * 1000.0
 
         render_time_ms = 0.0
+        rendered_layers: list[str] = []
         if render:
             render_started = perf_counter()
-            with timed_stage(LOGGER, "pipeline.render_layers", tile_size_px=tile_size_px) as metrics:
+            with timed_stage(
+                LOGGER,
+                "pipeline.render_layers",
+                tile_size_px=tile_size_px,
+            ) as metrics:
                 render_outputs = {
                     "base": outputs.layer_base_map,
                     "combat": outputs.layer_combat_zones,
@@ -160,14 +197,16 @@ class WorldgenPipeline:
                     "fallback": outputs.layer_fallback_positions,
                     "all": outputs.layer_all_debug,
                 }
-                LayerRenderer(self._project_root / "assets", tile_size_px).render_all(
+                renderer = LayerRenderer(self._project_root / "assets", tile_size_px)
+                rendered_layers = renderer.render_all(
                     outputs.generated_map,
                     outputs.tactical_map_debug,
                     render_outputs,
+                    include_debug_images=debug_images,
                 )
                 metrics.update(
                     {
-                        "rendered_layers": len(render_outputs),
+                        "rendered_layers": len(rendered_layers),
                         "output_dir": outputs.output_dir,
                     },
                 )
@@ -191,6 +230,9 @@ class WorldgenPipeline:
             "tactical_time_ms": round(tactical_time_ms, 2),
             "render_time_ms": round(render_time_ms, 2),
             "total_time_ms": round(total_time_ms, 2),
+            "render_enabled": render,
+            "debug_images_enabled": debug_images and render,
+            "rendered_layers": rendered_layers,
             "objective_profile": config.objective_profile,
             "spawn_selection_policy": objective.get("spawn_selection_policy"),
             "candidate_spawn_count": objective.get("candidate_spawn_count"),
@@ -204,12 +246,126 @@ class WorldgenPipeline:
             "original_cover_points": optimization.get("original_cover_points"),
             "selected_cover_points": optimization.get("selected_cover_points"),
         }
-        with timed_stage(LOGGER, "pipeline.write_metrics", metrics_path=outputs.metrics) as log_metrics:
+        with timed_stage(
+            LOGGER,
+            "pipeline.write_metrics",
+            metrics_path=outputs.metrics,
+        ) as log_metrics:
             outputs.metrics.write_text(self._format_metrics(metrics), encoding="utf-8")
             log_metrics.update({"metrics_count": len(metrics)})
 
+        artifacts = self._build_artifacts(
+            outputs,
+            render=render,
+            rendered_layers=rendered_layers,
+        )
+        manifest = build_manifest(
+            output_dir=outputs.output_dir,
+            seed=config.seed,
+            profile=config.objective_profile,
+            width=width,
+            height=height,
+            tile_size_px=tile_size_px,
+            total_time_ms=total_time_ms,
+            engine_time_ms=engine_time_ms,
+            tactical_time_ms=tactical_time_ms,
+            render_time_ms=render_time_ms,
+            render_enabled=render,
+            debug_images_enabled=debug_images and render,
+            layers=rendered_layers,
+            artifacts=artifacts,
+            metrics=metrics,
+        )
+        with timed_stage(
+            LOGGER,
+            "pipeline.write_manifest",
+            manifest_path=outputs.manifest,
+        ) as log_metrics:
+            write_manifest(manifest, outputs.manifest)
+            log_metrics.update(
+                {
+                    "files": len(manifest.get("files", [])),
+                    "primary_outputs": len(manifest.get("primary_outputs", [])),
+                    "debug_outputs": len(manifest.get("debug_outputs", [])),
+                },
+            )
+
         LOGGER.info("Pipeline completed total_time_ms=%.2f", total_time_ms)
         return PipelineResult(metrics=metrics, outputs=outputs)
+
+    @staticmethod
+    def _build_artifacts(
+        outputs: OutputPaths,
+        *,
+        render: bool,
+        rendered_layers: list[str],
+    ) -> list[OutputArtifact]:
+        artifacts = [
+            OutputArtifact(
+                outputs.generated_map,
+                "ascii_map",
+                True,
+                False,
+                ASCII_MAP_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.tactical_map,
+                "tactical_map",
+                True,
+                False,
+                TACTICAL_MAP_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.metrics,
+                "metrics",
+                True,
+                False,
+                METRICS_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.raw_tactical_map,
+                "raw_tactical_map",
+                False,
+                True,
+                TACTICAL_DEBUG_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.tactical_map_debug,
+                "tactical_debug",
+                False,
+                True,
+                TACTICAL_DEBUG_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.engine_config,
+                "engine_config",
+                False,
+                True,
+                ENGINE_CONFIG_SCHEMA_VERSION,
+            ),
+        ]
+        if render:
+            layer_paths = {
+                "base": outputs.layer_base_map,
+                "combat": outputs.layer_combat_zones,
+                "cover": outputs.layer_cover_points,
+                "choke": outputs.layer_choke_points,
+                "flank": outputs.layer_flank_routes,
+                "spawn": outputs.layer_enemy_spawn_zones,
+                "fallback": outputs.layer_fallback_positions,
+                "all": outputs.layer_all_debug,
+            }
+            for layer in rendered_layers:
+                artifacts.append(
+                    OutputArtifact(
+                        layer_paths[layer],
+                        f"png_layer:{layer}",
+                        layer == "base",
+                        layer != "base",
+                        PNG_LAYER_SCHEMA_VERSION,
+                    ),
+                )
+        return artifacts
 
     @staticmethod
     def _format_metrics(metrics: dict[str, Any]) -> str:

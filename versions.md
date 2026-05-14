@@ -24,3 +24,10 @@
 - Добавлен флаг `--verbose` для подробного DEBUG-логирования.
 - Расширено логирование CLI, pipeline, legacy runner, JSON I/O, tactical optimizer, fallback builder, objective selector и renderer.
 - Версия проекта поднята до `0.0.4`.
+
+## v0.0.4 -> v0.0.5
+
+- Добавлен `_manifest.json` с паспортом генерации: seed, profile, размеры, timing, схемы и список файлов.
+- Добавлен CLI-флаг `--no-debug-images` для отключения тяжёлых PNG debug-слоёв без отключения базового render.
+- Manifest помечает primary outputs и debug-only artifacts для автоматической обработки результата.
+- Версия проекта поднята до `0.0.5`.

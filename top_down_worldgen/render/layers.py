@@ -49,13 +49,19 @@ class LayerRenderer:
         map_path: Path,
         tactical_debug_path: Path,
         outputs: dict[str, Path],
-    ) -> None:
-        """Render all map layers.
+        *,
+        include_debug_images: bool = True,
+    ) -> list[str]:
+        """Render map layers.
 
         Args:
             map_path: ASCII map path.
             tactical_debug_path: Debug tactical map path.
             outputs: Output layer paths by name.
+            include_debug_images: Whether to render PNG debug overlays.
+
+        Returns:
+            Names of rendered layers.
         """
         with timed_stage(
             LOGGER,
@@ -63,23 +69,29 @@ class LayerRenderer:
             map_path=map_path,
             tactical_debug_path=tactical_debug_path,
             tile_size_px=self._tile_size_px,
+            include_debug_images=include_debug_images,
         ) as metrics:
             rows = self._read_rows(map_path)
             data = json.loads(tactical_debug_path.read_text(encoding="utf-8"))
             base = self._render_base(rows)
             base.save(outputs["base"])
+            rendered_layers = ["base"]
 
-            overlay_specs = {
-                "combat": {"combat"},
-                "cover": {"cover"},
-                "choke": {"choke"},
-                "flank": {"flank"},
-                "spawn": {"spawn"},
-                "fallback": {"fallback"},
-                "all": {"combat", "cover", "choke", "flank", "spawn", "fallback"},
-            }
-            for name, layers in overlay_specs.items():
-                self._save_overlay(base, data, outputs[name], layers)
+            if include_debug_images:
+                overlay_specs = {
+                    "combat": {"combat"},
+                    "cover": {"cover"},
+                    "choke": {"choke"},
+                    "flank": {"flank"},
+                    "spawn": {"spawn"},
+                    "fallback": {"fallback"},
+                    "all": {"combat", "cover", "choke", "flank", "spawn", "fallback"},
+                }
+                for name, layers in overlay_specs.items():
+                    self._save_overlay(base, data, outputs[name], layers)
+                    rendered_layers.append(name)
+            else:
+                LOGGER.info("PNG debug layers skipped by CLI flag")
 
             metrics.update(
                 {
@@ -91,9 +103,11 @@ class LayerRenderer:
                     "flank_routes": len(data.get("flank_routes", [])),
                     "enemy_spawn_zones": len(data.get("enemy_spawn_zones", [])),
                     "fallback_positions": len(data.get("fallback_positions", [])),
-                    "rendered_layers": len(outputs),
+                    "rendered_layers": len(rendered_layers),
+                    "debug_layers_rendered": max(0, len(rendered_layers) - 1),
                 },
             )
+            return rendered_layers
 
     def _save_overlay(
         self,
