@@ -65,3 +65,11 @@
 - Расширены validation checks по содержимому tactical output: старт/цель, tile grid, tile counts, combat zones, spawn/fallback refs, flank route waypoints и cover refs.
 - Runtime tactical schema обновлена до `tactical-map-v0.22`, manifest schema — до `generation-manifest-v3`.
 - Версия проекта поднята до `0.0.9`.
+
+## v0.0.9 -> v0.0.10
+
+- Усилен final repair связности walkable-карты.
+- Маленькие изолированные walkable-компоненты теперь удаляются до строгой валидации.
+- Крупные изолированные компоненты соединяются кратчайшим carved connector path.
+- Repair-метрики теперь честно учитывают failed repairs и не считают соединение успешным без уменьшения числа компонент.
+- Версия проекта поднята до `0.0.10`.

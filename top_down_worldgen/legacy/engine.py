@@ -312,7 +312,7 @@ class DerivedConfig:
             bush_ring_thickness=1,
             connected_pocket_min_radius=3,
             connected_pocket_max_radius=7,
-            cleanup_small_component_max_size=16,
+            cleanup_small_component_max_size=32,
             min_walkable_ratio=0.34,
             max_walkable_ratio=0.72,
             max_dead_end_ratio=0.22,
@@ -521,6 +521,7 @@ class MapGenerator:
             "components_after": 0,
             "filled_components": 0,
             "connected_components": 0,
+            "failed_repairs": 0,
             "tiles_changed": 0,
         }
 
@@ -1595,11 +1596,14 @@ class MapGenerator:
             "components_after": 0,
             "filled_components": 0,
             "connected_components": 0,
+            "failed_repairs": 0,
             "tiles_changed": 0,
         }
         critical_points = {self.start_point(), self.goal_point(), self.central_point()}
+        small_component_limit = self._small_isolated_component_limit()
+        max_repair_passes = 16
 
-        for pass_index in range(3):
+        for pass_index in range(max_repair_passes):
             components = MapValidator(self._grid).components()
             if pass_index == 0:
                 metrics["components_before"] = len(components)
@@ -1607,48 +1611,67 @@ class MapGenerator:
                 break
 
             main_component = self._main_walkable_component(components)
-            for component in components:
-                if component is main_component:
-                    continue
+            isolated_components = [
+                component for component in components if component is not main_component
+            ]
+            component = min(isolated_components, key=len)
+            before_count = len(components)
 
-                should_fill = (
-                    len(component) <= self._derived.cleanup_small_component_max_size
-                    and component.isdisjoint(critical_points)
+            if len(component) <= small_component_limit and component.isdisjoint(critical_points):
+                LOGGER.info(
+                    "  Filling small isolated component size=%s limit=%s",
+                    len(component),
+                    small_component_limit,
                 )
-                if should_fill:
-                    changed = self._fill_isolated_component(component)
-                    if changed > 0:
-                        metrics["filled_components"] += 1
-                        metrics["tiles_changed"] += changed
-                    continue
-
+                changed = self._fill_isolated_component(component)
+                action_key = "filled_components"
+            else:
                 source = self._nearest_component_point(
                     component,
                     self._component_center(component),
                 )
-                target = self._nearest_component_point(main_component, source)
                 LOGGER.info(
-                    "  Connecting isolated component size=%s from=(%03d,%03d) to=(%03d,%03d)",
+                    "  Connecting isolated component size=%s from=(%03d,%03d)",
                     len(component),
                     source.x,
                     source.y,
-                    target.x,
-                    target.y,
                 )
-                self._carve_forest_trail(source, target)
-                metrics["connected_components"] += 1
+                changed = self._connect_component_to_main(component, main_component)
+                action_key = "connected_components"
+
+            after_count = len(MapValidator(self._grid).components())
+            metrics["tiles_changed"] += changed
+            if changed > 0 and after_count < before_count:
+                metrics[action_key] += 1
+                continue
+
+            metrics["failed_repairs"] += 1
+            LOGGER.warning(
+                "  Connectivity repair made no progress: action=%s changed=%s "
+                "components_before=%s components_after=%s",
+                action_key,
+                changed,
+                before_count,
+                after_count,
+            )
 
         metrics["components_after"] = len(MapValidator(self._grid).components())
         self._connectivity_repair_metrics = metrics
         LOGGER.info(
             "Stage 10c complete: components_before=%s components_after=%s "
-            "filled_components=%s connected_components=%s tiles_changed=%s",
+            "filled_components=%s connected_components=%s failed_repairs=%s "
+            "tiles_changed=%s",
             metrics["components_before"],
             metrics["components_after"],
             metrics["filled_components"],
             metrics["connected_components"],
+            metrics["failed_repairs"],
             metrics["tiles_changed"],
         )
+
+    def _small_isolated_component_limit(self) -> int:
+        """Return the size limit for isolated walkable components to remove."""
+        return max(32, self._derived.cleanup_small_component_max_size)
 
     def _main_walkable_component(self, components: list[set[Point]]) -> set[Point]:
         """Return the component that should remain the main walkable area."""
@@ -1662,11 +1685,10 @@ class MapGenerator:
         """Fill a small isolated walkable component with blocking forest."""
         changed = 0
         for point in component:
-            if point in self._protected_path:
-                continue
             if self._grid.get_tile(point) == TileType.TREE:
                 continue
-            self._set_tile(point, TileType.TREE)
+            self._grid.set_tile(point, TileType.TREE)
+            self._protected_path.discard(point)
             changed += 1
         return changed
 
@@ -1677,6 +1699,69 @@ class MapGenerator:
             component,
             key=lambda point: abs(point.x - target.x) + abs(point.y - target.y),
         )
+
+    def _connect_component_to_main(
+        self,
+        component: set[Point],
+        main_component: set[Point],
+    ) -> int:
+        """Carve the shortest connector from an isolated component to the main one."""
+        connector = self._shortest_connector_path(component, main_component)
+        if not connector:
+            return 0
+
+        changed = 0
+        for point in connector:
+            current = self._grid.get_tile(point)
+            if current == TileType.PATH:
+                self._protected_path.add(point)
+                continue
+            if current == TileType.START or current == TileType.GOAL:
+                self._protected_path.add(point)
+                continue
+            self._grid.set_tile(point, TileType.PATH)
+            self._protected_path.add(point)
+            if current != TileType.PATH:
+                changed += 1
+
+        return changed
+
+    def _shortest_connector_path(
+        self,
+        component: set[Point],
+        main_component: set[Point],
+    ) -> list[Point]:
+        """Return a shortest grid path connecting two walkable components."""
+        parents: dict[Point, Point | None] = {}
+        queue: deque[Point] = deque()
+
+        for point in component:
+            parents[point] = None
+            queue.append(point)
+
+        end: Point | None = None
+        while queue:
+            current = queue.popleft()
+            if current in main_component:
+                end = current
+                break
+
+            for neighbor in self._grid.neighbors_4(current):
+                if neighbor in parents:
+                    continue
+                parents[neighbor] = current
+                queue.append(neighbor)
+
+        if end is None:
+            return []
+
+        path: list[Point] = []
+        current: Point | None = end
+        while current is not None:
+            path.append(current)
+            current = parents[current]
+        path.reverse()
+        return path
 
     def _ensure_walkable_area(self, center: Point, tile_type: TileType) -> None:
         """Ensure a small walkable patch around a critical point."""
