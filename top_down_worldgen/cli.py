@@ -18,7 +18,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-o", "--out", required=True, type=Path)
     parser.add_argument("--render-tile-size", type=int, choices=[16, 32], default=16)
     parser.add_argument("--no-render", action="store_true")
-    parser.add_argument("--no-debug-images", action="store_true")
+    parser.add_argument("--include-debug-layers", action="store_true")
+    parser.add_argument(
+        "--no-debug-images",
+        action="store_true",
+        help="Deprecated no-op; debug PNG layers are disabled by default.",
+    )
     parser.add_argument("--log-file", type=Path, default=None)
     parser.add_argument("--profile-performance", action="store_true")
     parser.add_argument("--verbose", action="store_true")
@@ -51,12 +56,19 @@ def main() -> int:
     configure_logging(args.log_file, args.verbose)
     try:
         project_root = Path(__file__).resolve().parent.parent
+        debug_layers = bool(args.include_debug_layers)
+        if args.no_debug_images:
+            LOGGER.warning(
+                "--no-debug-images is deprecated and has no effect; "
+                "debug PNG layers are disabled by default",
+            )
         LOGGER.info(
-            "CLI args config=%s out=%s render=%s debug_images=%s tile_size_px=%s log_file=%s verbose=%s",
+            "CLI args config=%s out=%s render=%s debug_layers=%s tile_size_px=%s "
+            "log_file=%s verbose=%s",
             args.config,
             args.out,
             not args.no_render,
-            not args.no_debug_images,
+            debug_layers,
             args.render_tile_size,
             args.log_file,
             args.verbose,
@@ -67,7 +79,7 @@ def main() -> int:
                 output_map=args.out,
                 tile_size_px=args.render_tile_size,
                 render=not args.no_render,
-                debug_images=not args.no_debug_images,
+                debug_images=debug_layers,
                 log_file=args.log_file,
             )
         LOGGER.info("Generated map: %s", result.outputs.generated_map)
@@ -75,9 +87,11 @@ def main() -> int:
         LOGGER.info("Debug tactical map: %s", result.outputs.tactical_map_debug)
         LOGGER.info("Generation manifest: %s", result.outputs.manifest)
         if not args.no_render:
-            LOGGER.info("Rendered PNG layers in: %s", result.outputs.output_dir)
-            if args.no_debug_images:
-                LOGGER.info("PNG debug layers were skipped")
+            LOGGER.info("Rendered base PNG layer in: %s", result.outputs.output_dir)
+            if debug_layers:
+                LOGGER.info("Rendered PNG debug layers in: %s", result.outputs.output_dir)
+            else:
+                LOGGER.info("PNG debug layers were skipped by default")
         if args.profile_performance:
             LOGGER.info("engine_time_ms=%.2f", result.metrics["engine_time_ms"])
             LOGGER.info("tactical_time_ms=%.2f", result.metrics["tactical_time_ms"])

@@ -516,10 +516,21 @@ class MapGenerator:
         self._goal_region_id = 0
         self._central_region_id = 0
         self._protected_path: set[Point] = set()
+        self._connectivity_repair_metrics: dict[str, int] = {
+            "components_before": 0,
+            "components_after": 0,
+            "filled_components": 0,
+            "connected_components": 0,
+            "tiles_changed": 0,
+        }
 
     def effective_seed(self) -> int:
         """Return effective seed."""
         return self._effective_seed
+
+    def connectivity_repair_metrics(self) -> dict[str, int]:
+        """Return final walkable connectivity repair metrics."""
+        return dict(self._connectivity_repair_metrics)
 
     def derived_config(self) -> DerivedConfig:
         """Return derived configuration."""
@@ -590,6 +601,7 @@ class MapGenerator:
         self._place_start_goal()
         self._open_dead_forest_masses()
         self._repair_critical_connectivity()
+        self._repair_walkable_connectivity()
         self._place_start_goal()
         self._validate()
 
@@ -1574,6 +1586,97 @@ class MapGenerator:
             repairs += 1
 
         LOGGER.info("Stage 10b complete: repairs=%s", repairs)
+
+    def _repair_walkable_connectivity(self) -> None:
+        """Repair disconnected walkable components before final validation."""
+        LOGGER.info("Stage 10c: repair final walkable connectivity")
+        metrics = {
+            "components_before": 0,
+            "components_after": 0,
+            "filled_components": 0,
+            "connected_components": 0,
+            "tiles_changed": 0,
+        }
+        critical_points = {self.start_point(), self.goal_point(), self.central_point()}
+
+        for pass_index in range(3):
+            components = MapValidator(self._grid).components()
+            if pass_index == 0:
+                metrics["components_before"] = len(components)
+            if len(components) <= 1:
+                break
+
+            main_component = self._main_walkable_component(components)
+            for component in components:
+                if component is main_component:
+                    continue
+
+                should_fill = (
+                    len(component) <= self._derived.cleanup_small_component_max_size
+                    and component.isdisjoint(critical_points)
+                )
+                if should_fill:
+                    changed = self._fill_isolated_component(component)
+                    if changed > 0:
+                        metrics["filled_components"] += 1
+                        metrics["tiles_changed"] += changed
+                    continue
+
+                source = self._nearest_component_point(
+                    component,
+                    self._component_center(component),
+                )
+                target = self._nearest_component_point(main_component, source)
+                LOGGER.info(
+                    "  Connecting isolated component size=%s from=(%03d,%03d) to=(%03d,%03d)",
+                    len(component),
+                    source.x,
+                    source.y,
+                    target.x,
+                    target.y,
+                )
+                self._carve_forest_trail(source, target)
+                metrics["connected_components"] += 1
+
+        metrics["components_after"] = len(MapValidator(self._grid).components())
+        self._connectivity_repair_metrics = metrics
+        LOGGER.info(
+            "Stage 10c complete: components_before=%s components_after=%s "
+            "filled_components=%s connected_components=%s tiles_changed=%s",
+            metrics["components_before"],
+            metrics["components_after"],
+            metrics["filled_components"],
+            metrics["connected_components"],
+            metrics["tiles_changed"],
+        )
+
+    def _main_walkable_component(self, components: list[set[Point]]) -> set[Point]:
+        """Return the component that should remain the main walkable area."""
+        start = self.start_point()
+        for component in components:
+            if start in component:
+                return component
+        return components[0]
+
+    def _fill_isolated_component(self, component: set[Point]) -> int:
+        """Fill a small isolated walkable component with blocking forest."""
+        changed = 0
+        for point in component:
+            if point in self._protected_path:
+                continue
+            if self._grid.get_tile(point) == TileType.TREE:
+                continue
+            self._set_tile(point, TileType.TREE)
+            changed += 1
+        return changed
+
+    @staticmethod
+    def _nearest_component_point(component: set[Point], target: Point) -> Point:
+        """Return component point nearest to target by Manhattan distance."""
+        return min(
+            component,
+            key=lambda point: abs(point.x - target.x) + abs(point.y - target.y),
+        )
 
     def _ensure_walkable_area(self, center: Point, tile_type: TileType) -> None:
         """Ensure a small walkable patch around a critical point."""
@@ -3420,6 +3523,7 @@ def main() -> int:
                     start=generator.start_point(),
                     tactical_data=tactical_data,
                 ).build()
+                tactical_data["connectivity_repair"] = generator.connectivity_repair_metrics()
                 TacticalExporter.export(tactical_data, tactical_out)
 
                 if not args.no_render:

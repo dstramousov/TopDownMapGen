@@ -13,6 +13,7 @@ def test_build_manifest_marks_primary_and_debug_outputs(tmp_path: Path) -> None:
     manifest = build_manifest(
         output_dir=tmp_path,
         seed=42,
+        resolved_seed=42,
         profile="clear_map",
         width=2,
         height=2,
@@ -23,18 +24,32 @@ def test_build_manifest_marks_primary_and_debug_outputs(tmp_path: Path) -> None:
         render_time_ms=2.0,
         render_enabled=True,
         debug_images_enabled=False,
+        available_debug_layers=["combat", "cover"],
+        generated_debug_layers=[],
         layers=["base"],
         artifacts=[
             OutputArtifact(ascii_map, "ascii_map", True, False, "ascii-map-v1"),
             OutputArtifact(debug_map, "tactical_debug", False, True, "debug-v1"),
         ],
+        validation_summary={
+            "status": "passed",
+            "checks": {"ascii_map_exists": True},
+            "errors": [],
+            "warnings": [],
+        },
         metrics={"combat_zones": 1},
     )
 
-    assert manifest["schema_version"] == "generation-manifest-v1"
+    assert manifest["schema_version"] == "generation-manifest-v3"
+    assert manifest["versions"]["generator"] == "0.0.9"
+    assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v3"
     assert manifest["seed"] == 42
+    assert manifest["resolved_seed"] == 42
     assert manifest["dimensions"]["width_tiles"] == 2
     assert manifest["render"]["debug_images_enabled"] is False
+    assert manifest["debug_layers"]["available"] == ["combat", "cover"]
+    assert manifest["debug_layers"]["generated"] == []
+    assert manifest["validation_summary"]["status"] == "passed"
     assert manifest["primary_outputs"][0]["path"] == "generated_map.txt"
     assert manifest["debug_outputs"][0]["path"] == "tactical_map_debug.json"
     assert len(manifest["files"]) == 2

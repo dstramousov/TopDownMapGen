@@ -25,6 +25,7 @@ class OutputPaths:
     layer_fallback_positions: Path
     layer_all_debug: Path
     manifest: Path
+    validation_report: Path
 
     @classmethod
     def from_output_map(cls, map_path: Path) -> "OutputPaths":
@@ -40,7 +41,7 @@ class OutputPaths:
         return cls(
             output_dir=output_dir,
             generated_map=map_path,
-            raw_tactical_map=output_dir / "_raw_tactical_map_v015.json",
+            raw_tactical_map=output_dir / "_raw_tactical_map.json",
             tactical_map=output_dir / "tactical_map.json",
             tactical_map_debug=output_dir / "tactical_map_debug.json",
             metrics=output_dir / "metrics.txt",
@@ -55,4 +56,5 @@ class OutputPaths:
             layer_fallback_positions=output_dir / "layer_fallback_positions.png",
             layer_all_debug=output_dir / "layer_all_debug.png",
             manifest=output_dir / "_manifest.json",
+            validation_report=output_dir / "validation_report.json",
         )

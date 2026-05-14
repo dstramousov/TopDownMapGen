@@ -95,7 +95,7 @@ class ObjectiveProfileSelector:
         selected: list[dict[str, Any]] = []
         for _, spawns in grouped.items():
             spawns.sort(key=self._spawn_sort_key)
-            zone_type = str(spawns[0].get("zone_type", "unknown")) if spawns else "unknown"
+            zone_type = str(spawns[0].get("type", "unknown")) if spawns else "unknown"
             limit = self._limit_for_zone(zone_type)
 
             for spawn in spawns[:limit]:
@@ -161,7 +161,7 @@ class ObjectiveProfileSelector:
             {
                 "id": spawn.get("id"),
                 "zone_id": spawn.get("zone_id"),
-                "zone_type": spawn.get("zone_type"),
+                "type": spawn.get("type"),
                 "position": spawn.get("position"),
                 "preferred_roles": spawn.get("preferred_roles", []),
                 "spawn_type": spawn.get("spawn_type"),

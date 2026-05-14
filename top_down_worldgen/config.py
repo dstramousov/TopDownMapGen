@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -11,13 +12,15 @@ from .utils.json_io import read_json, write_json
 
 
 LOGGER = logging.getLogger(__name__)
+UINT64_MAX = (1 << 64) - 1
 
 
 @dataclass(frozen=True, slots=True)
 class PublicConfig:
     """Public generator configuration."""
 
-    seed: int | str
+    seed: Any
+    resolved_seed: int
     map_width_tiles: int
     map_height_tiles: int
     chunk_width_tiles: int
@@ -45,8 +48,11 @@ class PublicConfig:
                 )
                 objective_profile = "clear_map"
 
+            raw_seed = data.get("seed", "random")
+            resolved_seed = resolve_seed(raw_seed)
             config = cls(
-                seed=data.get("seed", "random"),
+                seed=raw_seed,
+                resolved_seed=resolved_seed,
                 map_width_tiles=int(data["map_width_tiles"]),
                 map_height_tiles=int(data["map_height_tiles"]),
                 chunk_width_tiles=int(data["chunk_width_tiles"]),
@@ -57,6 +63,7 @@ class PublicConfig:
             metrics.update(
                 {
                     "seed": config.seed,
+                    "resolved_seed": config.resolved_seed,
                     "map_width_tiles": config.map_width_tiles,
                     "map_height_tiles": config.map_height_tiles,
                     "chunk_width_tiles": config.chunk_width_tiles,
@@ -74,7 +81,7 @@ class PublicConfig:
             Dict accepted by the legacy v0.15 engine.
         """
         data = {
-            "seed": self.seed,
+            "seed": self.resolved_seed,
             "map_width_tiles": self.map_width_tiles,
             "map_height_tiles": self.map_height_tiles,
             "chunk_width_tiles": self.chunk_width_tiles,
@@ -95,3 +102,33 @@ class PublicConfig:
             engine_config = self.to_engine_dict()
             write_json(engine_config, path)
             metrics.update({"field_count": len(engine_config)})
+
+
+def resolve_seed(seed: Any) -> int:
+    """Resolve a config seed into a concrete uint64 value.
+
+    Args:
+        seed: Raw seed value from public config.
+
+    Returns:
+        Concrete uint64 seed used by the generator.
+    """
+    if is_uint64_seed(seed):
+        return int(seed)
+
+    resolved_seed = secrets.randbits(64)
+    if seed != "random":
+        LOGGER.warning("Invalid seed in config; generated a random uint64 seed")
+    return resolved_seed
+
+
+def is_uint64_seed(seed: Any) -> bool:
+    """Return whether a raw value is a valid uint64 seed.
+
+    Args:
+        seed: Raw seed value.
+
+    Returns:
+        True if the value is an integer in uint64 range.
+    """
+    return not isinstance(seed, bool) and isinstance(seed, int) and 0 <= seed <= UINT64_MAX

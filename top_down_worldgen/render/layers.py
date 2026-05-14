@@ -16,6 +16,26 @@ LOGGER = logging.getLogger(__name__)
 class LayerRenderer:
     """Renders all debug map layers from final tactical data."""
 
+    AVAILABLE_DEBUG_LAYERS = [
+        "combat",
+        "cover",
+        "choke",
+        "flank",
+        "spawn",
+        "fallback",
+        "all",
+    ]
+
+    OVERLAY_SPECS = {
+        "combat": {"combat"},
+        "cover": {"cover"},
+        "choke": {"choke"},
+        "flank": {"flank"},
+        "spawn": {"spawn"},
+        "fallback": {"fallback"},
+        "all": {"combat", "cover", "choke", "flank", "spawn", "fallback"},
+    }
+
     TILE_FILES = {
         "+": "grass_plus.png",
         ".": "old_road_dot.png",
@@ -78,17 +98,8 @@ class LayerRenderer:
             rendered_layers = ["base"]
 
             if include_debug_images:
-                overlay_specs = {
-                    "combat": {"combat"},
-                    "cover": {"cover"},
-                    "choke": {"choke"},
-                    "flank": {"flank"},
-                    "spawn": {"spawn"},
-                    "fallback": {"fallback"},
-                    "all": {"combat", "cover", "choke", "flank", "spawn", "fallback"},
-                }
-                for name, layers in overlay_specs.items():
-                    self._save_overlay(base, data, outputs[name], layers)
+                for name in self.AVAILABLE_DEBUG_LAYERS:
+                    self._save_overlay(base, data, outputs[name], self.OVERLAY_SPECS[name])
                     rendered_layers.append(name)
             else:
                 LOGGER.info("PNG debug layers skipped by CLI flag")

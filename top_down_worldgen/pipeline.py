@@ -14,8 +14,10 @@ from .manifest import (
     ENGINE_CONFIG_SCHEMA_VERSION,
     METRICS_SCHEMA_VERSION,
     PNG_LAYER_SCHEMA_VERSION,
+    RAW_TACTICAL_MAP_SCHEMA_VERSION,
     TACTICAL_DEBUG_SCHEMA_VERSION,
     TACTICAL_MAP_SCHEMA_VERSION,
+    VALIDATION_REPORT_SCHEMA_VERSION,
     OutputArtifact,
     build_manifest,
     write_manifest,
@@ -27,6 +29,11 @@ from .tactical.grid import attach_tile_grid
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
 from .utils.json_io import read_json, write_json
+from .validation import (
+    build_validation_report,
+    validation_summary_from_report,
+    write_validation_report,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -92,6 +99,7 @@ class WorldgenPipeline:
             metrics.update(
                 {
                     "seed": config.seed,
+                    "resolved_seed": config.resolved_seed,
                     "map_width_tiles": config.map_width_tiles,
                     "map_height_tiles": config.map_height_tiles,
                     "chunk_width_tiles": config.chunk_width_tiles,
@@ -138,6 +146,10 @@ class WorldgenPipeline:
         tactical_started = perf_counter()
         with timed_stage(LOGGER, "pipeline.tactical_processing") as metrics:
             raw_data = read_json(outputs.raw_tactical_map)
+            raw_data["schema_version"] = RAW_TACTICAL_MAP_SCHEMA_VERSION
+            raw_data["generator_version"] = self._project_version()
+            raw_data["pipeline_version"] = "pipeline-v1"
+            write_json(raw_data, outputs.raw_tactical_map)
             LOGGER.info(
                 "Raw tactical counts combat_zones=%s cover_points=%s choke_points=%s "
                 "flank_routes=%s enemy_spawn_zones=%s",
@@ -159,8 +171,8 @@ class WorldgenPipeline:
                 debug_data,
             )
             runtime_data = attach_tile_grid(runtime_data, rows)
-            runtime_data["version"] = "0.20-runtime"
-            debug_data["version"] = "0.19-debug"
+            runtime_data["version"] = "0.22-runtime"
+            debug_data["version"] = "0.20-debug"
 
             write_json(runtime_data, outputs.tactical_map)
             write_json(debug_data, outputs.tactical_map_debug)
@@ -222,11 +234,13 @@ class WorldgenPipeline:
         height = len(rows)
         objective = runtime_data.get("objective", {})
         optimization = runtime_data.get("optimization", {})
+        connectivity_repair = runtime_data.get("connectivity_repair", {})
 
         metrics = {
             "version": "clean_refactor",
             "map_width_tiles": width,
             "map_height_tiles": height,
+            "resolved_seed": config.resolved_seed,
             "tile_size_px": tile_size_px,
             "engine_time_ms": round(engine_time_ms, 2),
             "tactical_time_ms": round(tactical_time_ms, 2),
@@ -247,6 +261,11 @@ class WorldgenPipeline:
             "fallback_positions": len(runtime_data.get("fallback_positions", [])),
             "original_cover_points": optimization.get("original_cover_points"),
             "selected_cover_points": optimization.get("selected_cover_points"),
+            "connectivity_components_before": connectivity_repair.get("components_before"),
+            "connectivity_components_after": connectivity_repair.get("components_after"),
+            "connectivity_filled_components": connectivity_repair.get("filled_components"),
+            "connectivity_connected_components": connectivity_repair.get("connected_components"),
+            "connectivity_tiles_changed": connectivity_repair.get("tiles_changed"),
         }
         with timed_stage(
             LOGGER,
@@ -256,6 +275,29 @@ class WorldgenPipeline:
             outputs.metrics.write_text(self._format_metrics(metrics), encoding="utf-8")
             log_metrics.update({"metrics_count": len(metrics)})
 
+        validation_report = build_validation_report(
+            outputs=outputs,
+            rows=rows,
+            width=width,
+            height=height,
+            runtime_data=runtime_data,
+            resolved_seed=config.resolved_seed,
+        )
+        with timed_stage(
+            LOGGER,
+            "pipeline.write_validation_report",
+            validation_report_path=outputs.validation_report,
+        ) as log_metrics:
+            write_validation_report(validation_report, outputs.validation_report)
+            log_metrics.update(
+                {
+                    "status": validation_report.get("status"),
+                    "checks": len(validation_report.get("checks", {})),
+                    "errors": len(validation_report.get("errors", [])),
+                    "warnings": len(validation_report.get("warnings", [])),
+                },
+            )
+
         artifacts = self._build_artifacts(
             outputs,
             render=render,
@@ -264,6 +306,7 @@ class WorldgenPipeline:
         manifest = build_manifest(
             output_dir=outputs.output_dir,
             seed=config.seed,
+            resolved_seed=config.resolved_seed,
             profile=config.objective_profile,
             width=width,
             height=height,
@@ -274,9 +317,13 @@ class WorldgenPipeline:
             render_time_ms=render_time_ms,
             render_enabled=render,
             debug_images_enabled=debug_images and render,
+            available_debug_layers=list(LayerRenderer.AVAILABLE_DEBUG_LAYERS),
+            generated_debug_layers=[layer for layer in rendered_layers if layer != "base"],
             layers=rendered_layers,
             artifacts=artifacts,
+            validation_summary=validation_summary_from_report(validation_report),
             metrics=metrics,
+            validation_report_path=outputs.validation_report,
         )
         with timed_stage(
             LOGGER,
@@ -329,7 +376,7 @@ class WorldgenPipeline:
                 "raw_tactical_map",
                 False,
                 True,
-                TACTICAL_DEBUG_SCHEMA_VERSION,
+                RAW_TACTICAL_MAP_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.tactical_map_debug,
@@ -337,6 +384,13 @@ class WorldgenPipeline:
                 False,
                 True,
                 TACTICAL_DEBUG_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.validation_report,
+                "validation_report",
+                True,
+                False,
+                VALIDATION_REPORT_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.engine_config,
@@ -368,6 +422,12 @@ class WorldgenPipeline:
                     ),
                 )
         return artifacts
+
+    @staticmethod
+    def _project_version() -> str:
+        from . import __version__
+
+        return __version__
 
     @staticmethod
     def _format_metrics(metrics: dict[str, Any]) -> str:

@@ -162,11 +162,23 @@ class TacticalOptimizer:
     def _filter_enemy_spawns(spawns: Any, selected_cover_ids: set[str]) -> list[dict[str, Any]]:
         if not isinstance(spawns, list):
             return []
-        return [
-            spawn for spawn in spawns
-            if isinstance(spawn, dict)
-            and str(spawn.get("cover_point_id", "")) in selected_cover_ids
-        ]
+
+        output: list[dict[str, Any]] = []
+        for spawn in spawns:
+            if not isinstance(spawn, dict):
+                continue
+            if str(spawn.get("cover_point_id", "")) not in selected_cover_ids:
+                continue
+            output.append(TacticalOptimizer._normalize_enemy_spawn(spawn))
+        return output
+
+    @staticmethod
+    def _normalize_enemy_spawn(spawn: dict[str, Any]) -> dict[str, Any]:
+        normalized = dict(spawn)
+        if "type" not in normalized and "zone_type" in normalized:
+            normalized["type"] = normalized["zone_type"]
+        normalized.pop("zone_type", None)
+        return normalized
 
     def _runtime_data(self, debug_data: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -214,8 +226,13 @@ class TacticalOptimizer:
                 for route in debug_data.get("flank_routes", [])
                 if isinstance(route, dict)
             ],
-            "enemy_spawn_zones": debug_data.get("enemy_spawn_zones", []),
+            "enemy_spawn_zones": [
+                self._normalize_enemy_spawn(spawn)
+                for spawn in debug_data.get("enemy_spawn_zones", [])
+                if isinstance(spawn, dict)
+            ],
             "optimization": debug_data.get("optimization", {}),
+            "connectivity_repair": debug_data.get("connectivity_repair", {}),
         }
 
     def _summary(
