@@ -13,12 +13,15 @@ from .tactical.runtime_objects import (
     MAX_OBJECT_HEIGHT,
     MAX_MEDKIT_CACHES,
     MAX_RUNTIME_OBJECTS,
+    MAX_TRENCHES,
     MIN_AMMO_CACHES,
     MIN_MEDKIT_CACHES,
+    MIN_TRENCHES,
     PASSABLE_OBJECT_TILES,
     MIN_ELEVATION_LEVEL,
     MIN_OBJECT_HEIGHT,
     RUNTIME_OBJECT_TYPE_NAMES,
+    TRENCH_ELEVATION_LEVEL,
 )
 from .paths import OutputPaths
 from .utils.json_io import write_json
@@ -143,6 +146,36 @@ def build_validation_report(
         ),
         "interest_points_do_not_overlap_cover": _interest_points_do_not_overlap_cover(
             runtime_data,
+        ),
+        "trenches_non_empty": bool(_trenches(runtime_data)),
+        "trenches_within_limits": _runtime_object_type_count_within_limits(
+            runtime_data,
+            object_type="trench",
+            min_count=MIN_TRENCHES,
+            max_count=MAX_TRENCHES,
+        ),
+        "trench_cells_have_negative_elevation": (
+            _trench_cells_have_negative_elevation(runtime_data)
+        ),
+        "trench_footprints_inside_map": _runtime_objects_inside_map(
+            {"runtime_objects": _trenches(runtime_data)},
+            width=width,
+            height=height,
+        ),
+        "trenches_do_not_overlap_start_goal": (
+            _runtime_objects_do_not_overlap_start_goal(
+                {"runtime_objects": _trenches(runtime_data)},
+                tile_grid,
+            )
+        ),
+        "trenches_do_not_overlap_blocked_tiles": (
+            _runtime_objects_avoid_blocked_tiles(
+                {"runtime_objects": _trenches(runtime_data)},
+                tile_grid,
+            )
+        ),
+        "elevation_cells_match_trench_footprints": (
+            _elevation_cells_match_trench_footprints(runtime_data)
         ),
         "elevation_cells_inside_map": _elevation_cells_inside_map(
             runtime_data,
@@ -358,6 +391,54 @@ def _interest_points(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
         for item in _runtime_objects(runtime_data)
         if item.get("type") in INTEREST_POINT_TYPES
     ]
+
+
+def _trenches(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        item
+        for item in _runtime_objects(runtime_data)
+        if item.get("type") == "trench"
+    ]
+
+
+def _trench_cells_have_negative_elevation(runtime_data: dict[str, Any]) -> bool:
+    elevation_by_point = _elevation_level_by_point(runtime_data)
+    for trench in _trenches(runtime_data):
+        points = _runtime_object_points(trench)
+        if not points:
+            return False
+        for point in points:
+            if elevation_by_point.get(point) != TRENCH_ELEVATION_LEVEL:
+                return False
+    return True
+
+
+def _elevation_cells_match_trench_footprints(runtime_data: dict[str, Any]) -> bool:
+    trench_points: set[tuple[int, int]] = set()
+    for trench in _trenches(runtime_data):
+        points = _runtime_object_points(trench)
+        if not points:
+            return False
+        trench_points.update(points)
+    negative_elevation_points = {
+        point
+        for point, level in _elevation_level_by_point(runtime_data).items()
+        if level == TRENCH_ELEVATION_LEVEL
+    }
+    return trench_points == negative_elevation_points
+
+
+def _elevation_level_by_point(runtime_data: dict[str, Any]) -> dict[tuple[int, int], int]:
+    levels: dict[tuple[int, int], int] = {}
+    for cell in _elevation_cells(runtime_data):
+        point = _point_from_xy(cell)
+        if point is None:
+            continue
+        try:
+            levels[point] = int(cell.get("level"))
+        except (TypeError, ValueError):
+            continue
+    return levels
 
 
 def _runtime_object_type_count_within_limits(

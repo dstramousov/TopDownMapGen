@@ -298,42 +298,68 @@ class LayerRenderer:
         for item in data.get("runtime_objects", []):
             if not isinstance(item, dict):
                 continue
-            position = self._runtime_object_position(item)
-            if position is None:
+            points = self._runtime_object_points(item)
+            if not points:
                 continue
-            cx = position[0] * self._tile_size_px + self._tile_size_px // 2
-            cy = position[1] * self._tile_size_px + self._tile_size_px // 2
             object_type = str(item.get("type", ""))
             color, label = colors.get(object_type, ((255, 255, 255, 230), "?"))
             radius = max(4, self._tile_size_px // 3)
-            if object_type in {"fallen_log", "scrap_pile"}:
-                draw.rectangle(
-                    (cx - radius, cy - radius // 2, cx + radius, cy + radius // 2),
-                    fill=color,
-                    outline=(255, 255, 255, 230),
-                    width=1,
-                )
-            elif object_type == "bush_thicket":
-                draw.ellipse(
-                    (cx - radius, cy - radius, cx + radius, cy + radius),
-                    fill=color,
-                    outline=(215, 255, 215, 220),
-                    width=1,
-                )
+            if object_type == "trench":
+                self._draw_runtime_object_footprint(draw, points, color)
             else:
-                draw.rectangle(
-                    (cx - radius, cy - radius, cx + radius, cy + radius),
-                    fill=color,
-                    outline=(255, 255, 255, 230),
-                    width=1,
-                )
+                position = points[0]
+                cx = position[0] * self._tile_size_px + self._tile_size_px // 2
+                cy = position[1] * self._tile_size_px + self._tile_size_px // 2
+                if object_type in {"fallen_log", "scrap_pile"}:
+                    draw.rectangle(
+                        (cx - radius, cy - radius // 2, cx + radius, cy + radius // 2),
+                        fill=color,
+                        outline=(255, 255, 255, 230),
+                        width=1,
+                    )
+                elif object_type == "bush_thicket":
+                    draw.ellipse(
+                        (cx - radius, cy - radius, cx + radius, cy + radius),
+                        fill=color,
+                        outline=(215, 255, 215, 220),
+                        width=1,
+                    )
+                else:
+                    draw.rectangle(
+                        (cx - radius, cy - radius, cx + radius, cy + radius),
+                        fill=color,
+                        outline=(255, 255, 255, 230),
+                        width=1,
+                    )
+            first = points[0]
+            label_x = first[0] * self._tile_size_px + self._tile_size_px // 2
+            label_y = first[1] * self._tile_size_px + self._tile_size_px // 2
             draw.text(
-                (cx - radius // 2, cy - radius // 2),
+                (label_x - radius // 2, label_y - radius // 2),
                 label,
                 font=font,
                 fill=(0, 0, 0, 235),
                 stroke_width=1,
                 stroke_fill=(255, 255, 255, 180),
+            )
+
+    def _draw_runtime_object_footprint(
+        self,
+        draw: ImageDraw.ImageDraw,
+        points: list[tuple[int, int]],
+        color: tuple[int, int, int, int],
+    ) -> None:
+        pad = max(1, self._tile_size_px // 8)
+        for x, y in points:
+            left = x * self._tile_size_px + pad
+            top = y * self._tile_size_px + pad
+            right = (x + 1) * self._tile_size_px - pad
+            bottom = (y + 1) * self._tile_size_px - pad
+            draw.rectangle(
+                (left, top, right, bottom),
+                fill=color,
+                outline=(255, 245, 210, 230),
+                width=1,
             )
 
     def _load_tiles(self) -> dict[str, Image.Image]:
@@ -373,6 +399,17 @@ class LayerRenderer:
             {"total": 0, "by_type": {}},
         )
         return data
+
+    @staticmethod
+    def _runtime_object_points(item: dict[str, Any]) -> list[tuple[int, int]]:
+        footprint = item.get("footprint")
+        if isinstance(footprint, list):
+            points = [LayerRenderer._point(point) for point in footprint]
+            return [point for point in points if point is not None]
+        position = LayerRenderer._runtime_object_position(item)
+        if position is None:
+            return []
+        return [position]
 
     @staticmethod
     def _runtime_object_position(item: dict[str, Any]) -> tuple[int, int] | None:

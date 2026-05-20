@@ -107,3 +107,12 @@
 - Расширены validation checks для interest points: наличие, лимиты количества, размещение внутри карты, отсутствие пересечений и запрет на START/GOAL.
 - Runtime tactical schema обновлена до `tactical-map-v0.26`, manifest schema — до `generation-manifest-v7`, validation report schema — до `validation-report-v4`, runtime objects schema — до `runtime-objects-v3`.
 - Версия проекта поднята до `0.0.14`.
+
+## v0.0.14 -> v0.0.15
+
+- Добавлен MVP генерации окопов (`trench`) как multi-tile runtime-объектов.
+- Окопы записывают footprint в `runtime_objects` и соответствующие клетки `elevation.level = -1`.
+- Runtime objects debug render уже отображает окопы в `layer_runtime_objects.png` и `layer_all_debug.png`.
+- Расширены validation checks для trench/elevation: наличие окопов, лимиты количества, отрицательная elevation, footprint внутри карты, запрет на START/GOAL и blocked tiles.
+- Runtime tactical schema обновлена до `tactical-map-v0.27`, manifest schema — до `generation-manifest-v8`, validation report schema — до `validation-report-v5`, runtime objects schema — до `runtime-objects-v4`.
+- Версия проекта поднята до `0.0.15`.

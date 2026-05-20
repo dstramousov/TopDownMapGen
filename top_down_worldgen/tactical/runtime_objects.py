@@ -5,13 +5,18 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v3"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v4"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
 MIN_OBJECT_HEIGHT = 0
 MAX_OBJECT_HEIGHT = 10
 MAX_RUNTIME_OBJECTS = 128
+MIN_TRENCHES = 1
+MAX_TRENCHES = 6
+TRENCH_MIN_LENGTH_TILES = 3
+TRENCH_MAX_LENGTH_TILES = 7
+TRENCH_ELEVATION_LEVEL = -1
 MIN_AMMO_CACHES = 1
 MAX_AMMO_CACHES = 8
 MIN_MEDKIT_CACHES = 1
@@ -30,6 +35,7 @@ GENERATED_RUNTIME_OBJECT_TYPES: tuple[str, ...] = (
     "rusted_barrel",
     "ammo_cache",
     "medkit_cache",
+    "trench",
 )
 
 RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
@@ -208,6 +214,7 @@ def attach_runtime_layers(
 
     objects = RuntimeObjectPlacer(seed).place(enriched)
     enriched["runtime_objects"] = objects
+    _attach_trench_elevation(enriched, objects)
     enriched["runtime_objects_summary"] = summarize_runtime_objects(objects)
     return enriched
 
@@ -281,6 +288,7 @@ class RuntimeObjectPlacer:
                     occupied=occupied,
                     preferred_tiles=quota.preferred_tiles,
                     anchors=anchors,
+                    object_type=quota.object_type,
                 )
                 if placement is None:
                     break
@@ -308,6 +316,7 @@ class RuntimeObjectPlacer:
         occupied: set[tuple[int, int]],
         preferred_tiles: frozenset[str],
         anchors: list[tuple[int, int]],
+        object_type: str,
     ) -> tuple[list[tuple[int, int]], str] | None:
         shuffled = list(candidates)
         self._rng.shuffle(shuffled)
@@ -321,7 +330,12 @@ class RuntimeObjectPlacer:
             ),
         )
         for point in shuffled:
-            footprint, orientation = _footprint_for_point(rows, point, self._rng)
+            footprint, orientation = _footprint_for_point(
+                rows,
+                point,
+                self._rng,
+                object_type=object_type,
+            )
             if _footprint_is_available(footprint, rows=rows, occupied=occupied):
                 return footprint, orientation
         return None
@@ -336,6 +350,7 @@ def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
         RuntimeObjectQuota("rusted_barrel", 5, frozenset({"R", ".", "c"})),
         RuntimeObjectQuota("ammo_cache", 3, frozenset({"R", "c", "."})),
         RuntimeObjectQuota("medkit_cache", 2, frozenset({"R", "c", ".", "+"})),
+        RuntimeObjectQuota("trench", 3, frozenset({"+", ".", "c"})),
     )
 
 
@@ -414,13 +429,36 @@ def _footprint_for_point(
     rows: list[str],
     point: tuple[int, int],
     rng: random.Random,
+    *,
+    object_type: str,
 ) -> tuple[list[tuple[int, int]], str]:
+    if object_type == "trench":
+        return _trench_footprint_for_point(rows, point, rng)
     # Fallen-log-shaped footprints are deliberately avoided here because this
-    # helper does not know the target object type. Multi-tile objects will be
-    # introduced after the single-cell object placement MVP is stable.
+    # patch keeps non-trench runtime objects as one-cell descriptors.
     _ = rows
     _ = rng
     return [point], "point"
+
+
+def _trench_footprint_for_point(
+    rows: list[str],
+    point: tuple[int, int],
+    rng: random.Random,
+) -> tuple[list[tuple[int, int]], str]:
+    orientation = rng.choice(["horizontal", "vertical"])
+    length = rng.randint(TRENCH_MIN_LENGTH_TILES, TRENCH_MAX_LENGTH_TILES)
+    if orientation == "horizontal":
+        max_length = min(length, len(rows[0]))
+        start_x = point[0] - max_length // 2
+        y = point[1]
+        footprint = [(start_x + offset, y) for offset in range(max_length)]
+    else:
+        max_length = min(length, len(rows))
+        x = point[0]
+        start_y = point[1] - max_length // 2
+        footprint = [(x, start_y + offset) for offset in range(max_length)]
+    return footprint, orientation
 
 
 def _footprint_is_available(
@@ -483,6 +521,60 @@ def _build_runtime_object(
     if len(footprint) > 1:
         item["footprint"] = [[point_x, point_y] for point_x, point_y in footprint]
     return item
+
+
+def _attach_trench_elevation(
+    tactical_data: dict[str, Any],
+    objects: list[dict[str, Any]],
+) -> None:
+    elevation = tactical_data.setdefault(
+        "elevation",
+        {"default": DEFAULT_ELEVATION_LEVEL, "cells": []},
+    )
+    if not isinstance(elevation, dict):
+        elevation = {"default": DEFAULT_ELEVATION_LEVEL, "cells": []}
+        tactical_data["elevation"] = elevation
+    cells = elevation.setdefault("cells", [])
+    if not isinstance(cells, list):
+        cells = []
+        elevation["cells"] = cells
+    existing: set[tuple[int, int]] = set()
+    for cell in cells:
+        if not isinstance(cell, dict):
+            continue
+        try:
+            existing.add((int(cell.get("x")), int(cell.get("y"))))
+        except (TypeError, ValueError):
+            continue
+    for item in objects:
+        if item.get("type") != "trench":
+            continue
+        for x, y in _object_footprint_points(item):
+            if (x, y) in existing:
+                continue
+            cells.append({"x": x, "y": y, "level": TRENCH_ELEVATION_LEVEL})
+            existing.add((x, y))
+
+
+def _object_footprint_points(item: dict[str, Any]) -> list[tuple[int, int]]:
+    footprint = item.get("footprint")
+    if isinstance(footprint, list):
+        points: list[tuple[int, int]] = []
+        for point in footprint:
+            if isinstance(point, list) and len(point) == 2:
+                try:
+                    points.append((int(point[0]), int(point[1])))
+                except (TypeError, ValueError):
+                    continue
+        if points:
+            return points
+    point = _point(item.get("position"))
+    if point is not None:
+        return [point]
+    try:
+        return [(int(item["x"]), int(item["y"]))]
+    except (KeyError, TypeError, ValueError):
+        return []
 
 
 def _dict_items(value: Any) -> list[dict[str, Any]]:
