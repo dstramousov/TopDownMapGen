@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v5"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v6"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
@@ -23,6 +23,12 @@ MAX_AMMO_CACHES = 8
 MIN_MEDKIT_CACHES = 1
 MAX_MEDKIT_CACHES = 6
 INTEREST_POINT_TYPES: frozenset[str] = frozenset({"ammo_cache", "medkit_cache"})
+LANDMARK_TYPES: frozenset[str] = frozenset(
+    {"big_dead_tree", "broken_radio_mast", "old_checkpoint"},
+)
+MIN_LANDMARKS = 1
+MAX_LANDMARKS = 6
+LANDMARK_MIN_DISTANCE_TILES = 8
 MIN_OBJECT_DISTANCE_TILES = 3
 PROTECTED_TILE_DISTANCE_TILES = 5
 
@@ -37,6 +43,9 @@ GENERATED_RUNTIME_OBJECT_TYPES: tuple[str, ...] = (
     "ammo_cache",
     "medkit_cache",
     "trench",
+    "big_dead_tree",
+    "broken_radio_mast",
+    "old_checkpoint",
 )
 
 RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
@@ -130,6 +139,46 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
         "blocks_vision": False,
         "interactive": True,
         "tags": ["loot", "healing"],
+    },
+
+    {
+        "type": "big_dead_tree",
+        "name_ru": "Большое мёртвое дерево",
+        "role": "landmark",
+        "default_height": 10,
+        "default_elevation": 0,
+        "cover_type": "full",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": True,
+        "interactive": False,
+        "tags": ["landmark", "natural", "high_cover"],
+    },
+    {
+        "type": "broken_radio_mast",
+        "name_ru": "Сломанная радиомачта",
+        "role": "landmark",
+        "default_height": 10,
+        "default_elevation": 0,
+        "cover_type": "low",
+        "blocks_movement": True,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["landmark", "signal", "navigation_landmark"],
+    },
+    {
+        "type": "old_checkpoint",
+        "name_ru": "Старый бетонный блокпост",
+        "role": "defensive_landmark",
+        "default_height": 4,
+        "default_elevation": 0,
+        "cover_type": "full",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": True,
+        "interactive": False,
+        "tags": ["landmark", "cover", "checkpoint", "ruin"],
     },
     {
         "type": "trench",
@@ -247,6 +296,16 @@ def summarize_runtime_objects(objects: Any) -> dict[str, Any]:
     }
     if trench_shapes:
         summary["trench_shapes"] = dict(sorted(trench_shapes.items()))
+    landmark_counts = {
+        object_type: counts[object_type]
+        for object_type in sorted(LANDMARK_TYPES)
+        if counts[object_type] > 0
+    }
+    if landmark_counts:
+        summary["landmarks"] = {
+            "total": sum(landmark_counts.values()),
+            "by_type": landmark_counts,
+        }
     return summary
 
 
@@ -288,7 +347,10 @@ class RuntimeObjectPlacer:
         anchors = _anchors(tactical_data)
 
         for quota in quotas:
-            target_count = max(1, round(quota.base_count * scale))
+            if quota.object_type in LANDMARK_TYPES:
+                target_count = quota.base_count
+            else:
+                target_count = max(1, round(quota.base_count * scale))
             placed = 0
             for _ in range(target_count):
                 desired_shape = self._desired_shape(
@@ -379,6 +441,9 @@ class RuntimeObjectPlacer:
 def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
     return (
         RuntimeObjectQuota("trench", 4, frozenset({"+", ".", "c"})),
+        RuntimeObjectQuota("big_dead_tree", 2, frozenset({"+"})),
+        RuntimeObjectQuota("broken_radio_mast", 1, frozenset({"R", "c", "."})),
+        RuntimeObjectQuota("old_checkpoint", 1, frozenset({"R", "c", "."})),
         RuntimeObjectQuota("stone_chunk", 10, frozenset({"+", ".", "c"})),
         RuntimeObjectQuota("bush_thicket", 14, frozenset({"+"})),
         RuntimeObjectQuota("fallen_log", 8, frozenset({"+", "."})),

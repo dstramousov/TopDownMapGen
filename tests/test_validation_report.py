@@ -103,6 +103,22 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
             "interactive": False,
             "tags": ["elevation", "cover", "below_floor"],
         },
+        {
+            "id": "big_dead_tree_000",
+            "type": "big_dead_tree",
+            "role": "landmark",
+            "x": 2,
+            "y": 2,
+            "position": [2, 2],
+            "elevation": 0,
+            "height": 10,
+            "cover_type": "full",
+            "blocks_movement": True,
+            "blocks_projectiles": True,
+            "blocks_vision": True,
+            "interactive": False,
+            "tags": ["landmark", "natural", "high_cover"],
+        },
     ]
 
     runtime_data["elevation"] = {

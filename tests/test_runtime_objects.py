@@ -20,6 +20,9 @@ def test_attach_runtime_layers_declares_object_types() -> None:
     assert enriched["runtime_objects"] == []
     assert enriched["elevation"] == {"default": 0, "cells": []}
     assert "trench" in RUNTIME_OBJECT_TYPE_NAMES
+    assert "big_dead_tree" in RUNTIME_OBJECT_TYPE_NAMES
+    assert "broken_radio_mast" in RUNTIME_OBJECT_TYPE_NAMES
+    assert "old_checkpoint" in RUNTIME_OBJECT_TYPE_NAMES
     assert any(
         item["type"] == "fallen_log"
         for item in enriched["runtime_object_schema"]["types"]
@@ -48,9 +51,12 @@ def test_attach_runtime_layers_generates_interest_points() -> None:
     assert "ammo_cache" in object_types
     assert "medkit_cache" in object_types
     assert "trench" in object_types
+    assert "big_dead_tree" in object_types
+    assert "old_checkpoint" in object_types
     assert runtime_data["runtime_objects_summary"]["by_type"]["ammo_cache"] >= 1
     assert runtime_data["runtime_objects_summary"]["by_type"]["medkit_cache"] >= 1
     assert runtime_data["runtime_objects_summary"]["by_type"]["trench"] >= 1
+    assert runtime_data["runtime_objects_summary"]["landmarks"]["total"] >= 1
     assert runtime_data["elevation"]["cells"]
     assert all(cell["level"] == -1 for cell in runtime_data["elevation"]["cells"])
 
@@ -153,6 +159,22 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
             "interactive": False,
             "tags": ["elevation", "cover", "below_floor"],
         },
+        {
+            "id": "big_dead_tree_000",
+            "type": "big_dead_tree",
+            "role": "landmark",
+            "x": 2,
+            "y": 2,
+            "position": [2, 2],
+            "elevation": 0,
+            "height": 10,
+            "cover_type": "full",
+            "blocks_movement": True,
+            "blocks_projectiles": True,
+            "blocks_vision": True,
+            "interactive": False,
+            "tags": ["landmark", "natural", "high_cover"],
+        },
     ]
     runtime_data["elevation"] = {
         "default": 0,
@@ -178,6 +200,8 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
     assert report["checks"]["trench_footprints_connected"] is True
     assert report["checks"]["l_shaped_trenches_have_corner"] is True
     assert report["checks"]["elevation_levels_valid"] is True
+    assert report["checks"]["landmarks_within_limits"] is True
+    assert report["checks"]["landmarks_min_distance"] is True
 
 
 def test_validation_rejects_runtime_object_on_start(tmp_path: Path) -> None:
@@ -267,3 +291,29 @@ def test_attach_runtime_layers_generates_l_shaped_trench() -> None:
     assert len(trenches) >= 2
     assert l_shaped
     assert runtime_data["runtime_objects_summary"]["trench_shapes"]["l_shape"] >= 1
+
+
+def test_attach_runtime_layers_generates_landmarks() -> None:
+    """Ensure landmark runtime objects are generated and summarized."""
+    rows = ["+" * 80 for _ in range(48)]
+    runtime_data = attach_runtime_layers(
+        {
+            "map": {
+                "width": 80,
+                "height": 48,
+                "tile_grid": rows,
+                "tile_counts": {"+": 80 * 48},
+            },
+            "combat_zones": [{"id": "zone_0", "center": [40, 24]}],
+            "choke_points": [{"position": [40, 24]}],
+        },
+        seed=7,
+    )
+
+    object_types = {item["type"] for item in runtime_data["runtime_objects"]}
+    landmarks = runtime_data["runtime_objects_summary"].get("landmarks", {})
+
+    assert "big_dead_tree" in object_types
+    assert "old_checkpoint" in object_types
+    assert landmarks["total"] >= 1
+    assert landmarks["by_type"]["big_dead_tree"] >= 1

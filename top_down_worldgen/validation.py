@@ -8,14 +8,18 @@ from .manifest import VALIDATION_REPORT_SCHEMA_VERSION
 from .tactical.runtime_objects import (
     COVER_TYPES,
     INTEREST_POINT_TYPES,
+    LANDMARK_MIN_DISTANCE_TILES,
+    LANDMARK_TYPES,
     MAX_AMMO_CACHES,
     MAX_ELEVATION_LEVEL,
     MAX_OBJECT_HEIGHT,
     MAX_MEDKIT_CACHES,
+    MAX_LANDMARKS,
     MAX_RUNTIME_OBJECTS,
     MAX_TRENCHES,
     MIN_AMMO_CACHES,
     MIN_MEDKIT_CACHES,
+    MIN_LANDMARKS,
     MIN_TRENCHES,
     PASSABLE_OBJECT_TILES,
     MIN_ELEVATION_LEVEL,
@@ -180,6 +184,22 @@ def build_validation_report(
         "trench_shapes_valid": _trench_shapes_valid(runtime_data),
         "trench_footprints_connected": _trench_footprints_connected(runtime_data),
         "l_shaped_trenches_have_corner": _l_shaped_trenches_have_corner(runtime_data),
+        "landmarks_within_limits": _landmarks_within_limits(runtime_data),
+        "landmarks_inside_map": _runtime_objects_inside_map(
+            {"runtime_objects": _landmarks(runtime_data)},
+            width=width,
+            height=height,
+        ),
+        "landmarks_do_not_overlap": _runtime_objects_do_not_overlap(
+            {"runtime_objects": _landmarks(runtime_data)},
+        ),
+        "landmarks_avoid_start_goal": (
+            _runtime_objects_do_not_overlap_start_goal(
+                {"runtime_objects": _landmarks(runtime_data)},
+                tile_grid,
+            )
+        ),
+        "landmarks_min_distance": _landmarks_min_distance(runtime_data),
         "elevation_cells_inside_map": _elevation_cells_inside_map(
             runtime_data,
             width=width,
@@ -394,6 +414,45 @@ def _interest_points(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
         for item in _runtime_objects(runtime_data)
         if item.get("type") in INTEREST_POINT_TYPES
     ]
+
+
+def _landmarks(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        item
+        for item in _runtime_objects(runtime_data)
+        if item.get("type") in LANDMARK_TYPES
+    ]
+
+
+def _landmarks_within_limits(runtime_data: dict[str, Any]) -> bool:
+    count = len(_landmarks(runtime_data))
+    return MIN_LANDMARKS <= count <= MAX_LANDMARKS
+
+
+def _landmarks_min_distance(runtime_data: dict[str, Any]) -> bool:
+    landmarks = _landmarks(runtime_data)
+    for index, first in enumerate(landmarks):
+        first_points = _runtime_object_points(first)
+        if not first_points:
+            return False
+        for second in landmarks[index + 1 :]:
+            second_points = _runtime_object_points(second)
+            if not second_points:
+                return False
+            if _minimum_point_distance(first_points, second_points) < LANDMARK_MIN_DISTANCE_TILES:
+                return False
+    return True
+
+
+def _minimum_point_distance(
+    first_points: list[tuple[int, int]],
+    second_points: list[tuple[int, int]],
+) -> int:
+    return min(
+        abs(first[0] - second[0]) + abs(first[1] - second[1])
+        for first in first_points
+        for second in second_points
+    )
 
 
 def _trenches(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:

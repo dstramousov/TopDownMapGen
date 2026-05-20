@@ -6,7 +6,7 @@ from top_down_worldgen.config import PublicConfig
 
 def test_package_version() -> None:
     """Ensure package exposes the current version."""
-    assert __version__ == "0.0.16"
+    assert __version__ == "0.0.17"
 
 
 def test_default_config_can_be_loaded() -> None:
@@ -14,6 +14,6 @@ def test_default_config_can_be_loaded() -> None:
     config = PublicConfig.from_file(Path("configs/default.json"))
 
     assert config.map_width_tiles == 160
-    assert config.map_height_tiles == 96
+    assert config.map_height_tiles == 160
     assert config.objective_profile == "clear_map"
     assert isinstance(config.resolved_seed, int)

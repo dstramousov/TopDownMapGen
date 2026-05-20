@@ -294,6 +294,9 @@ class LayerRenderer:
             "ammo_cache": ((245, 210, 65, 235), "A"),
             "medkit_cache": ((245, 70, 90, 235), "M"),
             "trench": ((95, 55, 35, 235), "T"),
+            "big_dead_tree": ((70, 45, 30, 240), "D"),
+            "broken_radio_mast": ((100, 180, 235, 235), "M"),
+            "old_checkpoint": ((115, 115, 125, 240), "C"),
         }
         for item in data.get("runtime_objects", []):
             if not isinstance(item, dict):
@@ -310,14 +313,14 @@ class LayerRenderer:
                 position = points[0]
                 cx = position[0] * self._tile_size_px + self._tile_size_px // 2
                 cy = position[1] * self._tile_size_px + self._tile_size_px // 2
-                if object_type in {"fallen_log", "scrap_pile"}:
+                if object_type in {"fallen_log", "scrap_pile", "broken_radio_mast"}:
                     draw.rectangle(
                         (cx - radius, cy - radius // 2, cx + radius, cy + radius // 2),
                         fill=color,
                         outline=(255, 255, 255, 230),
                         width=1,
                     )
-                elif object_type == "bush_thicket":
+                elif object_type in {"bush_thicket", "big_dead_tree"}:
                     draw.ellipse(
                         (cx - radius, cy - radius, cx + radius, cy + radius),
                         fill=color,
