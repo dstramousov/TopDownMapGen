@@ -5,6 +5,16 @@ from pathlib import Path
 from typing import Any
 
 from .manifest import VALIDATION_REPORT_SCHEMA_VERSION
+from .tactical.runtime_objects import (
+    COVER_TYPES,
+    MAX_ELEVATION_LEVEL,
+    MAX_OBJECT_HEIGHT,
+    MAX_RUNTIME_OBJECTS,
+    PASSABLE_OBJECT_TILES,
+    MIN_ELEVATION_LEVEL,
+    MIN_OBJECT_HEIGHT,
+    RUNTIME_OBJECT_TYPE_NAMES,
+)
 from .paths import OutputPaths
 from .utils.json_io import write_json
 
@@ -65,6 +75,46 @@ def build_validation_report(
             height=height,
         ),
         "zone_cover_refs_valid": _zone_cover_refs_valid(runtime_data),
+        "runtime_objects_non_empty": bool(_runtime_objects(runtime_data)),
+        "runtime_objects_have_unique_ids": _runtime_objects_have_unique_ids(
+            runtime_data,
+        ),
+        "runtime_objects_inside_map": _runtime_objects_inside_map(
+            runtime_data,
+            width=width,
+            height=height,
+        ),
+        "runtime_objects_have_valid_types": _runtime_objects_have_valid_types(
+            runtime_data,
+        ),
+        "runtime_objects_have_valid_cover": _runtime_objects_have_valid_cover(
+            runtime_data,
+        ),
+        "runtime_objects_have_valid_heights": _runtime_objects_have_valid_heights(
+            runtime_data,
+        ),
+        "runtime_objects_have_valid_elevation": _runtime_objects_have_valid_elevation(
+            runtime_data,
+        ),
+        "runtime_objects_do_not_overlap_start_goal": (
+            _runtime_objects_do_not_overlap_start_goal(runtime_data, tile_grid)
+        ),
+        "runtime_objects_do_not_overlap": _runtime_objects_do_not_overlap(
+            runtime_data,
+        ),
+        "runtime_objects_avoid_blocked_tiles": _runtime_objects_avoid_blocked_tiles(
+            runtime_data,
+            tile_grid,
+        ),
+        "runtime_objects_counts_within_limits": (
+            len(_runtime_objects(runtime_data)) <= MAX_RUNTIME_OBJECTS
+        ),
+        "elevation_cells_inside_map": _elevation_cells_inside_map(
+            runtime_data,
+            width=width,
+            height=height,
+        ),
+        "elevation_levels_valid": _elevation_levels_valid(runtime_data),
     }
     errors = [name for name, passed in checks.items() if not passed]
     warnings = build_validation_warnings(
@@ -262,6 +312,184 @@ def _zone_cover_refs_valid(runtime_data: dict[str, Any]) -> bool:
     return True
 
 
+
+def _runtime_objects(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
+    return _dict_list(runtime_data.get("runtime_objects"))
+
+
+def _runtime_objects_have_unique_ids(runtime_data: dict[str, Any]) -> bool:
+    ids: list[str] = []
+    for item in _runtime_objects(runtime_data):
+        object_id = item.get("id")
+        if not isinstance(object_id, str) or not object_id:
+            return False
+        ids.append(object_id)
+    return len(ids) == len(set(ids))
+
+
+def _runtime_objects_inside_map(
+    runtime_data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for item in _runtime_objects(runtime_data):
+        points = _runtime_object_points(item)
+        if not points:
+            return False
+        for point in points:
+            if not _point_in_bounds(point, width=width, height=height):
+                return False
+    return True
+
+
+def _runtime_objects_have_valid_types(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        if item.get("type") not in RUNTIME_OBJECT_TYPE_NAMES:
+            return False
+    return True
+
+
+def _runtime_objects_have_valid_cover(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        if item.get("cover_type") not in COVER_TYPES:
+            return False
+    return True
+
+
+def _runtime_objects_have_valid_heights(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        try:
+            height = int(item.get("height"))
+        except (TypeError, ValueError):
+            return False
+        if not MIN_OBJECT_HEIGHT <= height <= MAX_OBJECT_HEIGHT:
+            return False
+    return True
+
+
+def _runtime_objects_have_valid_elevation(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        try:
+            elevation = int(item.get("elevation"))
+        except (TypeError, ValueError):
+            return False
+        if not MIN_ELEVATION_LEVEL <= elevation <= MAX_ELEVATION_LEVEL:
+            return False
+    return True
+
+
+def _runtime_objects_do_not_overlap_start_goal(
+    runtime_data: dict[str, Any],
+    tile_grid: list[str],
+) -> bool:
+    protected = _protected_tile_positions(tile_grid)
+    if not protected:
+        return True
+    for item in _runtime_objects(runtime_data):
+        if any(point in protected for point in _runtime_object_points(item)):
+            return False
+    return True
+
+
+def _runtime_objects_do_not_overlap(runtime_data: dict[str, Any]) -> bool:
+    occupied: set[tuple[int, int]] = set()
+    for item in _runtime_objects(runtime_data):
+        points = _runtime_object_points(item)
+        if not points:
+            return False
+        for point in points:
+            if point in occupied:
+                return False
+            occupied.add(point)
+    return True
+
+
+def _runtime_objects_avoid_blocked_tiles(
+    runtime_data: dict[str, Any],
+    tile_grid: list[str],
+) -> bool:
+    if not tile_grid:
+        return False
+    for item in _runtime_objects(runtime_data):
+        for point in _runtime_object_points(item):
+            x, y = point
+            if y < 0 or y >= len(tile_grid) or x < 0 or x >= len(tile_grid[y]):
+                return False
+            if tile_grid[y][x] not in PASSABLE_OBJECT_TILES:
+                return False
+    return True
+
+
+def _elevation_cells_inside_map(
+    runtime_data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for cell in _elevation_cells(runtime_data):
+        point = _point_from_xy(cell)
+        if point is None or not _point_in_bounds(point, width=width, height=height):
+            return False
+    return True
+
+
+def _elevation_levels_valid(runtime_data: dict[str, Any]) -> bool:
+    elevation = runtime_data.get("elevation", {})
+    if not isinstance(elevation, dict):
+        return False
+    try:
+        default_level = int(elevation.get("default", 0))
+    except (TypeError, ValueError):
+        return False
+    if not MIN_ELEVATION_LEVEL <= default_level <= MAX_ELEVATION_LEVEL:
+        return False
+    for cell in _elevation_cells(runtime_data):
+        try:
+            level = int(cell.get("level"))
+        except (TypeError, ValueError):
+            return False
+        if not MIN_ELEVATION_LEVEL <= level <= MAX_ELEVATION_LEVEL:
+            return False
+    return True
+
+
+def _elevation_cells(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
+    elevation = runtime_data.get("elevation", {})
+    if not isinstance(elevation, dict):
+        return []
+    return _dict_list(elevation.get("cells"))
+
+
+def _runtime_object_points(item: dict[str, Any]) -> list[tuple[int, int]]:
+    footprint = item.get("footprint")
+    if isinstance(footprint, list):
+        points = [_point(point) for point in footprint]
+        return [point for point in points if point is not None]
+    point = _point(item.get("position"))
+    if point is not None:
+        return [point]
+    point = _point_from_xy(item)
+    if point is not None:
+        return [point]
+    return []
+
+
+def _point_from_xy(item: dict[str, Any]) -> tuple[int, int] | None:
+    try:
+        return int(item["x"]), int(item["y"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _protected_tile_positions(tile_grid: list[str]) -> set[tuple[int, int]]:
+    protected: set[tuple[int, int]] = set()
+    for y, row in enumerate(tile_grid):
+        for x, tile in enumerate(row):
+            if tile in {"S", "G"}:
+                protected.add((x, y))
+    return protected
+
 def _count_points_near_edge(
     items: Any,
     *,
@@ -324,6 +552,7 @@ def _count_existing_outputs(outputs: OutputPaths) -> int:
         outputs.layer_flank_routes,
         outputs.layer_enemy_spawn_zones,
         outputs.layer_fallback_positions,
+        outputs.layer_runtime_objects,
         outputs.layer_all_debug,
     ]
     return sum(path.exists() for path in candidates)

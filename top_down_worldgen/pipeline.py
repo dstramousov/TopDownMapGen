@@ -26,6 +26,7 @@ from .paths import OutputPaths
 from .render.layers import LayerRenderer
 from .tactical.fallback import FallbackPositionBuilder
 from .tactical.grid import attach_tile_grid
+from .tactical.runtime_objects import attach_runtime_layers
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
 from .utils.json_io import read_json, write_json
@@ -171,7 +172,8 @@ class WorldgenPipeline:
                 debug_data,
             )
             runtime_data = attach_tile_grid(runtime_data, rows)
-            runtime_data["version"] = "0.22-runtime"
+            runtime_data = attach_runtime_layers(runtime_data, seed=config.resolved_seed)
+            runtime_data["version"] = "0.24-runtime"
             debug_data["version"] = "0.20-debug"
 
             write_json(runtime_data, outputs.tactical_map)
@@ -187,6 +189,11 @@ class WorldgenPipeline:
                     ),
                     "runtime_fallback_positions": len(
                         runtime_data.get("fallback_positions", []),
+                    ),
+                    "runtime_objects": len(runtime_data.get("runtime_objects", [])),
+                    "runtime_object_types": len(runtime_data.get("runtime_objects_summary", {}).get("by_type", {})),
+                    "elevation_cells": len(
+                        runtime_data.get("elevation", {}).get("cells", []),
                     ),
                 },
             )
@@ -209,12 +216,14 @@ class WorldgenPipeline:
                     "flank": outputs.layer_flank_routes,
                     "spawn": outputs.layer_enemy_spawn_zones,
                     "fallback": outputs.layer_fallback_positions,
+                    "runtime_objects": outputs.layer_runtime_objects,
                     "all": outputs.layer_all_debug,
                 }
                 renderer = LayerRenderer(self._project_root / "assets", tile_size_px)
                 rendered_layers = renderer.render_all(
                     outputs.generated_map,
                     outputs.tactical_map_debug,
+                    outputs.tactical_map,
                     render_outputs,
                     include_debug_images=debug_images,
                 )
@@ -259,6 +268,10 @@ class WorldgenPipeline:
             "flank_routes": len(runtime_data.get("flank_routes", [])),
             "enemy_spawn_zones": len(runtime_data.get("enemy_spawn_zones", [])),
             "fallback_positions": len(runtime_data.get("fallback_positions", [])),
+            "runtime_objects": len(runtime_data.get("runtime_objects", [])),
+            "runtime_object_types": len(runtime_data.get("runtime_objects_summary", {}).get("by_type", {})),
+            "runtime_objects_summary": runtime_data.get("runtime_objects_summary", {}),
+            "elevation_cells": len(runtime_data.get("elevation", {}).get("cells", [])),
             "original_cover_points": optimization.get("original_cover_points"),
             "selected_cover_points": optimization.get("selected_cover_points"),
             "connectivity_components_before": connectivity_repair.get("components_before"),
@@ -409,6 +422,7 @@ class WorldgenPipeline:
                 "flank": outputs.layer_flank_routes,
                 "spawn": outputs.layer_enemy_spawn_zones,
                 "fallback": outputs.layer_fallback_positions,
+                "runtime_objects": outputs.layer_runtime_objects,
                 "all": outputs.layer_all_debug,
             }
             for layer in rendered_layers:

@@ -73,3 +73,29 @@
 - Крупные изолированные компоненты соединяются кратчайшим carved connector path.
 - Repair-метрики теперь честно учитывают failed repairs и не считают соединение успешным без уменьшения числа компонент.
 - Версия проекта поднята до `0.0.10`.
+
+## v0.0.10 -> v0.0.11
+
+- Добавлена foundation-схема для `runtime_objects`: типы объектов, роли, высота, elevation, cover-семантика и базовые gameplay-флаги.
+- В `tactical_map.json` добавлены пустые слои `runtime_objects` и `elevation`, чтобы подготовить карту к объектам поверх базового tile grid.
+- Объявлены первые типы runtime-объектов: `fallen_log`, `stone_chunk`, `bush_thicket`, `rusted_barrel`, `scrap_pile`, `ammo_cache`, `medkit_cache`, `trench`.
+- В validation report добавлены проверки runtime-объектов и elevation-слоя.
+- Runtime tactical schema обновлена до `tactical-map-v0.23`, manifest schema — до `generation-manifest-v4`, validation report schema — до `validation-report-v2`.
+- Версия проекта поднята до `0.0.11`.
+
+## v0.0.11 -> v0.0.12
+
+- Добавлено MVP-размещение первых runtime-объектов поверх базовой tile grid.
+- Генератор теперь детерминированно размещает `fallen_log`, `stone_chunk`, `bush_thicket`, `scrap_pile` и `rusted_barrel` по `resolved_seed`.
+- В `tactical_map.json` добавлен `runtime_objects_summary` со счётчиками по типам объектов.
+- Расширены validation checks для runtime-объектов: непустой слой, отсутствие пересечений, запрет на blocked tiles и лимит количества объектов.
+- Runtime tactical schema обновлена до `tactical-map-v0.24`, manifest schema — до `generation-manifest-v5`, validation report schema — до `validation-report-v3`.
+- Версия проекта поднята до `0.0.12`.
+
+## v0.0.12 -> v0.0.13
+
+- Добавлен отдельный PNG debug-слой `layer_runtime_objects.png` для runtime/gameplay объектов.
+- Runtime objects теперь отображаются в общем `layer_all_debug.png`.
+- `runtime_objects` добавлен в список доступных debug layers manifest-а.
+- Manifest schema обновлена до `generation-manifest-v6`, runtime tactical schema — до `tactical-map-v0.25`, debug layers version — до `debug-layers-v2`.
+- Версия проекта поднята до `0.0.13`.

@@ -11,3 +11,10 @@ def test_output_paths_use_stable_raw_tactical_name(tmp_path: Path) -> None:
 
     assert outputs.raw_tactical_map.name == "_raw_tactical_map.json"
     assert outputs.validation_report.name == "validation_report.json"
+
+
+def test_output_paths_include_runtime_objects_layer(tmp_path: Path) -> None:
+    """Ensure runtime objects have a dedicated debug PNG path."""
+    outputs = OutputPaths.from_output_map(tmp_path / "generated_map.txt")
+
+    assert outputs.layer_runtime_objects.name == "layer_runtime_objects.png"

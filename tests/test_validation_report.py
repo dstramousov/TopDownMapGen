@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from top_down_worldgen.paths import OutputPaths
+from top_down_worldgen.tactical.runtime_objects import attach_runtime_layers
 from top_down_worldgen.validation import build_validation_report
 
 
@@ -14,7 +15,7 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
     outputs.metrics.write_text("metrics\n", encoding="utf-8")
 
-    runtime_data = {
+    runtime_data = attach_runtime_layers({
         "map": {
             "width": 2,
             "height": 2,
@@ -38,7 +39,24 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
         ],
         "flank_routes": [{"waypoints": [[0, 0], [1, 1]]}],
         "choke_points": [],
-    }
+    })
+    runtime_data["runtime_objects"] = [
+        {
+            "id": "stone_chunk_000",
+            "type": "stone_chunk",
+            "role": "hard_cover",
+            "x": 0,
+            "y": 1,
+            "elevation": 0,
+            "height": 2,
+            "cover_type": "full",
+            "blocks_movement": True,
+            "blocks_projectiles": True,
+            "blocks_vision": True,
+            "interactive": False,
+            "tags": [],
+        },
+    ]
 
     report = build_validation_report(
         outputs=outputs,
