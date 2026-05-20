@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v4"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v5"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
@@ -13,9 +13,10 @@ MIN_OBJECT_HEIGHT = 0
 MAX_OBJECT_HEIGHT = 10
 MAX_RUNTIME_OBJECTS = 128
 MIN_TRENCHES = 1
-MAX_TRENCHES = 6
+MAX_TRENCHES = 8
 TRENCH_MIN_LENGTH_TILES = 3
 TRENCH_MAX_LENGTH_TILES = 7
+L_SHAPED_TRENCH_CHANCE = 0.35
 TRENCH_ELEVATION_LEVEL = -1
 MIN_AMMO_CACHES = 1
 MAX_AMMO_CACHES = 8
@@ -235,10 +236,18 @@ def summarize_runtime_objects(objects: Any) -> dict[str, Any]:
         for item in objects
         if isinstance(item, dict) and item.get("type") is not None
     )
-    return {
+    trench_shapes = Counter(
+        str(item.get("shape", "line"))
+        for item in objects
+        if isinstance(item, dict) and item.get("type") == "trench"
+    )
+    summary: dict[str, Any] = {
         "total": sum(counts.values()),
         "by_type": dict(sorted(counts.items())),
     }
+    if trench_shapes:
+        summary["trench_shapes"] = dict(sorted(trench_shapes.items()))
+    return summary
 
 
 class RuntimeObjectPlacer:
@@ -282,6 +291,11 @@ class RuntimeObjectPlacer:
             target_count = max(1, round(quota.base_count * scale))
             placed = 0
             for _ in range(target_count):
+                desired_shape = self._desired_shape(
+                    object_type=quota.object_type,
+                    placed=placed,
+                    target_count=target_count,
+                )
                 placement = self._pick_position(
                     rows=rows,
                     candidates=candidates,
@@ -289,10 +303,11 @@ class RuntimeObjectPlacer:
                     preferred_tiles=quota.preferred_tiles,
                     anchors=anchors,
                     object_type=quota.object_type,
+                    desired_shape=desired_shape,
                 )
                 if placement is None:
                     break
-                footprint, orientation = placement
+                footprint, orientation, shape = placement
                 object_id = f"{quota.object_type}_{placed:03d}"
                 objects.append(
                     _build_runtime_object(
@@ -300,6 +315,7 @@ class RuntimeObjectPlacer:
                         object_type=quota.object_type,
                         footprint=footprint,
                         orientation=orientation,
+                        shape=shape,
                     ),
                 )
                 occupied.update(footprint)
@@ -307,6 +323,22 @@ class RuntimeObjectPlacer:
                 if len(objects) >= MAX_RUNTIME_OBJECTS:
                     return objects
         return objects
+
+    def _desired_shape(
+        self,
+        *,
+        object_type: str,
+        placed: int,
+        target_count: int,
+    ) -> str | None:
+        if object_type != "trench":
+            return None
+        if placed == 0:
+            _ = target_count
+            return "l_shape"
+        if self._rng.random() < L_SHAPED_TRENCH_CHANCE:
+            return "l_shape"
+        return "line"
 
     def _pick_position(
         self,
@@ -317,7 +349,8 @@ class RuntimeObjectPlacer:
         preferred_tiles: frozenset[str],
         anchors: list[tuple[int, int]],
         object_type: str,
-    ) -> tuple[list[tuple[int, int]], str] | None:
+        desired_shape: str | None,
+    ) -> tuple[list[tuple[int, int]], str, str] | None:
         shuffled = list(candidates)
         self._rng.shuffle(shuffled)
         shuffled.sort(
@@ -330,19 +363,22 @@ class RuntimeObjectPlacer:
             ),
         )
         for point in shuffled:
-            footprint, orientation = _footprint_for_point(
+            footprints = _footprints_for_point(
                 rows,
                 point,
                 self._rng,
                 object_type=object_type,
+                desired_shape=desired_shape,
             )
-            if _footprint_is_available(footprint, rows=rows, occupied=occupied):
-                return footprint, orientation
+            for footprint, orientation, shape in footprints:
+                if _footprint_is_available(footprint, rows=rows, occupied=occupied):
+                    return footprint, orientation, shape
         return None
 
 
 def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
     return (
+        RuntimeObjectQuota("trench", 4, frozenset({"+", ".", "c"})),
         RuntimeObjectQuota("stone_chunk", 10, frozenset({"+", ".", "c"})),
         RuntimeObjectQuota("bush_thicket", 14, frozenset({"+"})),
         RuntimeObjectQuota("fallen_log", 8, frozenset({"+", "."})),
@@ -350,7 +386,6 @@ def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
         RuntimeObjectQuota("rusted_barrel", 5, frozenset({"R", ".", "c"})),
         RuntimeObjectQuota("ammo_cache", 3, frozenset({"R", "c", "."})),
         RuntimeObjectQuota("medkit_cache", 2, frozenset({"R", "c", ".", "+"})),
-        RuntimeObjectQuota("trench", 3, frozenset({"+", ".", "c"})),
     )
 
 
@@ -425,27 +460,42 @@ def _placement_score(
     return tile_penalty, anchor_distance, rng.random()
 
 
-def _footprint_for_point(
+def _footprints_for_point(
     rows: list[str],
     point: tuple[int, int],
     rng: random.Random,
     *,
     object_type: str,
-) -> tuple[list[tuple[int, int]], str]:
+    desired_shape: str | None,
+) -> list[tuple[list[tuple[int, int]], str, str]]:
     if object_type == "trench":
-        return _trench_footprint_for_point(rows, point, rng)
+        return _trench_footprints_for_point(rows, point, rng, desired_shape)
     # Fallen-log-shaped footprints are deliberately avoided here because this
     # patch keeps non-trench runtime objects as one-cell descriptors.
     _ = rows
     _ = rng
-    return [point], "point"
+    _ = desired_shape
+    return [([point], "point", "point")]
 
 
-def _trench_footprint_for_point(
+def _trench_footprints_for_point(
     rows: list[str],
     point: tuple[int, int],
     rng: random.Random,
-) -> tuple[list[tuple[int, int]], str]:
+    desired_shape: str | None,
+) -> list[tuple[list[tuple[int, int]], str, str]]:
+    primary_shape = desired_shape or "line"
+    if primary_shape == "l_shape":
+        line = _line_trench_footprint_for_point(rows, point, rng)
+        return [_l_shaped_trench_footprint_for_point(point, rng), line]
+    return [_line_trench_footprint_for_point(rows, point, rng)]
+
+
+def _line_trench_footprint_for_point(
+    rows: list[str],
+    point: tuple[int, int],
+    rng: random.Random,
+) -> tuple[list[tuple[int, int]], str, str]:
     orientation = rng.choice(["horizontal", "vertical"])
     length = rng.randint(TRENCH_MIN_LENGTH_TILES, TRENCH_MAX_LENGTH_TILES)
     if orientation == "horizontal":
@@ -458,7 +508,25 @@ def _trench_footprint_for_point(
         x = point[0]
         start_y = point[1] - max_length // 2
         footprint = [(x, start_y + offset) for offset in range(max_length)]
-    return footprint, orientation
+    return footprint, orientation, "line"
+
+
+def _l_shaped_trench_footprint_for_point(
+    point: tuple[int, int],
+    rng: random.Random,
+) -> tuple[list[tuple[int, int]], str, str]:
+    horizontal_dir = rng.choice([-1, 1])
+    vertical_dir = rng.choice([-1, 1])
+    horizontal_length = rng.randint(2, 4)
+    vertical_length = rng.randint(2, 4)
+    x, y = point
+    points = [(x + horizontal_dir * offset, y) for offset in range(horizontal_length)]
+    points.extend((x, y + vertical_dir * offset) for offset in range(1, vertical_length))
+    orientation = (
+        f"l_shape_{'east' if horizontal_dir > 0 else 'west'}_"
+        f"{'south' if vertical_dir > 0 else 'north'}"
+    )
+    return points, orientation, "l_shape"
 
 
 def _footprint_is_available(
@@ -498,6 +566,7 @@ def _build_runtime_object(
     object_type: str,
     footprint: list[tuple[int, int]],
     orientation: str,
+    shape: str,
 ) -> dict[str, Any]:
     spec = RUNTIME_OBJECT_TYPE_BY_NAME[object_type]
     x, y = footprint[0]
@@ -516,6 +585,7 @@ def _build_runtime_object(
         "blocks_vision": spec["blocks_vision"],
         "interactive": spec["interactive"],
         "orientation": orientation,
+        "shape": shape,
         "tags": list(spec["tags"]),
     }
     if len(footprint) > 1:

@@ -177,6 +177,9 @@ def build_validation_report(
         "elevation_cells_match_trench_footprints": (
             _elevation_cells_match_trench_footprints(runtime_data)
         ),
+        "trench_shapes_valid": _trench_shapes_valid(runtime_data),
+        "trench_footprints_connected": _trench_footprints_connected(runtime_data),
+        "l_shaped_trenches_have_corner": _l_shaped_trenches_have_corner(runtime_data),
         "elevation_cells_inside_map": _elevation_cells_inside_map(
             runtime_data,
             width=width,
@@ -426,6 +429,68 @@ def _elevation_cells_match_trench_footprints(runtime_data: dict[str, Any]) -> bo
         if level == TRENCH_ELEVATION_LEVEL
     }
     return trench_points == negative_elevation_points
+
+
+
+
+def _trench_shapes_valid(runtime_data: dict[str, Any]) -> bool:
+    valid_shapes = {"line", "l_shape"}
+    for trench in _trenches(runtime_data):
+        if trench.get("shape", "line") not in valid_shapes:
+            return False
+    return True
+
+
+def _trench_footprints_connected(runtime_data: dict[str, Any]) -> bool:
+    for trench in _trenches(runtime_data):
+        points = set(_runtime_object_points(trench))
+        if not points:
+            return False
+        pending = {next(iter(points))}
+        visited: set[tuple[int, int]] = set()
+        while pending:
+            point = pending.pop()
+            if point in visited:
+                continue
+            visited.add(point)
+            x, y = point
+            neighbors = {
+                (x - 1, y),
+                (x + 1, y),
+                (x, y - 1),
+                (x, y + 1),
+            }
+            pending.update(neighbors & points - visited)
+        if visited != points:
+            return False
+    return True
+
+
+def _l_shaped_trenches_have_corner(runtime_data: dict[str, Any]) -> bool:
+    for trench in _trenches(runtime_data):
+        if trench.get("shape") != "l_shape":
+            continue
+        points = set(_runtime_object_points(trench))
+        if len(points) < 3:
+            return False
+        xs = {x for x, _ in points}
+        ys = {y for _, y in points}
+        if len(xs) < 2 or len(ys) < 2:
+            return False
+        if not any(_orthogonal_neighbor_count(point, points) >= 2 for point in points):
+            return False
+    return True
+
+
+def _orthogonal_neighbor_count(
+    point: tuple[int, int],
+    points: set[tuple[int, int]],
+) -> int:
+    x, y = point
+    return sum(
+        neighbor in points
+        for neighbor in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))
+    )
 
 
 def _elevation_level_by_point(runtime_data: dict[str, Any]) -> dict[tuple[int, int], int]:

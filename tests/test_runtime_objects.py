@@ -174,6 +174,9 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
 
     assert report["status"] == "passed"
     assert report["checks"]["runtime_objects_have_valid_types"] is True
+    assert report["checks"]["trench_shapes_valid"] is True
+    assert report["checks"]["trench_footprints_connected"] is True
+    assert report["checks"]["l_shaped_trenches_have_corner"] is True
     assert report["checks"]["elevation_levels_valid"] is True
 
 
@@ -235,3 +238,32 @@ def test_validation_rejects_runtime_object_on_start(tmp_path: Path) -> None:
 
     assert report["status"] == "failed"
     assert "runtime_objects_do_not_overlap_start_goal" in report["errors"]
+
+
+def test_attach_runtime_layers_generates_l_shaped_trench() -> None:
+    """Ensure trench placement can create L-shaped defensive positions."""
+    rows = ["+" * 80 for _ in range(48)]
+    runtime_data = attach_runtime_layers(
+        {
+            "map": {
+                "width": 80,
+                "height": 48,
+                "tile_grid": rows,
+                "tile_counts": {"+": 80 * 48},
+            },
+            "combat_zones": [{"id": "zone_0", "center": [40, 24]}],
+            "choke_points": [{"position": [40, 24]}],
+        },
+        seed=1,
+    )
+
+    trenches = [
+        item
+        for item in runtime_data["runtime_objects"]
+        if item.get("type") == "trench"
+    ]
+    l_shaped = [item for item in trenches if item.get("shape") == "l_shape"]
+
+    assert len(trenches) >= 2
+    assert l_shaped
+    assert runtime_data["runtime_objects_summary"]["trench_shapes"]["l_shape"] >= 1
