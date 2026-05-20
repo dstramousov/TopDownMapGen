@@ -5,13 +5,18 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v2"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v3"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
 MIN_OBJECT_HEIGHT = 0
 MAX_OBJECT_HEIGHT = 10
 MAX_RUNTIME_OBJECTS = 128
+MIN_AMMO_CACHES = 1
+MAX_AMMO_CACHES = 8
+MIN_MEDKIT_CACHES = 1
+MAX_MEDKIT_CACHES = 6
+INTEREST_POINT_TYPES: frozenset[str] = frozenset({"ammo_cache", "medkit_cache"})
 MIN_OBJECT_DISTANCE_TILES = 3
 PROTECTED_TILE_DISTANCE_TILES = 5
 
@@ -23,6 +28,8 @@ GENERATED_RUNTIME_OBJECT_TYPES: tuple[str, ...] = (
     "bush_thicket",
     "scrap_pile",
     "rusted_barrel",
+    "ammo_cache",
+    "medkit_cache",
 )
 
 RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
@@ -327,6 +334,8 @@ def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
         RuntimeObjectQuota("fallen_log", 8, frozenset({"+", "."})),
         RuntimeObjectQuota("scrap_pile", 7, frozenset({"R", "c", "."})),
         RuntimeObjectQuota("rusted_barrel", 5, frozenset({"R", ".", "c"})),
+        RuntimeObjectQuota("ammo_cache", 3, frozenset({"R", "c", "."})),
+        RuntimeObjectQuota("medkit_cache", 2, frozenset({"R", "c", ".", "+"})),
     )
 
 

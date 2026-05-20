@@ -26,6 +26,31 @@ def test_attach_runtime_layers_declares_object_types() -> None:
     )
 
 
+def test_attach_runtime_layers_generates_interest_points() -> None:
+    """Ensure generated runtime objects include tactical interest points."""
+    rows = ["+" * 40 for _ in range(24)]
+    runtime_data = attach_runtime_layers(
+        {
+            "map": {
+                "width": 40,
+                "height": 24,
+                "tile_grid": rows,
+                "tile_counts": {"+": 40 * 24},
+            },
+            "combat_zones": [{"id": "zone_0", "center": [20, 12]}],
+            "choke_points": [{"position": [18, 12]}],
+        },
+        seed=1,
+    )
+
+    object_types = {item["type"] for item in runtime_data["runtime_objects"]}
+
+    assert "ammo_cache" in object_types
+    assert "medkit_cache" in object_types
+    assert runtime_data["runtime_objects_summary"]["by_type"]["ammo_cache"] >= 1
+    assert runtime_data["runtime_objects_summary"]["by_type"]["medkit_cache"] >= 1
+
+
 def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
     """Ensure valid runtime objects and elevation cells pass content checks."""
     outputs = OutputPaths.from_output_map(tmp_path / "generated_map.txt")
@@ -76,6 +101,36 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
             "blocks_vision": True,
             "interactive": False,
             "tags": [],
+        },
+        {
+            "id": "ammo_cache_000",
+            "type": "ammo_cache",
+            "role": "interest_point",
+            "x": 1,
+            "y": 1,
+            "elevation": 0,
+            "height": 1,
+            "cover_type": "none",
+            "blocks_movement": False,
+            "blocks_projectiles": False,
+            "blocks_vision": False,
+            "interactive": True,
+            "tags": ["loot", "ammo"],
+        },
+        {
+            "id": "medkit_cache_000",
+            "type": "medkit_cache",
+            "role": "interest_point",
+            "x": 0,
+            "y": 1,
+            "elevation": 0,
+            "height": 1,
+            "cover_type": "none",
+            "blocks_movement": False,
+            "blocks_projectiles": False,
+            "blocks_vision": False,
+            "interactive": True,
+            "tags": ["loot", "healing"],
         },
     ]
     runtime_data["elevation"] = {"default": 0, "cells": [{"x": 2, "y": 1, "level": -1}]}

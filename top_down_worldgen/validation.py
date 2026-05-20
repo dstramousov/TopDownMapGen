@@ -7,9 +7,14 @@ from typing import Any
 from .manifest import VALIDATION_REPORT_SCHEMA_VERSION
 from .tactical.runtime_objects import (
     COVER_TYPES,
+    INTEREST_POINT_TYPES,
+    MAX_AMMO_CACHES,
     MAX_ELEVATION_LEVEL,
     MAX_OBJECT_HEIGHT,
+    MAX_MEDKIT_CACHES,
     MAX_RUNTIME_OBJECTS,
+    MIN_AMMO_CACHES,
+    MIN_MEDKIT_CACHES,
     PASSABLE_OBJECT_TILES,
     MIN_ELEVATION_LEVEL,
     MIN_OBJECT_HEIGHT,
@@ -108,6 +113,36 @@ def build_validation_report(
         ),
         "runtime_objects_counts_within_limits": (
             len(_runtime_objects(runtime_data)) <= MAX_RUNTIME_OBJECTS
+        ),
+        "interest_points_non_empty": bool(_interest_points(runtime_data)),
+        "ammo_caches_within_limits": _runtime_object_type_count_within_limits(
+            runtime_data,
+            object_type="ammo_cache",
+            min_count=MIN_AMMO_CACHES,
+            max_count=MAX_AMMO_CACHES,
+        ),
+        "medkit_caches_within_limits": _runtime_object_type_count_within_limits(
+            runtime_data,
+            object_type="medkit_cache",
+            min_count=MIN_MEDKIT_CACHES,
+            max_count=MAX_MEDKIT_CACHES,
+        ),
+        "interest_points_inside_map": _runtime_objects_inside_map(
+            {"runtime_objects": _interest_points(runtime_data)},
+            width=width,
+            height=height,
+        ),
+        "interest_points_do_not_overlap": _runtime_objects_do_not_overlap(
+            {"runtime_objects": _interest_points(runtime_data)},
+        ),
+        "interest_points_avoid_start_goal": (
+            _runtime_objects_do_not_overlap_start_goal(
+                {"runtime_objects": _interest_points(runtime_data)},
+                tile_grid,
+            )
+        ),
+        "interest_points_do_not_overlap_cover": _interest_points_do_not_overlap_cover(
+            runtime_data,
         ),
         "elevation_cells_inside_map": _elevation_cells_inside_map(
             runtime_data,
@@ -315,6 +350,41 @@ def _zone_cover_refs_valid(runtime_data: dict[str, Any]) -> bool:
 
 def _runtime_objects(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
     return _dict_list(runtime_data.get("runtime_objects"))
+
+
+def _interest_points(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        item
+        for item in _runtime_objects(runtime_data)
+        if item.get("type") in INTEREST_POINT_TYPES
+    ]
+
+
+def _runtime_object_type_count_within_limits(
+    runtime_data: dict[str, Any],
+    *,
+    object_type: str,
+    min_count: int,
+    max_count: int,
+) -> bool:
+    count = sum(
+        1
+        for item in _runtime_objects(runtime_data)
+        if item.get("type") == object_type
+    )
+    return min_count <= count <= max_count
+
+
+def _interest_points_do_not_overlap_cover(runtime_data: dict[str, Any]) -> bool:
+    cover_points: set[tuple[int, int]] = set()
+    interest_points: set[tuple[int, int]] = set()
+    for item in _runtime_objects(runtime_data):
+        points = _runtime_object_points(item)
+        if not points:
+            return False
+        target = interest_points if item.get("type") in INTEREST_POINT_TYPES else cover_points
+        target.update(points)
+    return interest_points.isdisjoint(cover_points)
 
 
 def _runtime_objects_have_unique_ids(runtime_data: dict[str, Any]) -> bool:

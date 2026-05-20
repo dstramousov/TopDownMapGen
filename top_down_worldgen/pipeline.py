@@ -173,7 +173,7 @@ class WorldgenPipeline:
             )
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data = attach_runtime_layers(runtime_data, seed=config.resolved_seed)
-            runtime_data["version"] = "0.24-runtime"
+            runtime_data["version"] = "0.26-runtime"
             debug_data["version"] = "0.20-debug"
 
             write_json(runtime_data, outputs.tactical_map)

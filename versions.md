@@ -99,3 +99,11 @@
 - `runtime_objects` добавлен в список доступных debug layers manifest-а.
 - Manifest schema обновлена до `generation-manifest-v6`, runtime tactical schema — до `tactical-map-v0.25`, debug layers version — до `debug-layers-v2`.
 - Версия проекта поднята до `0.0.13`.
+
+## v0.0.13 -> v0.0.14
+
+- Добавлена генерация interest-point runtime-объектов `ammo_cache` и `medkit_cache`.
+- Тайники с патронами и аптечные тайники размещаются детерминированно по `resolved_seed` и не пересекаются с уже созданными runtime-объектами.
+- Расширены validation checks для interest points: наличие, лимиты количества, размещение внутри карты, отсутствие пересечений и запрет на START/GOAL.
+- Runtime tactical schema обновлена до `tactical-map-v0.26`, manifest schema — до `generation-manifest-v7`, validation report schema — до `validation-report-v4`, runtime objects schema — до `runtime-objects-v3`.
+- Версия проекта поднята до `0.0.14`.
