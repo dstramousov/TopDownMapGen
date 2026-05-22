@@ -6,6 +6,11 @@ from typing import Any
 
 from .manifest import VALIDATION_REPORT_SCHEMA_VERSION
 from .tactical.runtime_objects import (
+    COLLISION_MOVEMENT_VALUES,
+    COLLISION_PROJECTILE_VALUES,
+    COLLISION_VISION_VALUES,
+    COMBAT_PROPERTY_VALUE_MAX,
+    COMBAT_PROPERTY_VALUE_MIN,
     COVER_TYPES,
     INTEREST_POINT_TYPES,
     LANDMARK_MIN_DISTANCE_TILES,
@@ -108,6 +113,25 @@ def build_validation_report(
         "runtime_objects_have_valid_elevation": _runtime_objects_have_valid_elevation(
             runtime_data,
         ),
+        "runtime_objects_have_collision_profiles": (
+            _runtime_objects_have_collision_profiles(runtime_data)
+        ),
+        "runtime_objects_have_combat_properties": (
+            _runtime_objects_have_combat_properties(runtime_data)
+        ),
+        "cover_values_in_range": _combat_property_values_in_range(
+            runtime_data,
+            property_name="cover_value",
+        ),
+        "concealment_values_in_range": _combat_property_values_in_range(
+            runtime_data,
+            property_name="concealment_value",
+        ),
+        "trench_objects_have_stance_hints": _trench_objects_have_stance_hints(
+            runtime_data,
+        ),
+        "explosive_objects_tagged": _explosive_objects_tagged(runtime_data),
+        "loot_objects_tagged": _loot_objects_tagged(runtime_data),
         "runtime_objects_do_not_overlap_start_goal": (
             _runtime_objects_do_not_overlap_start_goal(runtime_data, tile_grid)
         ),
@@ -653,6 +677,94 @@ def _runtime_objects_have_valid_elevation(runtime_data: dict[str, Any]) -> bool:
             return False
     return True
 
+
+
+def _runtime_objects_have_collision_profiles(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        profile = item.get("collision_profile")
+        if not isinstance(profile, dict):
+            return False
+        if profile.get("movement") not in COLLISION_MOVEMENT_VALUES:
+            return False
+        if profile.get("projectiles") not in COLLISION_PROJECTILE_VALUES:
+            return False
+        if profile.get("vision") not in COLLISION_VISION_VALUES:
+            return False
+    return True
+
+
+def _runtime_objects_have_combat_properties(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        properties = item.get("combat_properties")
+        if not isinstance(properties, dict):
+            return False
+        if not isinstance(properties.get("explosive"), bool):
+            return False
+        if not isinstance(properties.get("loot"), bool):
+            return False
+        for property_name in ("cover_value", "concealment_value"):
+            if not _combat_property_value_in_range(properties.get(property_name)):
+                return False
+    return True
+
+
+def _combat_property_values_in_range(
+    runtime_data: dict[str, Any],
+    *,
+    property_name: str,
+) -> bool:
+    for item in _runtime_objects(runtime_data):
+        properties = item.get("combat_properties")
+        if not isinstance(properties, dict):
+            return False
+        if not _combat_property_value_in_range(properties.get(property_name)):
+            return False
+    return True
+
+
+def _combat_property_value_in_range(value: Any) -> bool:
+    try:
+        normalized = float(value)
+    except (TypeError, ValueError):
+        return False
+    return COMBAT_PROPERTY_VALUE_MIN <= normalized <= COMBAT_PROPERTY_VALUE_MAX
+
+
+def _trench_objects_have_stance_hints(runtime_data: dict[str, Any]) -> bool:
+    for trench in _trenches(runtime_data):
+        hints = trench.get("stance_hints")
+        if not isinstance(hints, dict):
+            return False
+        if hints.get("standing") != "exposed":
+            return False
+        if hints.get("crouching") != "protected_from_flat_fire":
+            return False
+    return True
+
+
+def _explosive_objects_tagged(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        properties = item.get("combat_properties")
+        if not isinstance(properties, dict) or properties.get("explosive") is not True:
+            continue
+        tags = item.get("tags")
+        if not isinstance(tags, list):
+            return False
+        normalized_tags = {str(tag) for tag in tags}
+        if "explosive" not in normalized_tags and "explosive_candidate" not in normalized_tags:
+            return False
+    return True
+
+
+def _loot_objects_tagged(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        properties = item.get("combat_properties")
+        if not isinstance(properties, dict) or properties.get("loot") is not True:
+            continue
+        tags = item.get("tags")
+        if not isinstance(tags, list) or "loot" not in {str(tag) for tag in tags}:
+            return False
+    return True
 
 def _runtime_objects_do_not_overlap_start_goal(
     runtime_data: dict[str, Any],

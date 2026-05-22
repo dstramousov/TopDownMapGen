@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v6"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v7"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
@@ -195,9 +195,80 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
     },
 )
 
-COVER_TYPES: frozenset[str] = frozenset(
-    {"none", "soft", "low", "full", "trench"},
+
+
+def _runtime_type_with_gameplay(spec: dict[str, Any]) -> dict[str, Any]:
+    enriched = dict(spec)
+    enriched["collision_profile"] = _collision_profile_for_spec(spec)
+    enriched["combat_properties"] = _combat_properties_for_type(str(spec["type"]))
+    if spec["type"] == "trench":
+        enriched["stance_hints"] = {
+            "standing": "exposed",
+            "crouching": "protected_from_flat_fire",
+        }
+    return enriched
+
+
+def _collision_profile_for_spec(spec: dict[str, Any]) -> dict[str, str]:
+    cover_type = str(spec.get("cover_type", "none"))
+    if spec.get("blocks_vision") is True and cover_type == "soft":
+        vision = "soft_blocked"
+    elif spec.get("blocks_vision") is True:
+        vision = "blocked"
+    else:
+        vision = "passable"
+    return {
+        "movement": "blocked" if spec.get("blocks_movement") is True else "passable",
+        "projectiles": "blocked" if spec.get("blocks_projectiles") is True else "passable",
+        "vision": vision,
+    }
+
+
+def _combat_properties_for_type(object_type: str) -> dict[str, Any]:
+    properties_by_type: dict[str, dict[str, Any]] = {
+        "fallen_log": {"cover_value": 0.55, "concealment_value": 0.0},
+        "stone_chunk": {"cover_value": 0.9, "concealment_value": 0.0},
+        "bush_thicket": {"cover_value": 0.15, "concealment_value": 0.7},
+        "rusted_barrel": {
+            "cover_value": 0.5,
+            "concealment_value": 0.0,
+            "explosive": True,
+        },
+        "scrap_pile": {"cover_value": 0.45, "concealment_value": 0.0},
+        "ammo_cache": {"cover_value": 0.0, "concealment_value": 0.0, "loot": True},
+        "medkit_cache": {"cover_value": 0.0, "concealment_value": 0.0, "loot": True},
+        "trench": {
+            "cover_value": 0.8,
+            "concealment_value": 0.25,
+            "stance_dependent": True,
+        },
+        "big_dead_tree": {"cover_value": 0.8, "concealment_value": 0.25},
+        "broken_radio_mast": {"cover_value": 0.2, "concealment_value": 0.0},
+        "old_checkpoint": {"cover_value": 0.85, "concealment_value": 0.0},
+    }
+    result = {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": False,
+        "loot": False,
+    }
+    result.update(properties_by_type.get(object_type, {}))
+    return result
+
+
+RUNTIME_OBJECT_TYPES = tuple(
+    _runtime_type_with_gameplay(item) for item in RUNTIME_OBJECT_TYPES
 )
+COVER_TYPES: frozenset[str] = frozenset(
+    {"none", "soft", "low", "partial", "full", "trench"},
+)
+COLLISION_MOVEMENT_VALUES: frozenset[str] = frozenset({"passable", "blocked"})
+COLLISION_PROJECTILE_VALUES: frozenset[str] = frozenset({"passable", "blocked"})
+COLLISION_VISION_VALUES: frozenset[str] = frozenset(
+    {"passable", "soft_blocked", "blocked"},
+)
+COMBAT_PROPERTY_VALUE_MIN = 0.0
+COMBAT_PROPERTY_VALUE_MAX = 1.0
 RUNTIME_OBJECT_TYPE_NAMES: frozenset[str] = frozenset(
     item["type"] for item in RUNTIME_OBJECT_TYPES
 )
@@ -652,7 +723,11 @@ def _build_runtime_object(
         "orientation": orientation,
         "shape": shape,
         "tags": list(spec["tags"]),
+        "collision_profile": dict(spec["collision_profile"]),
+        "combat_properties": dict(spec["combat_properties"]),
     }
+    if "stance_hints" in spec:
+        item["stance_hints"] = dict(spec["stance_hints"])
     if len(footprint) > 1:
         item["footprint"] = [[point_x, point_y] for point_x, point_y in footprint]
     return item

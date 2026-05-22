@@ -3,8 +3,27 @@ from __future__ import annotations
 from pathlib import Path
 
 from top_down_worldgen.paths import OutputPaths
-from top_down_worldgen.tactical.runtime_objects import attach_runtime_layers
+from top_down_worldgen.tactical.runtime_objects import (
+    RUNTIME_OBJECT_TYPE_BY_NAME,
+    attach_runtime_layers,
+)
 from top_down_worldgen.validation import build_validation_report
+
+
+def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
+    spec = RUNTIME_OBJECT_TYPE_BY_NAME[str(item["type"])]
+    enriched = dict(item)
+    enriched.setdefault("role", spec["role"])
+    enriched.setdefault("blocks_movement", spec["blocks_movement"])
+    enriched.setdefault("blocks_projectiles", spec["blocks_projectiles"])
+    enriched.setdefault("blocks_vision", spec["blocks_vision"])
+    enriched.setdefault("interactive", spec["interactive"])
+    enriched.setdefault("tags", list(spec["tags"]))
+    enriched.setdefault("collision_profile", dict(spec["collision_profile"]))
+    enriched.setdefault("combat_properties", dict(spec["combat_properties"]))
+    if "stance_hints" in spec:
+        enriched.setdefault("stance_hints", dict(spec["stance_hints"]))
+    return enriched
 
 
 def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> None:
@@ -119,6 +138,9 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
             "interactive": False,
             "tags": ["landmark", "natural", "high_cover"],
         },
+    ]
+    runtime_data["runtime_objects"] = [
+        _with_gameplay_fields(item) for item in runtime_data["runtime_objects"]
     ]
 
     runtime_data["elevation"] = {

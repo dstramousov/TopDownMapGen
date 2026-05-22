@@ -287,16 +287,16 @@ class LayerRenderer:
     ) -> None:
         colors = {
             "fallen_log": ((125, 75, 35, 230), "L"),
-            "stone_chunk": ((175, 175, 175, 235), "S"),
+            "stone_chunk": ((175, 175, 175, 235), "K"),
             "bush_thicket": ((40, 190, 85, 215), "B"),
-            "scrap_pile": ((120, 130, 140, 230), "P"),
-            "rusted_barrel": ((205, 105, 45, 235), "R"),
+            "scrap_pile": ((120, 130, 140, 230), "X"),
+            "rusted_barrel": ((205, 105, 45, 235), "E"),
             "ammo_cache": ((245, 210, 65, 235), "A"),
-            "medkit_cache": ((245, 70, 90, 235), "M"),
-            "trench": ((95, 55, 35, 235), "T"),
+            "medkit_cache": ((245, 70, 90, 235), "H"),
+            "trench": ((95, 55, 35, 235), "U"),
             "big_dead_tree": ((70, 45, 30, 240), "D"),
-            "broken_radio_mast": ((100, 180, 235, 235), "M"),
-            "old_checkpoint": ((115, 115, 125, 240), "C"),
+            "broken_radio_mast": ((100, 180, 235, 235), "N"),
+            "old_checkpoint": ((115, 115, 125, 240), "O"),
         }
         for item in data.get("runtime_objects", []):
             if not isinstance(item, dict):

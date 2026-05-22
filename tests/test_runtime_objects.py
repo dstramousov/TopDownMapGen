@@ -4,10 +4,27 @@ from pathlib import Path
 
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.tactical.runtime_objects import (
+    RUNTIME_OBJECT_TYPE_BY_NAME,
     RUNTIME_OBJECT_TYPE_NAMES,
     attach_runtime_layers,
 )
 from top_down_worldgen.validation import build_validation_report
+
+
+def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
+    spec = RUNTIME_OBJECT_TYPE_BY_NAME[str(item["type"])]
+    enriched = dict(item)
+    enriched.setdefault("role", spec["role"])
+    enriched.setdefault("blocks_movement", spec["blocks_movement"])
+    enriched.setdefault("blocks_projectiles", spec["blocks_projectiles"])
+    enriched.setdefault("blocks_vision", spec["blocks_vision"])
+    enriched.setdefault("interactive", spec["interactive"])
+    enriched.setdefault("tags", list(spec["tags"]))
+    enriched.setdefault("collision_profile", dict(spec["collision_profile"]))
+    enriched.setdefault("combat_properties", dict(spec["combat_properties"]))
+    if "stance_hints" in spec:
+        enriched.setdefault("stance_hints", dict(spec["stance_hints"]))
+    return enriched
 
 
 def test_attach_runtime_layers_declares_object_types() -> None:
@@ -57,6 +74,13 @@ def test_attach_runtime_layers_generates_interest_points() -> None:
     assert runtime_data["runtime_objects_summary"]["by_type"]["medkit_cache"] >= 1
     assert runtime_data["runtime_objects_summary"]["by_type"]["trench"] >= 1
     assert runtime_data["runtime_objects_summary"]["landmarks"]["total"] >= 1
+    assert all("collision_profile" in item for item in runtime_data["runtime_objects"])
+    assert all("combat_properties" in item for item in runtime_data["runtime_objects"])
+    assert all(
+        "stance_hints" in item
+        for item in runtime_data["runtime_objects"]
+        if item["type"] == "trench"
+    )
     assert runtime_data["elevation"]["cells"]
     assert all(cell["level"] == -1 for cell in runtime_data["elevation"]["cells"])
 
@@ -176,6 +200,9 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
             "tags": ["landmark", "natural", "high_cover"],
         },
     ]
+    runtime_data["runtime_objects"] = [
+        _with_gameplay_fields(item) for item in runtime_data["runtime_objects"]
+    ]
     runtime_data["elevation"] = {
         "default": 0,
         "cells": [
@@ -202,6 +229,9 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
     assert report["checks"]["elevation_levels_valid"] is True
     assert report["checks"]["landmarks_within_limits"] is True
     assert report["checks"]["landmarks_min_distance"] is True
+    assert report["checks"]["runtime_objects_have_collision_profiles"] is True
+    assert report["checks"]["runtime_objects_have_combat_properties"] is True
+    assert report["checks"]["trench_objects_have_stance_hints"] is True
 
 
 def test_validation_rejects_runtime_object_on_start(tmp_path: Path) -> None:
@@ -249,6 +279,9 @@ def test_validation_rejects_runtime_object_on_start(tmp_path: Path) -> None:
             "height": 1,
             "cover_type": "low",
         },
+    ]
+    runtime_data["runtime_objects"] = [
+        _with_gameplay_fields(item) for item in runtime_data["runtime_objects"]
     ]
 
     report = build_validation_report(
