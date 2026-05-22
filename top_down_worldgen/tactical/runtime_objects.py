@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v8"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v9"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
@@ -31,6 +31,7 @@ MAX_LANDMARKS = 6
 LANDMARK_MIN_DISTANCE_TILES = 8
 MIN_OBJECT_DISTANCE_TILES = 3
 PROTECTED_TILE_DISTANCE_TILES = 5
+MAX_PLACEMENT_CANDIDATE_SAMPLE = 3000
 
 PASSABLE_OBJECT_TILES: frozenset[str] = frozenset({"+", ".", "R", "c"})
 BLOCKED_OBJECT_TILES: frozenset[str] = frozenset({"T", "b", "w", "#", "S", "G"})
@@ -46,6 +47,18 @@ GENERATED_RUNTIME_OBJECT_TYPES: tuple[str, ...] = (
     "big_dead_tree",
     "broken_radio_mast",
     "old_checkpoint",
+    "car_wreck",
+    "abandoned_backpack",
+    "field_tent",
+    "dead_campfire",
+    "broken_generator",
+    "cable_spool",
+    "warning_sign",
+    "old_grave_marker",
+    "pit",
+    "earth_berm",
+    "old_well",
+    "abandoned_cart",
 )
 
 RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
@@ -180,6 +193,163 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
         "interactive": False,
         "tags": ["landmark", "cover", "checkpoint", "ruin"],
     },
+
+    {
+        "type": "car_wreck",
+        "name_ru": "Остов автомобиля",
+        "role": "roadside_debris",
+        "default_height": 2,
+        "default_elevation": 0,
+        "cover_type": "partial",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["debris", "roadside", "vehicle", "human_trace"],
+    },
+    {
+        "type": "abandoned_backpack",
+        "name_ru": "Брошенный рюкзак",
+        "role": "interest_point",
+        "default_height": 1,
+        "default_elevation": 0,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": True,
+        "tags": ["loot", "human_trace", "camp"],
+    },
+    {
+        "type": "field_tent",
+        "name_ru": "Полевая палатка",
+        "role": "camp_object",
+        "default_height": 2,
+        "default_elevation": 0,
+        "cover_type": "soft",
+        "blocks_movement": True,
+        "blocks_projectiles": False,
+        "blocks_vision": True,
+        "interactive": False,
+        "tags": ["camp", "shelter", "human_trace"],
+    },
+    {
+        "type": "dead_campfire",
+        "name_ru": "Потухший костёр",
+        "role": "camp_object",
+        "default_height": 0,
+        "default_elevation": 0,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["camp", "human_trace", "story_marker"],
+    },
+    {
+        "type": "broken_generator",
+        "name_ru": "Сломанный генератор",
+        "role": "tech_debris",
+        "default_height": 2,
+        "default_elevation": 0,
+        "cover_type": "partial",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["tech", "debris", "human_trace"],
+    },
+    {
+        "type": "cable_spool",
+        "name_ru": "Кабельная катушка",
+        "role": "tech_debris",
+        "default_height": 1,
+        "default_elevation": 0,
+        "cover_type": "low",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["tech", "cover", "human_trace"],
+    },
+    {
+        "type": "warning_sign",
+        "name_ru": "Предупреждающий знак",
+        "role": "marker",
+        "default_height": 2,
+        "default_elevation": 0,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["marker", "warning", "human_trace"],
+    },
+    {
+        "type": "old_grave_marker",
+        "name_ru": "Старая могила / крест",
+        "role": "story_marker",
+        "default_height": 1,
+        "default_elevation": 0,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["story_marker", "grave", "human_trace"],
+    },
+    {
+        "type": "pit",
+        "name_ru": "Провал / яма",
+        "role": "depression",
+        "default_height": 0,
+        "default_elevation": -1,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "below_floor", "terrain_feature"],
+    },
+    {
+        "type": "earth_berm",
+        "name_ru": "Земляная насыпь",
+        "role": "terrain_cover",
+        "default_height": 1,
+        "default_elevation": 0,
+        "cover_type": "low",
+        "blocks_movement": False,
+        "blocks_projectiles": True,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["terrain_feature", "cover", "earthwork"],
+    },
+    {
+        "type": "old_well",
+        "name_ru": "Колодец",
+        "role": "story_landmark",
+        "default_height": 1,
+        "default_elevation": 0,
+        "cover_type": "partial",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["landmark", "story_marker", "human_trace"],
+    },
+    {
+        "type": "abandoned_cart",
+        "name_ru": "Брошенная тележка",
+        "role": "roadside_debris",
+        "default_height": 1,
+        "default_elevation": 0,
+        "cover_type": "partial",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["debris", "roadside", "human_trace"],
+    },
     {
         "type": "trench",
         "name_ru": "Окоп / траншея",
@@ -245,6 +415,18 @@ def _combat_properties_for_type(object_type: str) -> dict[str, Any]:
         "big_dead_tree": {"cover_value": 0.8, "concealment_value": 0.25},
         "broken_radio_mast": {"cover_value": 0.2, "concealment_value": 0.0},
         "old_checkpoint": {"cover_value": 0.85, "concealment_value": 0.0},
+        "car_wreck": {"cover_value": 0.6, "concealment_value": 0.0},
+        "abandoned_backpack": {"cover_value": 0.0, "concealment_value": 0.0, "loot": True},
+        "field_tent": {"cover_value": 0.1, "concealment_value": 0.45},
+        "dead_campfire": {"cover_value": 0.0, "concealment_value": 0.0},
+        "broken_generator": {"cover_value": 0.55, "concealment_value": 0.0},
+        "cable_spool": {"cover_value": 0.35, "concealment_value": 0.0},
+        "warning_sign": {"cover_value": 0.0, "concealment_value": 0.0},
+        "old_grave_marker": {"cover_value": 0.0, "concealment_value": 0.0},
+        "pit": {"cover_value": 0.25, "concealment_value": 0.15},
+        "earth_berm": {"cover_value": 0.45, "concealment_value": 0.0},
+        "old_well": {"cover_value": 0.5, "concealment_value": 0.0},
+        "abandoned_cart": {"cover_value": 0.4, "concealment_value": 0.0},
     }
     result = {
         "cover_value": 0.0,
@@ -484,8 +666,8 @@ class RuntimeObjectPlacer:
         object_type: str,
         desired_shape: str | None,
     ) -> tuple[list[tuple[int, int]], str, str] | None:
-        shuffled = list(candidates)
-        self._rng.shuffle(shuffled)
+        sample_size = min(len(candidates), MAX_PLACEMENT_CANDIDATE_SAMPLE)
+        shuffled = self._rng.sample(candidates, sample_size)
         shuffled.sort(
             key=lambda point: _placement_score(
                 point,
@@ -515,6 +697,18 @@ def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
         RuntimeObjectQuota("big_dead_tree", 2, frozenset({"+"})),
         RuntimeObjectQuota("broken_radio_mast", 1, frozenset({"R", "c", "."})),
         RuntimeObjectQuota("old_checkpoint", 1, frozenset({"R", "c", "."})),
+        RuntimeObjectQuota("old_well", 1, frozenset({"+", "R", "c"})),
+        RuntimeObjectQuota("car_wreck", 2, frozenset({".", "c", "R"})),
+        RuntimeObjectQuota("field_tent", 2, frozenset({"+", ".", "R"})),
+        RuntimeObjectQuota("broken_generator", 1, frozenset({"R", "c", "."})),
+        RuntimeObjectQuota("cable_spool", 2, frozenset({"R", "c", "."})),
+        RuntimeObjectQuota("warning_sign", 2, frozenset({".", "c", "+"})),
+        RuntimeObjectQuota("old_grave_marker", 1, frozenset({"+", "c"})),
+        RuntimeObjectQuota("pit", 2, frozenset({"+", "c"})),
+        RuntimeObjectQuota("earth_berm", 3, frozenset({"+", ".", "c"})),
+        RuntimeObjectQuota("abandoned_cart", 2, frozenset({".", "c", "+"})),
+        RuntimeObjectQuota("abandoned_backpack", 3, frozenset({"+", ".", "R", "c"})),
+        RuntimeObjectQuota("dead_campfire", 2, frozenset({"+", ".", "R"})),
         RuntimeObjectQuota("stone_chunk", 10, frozenset({"+", ".", "c"})),
         RuntimeObjectQuota("bush_thicket", 14, frozenset({"+"})),
         RuntimeObjectQuota("fallen_log", 8, frozenset({"+", "."})),
@@ -757,7 +951,7 @@ def _attach_trench_elevation(
         except (TypeError, ValueError):
             continue
     for item in objects:
-        if item.get("type") != "trench":
+        if item.get("type") not in {"trench", "pit"}:
             continue
         for x, y in _object_footprint_points(item):
             if (x, y) in existing:

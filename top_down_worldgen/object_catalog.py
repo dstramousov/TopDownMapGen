@@ -96,6 +96,18 @@ RUNTIME_DEBUG_SYMBOLS: dict[str, str] = {
     "big_dead_tree": "D",
     "broken_radio_mast": "N",
     "old_checkpoint": "O",
+    "car_wreck": "V",
+    "abandoned_backpack": "P",
+    "field_tent": "T",
+    "dead_campfire": "F",
+    "broken_generator": "J",
+    "cable_spool": "C",
+    "warning_sign": "W",
+    "old_grave_marker": "Z",
+    "pit": "I",
+    "earth_berm": "Q",
+    "old_well": "M",
+    "abandoned_cart": "Y",
 }
 
 
@@ -360,6 +372,18 @@ def _runtime_object_meaning(object_type: str) -> str:
         "big_dead_tree": "Высокий landmark и природный ориентир.",
         "broken_radio_mast": "Landmark, след связи или экспедиции.",
         "old_checkpoint": "Блокпост, defensive landmark и след старого контроля.",
+        "car_wreck": "Остов автомобиля, дорожный техногенный след и частичное укрытие.",
+        "abandoned_backpack": "Брошенный рюкзак, малый человеческий след и потенциальная точка интереса.",
+        "field_tent": "Полевая палатка, основа лагерной микросцены.",
+        "dead_campfire": "Потухший костёр, маркер старой стоянки.",
+        "broken_generator": "Сломанный генератор, техногенный мусор и след экспедиции.",
+        "cable_spool": "Кабельная катушка, технический мусор и низкое укрытие.",
+        "warning_sign": "Предупреждающий знак, маркер запретной или опасной области.",
+        "old_grave_marker": "Старая могила или крест, тревожный story marker.",
+        "pit": "Провал или яма уровня -1, локальная низина.",
+        "earth_berm": "Земляная насыпь, мягкий рельеф и низкое укрытие.",
+        "old_well": "Колодец, story landmark для заброшенных мест.",
+        "abandoned_cart": "Брошенная тележка, дорожный след и частичное укрытие.",
     }
     return meanings.get(object_type, "Runtime object.")
 

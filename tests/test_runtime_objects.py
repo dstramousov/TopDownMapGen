@@ -40,6 +40,9 @@ def test_attach_runtime_layers_declares_object_types() -> None:
     assert "big_dead_tree" in RUNTIME_OBJECT_TYPE_NAMES
     assert "broken_radio_mast" in RUNTIME_OBJECT_TYPE_NAMES
     assert "old_checkpoint" in RUNTIME_OBJECT_TYPE_NAMES
+    assert "car_wreck" in RUNTIME_OBJECT_TYPE_NAMES
+    assert "old_well" in RUNTIME_OBJECT_TYPE_NAMES
+    assert "pit" in RUNTIME_OBJECT_TYPE_NAMES
     assert any(
         item["type"] == "fallen_log"
         for item in enriched["runtime_object_schema"]["types"]
@@ -70,6 +73,9 @@ def test_attach_runtime_layers_generates_interest_points() -> None:
     assert "trench" in object_types
     assert "big_dead_tree" in object_types
     assert "old_checkpoint" in object_types
+    assert "car_wreck" in object_types
+    assert "old_well" in object_types
+    assert "pit" in object_types
     assert runtime_data["runtime_objects_summary"]["by_type"]["ammo_cache"] >= 1
     assert runtime_data["runtime_objects_summary"]["by_type"]["medkit_cache"] >= 1
     assert runtime_data["runtime_objects_summary"]["by_type"]["trench"] >= 1

@@ -297,6 +297,18 @@ class LayerRenderer:
             "big_dead_tree": ((70, 45, 30, 240), "D"),
             "broken_radio_mast": ((100, 180, 235, 235), "N"),
             "old_checkpoint": ((115, 115, 125, 240), "O"),
+            "car_wreck": ((80, 95, 105, 240), "V"),
+            "abandoned_backpack": ((80, 120, 215, 235), "P"),
+            "field_tent": ((185, 170, 110, 235), "T"),
+            "dead_campfire": ((230, 115, 45, 235), "F"),
+            "broken_generator": ((90, 100, 120, 240), "J"),
+            "cable_spool": ((185, 125, 60, 235), "C"),
+            "warning_sign": ((245, 230, 45, 240), "W"),
+            "old_grave_marker": ((170, 170, 155, 235), "Z"),
+            "pit": ((45, 30, 25, 235), "I"),
+            "earth_berm": ((135, 100, 55, 235), "Q"),
+            "old_well": ((95, 95, 115, 240), "M"),
+            "abandoned_cart": ((145, 95, 45, 235), "Y"),
         }
         for item in data.get("runtime_objects", []):
             if not isinstance(item, dict):
@@ -313,14 +325,23 @@ class LayerRenderer:
                 position = points[0]
                 cx = position[0] * self._tile_size_px + self._tile_size_px // 2
                 cy = position[1] * self._tile_size_px + self._tile_size_px // 2
-                if object_type in {"fallen_log", "scrap_pile", "broken_radio_mast"}:
+                if object_type in {
+                    "fallen_log",
+                    "scrap_pile",
+                    "broken_radio_mast",
+                    "car_wreck",
+                    "broken_generator",
+                    "cable_spool",
+                    "earth_berm",
+                    "abandoned_cart",
+                }:
                     draw.rectangle(
                         (cx - radius, cy - radius // 2, cx + radius, cy + radius // 2),
                         fill=color,
                         outline=(255, 255, 255, 230),
                         width=1,
                     )
-                elif object_type in {"bush_thicket", "big_dead_tree"}:
+                elif object_type in {"bush_thicket", "big_dead_tree", "old_well", "pit"}:
                     draw.ellipse(
                         (cx - radius, cy - radius, cx + radius, cy + radius),
                         fill=color,

@@ -518,18 +518,20 @@ def _trench_cells_have_negative_elevation(runtime_data: dict[str, Any]) -> bool:
 
 
 def _elevation_cells_match_trench_footprints(runtime_data: dict[str, Any]) -> bool:
-    trench_points: set[tuple[int, int]] = set()
-    for trench in _trenches(runtime_data):
-        points = _runtime_object_points(trench)
+    negative_object_points: set[tuple[int, int]] = set()
+    for item in _runtime_objects(runtime_data):
+        if item.get("type") not in {"trench", "pit"}:
+            continue
+        points = _runtime_object_points(item)
         if not points:
             return False
-        trench_points.update(points)
+        negative_object_points.update(points)
     negative_elevation_points = {
         point
         for point, level in _elevation_level_by_point(runtime_data).items()
         if level == TRENCH_ELEVATION_LEVEL
     }
-    return trench_points == negative_elevation_points
+    return negative_object_points == negative_elevation_points
 
 
 

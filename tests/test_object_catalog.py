@@ -28,7 +28,11 @@ def test_object_catalog_includes_counts_and_symbols(tmp_path: Path) -> None:
 
     assert "# Object Catalog" in content
     assert "`stone_chunk`" in content
+    assert "`car_wreck`" in content
+    assert "`old_well`" in content
     assert "| K      | `stone_chunk`" in content
+    assert "| V      | `car_wreck`" in content
+    assert "| M      | `old_well`" in content
     assert "| U      | `trench`" in content
     assert "| `+`    | `grass`" in content
     assert "| `old_defensive_position`" in content

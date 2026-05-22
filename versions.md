@@ -174,3 +174,13 @@
 - Числовые колонки `Count` выравниваются вправо для лучшей читаемости в терминале.
 - Schema versions подняты до `generation-manifest-v14`, `validation-report-v11`, `object-catalog-v2`.
 - Версия проекта поднята до `0.0.22`.
+
+## v0.0.22 -> v0.0.23
+
+- Добавлены 12 новых runtime-объектов для более насыщенного наполнения карты: `car_wreck`, `abandoned_backpack`, `field_tent`, `dead_campfire`, `broken_generator`, `cable_spool`, `warning_sign`, `old_grave_marker`, `pit`, `earth_berm`, `old_well`, `abandoned_cart`.
+- Новые объекты получили роли, русские имена, gameplay-семантику, `collision_profile`, `combat_properties`, debug-символы и описания в `object_catalog.md`.
+- Новые объекты размещаются детерминированно от `resolved_seed` с низкими квотами, чтобы не превращать карту в свалку.
+- `pit` теперь добавляет клетки уровня `-1` в слой `elevation`, как небольшая яма/провал.
+- `layer_runtime_objects.png` и `layer_all_debug.png` отображают новые runtime-объекты.
+- Schema versions подняты до `generation-manifest-v15`, `validation-report-v12`, `object-catalog-v3`, `runtime-objects-v9`, `tactical-map-v0.32`.
+- Версия проекта поднята до `0.0.23`.

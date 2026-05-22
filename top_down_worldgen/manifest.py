@@ -8,20 +8,20 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v14"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v15"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
-TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.31"
+TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v11"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v12"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v1"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
 DEBUG_LAYERS_VERSION = "debug-layers-v2"
-RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v8"
+RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v9"
 PLACES_SCHEMA_VERSION = "places-v1"
-OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v2"
+OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
 
 
 @dataclass(frozen=True, slots=True)
