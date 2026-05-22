@@ -147,62 +147,80 @@ def build_object_catalog_markdown(
         "",
         "## Runtime objects generated in this run",
         "",
-        "| Symbol | Type | Russian name | Role | Count | Meaning |",
-        "|---|---|---|---|---:|---|",
     ]
+    runtime_rows: list[list[str]] = []
     for spec in RUNTIME_OBJECT_TYPES:
         object_type = str(spec["type"])
-        lines.append(
-            "| {symbol} | `{type}` | {name_ru} | `{role}` | {count} | {meaning} |".format(
-                symbol=RUNTIME_DEBUG_SYMBOLS.get(object_type, "?"),
-                type=object_type,
-                name_ru=str(spec.get("name_ru", object_type)),
-                role=str(spec.get("role", "unknown")),
-                count=runtime_counts.get(object_type, 0),
-                meaning=_runtime_object_meaning(object_type),
-            ),
+        runtime_rows.append(
+            [
+                RUNTIME_DEBUG_SYMBOLS.get(object_type, "?"),
+                f"`{object_type}`",
+                str(spec.get("name_ru", object_type)),
+                f"`{spec.get('role', 'unknown')}`",
+                str(runtime_counts.get(object_type, 0)),
+                _runtime_object_meaning(object_type),
+            ],
         )
+    lines.extend(
+        _markdown_table(
+            headers=["Symbol", "Type", "Russian name", "Role", "Count", "Meaning"],
+            rows=runtime_rows,
+            right_aligned={"Count"},
+        ),
+    )
 
     lines.extend(
         [
             "",
             "## Base map tiles generated in this run",
             "",
-            "| Symbol | Type | Russian name | Count | Meaning |",
-            "|---|---|---|---:|---|",
         ],
     )
+    tile_rows: list[list[str]] = []
     for spec in BASE_TILE_TYPES:
         symbol = spec["symbol"]
-        lines.append(
-            "| `{symbol}` | `{type}` | {name_ru} | {count} | {meaning} |".format(
-                symbol=symbol,
-                type=spec["type"],
-                name_ru=spec["name_ru"],
-                count=tile_counts.get(symbol, 0),
-                meaning=spec["meaning"],
-            ),
+        tile_rows.append(
+            [
+                f"`{symbol}`",
+                f"`{spec['type']}`",
+                spec["name_ru"],
+                str(tile_counts.get(symbol, 0)),
+                spec["meaning"],
+            ],
         )
+    lines.extend(
+        _markdown_table(
+            headers=["Symbol", "Type", "Russian name", "Count", "Meaning"],
+            rows=tile_rows,
+            right_aligned={"Count"},
+        ),
+    )
 
     lines.extend(
         [
             "",
             "## Places generated in this run",
             "",
-            "| Type | Russian name | Count | Role |",
-            "|---|---|---:|---|",
         ],
     )
+    place_rows: list[list[str]] = []
     for spec in PLACE_TYPES:
         place_type = str(spec["type"])
-        lines.append(
-            "| `{type}` | {name_ru} | {count} | `{role}` |".format(
-                type=place_type,
-                name_ru=str(spec.get("name_ru", place_type)),
-                count=place_counts.get(place_type, 0),
-                role=str(spec.get("role", "unknown")),
-            ),
+        place_rows.append(
+            [
+                f"`{place_type}`",
+                str(spec.get("name_ru", place_type)),
+                str(place_counts.get(place_type, 0)),
+                f"`{spec.get('role', 'unknown')}`",
+            ],
         )
+    lines.extend(
+        _markdown_table(
+            headers=["Type", "Russian name", "Count", "Role"],
+            rows=place_rows,
+            right_aligned={"Count"},
+        ),
+    )
 
     lines.extend(
         [
@@ -217,6 +235,83 @@ def build_object_catalog_markdown(
         ],
     )
     return "\n".join(lines)
+
+
+def _markdown_table(
+    *,
+    headers: list[str],
+    rows: list[list[str]],
+    right_aligned: set[str] | None = None,
+) -> list[str]:
+    """Build an aligned Markdown table.
+
+    Args:
+        headers: Table column names.
+        rows: Table rows.
+        right_aligned: Column names that should be right-aligned.
+
+    Returns:
+        Markdown lines with padded cells.
+    """
+    right_aligned = right_aligned or set()
+    widths = _table_widths(headers, rows)
+    header_line = _format_table_row(headers, widths, right_aligned=set())
+    separator_line = _format_separator_row(headers, widths, right_aligned)
+    body_lines = [
+        _format_table_row(row, widths, right_aligned=right_aligned, headers=headers)
+        for row in rows
+    ]
+    return [header_line, separator_line, *body_lines]
+
+
+def _table_widths(headers: list[str], rows: list[list[str]]) -> list[int]:
+    widths = [_display_width(header) for header in headers]
+    for row in rows:
+        for index, cell in enumerate(row):
+            widths[index] = max(widths[index], _display_width(cell))
+    return widths
+
+
+def _format_table_row(
+    cells: list[str],
+    widths: list[int],
+    *,
+    right_aligned: set[str],
+    headers: list[str] | None = None,
+) -> str:
+    padded_cells: list[str] = []
+    for index, cell in enumerate(cells):
+        header = headers[index] if headers is not None else cell
+        padded_cells.append(
+            _pad_cell(cell, widths[index], align_right=header in right_aligned),
+        )
+    return f"| {' | '.join(padded_cells)} |"
+
+
+def _format_separator_row(
+    headers: list[str],
+    widths: list[int],
+    right_aligned: set[str],
+) -> str:
+    cells = []
+    for header, width in zip(headers, widths, strict=True):
+        dash_count = max(width, 3)
+        if header in right_aligned:
+            cells.append(f"{'-' * (dash_count - 1)}:")
+        else:
+            cells.append('-' * dash_count)
+    return f"| {' | '.join(cells)} |"
+
+
+def _pad_cell(value: str, width: int, *, align_right: bool) -> str:
+    padding = max(width - _display_width(value), 0)
+    if align_right:
+        return f"{' ' * padding}{value}"
+    return f"{value}{' ' * padding}"
+
+
+def _display_width(value: str) -> int:
+    return len(value)
 
 
 def _runtime_object_counts(runtime_data: dict[str, Any]) -> dict[str, int]:

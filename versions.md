@@ -167,3 +167,10 @@
 - `object_catalog.md` добавлен в manifest как `object_catalog` со схемой `object-catalog-v1`.
 - В `validation_report.json` добавлен check `object_catalog_exists`.
 - Версия проекта поднята до `0.0.21`.
+
+## v0.0.21 -> v0.0.22
+
+- Таблицы в `object_catalog.md` теперь генерируются выровненными по ширине колонок.
+- Числовые колонки `Count` выравниваются вправо для лучшей читаемости в терминале.
+- Schema versions подняты до `generation-manifest-v14`, `validation-report-v11`, `object-catalog-v2`.
+- Версия проекта поднята до `0.0.22`.

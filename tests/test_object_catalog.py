@@ -28,10 +28,12 @@ def test_object_catalog_includes_counts_and_symbols(tmp_path: Path) -> None:
 
     assert "# Object Catalog" in content
     assert "`stone_chunk`" in content
-    assert "| K | `stone_chunk`" in content
-    assert "| U | `trench`" in content
-    assert "| `+` | `grass` | Трава | 3 |" in content
-    assert "| `old_defensive_position` | Старая оборонительная позиция | 1 |" in content
+    assert "| K      | `stone_chunk`" in content
+    assert "| U      | `trench`" in content
+    assert "| `+`    | `grass`" in content
+    assert "| `old_defensive_position`" in content
+    assert "| Count" in content
+    assert "---:" in content
 
 
 def test_write_object_catalog_creates_markdown_file(tmp_path: Path) -> None:

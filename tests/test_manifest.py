@@ -40,9 +40,9 @@ def test_build_manifest_marks_primary_and_debug_outputs(tmp_path: Path) -> None:
         metrics={"combat_zones": 1},
     )
 
-    assert manifest["schema_version"] == "generation-manifest-v13"
-    assert manifest["versions"]["generator"] == "0.0.21"
-    assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v13"
+    assert manifest["schema_version"] == "generation-manifest-v14"
+    assert manifest["versions"]["generator"] == "0.0.22"
+    assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v14"
     assert manifest["seed"] == 42
     assert manifest["resolved_seed"] == 42
     assert manifest["dimensions"]["width_tiles"] == 2
@@ -53,4 +53,4 @@ def test_build_manifest_marks_primary_and_debug_outputs(tmp_path: Path) -> None:
     assert manifest["primary_outputs"][0]["path"] == "generated_map.txt"
     assert manifest["debug_outputs"][0]["path"] == "tactical_map_debug.json"
     assert len(manifest["files"]) == 2
-    assert manifest["versions"]["schemas"]["object_catalog"] == "object-catalog-v1"
+    assert manifest["versions"]["schemas"]["object_catalog"] == "object-catalog-v2"
