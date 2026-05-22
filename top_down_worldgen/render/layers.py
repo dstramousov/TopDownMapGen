@@ -23,6 +23,7 @@ class LayerRenderer:
         "flank",
         "spawn",
         "fallback",
+        "runtime_objects",
         "all",
     ]
 
@@ -33,7 +34,16 @@ class LayerRenderer:
         "flank": {"flank"},
         "spawn": {"spawn"},
         "fallback": {"fallback"},
-        "all": {"combat", "cover", "choke", "flank", "spawn", "fallback"},
+        "runtime_objects": {"runtime_objects"},
+        "all": {
+            "combat",
+            "cover",
+            "choke",
+            "flank",
+            "spawn",
+            "fallback",
+            "runtime_objects",
+        },
     }
 
     TILE_FILES = {
@@ -68,6 +78,7 @@ class LayerRenderer:
         self,
         map_path: Path,
         tactical_debug_path: Path,
+        tactical_map_path: Path,
         outputs: dict[str, Path],
         *,
         include_debug_images: bool = True,
@@ -77,6 +88,7 @@ class LayerRenderer:
         Args:
             map_path: ASCII map path.
             tactical_debug_path: Debug tactical map path.
+            tactical_map_path: Runtime tactical map path.
             outputs: Output layer paths by name.
             include_debug_images: Whether to render PNG debug overlays.
 
@@ -88,11 +100,14 @@ class LayerRenderer:
             "LayerRenderer.render_all",
             map_path=map_path,
             tactical_debug_path=tactical_debug_path,
+            tactical_map_path=tactical_map_path,
             tile_size_px=self._tile_size_px,
             include_debug_images=include_debug_images,
         ) as metrics:
             rows = self._read_rows(map_path)
-            data = json.loads(tactical_debug_path.read_text(encoding="utf-8"))
+            debug_data = json.loads(tactical_debug_path.read_text(encoding="utf-8"))
+            runtime_data = json.loads(tactical_map_path.read_text(encoding="utf-8"))
+            data = self._merge_render_data(debug_data, runtime_data)
             base = self._render_base(rows)
             base.save(outputs["base"])
             rendered_layers = ["base"]
@@ -114,6 +129,10 @@ class LayerRenderer:
                     "flank_routes": len(data.get("flank_routes", [])),
                     "enemy_spawn_zones": len(data.get("enemy_spawn_zones", [])),
                     "fallback_positions": len(data.get("fallback_positions", [])),
+                    "runtime_objects": len(data.get("runtime_objects", [])),
+                    "runtime_object_types": len(
+                        data.get("runtime_objects_summary", {}).get("by_type", {}),
+                    ),
                     "rendered_layers": len(rendered_layers),
                     "debug_layers_rendered": max(0, len(rendered_layers) - 1),
                 },
@@ -144,6 +163,8 @@ class LayerRenderer:
             self._draw_spawn(draw, data)
         if "fallback" in layers:
             self._draw_fallback(draw, data)
+        if "runtime_objects" in layers:
+            self._draw_runtime_objects(draw, data, font)
 
         Image.alpha_composite(dimmed, overlay).save(output_path)
 
@@ -257,6 +278,114 @@ class LayerRenderer:
             points = [(cx, cy - size), (cx - size, cy + size), (cx + size, cy + size)]
             draw.polygon(points, fill=(115, 255, 120, 210), outline=(255, 255, 255, 235))
 
+
+    def _draw_runtime_objects(
+        self,
+        draw: ImageDraw.ImageDraw,
+        data: dict[str, Any],
+        font: ImageFont.ImageFont,
+    ) -> None:
+        colors = {
+            "fallen_log": ((125, 75, 35, 230), "L"),
+            "stone_chunk": ((175, 175, 175, 235), "K"),
+            "bush_thicket": ((40, 190, 85, 215), "B"),
+            "scrap_pile": ((120, 130, 140, 230), "X"),
+            "rusted_barrel": ((205, 105, 45, 235), "E"),
+            "ammo_cache": ((245, 210, 65, 235), "A"),
+            "medkit_cache": ((245, 70, 90, 235), "H"),
+            "trench": ((95, 55, 35, 235), "U"),
+            "big_dead_tree": ((70, 45, 30, 240), "D"),
+            "broken_radio_mast": ((100, 180, 235, 235), "N"),
+            "old_checkpoint": ((115, 115, 125, 240), "O"),
+            "car_wreck": ((80, 95, 105, 240), "V"),
+            "abandoned_backpack": ((80, 120, 215, 235), "P"),
+            "field_tent": ((185, 170, 110, 235), "T"),
+            "dead_campfire": ((230, 115, 45, 235), "F"),
+            "broken_generator": ((90, 100, 120, 240), "J"),
+            "cable_spool": ((185, 125, 60, 235), "C"),
+            "warning_sign": ((245, 230, 45, 240), "W"),
+            "old_grave_marker": ((170, 170, 155, 235), "Z"),
+            "pit": ((45, 30, 25, 235), "I"),
+            "earth_berm": ((135, 100, 55, 235), "Q"),
+            "old_well": ((95, 95, 115, 240), "M"),
+            "abandoned_cart": ((145, 95, 45, 235), "Y"),
+        }
+        for item in data.get("runtime_objects", []):
+            if not isinstance(item, dict):
+                continue
+            points = self._runtime_object_points(item)
+            if not points:
+                continue
+            object_type = str(item.get("type", ""))
+            color, label = colors.get(object_type, ((255, 255, 255, 230), "?"))
+            radius = max(4, self._tile_size_px // 3)
+            if object_type == "trench":
+                self._draw_runtime_object_footprint(draw, points, color)
+            else:
+                position = points[0]
+                cx = position[0] * self._tile_size_px + self._tile_size_px // 2
+                cy = position[1] * self._tile_size_px + self._tile_size_px // 2
+                if object_type in {
+                    "fallen_log",
+                    "scrap_pile",
+                    "broken_radio_mast",
+                    "car_wreck",
+                    "broken_generator",
+                    "cable_spool",
+                    "earth_berm",
+                    "abandoned_cart",
+                }:
+                    draw.rectangle(
+                        (cx - radius, cy - radius // 2, cx + radius, cy + radius // 2),
+                        fill=color,
+                        outline=(255, 255, 255, 230),
+                        width=1,
+                    )
+                elif object_type in {"bush_thicket", "big_dead_tree", "old_well", "pit"}:
+                    draw.ellipse(
+                        (cx - radius, cy - radius, cx + radius, cy + radius),
+                        fill=color,
+                        outline=(215, 255, 215, 220),
+                        width=1,
+                    )
+                else:
+                    draw.rectangle(
+                        (cx - radius, cy - radius, cx + radius, cy + radius),
+                        fill=color,
+                        outline=(255, 255, 255, 230),
+                        width=1,
+                    )
+            first = points[0]
+            label_x = first[0] * self._tile_size_px + self._tile_size_px // 2
+            label_y = first[1] * self._tile_size_px + self._tile_size_px // 2
+            draw.text(
+                (label_x - radius // 2, label_y - radius // 2),
+                label,
+                font=font,
+                fill=(0, 0, 0, 235),
+                stroke_width=1,
+                stroke_fill=(255, 255, 255, 180),
+            )
+
+    def _draw_runtime_object_footprint(
+        self,
+        draw: ImageDraw.ImageDraw,
+        points: list[tuple[int, int]],
+        color: tuple[int, int, int, int],
+    ) -> None:
+        pad = max(1, self._tile_size_px // 8)
+        for x, y in points:
+            left = x * self._tile_size_px + pad
+            top = y * self._tile_size_px + pad
+            right = (x + 1) * self._tile_size_px - pad
+            bottom = (y + 1) * self._tile_size_px - pad
+            draw.rectangle(
+                (left, top, right, bottom),
+                fill=color,
+                outline=(255, 245, 210, 230),
+                width=1,
+            )
+
     def _load_tiles(self) -> dict[str, Image.Image]:
         with timed_stage(
             LOGGER,
@@ -280,6 +409,41 @@ class LayerRenderer:
                 tiles[symbol] = image
             metrics.update({"tiles_loaded": len(tiles), "tiles_resized": resized_count})
             return tiles
+
+
+    @staticmethod
+    def _merge_render_data(
+        debug_data: dict[str, Any],
+        runtime_data: dict[str, Any],
+    ) -> dict[str, Any]:
+        data = dict(debug_data)
+        data["runtime_objects"] = runtime_data.get("runtime_objects", [])
+        data["runtime_objects_summary"] = runtime_data.get(
+            "runtime_objects_summary",
+            {"total": 0, "by_type": {}},
+        )
+        return data
+
+    @staticmethod
+    def _runtime_object_points(item: dict[str, Any]) -> list[tuple[int, int]]:
+        footprint = item.get("footprint")
+        if isinstance(footprint, list):
+            points = [LayerRenderer._point(point) for point in footprint]
+            return [point for point in points if point is not None]
+        position = LayerRenderer._runtime_object_position(item)
+        if position is None:
+            return []
+        return [position]
+
+    @staticmethod
+    def _runtime_object_position(item: dict[str, Any]) -> tuple[int, int] | None:
+        position = LayerRenderer._point(item.get("position"))
+        if position is not None:
+            return position
+        try:
+            return int(item["x"]), int(item["y"])
+        except (KeyError, TypeError, ValueError):
+            return None
 
     @staticmethod
     def _read_rows(map_path: Path) -> list[str]:

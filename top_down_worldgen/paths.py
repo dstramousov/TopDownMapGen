@@ -23,9 +23,11 @@ class OutputPaths:
     layer_flank_routes: Path
     layer_enemy_spawn_zones: Path
     layer_fallback_positions: Path
+    layer_runtime_objects: Path
     layer_all_debug: Path
     manifest: Path
     validation_report: Path
+    object_catalog: Path
 
     @classmethod
     def from_output_map(cls, map_path: Path) -> "OutputPaths":
@@ -54,7 +56,9 @@ class OutputPaths:
             layer_flank_routes=output_dir / "layer_flank_routes.png",
             layer_enemy_spawn_zones=output_dir / "layer_enemy_spawn_zones.png",
             layer_fallback_positions=output_dir / "layer_fallback_positions.png",
+            layer_runtime_objects=output_dir / "layer_runtime_objects.png",
             layer_all_debug=output_dir / "layer_all_debug.png",
             manifest=output_dir / "_manifest.json",
             validation_report=output_dir / "validation_report.json",
+            object_catalog=output_dir / "object_catalog.md",
         )
