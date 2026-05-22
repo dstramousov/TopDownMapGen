@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v7"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v8"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10

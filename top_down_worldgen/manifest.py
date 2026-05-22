@@ -8,18 +8,19 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v11"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v12"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
-TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.30"
+TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.31"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v8"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v9"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v1"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
 DEBUG_LAYERS_VERSION = "debug-layers-v2"
-RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v7"
+RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v8"
+PLACES_SCHEMA_VERSION = "places-v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +97,7 @@ def build_manifest(
         "raw_tactical_map": RAW_TACTICAL_MAP_SCHEMA_VERSION,
         "validation_report": VALIDATION_REPORT_SCHEMA_VERSION,
         "runtime_objects": RUNTIME_OBJECTS_SCHEMA_VERSION,
+        "places": PLACES_SCHEMA_VERSION,
         "metrics": METRICS_SCHEMA_VERSION,
         "engine_config": ENGINE_CONFIG_SCHEMA_VERSION,
         "png_layer": PNG_LAYER_SCHEMA_VERSION,

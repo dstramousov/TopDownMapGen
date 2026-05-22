@@ -5,6 +5,12 @@ from pathlib import Path
 from typing import Any
 
 from .manifest import VALIDATION_REPORT_SCHEMA_VERSION
+from .tactical.places import (
+    MAX_PLACES,
+    MIN_PLACES,
+    MIN_PLACE_DISTANCE_TILES,
+    PLACE_TYPE_NAMES,
+)
 from .tactical.runtime_objects import (
     COLLISION_MOVEMENT_VALUES,
     COLLISION_PROJECTILE_VALUES,
@@ -230,6 +236,17 @@ def build_validation_report(
             height=height,
         ),
         "elevation_levels_valid": _elevation_levels_valid(runtime_data),
+        "places_non_empty": bool(_places(runtime_data)),
+        "places_have_unique_ids": _places_have_unique_ids(runtime_data),
+        "places_have_valid_types": _places_have_valid_types(runtime_data),
+        "places_have_valid_object_refs": _places_have_valid_object_refs(runtime_data),
+        "places_inside_map": _places_inside_map(
+            runtime_data,
+            width=width,
+            height=height,
+        ),
+        "places_counts_within_limits": _places_counts_within_limits(runtime_data),
+        "places_min_distance": _places_min_distance(runtime_data),
     }
     errors = [name for name, passed in checks.items() if not passed]
     warnings = build_validation_warnings(
@@ -876,6 +893,100 @@ def _protected_tile_positions(tile_grid: list[str]) -> set[tuple[int, int]]:
             if tile in {"S", "G"}:
                 protected.add((x, y))
     return protected
+
+
+
+def _places(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
+    value = runtime_data.get("places")
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _places_have_unique_ids(runtime_data: dict[str, Any]) -> bool:
+    ids: list[str] = []
+    for place in _places(runtime_data):
+        place_id = place.get("id")
+        if not isinstance(place_id, str) or not place_id:
+            return False
+        ids.append(place_id)
+    return len(ids) == len(set(ids))
+
+
+def _places_have_valid_types(runtime_data: dict[str, Any]) -> bool:
+    for place in _places(runtime_data):
+        if place.get("type") not in PLACE_TYPE_NAMES:
+            return False
+    return True
+
+
+def _places_have_valid_object_refs(runtime_data: dict[str, Any]) -> bool:
+    object_ids = {
+        str(item.get("id"))
+        for item in _runtime_objects(runtime_data)
+        if isinstance(item.get("id"), str) and item.get("id")
+    }
+    for place in _places(runtime_data):
+        refs = place.get("object_ids")
+        if not isinstance(refs, list) or not refs:
+            return False
+        normalized_refs: list[str] = []
+        for ref in refs:
+            if not isinstance(ref, str) or ref not in object_ids:
+                return False
+            normalized_refs.append(ref)
+        anchor_ref = place.get("anchor_object_id")
+        if not isinstance(anchor_ref, str) or anchor_ref not in normalized_refs:
+            return False
+    return True
+
+
+def _places_inside_map(
+    runtime_data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for place in _places(runtime_data):
+        center = place.get("center")
+        if not isinstance(center, dict):
+            return False
+        point = _point_from_xy(center)
+        if point is None or not _point_in_bounds(point, width=width, height=height):
+            return False
+        try:
+            radius = int(place.get("radius"))
+        except (TypeError, ValueError):
+            return False
+        if radius <= 0:
+            return False
+    return True
+
+
+def _places_counts_within_limits(runtime_data: dict[str, Any]) -> bool:
+    place_count = len(_places(runtime_data))
+    return MIN_PLACES <= place_count <= MAX_PLACES
+
+
+def _places_min_distance(runtime_data: dict[str, Any]) -> bool:
+    centers: list[tuple[int, int]] = []
+    for place in _places(runtime_data):
+        center = place.get("center")
+        if not isinstance(center, dict):
+            return False
+        point = _point_from_xy(center)
+        if point is None:
+            return False
+        centers.append(point)
+    for index, first in enumerate(centers):
+        for second in centers[index + 1:]:
+            if _manhattan(first, second) < MIN_PLACE_DISTANCE_TILES:
+                return False
+    return True
+
+
+def _manhattan(first: tuple[int, int], second: tuple[int, int]) -> int:
+    return abs(first[0] - second[0]) + abs(first[1] - second[1])
 
 def _count_points_near_edge(
     items: Any,

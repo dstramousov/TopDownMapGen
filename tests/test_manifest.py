@@ -40,9 +40,9 @@ def test_build_manifest_marks_primary_and_debug_outputs(tmp_path: Path) -> None:
         metrics={"combat_zones": 1},
     )
 
-    assert manifest["schema_version"] == "generation-manifest-v11"
-    assert manifest["versions"]["generator"] == "0.0.18"
-    assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v11"
+    assert manifest["schema_version"] == "generation-manifest-v12"
+    assert manifest["versions"]["generator"] == "0.0.20"
+    assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v12"
     assert manifest["seed"] == 42
     assert manifest["resolved_seed"] == 42
     assert manifest["dimensions"]["width_tiles"] == 2

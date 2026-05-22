@@ -211,6 +211,22 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
             {"x": 4, "y": 1, "level": -1},
         ],
     }
+    runtime_data["places"] = [
+        {
+            "id": "old_defensive_position_000",
+            "type": "old_defensive_position",
+            "role": "defensive_site",
+            "center": {"x": 2, "y": 2},
+            "radius": 6,
+            "object_ids": ["trench_000", "stone_chunk_000", "ammo_cache_000"],
+            "anchor_object_id": "trench_000",
+            "tags": ["defense", "trench", "human_trace"],
+        },
+    ]
+    runtime_data["places_summary"] = {
+        "total": 1,
+        "by_type": {"old_defensive_position": 1},
+    }
 
     report = build_validation_report(
         outputs=outputs,

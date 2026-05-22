@@ -144,3 +144,18 @@
 - Уточнены debug-маркеры runtime-объектов, чтобы убрать конфликтующие буквы на PNG-слоях.
 - Runtime tactical schema обновлена до `tactical-map-v0.30`, manifest schema — до `generation-manifest-v11`, validation report schema — до `validation-report-v8`, runtime objects schema — до `runtime-objects-v7`.
 - Версия проекта поднята до `0.0.18`.
+
+## v0.0.18 -> v0.0.19
+
+- Добавлен слой микролокаций `places`, который группирует runtime-объекты в маленькие сцены карты.
+- Добавлена схема `place_schema` и сводка `places_summary` в `tactical_map.json`.
+- Первые типы сцен: `abandoned_checkpoint`, `broken_radio_site`, `old_defensive_position`, `forest_obstruction`, `small_ruin_site`.
+- Manifest schema обновлена до `generation-manifest-v12`, runtime tactical schema — до `tactical-map-v0.31`, validation report schema — до `validation-report-v9`, runtime objects schema — до `runtime-objects-v8`, places schema — до `places-v1`.
+- В validation report добавлены проверки `places`: наличие, уникальные id, допустимые типы, валидные ссылки на runtime-объекты, положение внутри карты, лимиты количества и минимальная дистанция.
+- Версия проекта поднята до `0.0.19`.
+
+## v0.0.19 -> v0.0.20
+
+- Исправлен блокирующий импорт `top_down_worldgen.tactical.places`: добавлен отсутствующий модуль сборки микролокаций.
+- `places` теперь корректно собираются из существующих `runtime_objects`, получают `place_schema` и `places_summary`.
+- Версия проекта поднята до `0.0.20`.
