@@ -79,6 +79,7 @@ def build_validation_report(
         "tactical_debug_exists": outputs.tactical_map_debug.exists(),
         "tile_grid_embedded": tile_grid == rows,
         "metrics_exists": outputs.metrics.exists(),
+        "object_catalog_exists": outputs.object_catalog.exists(),
         "single_start_exists": _count_tiles(tile_grid, "S") == 1,
         "single_goal_exists": _count_tiles(tile_grid, "G") == 1,
         "tile_grid_matches_dimensions": _grid_matches_dimensions(

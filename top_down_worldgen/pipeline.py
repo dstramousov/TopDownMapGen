@@ -13,6 +13,7 @@ from .manifest import (
     ASCII_MAP_SCHEMA_VERSION,
     ENGINE_CONFIG_SCHEMA_VERSION,
     METRICS_SCHEMA_VERSION,
+    OBJECT_CATALOG_SCHEMA_VERSION,
     PNG_LAYER_SCHEMA_VERSION,
     RAW_TACTICAL_MAP_SCHEMA_VERSION,
     TACTICAL_DEBUG_SCHEMA_VERSION,
@@ -22,6 +23,7 @@ from .manifest import (
     build_manifest,
     write_manifest,
 )
+from .object_catalog import write_object_catalog
 from .paths import OutputPaths
 from .render.layers import LayerRenderer
 from .tactical.fallback import FallbackPositionBuilder
@@ -294,6 +296,28 @@ class WorldgenPipeline:
             outputs.metrics.write_text(self._format_metrics(metrics), encoding="utf-8")
             log_metrics.update({"metrics_count": len(metrics)})
 
+        with timed_stage(
+            LOGGER,
+            "pipeline.write_object_catalog",
+            object_catalog_path=outputs.object_catalog,
+        ) as log_metrics:
+            write_object_catalog(
+                path=outputs.object_catalog,
+                rows=rows,
+                runtime_data=runtime_data,
+            )
+            log_metrics.update(
+                {
+                    "runtime_object_types": len(
+                        runtime_data.get("runtime_objects_summary", {}).get("by_type", {}),
+                    ),
+                    "place_types": len(
+                        runtime_data.get("places_summary", {}).get("by_type", {}),
+                    ),
+                    "size_bytes": outputs.object_catalog.stat().st_size,
+                },
+            )
+
         validation_report = build_validation_report(
             outputs=outputs,
             rows=rows,
@@ -410,6 +434,13 @@ class WorldgenPipeline:
                 True,
                 False,
                 VALIDATION_REPORT_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.object_catalog,
+                "object_catalog",
+                False,
+                False,
+                OBJECT_CATALOG_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.engine_config,

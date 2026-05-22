@@ -159,3 +159,11 @@
 - Исправлен блокирующий импорт `top_down_worldgen.tactical.places`: добавлен отсутствующий модуль сборки микролокаций.
 - `places` теперь корректно собираются из существующих `runtime_objects`, получают `place_schema` и `places_summary`.
 - Версия проекта поднята до `0.0.20`.
+
+## v0.0.20 -> v0.0.21
+
+- Добавлен человекочитаемый `object_catalog.md` рядом с output-файлами генерации.
+- В каталог добавлены базовые тайлы, runtime-объекты, places и фактические количества сущностей текущего прогона.
+- `object_catalog.md` добавлен в manifest как `object_catalog` со схемой `object-catalog-v1`.
+- В `validation_report.json` добавлен check `object_catalog_exists`.
+- Версия проекта поднята до `0.0.21`.

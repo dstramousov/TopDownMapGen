@@ -27,6 +27,7 @@ class OutputPaths:
     layer_all_debug: Path
     manifest: Path
     validation_report: Path
+    object_catalog: Path
 
     @classmethod
     def from_output_map(cls, map_path: Path) -> "OutputPaths":
@@ -59,4 +60,5 @@ class OutputPaths:
             layer_all_debug=output_dir / "layer_all_debug.png",
             manifest=output_dir / "_manifest.json",
             validation_report=output_dir / "validation_report.json",
+            object_catalog=output_dir / "object_catalog.md",
         )

@@ -33,6 +33,7 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
     outputs.tactical_map.write_text("{}\n", encoding="utf-8")
     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
     outputs.metrics.write_text("metrics\n", encoding="utf-8")
+    outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
 
     runtime_data = attach_runtime_layers({
         "map": {
@@ -188,6 +189,7 @@ def test_validation_report_rejects_broken_tile_counts(tmp_path: Path) -> None:
     outputs.tactical_map.write_text("{}\n", encoding="utf-8")
     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
     outputs.metrics.write_text("metrics\n", encoding="utf-8")
+    outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
 
     runtime_data = {
         "map": {
