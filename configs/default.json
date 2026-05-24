@@ -1,7 +1,7 @@
 {
   "seed": "random",
-  "map_width_tiles": 192,
-  "map_height_tiles": 128,
+  "map_width_tiles": 160,
+  "map_height_tiles": 160,
   "chunk_width_tiles": 16,
   "chunk_height_tiles": 16,
   "biome_profile": "forest_ruins",
