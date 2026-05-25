@@ -26,6 +26,8 @@ from .manifest import (
     RAW_TACTICAL_MAP_SCHEMA_VERSION,
     TACTICAL_DEBUG_SCHEMA_VERSION,
     TACTICAL_MAP_SCHEMA_VERSION,
+    START_GOAL_LAYER_SCHEMA_VERSION,
+    TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
     VALIDATION_REPORT_SCHEMA_VERSION,
     OutputArtifact,
@@ -484,6 +486,13 @@ class WorldgenPipeline:
                 TILE_GRID_LAYER_SCHEMA_VERSION,
             ),
             OutputArtifact(
+                outputs.map_package_terrain,
+                "map_package:terrain",
+                True,
+                False,
+                TERRAIN_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
                 outputs.map_package_movement_costs,
                 "map_package:movement_costs",
                 True,
@@ -503,6 +512,13 @@ class WorldgenPipeline:
                 True,
                 False,
                 ELEVATION_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_start_goal,
+                "map_package:start_goal",
+                True,
+                False,
+                START_GOAL_LAYER_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.map_package_combat_zones,

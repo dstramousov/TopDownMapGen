@@ -46,6 +46,12 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
 
     package_index = json.loads(outputs.map_package_map.read_text(encoding="utf-8"))
     tile_grid = json.loads(outputs.map_package_tile_grid.read_text(encoding="utf-8"))
+    terrain = json.loads(outputs.map_package_terrain.read_text(encoding="utf-8"))
+    movement = json.loads(
+        outputs.map_package_movement_costs.read_text(encoding="utf-8"),
+    )
+    collision = json.loads(outputs.map_package_collision.read_text(encoding="utf-8"))
+    start_goal = json.loads(outputs.map_package_start_goal.read_text(encoding="utf-8"))
     runtime_objects = json.loads(
         outputs.map_package_runtime_objects.read_text(encoding="utf-8"),
     )
@@ -55,5 +61,13 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
     assert package_index["layers"]["collision"] == "layers/collision.json"
+    assert package_index["layers"]["terrain"] == "layers/terrain.json"
+    assert package_index["layers"]["start_goal"] == "layers/start_goal.json"
     assert tile_grid["rows"] == ["S+", "+G"]
+    assert terrain["rows"] == [["start", "grass"], ["grass", "goal"]]
+    assert movement["costs_by_type"]["grass"] == 1
+    assert collision["format"] == "boolean_rows"
+    assert collision["rows"] == ["00", "00"]
+    assert start_goal["start"] == {"x": 0, "y": 0}
+    assert start_goal["goal"] == {"x": 1, "y": 1}
     assert runtime_objects["items"][0]["type"] == "stone_chunk"

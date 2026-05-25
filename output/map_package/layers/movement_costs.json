@@ -1,0 +1,30 @@
+{
+  "schema_version": "movement-layer-v1",
+  "kind": "movement_costs",
+  "width": 160,
+  "height": 160,
+  "costs_by_tile": {
+    "+": 1,
+    ".": 1,
+    "b": 2,
+    "f": 1,
+    "m": 1,
+    "w": 3,
+    "c": 1,
+    "R": 1,
+    "S": 1,
+    "G": 1
+  },
+  "costs_by_type": {
+    "grass": 1,
+    "old_overgrown_road": 1,
+    "bush_slow_concealment": 2,
+    "flower_decor": 1,
+    "mushroom_decor": 1,
+    "water_slow": 3,
+    "cracked_ground": 1,
+    "ruin_floor": 1,
+    "start": 1,
+    "goal": 1
+  }
+}

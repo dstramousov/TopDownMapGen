@@ -1,0 +1,358 @@
+{
+  "schema_version": "gameplay-layer-v1",
+  "kind": "choke_points",
+  "items": [
+    {
+      "id": "choke_0",
+      "position": [
+        107,
+        107
+      ],
+      "width_estimate": 1.62,
+      "blocker_score": 11.92,
+      "priority": 1.0,
+      "cluster_size": 13
+    },
+    {
+      "id": "choke_1",
+      "position": [
+        31,
+        83
+      ],
+      "width_estimate": 1.82,
+      "blocker_score": 13.18,
+      "priority": 1.0,
+      "cluster_size": 11
+    },
+    {
+      "id": "choke_2",
+      "position": [
+        11,
+        132
+      ],
+      "width_estimate": 1.82,
+      "blocker_score": 11.36,
+      "priority": 1.0,
+      "cluster_size": 11
+    },
+    {
+      "id": "choke_3",
+      "position": [
+        137,
+        60
+      ],
+      "width_estimate": 1.8,
+      "blocker_score": 12.0,
+      "priority": 1.0,
+      "cluster_size": 10
+    },
+    {
+      "id": "choke_4",
+      "position": [
+        84,
+        125
+      ],
+      "width_estimate": 1.7,
+      "blocker_score": 12.5,
+      "priority": 1.0,
+      "cluster_size": 10
+    },
+    {
+      "id": "choke_5",
+      "position": [
+        12,
+        20
+      ],
+      "width_estimate": 1.9,
+      "blocker_score": 12.6,
+      "priority": 1.0,
+      "cluster_size": 10
+    },
+    {
+      "id": "choke_6",
+      "position": [
+        6,
+        103
+      ],
+      "width_estimate": 1.9,
+      "blocker_score": 12.2,
+      "priority": 1.0,
+      "cluster_size": 10
+    },
+    {
+      "id": "choke_7",
+      "position": [
+        75,
+        37
+      ],
+      "width_estimate": 1.9,
+      "blocker_score": 12.2,
+      "priority": 1.0,
+      "cluster_size": 10
+    },
+    {
+      "id": "choke_8",
+      "position": [
+        49,
+        3
+      ],
+      "width_estimate": 1.67,
+      "blocker_score": 13.33,
+      "priority": 1.0,
+      "cluster_size": 9
+    },
+    {
+      "id": "choke_9",
+      "position": [
+        96,
+        76
+      ],
+      "width_estimate": 1.67,
+      "blocker_score": 13.56,
+      "priority": 1.0,
+      "cluster_size": 9
+    },
+    {
+      "id": "choke_10",
+      "position": [
+        150,
+        18
+      ],
+      "width_estimate": 1.89,
+      "blocker_score": 11.44,
+      "priority": 1.0,
+      "cluster_size": 9
+    },
+    {
+      "id": "choke_11",
+      "position": [
+        106,
+        93
+      ],
+      "width_estimate": 1.89,
+      "blocker_score": 12.22,
+      "priority": 1.0,
+      "cluster_size": 9
+    },
+    {
+      "id": "choke_12",
+      "position": [
+        103,
+        130
+      ],
+      "width_estimate": 1.88,
+      "blocker_score": 11.62,
+      "priority": 1.0,
+      "cluster_size": 8
+    },
+    {
+      "id": "choke_13",
+      "position": [
+        76,
+        24
+      ],
+      "width_estimate": 1.75,
+      "blocker_score": 11.75,
+      "priority": 1.0,
+      "cluster_size": 8
+    },
+    {
+      "id": "choke_14",
+      "position": [
+        95,
+        100
+      ],
+      "width_estimate": 2.0,
+      "blocker_score": 11.0,
+      "priority": 1.0,
+      "cluster_size": 8
+    },
+    {
+      "id": "choke_15",
+      "position": [
+        25,
+        19
+      ],
+      "width_estimate": 1.71,
+      "blocker_score": 11.43,
+      "priority": 1.0,
+      "cluster_size": 7
+    },
+    {
+      "id": "choke_16",
+      "position": [
+        63,
+        35
+      ],
+      "width_estimate": 1.71,
+      "blocker_score": 12.29,
+      "priority": 1.0,
+      "cluster_size": 7
+    },
+    {
+      "id": "choke_17",
+      "position": [
+        142,
+        44
+      ],
+      "width_estimate": 1.71,
+      "blocker_score": 12.0,
+      "priority": 1.0,
+      "cluster_size": 7
+    },
+    {
+      "id": "choke_18",
+      "position": [
+        91,
+        58
+      ],
+      "width_estimate": 1.86,
+      "blocker_score": 11.71,
+      "priority": 1.0,
+      "cluster_size": 7
+    },
+    {
+      "id": "choke_19",
+      "position": [
+        58,
+        59
+      ],
+      "width_estimate": 1.86,
+      "blocker_score": 11.0,
+      "priority": 1.0,
+      "cluster_size": 7
+    },
+    {
+      "id": "choke_20",
+      "position": [
+        48,
+        97
+      ],
+      "width_estimate": 2.0,
+      "blocker_score": 11.43,
+      "priority": 1.0,
+      "cluster_size": 7
+    },
+    {
+      "id": "choke_21",
+      "position": [
+        150,
+        85
+      ],
+      "width_estimate": 1.67,
+      "blocker_score": 12.83,
+      "priority": 1.0,
+      "cluster_size": 6
+    },
+    {
+      "id": "choke_22",
+      "position": [
+        126,
+        84
+      ],
+      "width_estimate": 1.83,
+      "blocker_score": 12.83,
+      "priority": 1.0,
+      "cluster_size": 6
+    },
+    {
+      "id": "choke_23",
+      "position": [
+        12,
+        114
+      ],
+      "width_estimate": 2.0,
+      "blocker_score": 11.67,
+      "priority": 1.0,
+      "cluster_size": 6
+    },
+    {
+      "id": "choke_24",
+      "position": [
+        46,
+        132
+      ],
+      "width_estimate": 1.67,
+      "blocker_score": 12.0,
+      "priority": 1.0,
+      "cluster_size": 6
+    },
+    {
+      "id": "choke_25",
+      "position": [
+        153,
+        140
+      ],
+      "width_estimate": 2.0,
+      "blocker_score": 11.83,
+      "priority": 1.0,
+      "cluster_size": 6
+    },
+    {
+      "id": "choke_26",
+      "position": [
+        139,
+        28
+      ],
+      "width_estimate": 2.0,
+      "blocker_score": 11.5,
+      "priority": 1.0,
+      "cluster_size": 6
+    },
+    {
+      "id": "choke_27",
+      "position": [
+        44,
+        142
+      ],
+      "width_estimate": 1.6,
+      "blocker_score": 13.0,
+      "priority": 1.0,
+      "cluster_size": 5
+    },
+    {
+      "id": "choke_28",
+      "position": [
+        153,
+        132
+      ],
+      "width_estimate": 2.0,
+      "blocker_score": 12.6,
+      "priority": 1.0,
+      "cluster_size": 5
+    },
+    {
+      "id": "choke_29",
+      "position": [
+        121,
+        3
+      ],
+      "width_estimate": 1.8,
+      "blocker_score": 12.0,
+      "priority": 1.0,
+      "cluster_size": 5
+    },
+    {
+      "id": "choke_30",
+      "position": [
+        147,
+        3
+      ],
+      "width_estimate": 1.8,
+      "blocker_score": 12.4,
+      "priority": 1.0,
+      "cluster_size": 5
+    },
+    {
+      "id": "choke_31",
+      "position": [
+        36,
+        37
+      ],
+      "width_estimate": 1.8,
+      "blocker_score": 13.2,
+      "priority": 1.0,
+      "cluster_size": 5
+    }
+  ]
+}

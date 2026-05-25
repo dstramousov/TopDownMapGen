@@ -13,6 +13,8 @@ from top_down_worldgen.manifest import (
     MOVEMENT_LAYER_SCHEMA_VERSION,
     OBJECT_INSTANCES_SCHEMA_VERSION,
     PLACES_SCHEMA_VERSION,
+    START_GOAL_LAYER_SCHEMA_VERSION,
+    TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
@@ -63,6 +65,15 @@ def write_map_package(
     movement_costs = _dict(runtime_data.get("movement_costs"))
     if not movement_costs:
         movement_costs = _dict(map_data.get("movement_costs"))
+    tile_legend = _dict(map_data.get("tile_legend"))
+    terrain_rows = _terrain_rows(tile_grid, tile_legend)
+    points = _extract_points(tile_grid)
+    collision = _build_collision_layer(
+        tile_grid=tile_grid,
+        tile_legend=tile_legend,
+        width=width,
+        height=height,
+    )
 
     write_json(
         {
@@ -71,11 +82,23 @@ def write_map_package(
             "width": width,
             "height": height,
             "format": "ascii_rows",
-            "tile_legend": _dict(map_data.get("tile_legend")),
+            "tile_legend": tile_legend,
             "tile_counts": _dict(map_data.get("tile_counts")),
             "rows": tile_grid,
         },
         outputs.map_package_tile_grid,
+    )
+    write_json(
+        {
+            "schema_version": TERRAIN_LAYER_SCHEMA_VERSION,
+            "kind": "terrain",
+            "width": width,
+            "height": height,
+            "format": "type_rows",
+            "type_by_tile": tile_legend,
+            "rows": terrain_rows,
+        },
+        outputs.map_package_terrain,
     )
     write_json(
         {
@@ -84,21 +107,11 @@ def write_map_package(
             "width": width,
             "height": height,
             "costs_by_tile": movement_costs,
+            "costs_by_type": _movement_costs_by_type(movement_costs, tile_legend),
         },
         outputs.map_package_movement_costs,
     )
-    write_json(
-        {
-            "schema_version": COLLISION_LAYER_SCHEMA_VERSION,
-            "kind": "collision",
-            "width": width,
-            "height": height,
-            "blocked_tiles": ["T", "#"],
-            "passable_tiles": sorted(set("".join(tile_grid)) - {"T", "#"}),
-            "source": "tile_grid",
-        },
-        outputs.map_package_collision,
-    )
+    write_json(collision, outputs.map_package_collision)
     write_json(
         {
             "schema_version": ELEVATION_LAYER_SCHEMA_VERSION,
@@ -108,6 +121,18 @@ def write_map_package(
             "elevation": _dict(runtime_data.get("elevation")),
         },
         outputs.map_package_elevation,
+    )
+    write_json(
+        {
+            "schema_version": START_GOAL_LAYER_SCHEMA_VERSION,
+            "kind": "start_goal",
+            "width": width,
+            "height": height,
+            "start": points["start"],
+            "goal": points["goal"],
+            "source_layer": "tile_grid",
+        },
+        outputs.map_package_start_goal,
     )
 
     for key, filename in _GAMEPLAY_FILES:
@@ -159,12 +184,14 @@ def write_map_package(
                 "x_axis": "right",
                 "y_axis": "down",
             },
-            "points": _extract_points(tile_grid),
+            "points": points,
             "layers": {
                 "tile_grid": "layers/tile_grid.json",
+                "terrain": "layers/terrain.json",
                 "movement_costs": "layers/movement_costs.json",
                 "collision": "layers/collision.json",
                 "elevation": "layers/elevation.json",
+                "start_goal": "layers/start_goal.json",
             },
             "gameplay": {
                 key: f"gameplay/{filename}" for key, filename in _GAMEPLAY_FILES
@@ -195,9 +222,11 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
     return [
         outputs.map_package_map,
         outputs.map_package_tile_grid,
+        outputs.map_package_terrain,
         outputs.map_package_movement_costs,
         outputs.map_package_collision,
         outputs.map_package_elevation,
+        outputs.map_package_start_goal,
         outputs.map_package_combat_zones,
         outputs.map_package_cover_points,
         outputs.map_package_choke_points,
@@ -207,6 +236,84 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_runtime_objects,
         outputs.map_package_places,
     ]
+
+
+
+def _terrain_rows(
+    tile_grid: list[str],
+    tile_legend: dict[str, Any],
+) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for row in tile_grid:
+        rows.append([str(tile_legend.get(tile, "unknown")) for tile in row])
+    return rows
+
+
+def _movement_costs_by_type(
+    movement_costs: dict[str, Any],
+    tile_legend: dict[str, Any],
+) -> dict[str, Any]:
+    costs_by_type: dict[str, Any] = {}
+    for symbol, cost in movement_costs.items():
+        terrain_type = tile_legend.get(symbol)
+        if isinstance(terrain_type, str) and terrain_type:
+            costs_by_type[terrain_type] = cost
+    return costs_by_type
+
+
+def _build_collision_layer(
+    *,
+    tile_grid: list[str],
+    tile_legend: dict[str, Any],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    blocked_tiles = _blocked_tile_symbols(tile_legend)
+    present_tiles = set("".join(tile_grid))
+    passable_tiles = sorted(present_tiles - blocked_tiles)
+    blocked_types = sorted(
+        str(tile_legend.get(tile, "unknown"))
+        for tile in blocked_tiles
+        if tile in present_tiles
+    )
+    passable_types = sorted(
+        {
+            str(tile_legend.get(tile, "unknown"))
+            for tile in passable_tiles
+        },
+    )
+    return {
+        "schema_version": COLLISION_LAYER_SCHEMA_VERSION,
+        "kind": "collision",
+        "width": width,
+        "height": height,
+        "format": "boolean_rows",
+        "legend": {
+            "0": "passable",
+            "1": "blocked",
+        },
+        "rows": [
+            "".join("1" if tile in blocked_tiles else "0" for tile in row)
+            for row in tile_grid
+        ],
+        "blocked_tile_types": blocked_types,
+        "passable_tile_types": passable_types,
+        "legacy_blocked_tiles": sorted(blocked_tiles),
+        "legacy_passable_tiles": passable_tiles,
+        "source_layer": "terrain",
+    }
+
+
+def _blocked_tile_symbols(tile_legend: dict[str, Any]) -> set[str]:
+    blocked_tiles = {
+        symbol
+        for symbol, tile_type in tile_legend.items()
+        if isinstance(symbol, str)
+        and isinstance(tile_type, str)
+        and "blocker" in tile_type
+    }
+    blocked_tiles.update({"T", "#"})
+    return blocked_tiles
 
 
 def _dict(value: Any) -> dict[str, Any]:

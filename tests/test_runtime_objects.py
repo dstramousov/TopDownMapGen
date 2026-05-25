@@ -16,9 +16,11 @@ def _write_map_package_files(outputs: OutputPaths) -> None:
     for path in (
         outputs.map_package_map,
         outputs.map_package_tile_grid,
+        outputs.map_package_terrain,
         outputs.map_package_movement_costs,
         outputs.map_package_collision,
         outputs.map_package_elevation,
+        outputs.map_package_start_goal,
         outputs.map_package_combat_zones,
         outputs.map_package_cover_points,
         outputs.map_package_choke_points,

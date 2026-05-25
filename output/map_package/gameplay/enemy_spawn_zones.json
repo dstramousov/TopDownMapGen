@@ -1,0 +1,365 @@
+{
+  "schema_version": "gameplay-layer-v1",
+  "kind": "enemy_spawn_zones",
+  "items": [
+    {
+      "id": "spawn_0",
+      "zone_id": "central_ruins_combat_0",
+      "type": "central_ruins_combat",
+      "position": [
+        76,
+        77
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "flanker",
+        "grenadier"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 4,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_1",
+      "zone_id": "central_ruins_combat_0",
+      "type": "central_ruins_combat",
+      "position": [
+        81,
+        77
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "flanker",
+        "grenadier"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 4,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_2",
+      "zone_id": "forest_ambush_0",
+      "type": "forest_ambush",
+      "position": [
+        125,
+        75
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ],
+      "spawn_type": "ambush_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_3",
+      "zone_id": "forest_ambush_1",
+      "type": "forest_ambush",
+      "position": [
+        86,
+        122
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ],
+      "spawn_type": "ambush_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_4",
+      "zone_id": "forest_ambush_2",
+      "type": "forest_ambush",
+      "position": [
+        110,
+        113
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ],
+      "spawn_type": "ambush_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 0.95
+    },
+    {
+      "id": "spawn_5",
+      "zone_id": "forest_ambush_3",
+      "type": "forest_ambush",
+      "position": [
+        46,
+        128
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ],
+      "spawn_type": "ambush_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 0.35
+    },
+    {
+      "id": "spawn_6",
+      "zone_id": "forest_ambush_4",
+      "type": "forest_ambush",
+      "position": [
+        13,
+        136
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ],
+      "spawn_type": "ambush_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 0.7
+    },
+    {
+      "id": "spawn_7",
+      "zone_id": "goal_encounter_0",
+      "type": "goal_encounter",
+      "position": [
+        12,
+        20
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_8",
+      "zone_id": "side_ruin_encounter_0",
+      "type": "side_ruin_encounter",
+      "position": [
+        12,
+        73
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_9",
+      "zone_id": "side_ruin_encounter_1",
+      "type": "side_ruin_encounter",
+      "position": [
+        82,
+        4
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_10",
+      "zone_id": "side_ruin_encounter_10",
+      "type": "side_ruin_encounter",
+      "position": [
+        106,
+        137
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_11",
+      "zone_id": "side_ruin_encounter_11",
+      "type": "side_ruin_encounter",
+      "position": [
+        142,
+        44
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_12",
+      "zone_id": "side_ruin_encounter_12",
+      "type": "side_ruin_encounter",
+      "position": [
+        42,
+        73
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_13",
+      "zone_id": "side_ruin_encounter_2",
+      "type": "side_ruin_encounter",
+      "position": [
+        117,
+        13
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_14",
+      "zone_id": "side_ruin_encounter_3",
+      "type": "side_ruin_encounter",
+      "position": [
+        14,
+        114
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 0.9
+    },
+    {
+      "id": "spawn_15",
+      "zone_id": "side_ruin_encounter_4",
+      "type": "side_ruin_encounter",
+      "position": [
+        116,
+        37
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_16",
+      "zone_id": "side_ruin_encounter_5",
+      "type": "side_ruin_encounter",
+      "position": [
+        140,
+        72
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_17",
+      "zone_id": "side_ruin_encounter_6",
+      "type": "side_ruin_encounter",
+      "position": [
+        134,
+        112
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_18",
+      "zone_id": "side_ruin_encounter_7",
+      "type": "side_ruin_encounter",
+      "position": [
+        84,
+        73
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_19",
+      "zone_id": "side_ruin_encounter_8",
+      "type": "side_ruin_encounter",
+      "position": [
+        41,
+        135
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    },
+    {
+      "id": "spawn_20",
+      "zone_id": "side_ruin_encounter_9",
+      "type": "side_ruin_encounter",
+      "position": [
+        49,
+        3
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ],
+      "spawn_type": "initial_squad",
+      "respawn_allowed": false,
+      "recommended_squad_size": 3,
+      "quality": 1.0
+    }
+  ]
+}

@@ -32,9 +32,11 @@ class OutputPaths:
     map_package_map: Path
     map_package_layers_dir: Path
     map_package_tile_grid: Path
+    map_package_terrain: Path
     map_package_movement_costs: Path
     map_package_collision: Path
     map_package_elevation: Path
+    map_package_start_goal: Path
     map_package_gameplay_dir: Path
     map_package_combat_zones: Path
     map_package_cover_points: Path
@@ -86,9 +88,11 @@ class OutputPaths:
             map_package_map=map_package_dir / "map.json",
             map_package_layers_dir=map_package_layers_dir,
             map_package_tile_grid=map_package_layers_dir / "tile_grid.json",
+            map_package_terrain=map_package_layers_dir / "terrain.json",
             map_package_movement_costs=map_package_layers_dir / "movement_costs.json",
             map_package_collision=map_package_layers_dir / "collision.json",
             map_package_elevation=map_package_layers_dir / "elevation.json",
+            map_package_start_goal=map_package_layers_dir / "start_goal.json",
             map_package_gameplay_dir=map_package_gameplay_dir,
             map_package_combat_zones=map_package_gameplay_dir / "combat_zones.json",
             map_package_cover_points=map_package_gameplay_dir / "cover_points.json",

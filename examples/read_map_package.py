@@ -66,15 +66,19 @@ def load_summary(path: Path) -> MapPackageSummary:
     objects = _require_object(map_index, "objects")
     gameplay = _optional_object(map_index.get("gameplay"))
 
-    tile_grid = _read_object(package_dir / _require_str(layers, "tile_grid"))
     collision = _read_object(package_dir / _require_str(layers, "collision"))
+    start_goal_path = layers.get("start_goal")
+    start_goal = (
+        _read_object(package_dir / start_goal_path)
+        if isinstance(start_goal_path, str)
+        else {}
+    )
     runtime_objects = _read_object(
         package_dir / _require_str(objects, "runtime_objects"),
     )
 
-    rows = _require_string_list(tile_grid, "rows")
-    blocked_tiles = set(_require_string_list(collision, "blocked_tiles"))
-    blocked_count = sum(tile in blocked_tiles for row in rows for tile in row)
+    collision_rows = _require_string_list(collision, "rows")
+    blocked_count = sum(cell == "1" for row in collision_rows for cell in row)
 
     object_items = _optional_list(runtime_objects.get("items"))
     points = _optional_object(map_index.get("points"))
@@ -83,8 +87,8 @@ def load_summary(path: Path) -> MapPackageSummary:
         width=width,
         height=height,
         tile_size_px=tile_size_px,
-        start=_optional_point(points.get("start")),
-        goal=_optional_point(points.get("goal")),
+        start=_optional_point(start_goal.get("start") or points.get("start")),
+        goal=_optional_point(start_goal.get("goal") or points.get("goal")),
         runtime_object_count=len(object_items),
         blocked_tile_count=blocked_count,
         gameplay_layers=sorted(gameplay),
@@ -119,20 +123,16 @@ def resolve_map_json_path(path: Path) -> Path:
     raise FileNotFoundError(f"Cannot resolve map package index from: {path}")
 
 
-def build_collision_grid(
-    tile_rows: list[str],
-    blocked_tiles: set[str],
-) -> list[list[bool]]:
-    """Build a boolean collision grid from tile rows and blocked tile symbols.
+def build_collision_grid(collision_rows: list[str]) -> list[list[bool]]:
+    """Build a boolean collision grid from encoded collision rows.
 
     Args:
-        tile_rows: ASCII tile rows.
-        blocked_tiles: Tile symbols treated as blocked.
+        collision_rows: Row strings where "1" means blocked and "0" means passable.
 
     Returns:
         A row-major grid where True means blocked.
     """
-    return [[tile in blocked_tiles for tile in row] for row in tile_rows]
+    return [[cell == "1" for cell in row] for row in collision_rows]
 
 
 def _map_json_from_manifest(manifest_path: Path) -> Path:

@@ -156,3 +156,19 @@ _manifest.json.versions.schemas
 ```
 
 Этого достаточно для первой проверки карты в игровом runtime без renderer-specific логики.
+
+
+## Runtime-friendly loading since v0.0.26
+
+Для новой интеграции лучше использовать такие файлы:
+
+1. `_manifest.json` — найти `map_package:index`;
+2. `map_package/map.json` — получить размеры и ссылки на слои;
+3. `layers/terrain.json` — получить типы поверхности;
+4. `layers/collision.json` — построить boolean collision grid из `rows`;
+5. `layers/movement_costs.json` — читать `costs_by_type`;
+6. `layers/start_goal.json` — получить `start` и `goal`;
+7. `objects/runtime_objects.json` — расставить объекты;
+8. `gameplay/enemy_spawn_zones.json` — подключить спавны врагов, если они нужны.
+
+`tile_grid.json` остаётся полезным для отладки и legacy-инструментов, но игра не должна строить логику напрямую на символах `+`, `T`, `#` и других ASCII-тайлах.

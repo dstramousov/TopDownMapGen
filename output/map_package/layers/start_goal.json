@@ -1,0 +1,15 @@
+{
+  "schema_version": "start-goal-layer-v1",
+  "kind": "start_goal",
+  "width": 160,
+  "height": 160,
+  "start": {
+    "x": 141,
+    "y": 136
+  },
+  "goal": {
+    "x": 8,
+    "y": 13
+  },
+  "source_layer": "tile_grid"
+}

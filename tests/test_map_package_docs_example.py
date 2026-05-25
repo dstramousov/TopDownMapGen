@@ -51,8 +51,10 @@ def test_read_map_package_example_loads_summary(tmp_path: Path) -> None:
             },
             "layers": {
                 "tile_grid": "layers/tile_grid.json",
+                "terrain": "layers/terrain.json",
                 "collision": "layers/collision.json",
                 "movement_costs": "layers/movement_costs.json",
+                "start_goal": "layers/start_goal.json",
             },
             "gameplay": {
                 "enemy_spawn_zones": "gameplay/enemy_spawn_zones.json",
@@ -64,8 +66,16 @@ def test_read_map_package_example_loads_summary(tmp_path: Path) -> None:
     )
     _write_json(package_dir / "layers" / "tile_grid.json", {"rows": ["S+", "TG"]})
     _write_json(
+        package_dir / "layers" / "terrain.json",
+        {"rows": [["start", "grass"], ["tree_blocker", "goal"]]},
+    )
+    _write_json(
         package_dir / "layers" / "collision.json",
-        {"blocked_tiles": ["T"]},
+        {"rows": ["00", "10"]},
+    )
+    _write_json(
+        package_dir / "layers" / "start_goal.json",
+        {"start": {"x": 0, "y": 0}, "goal": {"x": 1, "y": 1}},
     )
     _write_json(
         package_dir / "layers" / "movement_costs.json",

@@ -1,0 +1,4326 @@
+{
+  "schema_version": "gameplay-layer-v1",
+  "kind": "cover_points",
+  "items": [
+    {
+      "id": "cover_17",
+      "position": [
+        49,
+        3
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_18",
+      "position": [
+        54,
+        3
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_26",
+      "position": [
+        121,
+        3
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_27",
+      "position": [
+        147,
+        3
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_29",
+      "position": [
+        48,
+        4
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_33",
+      "position": [
+        82,
+        4
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_98",
+      "position": [
+        133,
+        6
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_179",
+      "position": [
+        76,
+        8
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_180",
+      "position": [
+        84,
+        8
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_209",
+      "position": [
+        75,
+        9
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_267",
+      "position": [
+        89,
+        11
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_278",
+      "position": [
+        155,
+        11
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_281",
+      "position": [
+        50,
+        12
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_301",
+      "position": [
+        53,
+        13
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_302",
+      "position": [
+        56,
+        13
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_306",
+      "position": [
+        76,
+        13
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_312",
+      "position": [
+        84,
+        13
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_318",
+      "position": [
+        117,
+        13
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_366",
+      "position": [
+        76,
+        15
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_371",
+      "position": [
+        83,
+        15
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_432",
+      "position": [
+        69,
+        17
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_436",
+      "position": [
+        84,
+        17
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_477",
+      "position": [
+        149,
+        18
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_478",
+      "position": [
+        150,
+        18
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_487",
+      "position": [
+        25,
+        19
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_488",
+      "position": [
+        29,
+        19
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_527",
+      "position": [
+        12,
+        20
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_551",
+      "position": [
+        75,
+        21
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_558",
+      "position": [
+        85,
+        21
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_564",
+      "position": [
+        122,
+        21
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_576",
+      "position": [
+        74,
+        22
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_593",
+      "position": [
+        75,
+        23
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_624",
+      "position": [
+        8,
+        25
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_701",
+      "position": [
+        63,
+        35
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_714",
+      "position": [
+        64,
+        36
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_718",
+      "position": [
+        88,
+        36
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_728",
+      "position": [
+        36,
+        37
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_741",
+      "position": [
+        116,
+        37
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_742",
+      "position": [
+        119,
+        37
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_756",
+      "position": [
+        67,
+        38
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_768",
+      "position": [
+        121,
+        38
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_792",
+      "position": [
+        123,
+        39
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_804",
+      "position": [
+        75,
+        40
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_813",
+      "position": [
+        153,
+        40
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_814",
+      "position": [
+        32,
+        41
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_815",
+      "position": [
+        40,
+        41
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_839",
+      "position": [
+        70,
+        42
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_888",
+      "position": [
+        142,
+        44
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_891",
+      "position": [
+        30,
+        45
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_909",
+      "position": [
+        144,
+        45
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_938",
+      "position": [
+        138,
+        46
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1006",
+      "position": [
+        24,
+        51
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1031",
+      "position": [
+        147,
+        52
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1053",
+      "position": [
+        137,
+        54
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1104",
+      "position": [
+        60,
+        56
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1118",
+      "position": [
+        30,
+        57
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1139",
+      "position": [
+        91,
+        58
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1161",
+      "position": [
+        137,
+        60
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1185",
+      "position": [
+        135,
+        62
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1239",
+      "position": [
+        8,
+        67
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1281",
+      "position": [
+        31,
+        69
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1339",
+      "position": [
+        29,
+        71
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1350",
+      "position": [
+        131,
+        71
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1353",
+      "position": [
+        146,
+        71
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1354",
+      "position": [
+        148,
+        71
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1398",
+      "position": [
+        109,
+        72
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1408",
+      "position": [
+        140,
+        72
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1409",
+      "position": [
+        142,
+        72
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1417",
+      "position": [
+        12,
+        73
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1427",
+      "position": [
+        42,
+        73
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1434",
+      "position": [
+        84,
+        73
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1440",
+      "position": [
+        141,
+        73
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1443",
+      "position": [
+        5,
+        74
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1446",
+      "position": [
+        8,
+        74
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1447",
+      "position": [
+        10,
+        74
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1449",
+      "position": [
+        13,
+        74
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1483",
+      "position": [
+        149,
+        74
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1484",
+      "position": [
+        4,
+        75
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1502",
+      "position": [
+        125,
+        75
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1503",
+      "position": [
+        141,
+        75
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1519",
+      "position": [
+        40,
+        76
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1533",
+      "position": [
+        86,
+        76
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1534",
+      "position": [
+        88,
+        76
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1538",
+      "position": [
+        92,
+        76
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1539",
+      "position": [
+        96,
+        76
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1560",
+      "position": [
+        48,
+        77
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1563",
+      "position": [
+        76,
+        77
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1564",
+      "position": [
+        81,
+        77
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1565",
+      "position": [
+        87,
+        77
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1567",
+      "position": [
+        97,
+        77
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1575",
+      "position": [
+        17,
+        78
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1589",
+      "position": [
+        77,
+        78
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1615",
+      "position": [
+        11,
+        79
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1616",
+      "position": [
+        13,
+        79
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1617",
+      "position": [
+        16,
+        79
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1624",
+      "position": [
+        29,
+        79
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1665",
+      "position": [
+        40,
+        80
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1679",
+      "position": [
+        141,
+        80
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1686",
+      "position": [
+        11,
+        81
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1687",
+      "position": [
+        13,
+        81
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1688",
+      "position": [
+        16,
+        81
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1692",
+      "position": [
+        33,
+        81
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1708",
+      "position": [
+        77,
+        81
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1721",
+      "position": [
+        95,
+        81
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1742",
+      "position": [
+        40,
+        82
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1745",
+      "position": [
+        47,
+        82
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1748",
+      "position": [
+        75,
+        82
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1749",
+      "position": [
+        81,
+        82
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1750",
+      "position": [
+        84,
+        82
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1751",
+      "position": [
+        86,
+        82
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1752",
+      "position": [
+        88,
+        82
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1753",
+      "position": [
+        93,
+        82
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1764",
+      "position": [
+        4,
+        83
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1772",
+      "position": [
+        33,
+        83
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1778",
+      "position": [
+        39,
+        83
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1788",
+      "position": [
+        76,
+        83
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1802",
+      "position": [
+        95,
+        83
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1806",
+      "position": [
+        141,
+        83
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1809",
+      "position": [
+        5,
+        84
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1811",
+      "position": [
+        8,
+        84
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1819",
+      "position": [
+        31,
+        84
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1822",
+      "position": [
+        41,
+        84
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1823",
+      "position": [
+        48,
+        84
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1838",
+      "position": [
+        126,
+        84
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1851",
+      "position": [
+        140,
+        84
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1852",
+      "position": [
+        142,
+        84
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1859",
+      "position": [
+        6,
+        85
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1860",
+      "position": [
+        9,
+        85
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1882",
+      "position": [
+        137,
+        85
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1883",
+      "position": [
+        145,
+        85
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1885",
+      "position": [
+        150,
+        85
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1902",
+      "position": [
+        42,
+        86
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1929",
+      "position": [
+        130,
+        86
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1944",
+      "position": [
+        149,
+        86
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1947",
+      "position": [
+        31,
+        87
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1951",
+      "position": [
+        41,
+        87
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1956",
+      "position": [
+        74,
+        87
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1957",
+      "position": [
+        76,
+        87
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1958",
+      "position": [
+        78,
+        87
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1959",
+      "position": [
+        82,
+        87
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1983",
+      "position": [
+        79,
+        88
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1984",
+      "position": [
+        80,
+        88
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1985",
+      "position": [
+        81,
+        88
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1987",
+      "position": [
+        83,
+        88
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1988",
+      "position": [
+        84,
+        88
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2004",
+      "position": [
+        78,
+        89
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2024",
+      "position": [
+        79,
+        90
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2065",
+      "position": [
+        6,
+        92
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2072",
+      "position": [
+        32,
+        92
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2078",
+      "position": [
+        64,
+        92
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2084",
+      "position": [
+        78,
+        92
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2086",
+      "position": [
+        87,
+        92
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2087",
+      "position": [
+        89,
+        92
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2088",
+      "position": [
+        95,
+        92
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2108",
+      "position": [
+        67,
+        93
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2109",
+      "position": [
+        69,
+        93
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2110",
+      "position": [
+        72,
+        93
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2124",
+      "position": [
+        106,
+        93
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2135",
+      "position": [
+        47,
+        94
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2140",
+      "position": [
+        63,
+        94
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2141",
+      "position": [
+        65,
+        94
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2145",
+      "position": [
+        71,
+        94
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2195",
+      "position": [
+        85,
+        96
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2212",
+      "position": [
+        72,
+        97
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2230",
+      "position": [
+        38,
+        98
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2237",
+      "position": [
+        73,
+        98
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2242",
+      "position": [
+        84,
+        98
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2243",
+      "position": [
+        86,
+        98
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2246",
+      "position": [
+        111,
+        98
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2272",
+      "position": [
+        11,
+        100
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2304",
+      "position": [
+        78,
+        101
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2305",
+      "position": [
+        80,
+        101
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2306",
+      "position": [
+        83,
+        101
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2314",
+      "position": [
+        7,
+        102
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2330",
+      "position": [
+        85,
+        102
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2341",
+      "position": [
+        6,
+        103
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2350",
+      "position": [
+        74,
+        103
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2354",
+      "position": [
+        106,
+        103
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2360",
+      "position": [
+        28,
+        104
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2365",
+      "position": [
+        72,
+        104
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2367",
+      "position": [
+        86,
+        104
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2386",
+      "position": [
+        5,
+        106
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2402",
+      "position": [
+        110,
+        106
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2410",
+      "position": [
+        45,
+        107
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2418",
+      "position": [
+        107,
+        107
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2443",
+      "position": [
+        73,
+        108
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2453",
+      "position": [
+        108,
+        108
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2480",
+      "position": [
+        107,
+        109
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2492",
+      "position": [
+        37,
+        110
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2535",
+      "position": [
+        77,
+        111
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2549",
+      "position": [
+        119,
+        111
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2583",
+      "position": [
+        120,
+        112
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2584",
+      "position": [
+        134,
+        112
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2585",
+      "position": [
+        141,
+        112
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2586",
+      "position": [
+        144,
+        112
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2621",
+      "position": [
+        133,
+        113
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2629",
+      "position": [
+        143,
+        113
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2675",
+      "position": [
+        125,
+        115
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2676",
+      "position": [
+        129,
+        115
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2698",
+      "position": [
+        132,
+        116
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2715",
+      "position": [
+        126,
+        117
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2720",
+      "position": [
+        144,
+        117
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2784",
+      "position": [
+        148,
+        120
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2825",
+      "position": [
+        86,
+        122
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2846",
+      "position": [
+        92,
+        123
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2886",
+      "position": [
+        68,
+        125
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2887",
+      "position": [
+        74,
+        125
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2897",
+      "position": [
+        84,
+        125
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2898",
+      "position": [
+        86,
+        125
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2899",
+      "position": [
+        87,
+        125
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2954",
+      "position": [
+        105,
+        128
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2969",
+      "position": [
+        87,
+        129
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2970",
+      "position": [
+        95,
+        129
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2980",
+      "position": [
+        45,
+        130
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2981",
+      "position": [
+        49,
+        130
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2984",
+      "position": [
+        103,
+        130
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3004",
+      "position": [
+        11,
+        132
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3013",
+      "position": [
+        46,
+        132
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3036",
+      "position": [
+        91,
+        133
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3048",
+      "position": [
+        11,
+        134
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3074",
+      "position": [
+        41,
+        135
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3101",
+      "position": [
+        35,
+        136
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3138",
+      "position": [
+        106,
+        137
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3170",
+      "position": [
+        151,
+        138
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3174",
+      "position": [
+        45,
+        139
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3218",
+      "position": [
+        105,
+        141
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3235",
+      "position": [
+        44,
+        142
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3249",
+      "position": [
+        98,
+        143
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3254",
+      "position": [
+        112,
+        143
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3304",
+      "position": [
+        41,
+        146
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3313",
+      "position": [
+        21,
+        147
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3316",
+      "position": [
+        102,
+        147
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3365",
+      "position": [
+        141,
+        149
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3369",
+      "position": [
+        109,
+        150
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3379",
+      "position": [
+        35,
+        152
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3390",
+      "position": [
+        6,
+        156
+      ],
+      "quality": 1.0,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_112",
+      "position": [
+        14,
+        7
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_161",
+      "position": [
+        135,
+        7
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_170",
+      "position": [
+        15,
+        8
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_200",
+      "position": [
+        14,
+        9
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_203",
+      "position": [
+        31,
+        9
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_230",
+      "position": [
+        146,
+        9
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_962",
+      "position": [
+        42,
+        48
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1230",
+      "position": [
+        71,
+        66
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1368",
+      "position": [
+        25,
+        72
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2097",
+      "position": [
+        20,
+        93
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2137",
+      "position": [
+        49,
+        94
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2419",
+      "position": [
+        108,
+        107
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2610",
+      "position": [
+        78,
+        113
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2615",
+      "position": [
+        110,
+        113
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2709",
+      "position": [
+        78,
+        117
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2802",
+      "position": [
+        85,
+        121
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2820",
+      "position": [
+        77,
+        122
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3029",
+      "position": [
+        11,
+        133
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3042",
+      "position": [
+        146,
+        133
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3067",
+      "position": [
+        145,
+        134
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3120",
+      "position": [
+        129,
+        136
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3274",
+      "position": [
+        148,
+        144
+      ],
+      "quality": 0.95,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_19",
+      "position": [
+        55,
+        3
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_20",
+      "position": [
+        56,
+        3
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_30",
+      "position": [
+        50,
+        4
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_48",
+      "position": [
+        49,
+        5
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_79",
+      "position": [
+        48,
+        6
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_351",
+      "position": [
+        11,
+        15
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_384",
+      "position": [
+        13,
+        16
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_385",
+      "position": [
+        14,
+        16
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_386",
+      "position": [
+        16,
+        16
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_391",
+      "position": [
+        26,
+        16
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_392",
+      "position": [
+        28,
+        16
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_420",
+      "position": [
+        7,
+        17
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_424",
+      "position": [
+        25,
+        17
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_425",
+      "position": [
+        29,
+        17
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_452",
+      "position": [
+        18,
+        18
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_480",
+      "position": [
+        7,
+        19
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_524",
+      "position": [
+        147,
+        19
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_545",
+      "position": [
+        9,
+        21
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_546",
+      "position": [
+        11,
+        21
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_573",
+      "position": [
+        14,
+        22
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_590",
+      "position": [
+        14,
+        23
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_694",
+      "position": [
+        76,
+        34
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_702",
+      "position": [
+        75,
+        35
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_715",
+      "position": [
+        75,
+        36
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_735",
+      "position": [
+        76,
+        37
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_755",
+      "position": [
+        64,
+        38
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_757",
+      "position": [
+        68,
+        38
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_779",
+      "position": [
+        65,
+        39
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_782",
+      "position": [
+        69,
+        39
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_783",
+      "position": [
+        77,
+        39
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_840",
+      "position": [
+        75,
+        42
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_875",
+      "position": [
+        75,
+        44
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_898",
+      "position": [
+        71,
+        45
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_899",
+      "position": [
+        72,
+        45
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_900",
+      "position": [
+        74,
+        45
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_907",
+      "position": [
+        141,
+        45
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_910",
+      "position": [
+        146,
+        45
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_986",
+      "position": [
+        136,
+        49
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1035",
+      "position": [
+        153,
+        52
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1085",
+      "position": [
+        136,
+        55
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1089",
+      "position": [
+        152,
+        55
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1114",
+      "position": [
+        139,
+        56
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1148",
+      "position": [
+        58,
+        59
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1313",
+      "position": [
+        22,
+        70
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1335",
+      "position": [
+        147,
+        70
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1340",
+      "position": [
+        31,
+        71
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1552",
+      "position": [
+        26,
+        77
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1553",
+      "position": [
+        28,
+        77
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1566",
+      "position": [
+        95,
+        77
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1577",
+      "position": [
+        25,
+        78
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1645",
+      "position": [
+        96,
+        79
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1662",
+      "position": [
+        30,
+        80
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1677",
+      "position": [
+        124,
+        80
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1691",
+      "position": [
+        31,
+        81
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1705",
+      "position": [
+        49,
+        81
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1722",
+      "position": [
+        97,
+        81
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1741",
+      "position": [
+        31,
+        82
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1746",
+      "position": [
+        49,
+        82
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1771",
+      "position": [
+        31,
+        83
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1857",
+      "position": [
+        149,
+        84
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1884",
+      "position": [
+        148,
+        85
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1895",
+      "position": [
+        32,
+        86
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1943",
+      "position": [
+        146,
+        86
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2034",
+      "position": [
+        105,
+        90
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2245",
+      "position": [
+        97,
+        98
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2634",
+      "position": [
+        14,
+        114
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2678",
+      "position": [
+        131,
+        115
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2690",
+      "position": [
+        80,
+        116
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2716",
+      "position": [
+        129,
+        117
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2777",
+      "position": [
+        91,
+        120
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2778",
+      "position": [
+        93,
+        120
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2807",
+      "position": [
+        90,
+        121
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2824",
+      "position": [
+        83,
+        122
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2845",
+      "position": [
+        90,
+        123
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2861",
+      "position": [
+        87,
+        124
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3076",
+      "position": [
+        46,
+        135
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3096",
+      "position": [
+        150,
+        135
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3109",
+      "position": [
+        45,
+        136
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3154",
+      "position": [
+        150,
+        137
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3265",
+      "position": [
+        40,
+        144
+      ],
+      "quality": 0.9,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2544",
+      "position": [
+        110,
+        111
+      ],
+      "quality": 0.8,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_547",
+      "position": [
+        12,
+        21
+      ],
+      "quality": 0.75,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1044",
+      "position": [
+        148,
+        53
+      ],
+      "quality": 0.75,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2677",
+      "position": [
+        130,
+        115
+      ],
+      "quality": 0.75,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2862",
+      "position": [
+        88,
+        124
+      ],
+      "quality": 0.75,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2864",
+      "position": [
+        90,
+        124
+      ],
+      "quality": 0.75,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_10",
+      "position": [
+        57,
+        2
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_12",
+      "position": [
+        59,
+        2
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_76",
+      "position": [
+        45,
+        6
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_87",
+      "position": [
+        113,
+        6
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_350",
+      "position": [
+        9,
+        15
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_443",
+      "position": [
+        120,
+        17
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_771",
+      "position": [
+        125,
+        38
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_850",
+      "position": [
+        123,
+        42
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_865",
+      "position": [
+        126,
+        43
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_889",
+      "position": [
+        147,
+        44
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_969",
+      "position": [
+        135,
+        48
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1033",
+      "position": [
+        150,
+        52
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1132",
+      "position": [
+        139,
+        57
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2460",
+      "position": [
+        6,
+        109
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2486",
+      "position": [
+        7,
+        110
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2511",
+      "position": [
+        110,
+        110
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2516",
+      "position": [
+        8,
+        111
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2578",
+      "position": [
+        112,
+        112
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2588",
+      "position": [
+        11,
+        113
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2632",
+      "position": [
+        12,
+        114
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2646",
+      "position": [
+        112,
+        114
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2683",
+      "position": [
+        15,
+        116
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2702",
+      "position": [
+        16,
+        117
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2721",
+      "position": [
+        147,
+        117
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3061",
+      "position": [
+        46,
+        134
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3093",
+      "position": [
+        147,
+        135
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3099",
+      "position": [
+        13,
+        136
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3175",
+      "position": [
+        102,
+        139
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3200",
+      "position": [
+        100,
+        140
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3217",
+      "position": [
+        99,
+        141
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3331",
+      "position": [
+        40,
+        149
+      ],
+      "quality": 0.7,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2512",
+      "position": [
+        111,
+        110
+      ],
+      "quality": 0.6,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2576",
+      "position": [
+        109,
+        112
+      ],
+      "quality": 0.6,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2827",
+      "position": [
+        88,
+        122
+      ],
+      "quality": 0.6,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2844",
+      "position": [
+        89,
+        123
+      ],
+      "quality": 0.6,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_21",
+      "position": [
+        57,
+        3
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_31",
+      "position": [
+        58,
+        4
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_147",
+      "position": [
+        79,
+        7
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_148",
+      "position": [
+        80,
+        7
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_149",
+      "position": [
+        81,
+        7
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_150",
+      "position": [
+        82,
+        7
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_151",
+      "position": [
+        83,
+        7
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_152",
+      "position": [
+        85,
+        7
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_210",
+      "position": [
+        77,
+        9
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_274",
+      "position": [
+        116,
+        11
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_275",
+      "position": [
+        117,
+        11
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_276",
+      "position": [
+        118,
+        11
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_296",
+      "position": [
+        115,
+        12
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_297",
+      "position": [
+        119,
+        12
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_316",
+      "position": [
+        110,
+        13
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_317",
+      "position": [
+        116,
+        13
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_319",
+      "position": [
+        119,
+        13
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_342",
+      "position": [
+        109,
+        14
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_343",
+      "position": [
+        111,
+        14
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_344",
+      "position": [
+        117,
+        14
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_345",
+      "position": [
+        119,
+        14
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_349",
+      "position": [
+        8,
+        15
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_375",
+      "position": [
+        110,
+        15
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_720",
+      "position": [
+        115,
+        36
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_721",
+      "position": [
+        117,
+        36
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_722",
+      "position": [
+        118,
+        36
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_723",
+      "position": [
+        120,
+        36
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_724",
+      "position": [
+        121,
+        36
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_725",
+      "position": [
+        122,
+        36
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_740",
+      "position": [
+        114,
+        37
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_743",
+      "position": [
+        123,
+        37
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_763",
+      "position": [
+        114,
+        38
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_908",
+      "position": [
+        142,
+        45
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1326",
+      "position": [
+        134,
+        70
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1327",
+      "position": [
+        135,
+        70
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1328",
+      "position": [
+        139,
+        70
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1329",
+      "position": [
+        140,
+        70
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1348",
+      "position": [
+        125,
+        71
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1351",
+      "position": [
+        136,
+        71
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1352",
+      "position": [
+        138,
+        71
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1399",
+      "position": [
+        124,
+        72
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1400",
+      "position": [
+        126,
+        72
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1403",
+      "position": [
+        132,
+        72
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1438",
+      "position": [
+        124,
+        73
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1439",
+      "position": [
+        126,
+        73
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1479",
+      "position": [
+        124,
+        74
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1480",
+      "position": [
+        126,
+        74
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_1541",
+      "position": [
+        124,
+        76
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2390",
+      "position": [
+        14,
+        106
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2391",
+      "position": [
+        15,
+        106
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2392",
+      "position": [
+        16,
+        106
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2407",
+      "position": [
+        13,
+        107
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2408",
+      "position": [
+        17,
+        107
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2429",
+      "position": [
+        12,
+        108
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2430",
+      "position": [
+        14,
+        108
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2431",
+      "position": [
+        15,
+        108
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2474",
+      "position": [
+        87,
+        109
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2551",
+      "position": [
+        135,
+        111
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2552",
+      "position": [
+        136,
+        111
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2553",
+      "position": [
+        137,
+        111
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2554",
+      "position": [
+        138,
+        111
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3011",
+      "position": [
+        44,
+        132
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3035",
+      "position": [
+        45,
+        133
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3051",
+      "position": [
+        35,
+        134
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3052",
+      "position": [
+        36,
+        134
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3053",
+      "position": [
+        37,
+        134
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3054",
+      "position": [
+        38,
+        134
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3078",
+      "position": [
+        105,
+        135
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3079",
+      "position": [
+        106,
+        135
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3080",
+      "position": [
+        107,
+        135
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3081",
+      "position": [
+        108,
+        135
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3082",
+      "position": [
+        109,
+        135
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3083",
+      "position": [
+        110,
+        135
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3084",
+      "position": [
+        111,
+        135
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3111",
+      "position": [
+        104,
+        136
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3112",
+      "position": [
+        112,
+        136
+      ],
+      "quality": 0.55,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2542",
+      "position": [
+        108,
+        111
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2546",
+      "position": [
+        112,
+        111
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2579",
+      "position": [
+        113,
+        112
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2644",
+      "position": [
+        109,
+        114
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2647",
+      "position": [
+        113,
+        114
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2666",
+      "position": [
+        110,
+        115
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2668",
+      "position": [
+        112,
+        115
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3024",
+      "position": [
+        145,
+        132
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3025",
+      "position": [
+        147,
+        132
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3041",
+      "position": [
+        144,
+        133
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3044",
+      "position": [
+        148,
+        133
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3050",
+      "position": [
+        14,
+        134
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3069",
+      "position": [
+        149,
+        134
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3091",
+      "position": [
+        144,
+        135
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3094",
+      "position": [
+        148,
+        135
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3095",
+      "position": [
+        149,
+        135
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3100",
+      "position": [
+        14,
+        136
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3122",
+      "position": [
+        131,
+        136
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3124",
+      "position": [
+        145,
+        136
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3126",
+      "position": [
+        147,
+        136
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_3132",
+      "position": [
+        13,
+        137
+      ],
+      "quality": 0.4,
+      "cover_type": "soft"
+    },
+    {
+      "id": "cover_2543",
+      "position": [
+        109,
+        111
+      ],
+      "quality": 0.35,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2545",
+      "position": [
+        111,
+        111
+      ],
+      "quality": 0.35,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_2946",
+      "position": [
+        46,
+        128
+      ],
+      "quality": 0.35,
+      "cover_type": "hard"
+    },
+    {
+      "id": "cover_3071",
+      "position": [
+        14,
+        135
+      ],
+      "quality": 0.35,
+      "cover_type": "hard"
+    }
+  ]
+}

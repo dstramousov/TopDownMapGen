@@ -8,13 +8,13 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v16"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v17"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v13"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v14"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v1"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
@@ -25,9 +25,11 @@ OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
 MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
 MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v1"
 TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
+TERRAIN_LAYER_SCHEMA_VERSION = "terrain-layer-v1"
 MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"
-COLLISION_LAYER_SCHEMA_VERSION = "collision-layer-v1"
+COLLISION_LAYER_SCHEMA_VERSION = "collision-layer-v2"
 ELEVATION_LAYER_SCHEMA_VERSION = "elevation-layer-v1"
+START_GOAL_LAYER_SCHEMA_VERSION = "start-goal-layer-v1"
 GAMEPLAY_LAYER_SCHEMA_VERSION = "gameplay-layer-v1"
 OBJECT_INSTANCES_SCHEMA_VERSION = "object-instances-v1"
 
@@ -114,9 +116,11 @@ def build_manifest(
         "map_package": MAP_PACKAGE_SCHEMA_VERSION,
         "map_package_map": MAP_PACKAGE_MAP_SCHEMA_VERSION,
         "tile_grid_layer": TILE_GRID_LAYER_SCHEMA_VERSION,
+        "terrain_layer": TERRAIN_LAYER_SCHEMA_VERSION,
         "movement_layer": MOVEMENT_LAYER_SCHEMA_VERSION,
         "collision_layer": COLLISION_LAYER_SCHEMA_VERSION,
         "elevation_layer": ELEVATION_LAYER_SCHEMA_VERSION,
+        "start_goal_layer": START_GOAL_LAYER_SCHEMA_VERSION,
         "gameplay_layer": GAMEPLAY_LAYER_SCHEMA_VERSION,
         "object_instances": OBJECT_INSTANCES_SCHEMA_VERSION,
     }

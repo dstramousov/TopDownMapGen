@@ -181,3 +181,28 @@ tactical_map_debug.json
 - machine-readable catalogs для tile/object types;
 - renderer hints для autotile и sprite selection;
 - экспорт в Tiled/Godot/собственный runtime format.
+
+
+## v0.0.26 layer additions
+
+`map_package v1` теперь содержит два дополнительных runtime-friendly слоя:
+
+- `layers/terrain.json` — сетка типов поверхности в формате `type_rows`. Игра может читать `grass`, `old_overgrown_road`, `tree_blocker`, `ruin_wall_blocker` и другие типы без прямой зависимости от ASCII-символов.
+- `layers/start_goal.json` — явный слой стартовой и целевой точки. Поле `points` в `map.json` остаётся для совместимости, но новым потребителям лучше читать этот слой.
+
+`layers/collision.json` использует schema `collision-layer-v2` и формат `boolean_rows`:
+
+```json
+{
+  "format": "boolean_rows",
+  "legend": {
+    "0": "passable",
+    "1": "blocked"
+  },
+  "rows": ["0010", "1110"]
+}
+```
+
+Старые поля `legacy_blocked_tiles` и `legacy_passable_tiles` оставлены только для диагностики и переходного периода. Игровой runtime должен использовать `rows`, `blocked_tile_types` и `passable_tile_types`.
+
+`layers/movement_costs.json` дополнен `costs_by_type`. Это позволяет читать стоимость движения по типам поверхности, а не по ASCII-символам.
