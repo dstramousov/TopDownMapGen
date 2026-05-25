@@ -42,6 +42,20 @@ from .paths import OutputPaths
 from .utils.json_io import write_json
 
 EDGE_WARNING_MARGIN_TILES = 1
+WARNING_ONLY_CHECKS = {
+    "runtime_objects_non_empty",
+    "runtime_objects_counts_within_limits",
+    "interest_points_non_empty",
+    "ammo_caches_within_limits",
+    "medkit_caches_within_limits",
+    "trenches_non_empty",
+    "trenches_within_limits",
+    "landmarks_within_limits",
+    "landmarks_min_distance",
+    "places_non_empty",
+    "places_counts_within_limits",
+    "places_min_distance",
+}
 
 
 def build_validation_report(
@@ -249,15 +263,21 @@ def build_validation_report(
         "places_counts_within_limits": _places_counts_within_limits(runtime_data),
         "places_min_distance": _places_min_distance(runtime_data),
     }
-    errors = [name for name, passed in checks.items() if not passed]
+    errors = [
+        name
+        for name, passed in checks.items()
+        if not passed and name not in WARNING_ONLY_CHECKS
+    ]
     warnings = build_validation_warnings(
         runtime_data=runtime_data,
         width=width,
         height=height,
+        checks=checks,
     )
+    status = "failed" if errors else "passed_with_warnings" if warnings else "passed"
     return {
         "schema_version": VALIDATION_REPORT_SCHEMA_VERSION,
-        "status": "passed" if not errors else "failed",
+        "status": status,
         "checks": checks,
         "errors": errors,
         "warnings": warnings,
@@ -302,6 +322,7 @@ def build_validation_warnings(
     runtime_data: dict[str, Any],
     width: int,
     height: int,
+    checks: dict[str, bool],
 ) -> list[dict[str, Any]]:
     """Build non-failing validation warnings.
 
@@ -309,11 +330,31 @@ def build_validation_warnings(
         runtime_data: Runtime tactical map data.
         width: Map width in tiles.
         height: Map height in tiles.
+        checks: Completed validation checks.
 
     Returns:
         List of warning descriptors.
     """
     warnings: list[dict[str, Any]] = []
+    diagnostics = runtime_data.get("generation_diagnostics", {})
+    if isinstance(diagnostics, dict):
+        generation_warnings = diagnostics.get("warnings", [])
+        if isinstance(generation_warnings, list):
+            warnings.extend(
+                warning
+                for warning in generation_warnings
+                if isinstance(warning, dict)
+            )
+
+    for check_name in sorted(WARNING_ONLY_CHECKS):
+        if checks.get(check_name) is False:
+            warnings.append(
+                {
+                    "code": f"validation.{check_name}",
+                    "level": "warning",
+                    "message": "Validation check failed but is treated as a tunable gameplay warning.",
+                },
+            )
     edge_counts = {
         "cover_points_near_edge": _count_points_near_edge(
             runtime_data.get("cover_points", []),

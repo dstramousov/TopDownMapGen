@@ -5,7 +5,9 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v9"
+from ..config import RuntimeObjectsConfig
+
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v10"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
@@ -472,16 +474,19 @@ def attach_runtime_layers(
     tactical_data: dict[str, Any],
     *,
     seed: int | None = None,
+    config: RuntimeObjectsConfig | None = None,
 ) -> dict[str, Any]:
     """Attach runtime object and elevation layers to tactical data.
 
     Args:
         tactical_data: Runtime tactical JSON object.
         seed: Optional deterministic seed for runtime object placement.
+        config: Optional runtime object tuning config.
 
     Returns:
         Copy of tactical data with map-level sections.
     """
+    runtime_config = config or RuntimeObjectsConfig()
     enriched = dict(tactical_data)
     enriched.setdefault(
         "runtime_object_schema",
@@ -492,7 +497,8 @@ def attach_runtime_layers(
             "height_range": [MIN_OBJECT_HEIGHT, MAX_OBJECT_HEIGHT],
             "elevation_range": [MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL],
             "generated_types": list(GENERATED_RUNTIME_OBJECT_TYPES),
-            "max_runtime_objects": MAX_RUNTIME_OBJECTS,
+            "max_runtime_objects": runtime_config.max_objects,
+            "tuning": runtime_config.to_dict(),
         },
     )
     enriched.setdefault(
@@ -508,14 +514,14 @@ def attach_runtime_layers(
         enriched["runtime_objects_summary"] = summarize_runtime_objects(existing_objects)
         return enriched
 
-    if seed is None:
+    if seed is None or not runtime_config.enabled or runtime_config.max_objects <= 0:
         enriched.setdefault("runtime_objects", [])
         enriched["runtime_objects_summary"] = summarize_runtime_objects(
             enriched["runtime_objects"],
         )
         return enriched
 
-    objects = RuntimeObjectPlacer(seed).place(enriched)
+    objects = RuntimeObjectPlacer(seed, runtime_config).place(enriched)
     enriched["runtime_objects"] = objects
     _attach_trench_elevation(enriched, objects)
     enriched["runtime_objects_summary"] = summarize_runtime_objects(objects)
@@ -565,13 +571,15 @@ def summarize_runtime_objects(objects: Any) -> dict[str, Any]:
 class RuntimeObjectPlacer:
     """Places deterministic gameplay objects on an existing tactical map."""
 
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int, config: RuntimeObjectsConfig) -> None:
         """Initialize placer.
 
         Args:
             seed: Resolved uint64 map seed.
+            config: Runtime object placement tuning config.
         """
         self._rng = random.Random(seed ^ 0x5EED_0B1E_C7)
+        self._config = config
 
     def place(self, tactical_data: dict[str, Any]) -> list[dict[str, Any]]:
         """Place runtime objects on passable map cells.
@@ -600,10 +608,9 @@ class RuntimeObjectPlacer:
         anchors = _anchors(tactical_data)
 
         for quota in quotas:
-            if quota.object_type in LANDMARK_TYPES:
-                target_count = quota.base_count
-            else:
-                target_count = max(1, round(quota.base_count * scale))
+            target_count = self._target_count(quota, scale)
+            if target_count <= 0:
+                continue
             placed = 0
             for _ in range(target_count):
                 desired_shape = self._desired_shape(
@@ -635,9 +642,18 @@ class RuntimeObjectPlacer:
                 )
                 occupied.update(footprint)
                 placed += 1
-                if len(objects) >= MAX_RUNTIME_OBJECTS:
+                if len(objects) >= self._config.max_objects:
                     return objects
         return objects
+
+    def _target_count(self, quota: RuntimeObjectQuota, map_scale: float) -> int:
+        type_scale = self._config.type_scales.get(quota.object_type, 1.0)
+        tuned_count = quota.base_count * self._config.global_scale * type_scale
+        if tuned_count <= 0.0:
+            return 0
+        if quota.object_type not in LANDMARK_TYPES:
+            tuned_count *= map_scale
+        return max(1, round(tuned_count))
 
     def _desired_shape(
         self,

@@ -110,6 +110,9 @@ class WorldgenPipeline:
                     "chunk_height_tiles": config.chunk_height_tiles,
                     "biome_profile": config.biome_profile,
                     "objective_profile": config.objective_profile,
+                    "generation_tuning": config.generation_tuning.to_dict(),
+                    "runtime_objects_config": config.runtime_objects.to_dict(),
+                    "places_config": config.places.to_dict(),
                 },
             )
 
@@ -154,7 +157,8 @@ class WorldgenPipeline:
             raw_data["generator_version"] = self._project_version()
             raw_data["pipeline_version"] = "pipeline-v1"
             write_json(raw_data, outputs.raw_tactical_map)
-            LOGGER.info(
+            self._log_generation_warnings(raw_data)
+            LOGGER.debug(
                 "Raw tactical counts combat_zones=%s cover_points=%s choke_points=%s "
                 "flank_routes=%s enemy_spawn_zones=%s",
                 len(raw_data.get("combat_zones", [])),
@@ -175,16 +179,20 @@ class WorldgenPipeline:
                 debug_data,
             )
             runtime_data = attach_tile_grid(runtime_data, rows)
-            runtime_data = attach_runtime_layers(runtime_data, seed=config.resolved_seed)
-            runtime_data = attach_places(runtime_data)
+            runtime_data = attach_runtime_layers(
+                runtime_data,
+                seed=config.resolved_seed,
+                config=config.runtime_objects,
+            )
+            runtime_data = attach_places(runtime_data, config=config.places)
             runtime_data["schema_version"] = TACTICAL_MAP_SCHEMA_VERSION
             runtime_data["generator_version"] = self._project_version()
             runtime_data["pipeline_version"] = "pipeline-v1"
-            runtime_data["version"] = "0.33-runtime"
+            runtime_data["version"] = "0.35-runtime"
             debug_data["schema_version"] = TACTICAL_DEBUG_SCHEMA_VERSION
             debug_data["generator_version"] = self._project_version()
             debug_data["pipeline_version"] = "pipeline-v1"
-            debug_data["version"] = "0.21-debug"
+            debug_data["version"] = "0.22-debug"
 
             write_json(runtime_data, outputs.tactical_map)
             write_json(debug_data, outputs.tactical_map_debug)
@@ -332,6 +340,13 @@ class WorldgenPipeline:
             runtime_data=runtime_data,
             resolved_seed=config.resolved_seed,
         )
+        metrics.update(
+            {
+                "validation_status": validation_report.get("status"),
+                "validation_errors": len(validation_report.get("errors", [])),
+                "validation_warnings": len(validation_report.get("warnings", [])),
+            },
+        )
         with timed_stage(
             LOGGER,
             "pipeline.write_validation_report",
@@ -388,8 +403,28 @@ class WorldgenPipeline:
                 },
             )
 
-        LOGGER.info("Pipeline completed total_time_ms=%.2f", total_time_ms)
+        LOGGER.debug("Pipeline completed total_time_ms=%.2f", total_time_ms)
         return PipelineResult(metrics=metrics, outputs=outputs)
+
+    @staticmethod
+    def _log_generation_warnings(raw_data: dict[str, Any]) -> None:
+        """Log compact generation quality warnings from raw legacy output."""
+        diagnostics = raw_data.get("generation_diagnostics", {})
+        if not isinstance(diagnostics, dict):
+            return
+        warnings = diagnostics.get("warnings", [])
+        if not isinstance(warnings, list):
+            return
+        for warning in warnings:
+            if not isinstance(warning, dict):
+                continue
+            LOGGER.warning(
+                "generation warning code=%s value=%s recommended_min=%s recommended_max=%s",
+                warning.get("code"),
+                warning.get("value"),
+                warning.get("recommended_min"),
+                warning.get("recommended_max"),
+            )
 
     @staticmethod
     def _build_artifacts(

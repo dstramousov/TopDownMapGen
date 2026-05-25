@@ -233,6 +233,7 @@ class TacticalOptimizer:
             ],
             "optimization": debug_data.get("optimization", {}),
             "connectivity_repair": debug_data.get("connectivity_repair", {}),
+            "generation_diagnostics": debug_data.get("generation_diagnostics", {}),
         }
 
     def _summary(

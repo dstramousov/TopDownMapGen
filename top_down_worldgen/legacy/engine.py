@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-from typing import Iterable
+from typing import Any, Iterable
 
 
 LOGGER = logging.getLogger(__name__)
@@ -23,6 +23,35 @@ class ConfigError(ValueError):
 
 class GenerationError(RuntimeError):
     """Raised when map generation fails."""
+
+
+@dataclass(frozen=True, slots=True)
+class QualityWarning:
+    """Non-fatal map quality warning."""
+
+    code: str
+    message: str
+    value: float | int | None = None
+    recommended_min: float | int | None = None
+    recommended_max: float | int | None = None
+    details: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert warning to a JSON-serializable dictionary."""
+        data: dict[str, Any] = {
+            "code": self.code,
+            "level": "warning",
+            "message": self.message,
+        }
+        if self.value is not None:
+            data["value"] = self.value
+        if self.recommended_min is not None:
+            data["recommended_min"] = self.recommended_min
+        if self.recommended_max is not None:
+            data["recommended_max"] = self.recommended_max
+        if self.details:
+            data["details"] = self.details
+        return data
 
 
 class TileType(StrEnum):
@@ -119,6 +148,7 @@ class PublicConfig:
     chunk_width_tiles: int
     chunk_height_tiles: int
     biome_profile: str
+    generation_tuning: dict[str, float] = field(default_factory=dict)
 
     @classmethod
     def from_json_file(cls, path: Path) -> PublicConfig:
@@ -175,6 +205,35 @@ class PublicConfig:
         if self.biome_profile != "forest_ruins":
             raise ConfigError('Only "forest_ruins" biome profile is supported in v0.15')
 
+        if not isinstance(self.generation_tuning, dict):
+            raise ConfigError("generation_tuning must be an object")
+
+    def tuning_scale(
+        self,
+        name: str,
+        *,
+        default: float = 1.0,
+        minimum: float = 0.0,
+        maximum: float = 4.0,
+    ) -> float:
+        """Return a bounded generation tuning scale.
+
+        Args:
+            name: Public tuning field name.
+            default: Fallback scale value.
+            minimum: Minimum accepted value.
+            maximum: Maximum accepted value.
+
+        Returns:
+            Bounded scale value.
+        """
+        raw_value = self.generation_tuning.get(name, default)
+        try:
+            value = float(raw_value)
+        except (TypeError, ValueError):
+            value = default
+        return max(minimum, min(value, maximum))
+
     def resolve_seed(self) -> int:
         """Resolve configured seed.
 
@@ -207,6 +266,8 @@ class DerivedConfig:
     mushroom_patch_count: int
     water_patch_count: int
     cracked_ground_patch_count: int
+    water_patch_min_radius: int
+    water_patch_max_radius: int
     clearing_min_radius: int
     clearing_max_radius: int
     central_clearing_radius: int
@@ -256,21 +317,75 @@ class DerivedConfig:
         chunk_count = chunk_cols * chunk_rows
         area_tiles = public.map_width_tiles * public.map_height_tiles
 
+        water_scale = public.tuning_scale("water_scale")
+        ruins_scale = public.tuning_scale("ruins_scale")
+        openness_scale = public.tuning_scale(
+            "openness_scale",
+            minimum=0.25,
+        )
+        road_width_scale = public.tuning_scale(
+            "road_width_scale",
+            minimum=0.25,
+        )
+        decoration_scale = public.tuning_scale("decoration_scale")
+        ruin_size_scale = math.sqrt(max(ruins_scale, 0.0))
+        openness_size_scale = math.sqrt(max(openness_scale, 0.25))
+        water_size_scale = math.sqrt(max(water_scale, 0.0))
+
         # Content density scales by map area/chunk count, while individual object sizes
         # stay within profile-specific bounds. Larger maps get more regions, not giant ruins.
         region_count = cls._clamp(round(chunk_count / 4.2), 18, 140)
-        small_ruin_count = cls._clamp(round(region_count * 0.34), 6, 48)
-        medium_ruin_count = cls._clamp(round(region_count * 0.22), 4, 28)
+        small_ruin_count = cls._scaled_count(
+            round(region_count * 0.34),
+            ruins_scale,
+            minimum=0,
+            maximum=48,
+        )
+        medium_ruin_count = cls._scaled_count(
+            round(region_count * 0.22),
+            ruins_scale,
+            minimum=0,
+            maximum=28,
+        )
         loop_target_count = cls._clamp(round(region_count * 0.55), 8, 70)
-        connected_pocket_count = cls._clamp(round(region_count * 1.75), 24, 220)
+        connected_pocket_count = cls._scaled_count(
+            round(region_count * 1.75),
+            openness_scale,
+            minimum=6,
+            maximum=260,
+        )
         tree_cluster_count = cls._clamp(round(area_tiles / 560), 28, 650)
-        flower_patch_count = cls._clamp(round(area_tiles / 850), 14, 260)
-        mushroom_patch_count = cls._clamp(round(area_tiles / 1250), 8, 180)
-        water_patch_count = cls._clamp(round(area_tiles / 3200), 4, 80)
-        cracked_ground_patch_count = cls._clamp(round(region_count * 0.85), 10, 140)
+        flower_patch_count = cls._scaled_count(
+            round(area_tiles / 850),
+            decoration_scale,
+            minimum=0,
+            maximum=320,
+        )
+        mushroom_patch_count = cls._scaled_count(
+            round(area_tiles / 1250),
+            decoration_scale,
+            minimum=0,
+            maximum=240,
+        )
+        water_patch_count = cls._scaled_count(
+            round(area_tiles / 3200),
+            water_scale,
+            minimum=0,
+            maximum=120,
+        )
+        cracked_ground_patch_count = cls._scaled_count(
+            round(region_count * 0.85),
+            decoration_scale * max(ruins_scale, 0.25),
+            minimum=0,
+            maximum=180,
+        )
 
         sqrt_factor = math.sqrt(area_tiles / (160 * 96))
-        central_clearing_radius = cls._clamp(round(16 + sqrt_factor * 2.8), 17, 28)
+        central_clearing_radius = cls._clamp(
+            round((16 + sqrt_factor * 2.8) * openness_size_scale),
+            12,
+            34,
+        )
 
         return cls(
             chunk_cols=chunk_cols,
@@ -289,44 +404,75 @@ class DerivedConfig:
             mushroom_patch_count=mushroom_patch_count,
             water_patch_count=water_patch_count,
             cracked_ground_patch_count=cracked_ground_patch_count,
-            clearing_min_radius=7,
-            clearing_max_radius=13,
+            water_patch_min_radius=max(1, round(1 * water_size_scale)),
+            water_patch_max_radius=max(1, round(3 * water_size_scale)),
+            clearing_min_radius=max(3, round(7 * openness_size_scale)),
+            clearing_max_radius=max(4, round(13 * openness_size_scale)),
             central_clearing_radius=central_clearing_radius,
-            old_road_corridor_min_width=4,
-            old_road_corridor_max_width=6,
+            old_road_corridor_min_width=max(1, round(4 * road_width_scale)),
+            old_road_corridor_max_width=max(1, round(6 * road_width_scale)),
             old_road_spine_width=1,
             old_road_overgrowth_chance=0.13,
             old_road_side_grass_chance=0.76,
-            small_ruin_min_width=8,
-            small_ruin_max_width=13,
-            small_ruin_min_height=6,
-            small_ruin_max_height=10,
-            medium_ruin_min_width=14,
-            medium_ruin_max_width=24,
-            medium_ruin_min_height=10,
-            medium_ruin_max_height=17,
-            settlement_min_buildings=7,
-            settlement_max_buildings=11,
+            small_ruin_min_width=max(4, round(8 * ruin_size_scale)),
+            small_ruin_max_width=max(5, round(13 * ruin_size_scale)),
+            small_ruin_min_height=max(4, round(6 * ruin_size_scale)),
+            small_ruin_max_height=max(5, round(10 * ruin_size_scale)),
+            medium_ruin_min_width=max(6, round(14 * ruin_size_scale)),
+            medium_ruin_max_width=max(7, round(24 * ruin_size_scale)),
+            medium_ruin_min_height=max(5, round(10 * ruin_size_scale)),
+            medium_ruin_max_height=max(6, round(17 * ruin_size_scale)),
+            settlement_min_buildings=max(1, round(7 * max(ruins_scale, 0.25))),
+            settlement_max_buildings=max(2, round(11 * max(ruins_scale, 0.25))),
             tree_cluster_min_radius=1,
             tree_cluster_max_radius=3,
             bush_ring_thickness=1,
-            connected_pocket_min_radius=3,
-            connected_pocket_max_radius=7,
+            connected_pocket_min_radius=max(2, round(3 * openness_size_scale)),
+            connected_pocket_max_radius=max(3, round(7 * openness_size_scale)),
             cleanup_small_component_max_size=32,
             min_walkable_ratio=0.34,
             max_walkable_ratio=0.72,
             max_dead_end_ratio=0.22,
             min_grass_to_path_ratio=1.80,
             max_generation_attempts=25,
-            max_hidden_clearings=cls._clamp(round(chunk_count / 32), 1, 8),
+            max_hidden_clearings=cls._scaled_count(
+                round(chunk_count / 32),
+                openness_scale,
+                minimum=1,
+                maximum=12,
+            ),
             big_forest_component_min_size=cls._clamp(round(area_tiles / 70), 140, 1400),
-            hidden_clearing_min_radius=4,
-            hidden_clearing_max_radius=7,
+            hidden_clearing_min_radius=max(2, round(4 * openness_size_scale)),
+            hidden_clearing_max_radius=max(3, round(7 * openness_size_scale)),
         )
 
     @staticmethod
     def _clamp(value: int, minimum: int, maximum: int) -> int:
         return max(minimum, min(value, maximum))
+
+    @classmethod
+    def _scaled_count(
+        cls,
+        base_value: int,
+        scale: float,
+        *,
+        minimum: int,
+        maximum: int,
+    ) -> int:
+        """Scale and clamp a generated content count.
+
+        Args:
+            base_value: Base count before tuning.
+            scale: Public tuning scale.
+            minimum: Minimum returned count.
+            maximum: Maximum returned count.
+
+        Returns:
+            Scaled count.
+        """
+        if scale <= 0.0:
+            return 0
+        return cls._clamp(round(base_value * scale), minimum, maximum)
 
 
 class MapGrid:
@@ -516,6 +662,8 @@ class MapGenerator:
         self._goal_region_id = 0
         self._central_region_id = 0
         self._protected_path: set[Point] = set()
+        self._quality_warnings: list[QualityWarning] = []
+        self._validation_metrics: dict[str, Any] = {}
         self._connectivity_repair_metrics: dict[str, int] = {
             "components_before": 0,
             "components_after": 0,
@@ -532,6 +680,16 @@ class MapGenerator:
     def connectivity_repair_metrics(self) -> dict[str, int]:
         """Return final walkable connectivity repair metrics."""
         return dict(self._connectivity_repair_metrics)
+
+    def generation_diagnostics(self) -> dict[str, Any]:
+        """Return non-fatal generation diagnostics."""
+        warnings = [warning.to_dict() for warning in self._quality_warnings]
+        status = "generated_with_warnings" if warnings else "generated"
+        return {
+            "status": status,
+            "warnings": warnings,
+            "metrics": dict(self._validation_metrics),
+        }
 
     def derived_config(self) -> DerivedConfig:
         """Return derived configuration."""
@@ -1095,7 +1253,10 @@ class MapGenerator:
                 if self._rng.random() < 0.65:
                     continue
 
-            radius = self._rng.randint(1, 3)
+            radius = self._rng.randint(
+                self._derived.water_patch_min_radius,
+                self._derived.water_patch_max_radius,
+            )
             self._paint_patch(
                 center=center,
                 radius=radius,
@@ -1769,6 +1930,8 @@ class MapGenerator:
 
     def _validate(self) -> None:
         LOGGER.info("Stage 11: validate map")
+        self._quality_warnings = []
+        self._validation_metrics = {}
         validator = MapValidator(self._grid)
         start = self.start_point()
         goal = self.goal_point()
@@ -1776,49 +1939,129 @@ class MapGenerator:
         distances = validator.reachable_distances(start)
 
         if goal not in distances:
-            raise GenerationError("Goal is not reachable from start")
+            self._add_quality_warning(
+                "topology.goal_unreachable",
+                "Goal is not reachable from start.",
+            )
 
         if central not in distances:
-            raise GenerationError("Central ruin clearing is not reachable from start")
+            self._add_quality_warning(
+                "topology.central_unreachable",
+                "Central ruin clearing is not reachable from start.",
+            )
 
+        unreachable_regions: list[int] = []
         for region in self._regions:
             if region.center not in distances and not any(point in distances for point in region.entrances):
-                raise GenerationError(f"Region {region.region_id} is not reachable")
+                unreachable_regions.append(region.region_id)
+
+        if unreachable_regions:
+            self._add_quality_warning(
+                "topology.regions_unreachable",
+                "One or more generated regions are not reachable from start.",
+                details={"region_ids": unreachable_regions},
+            )
 
         components = validator.components()
         path_components = validator.path_network_components()
         walkable_ratio = validator.walkable_ratio()
         dead_end_ratio = validator.dead_end_ratio()
-        path_length = distances[goal]
+        path_length = distances.get(goal)
         manhattan = max(1, self._manhattan(start, goal))
-        tortuosity = path_length / manhattan
+        tortuosity = None if path_length is None else path_length / manhattan
         counts = self._tile_counts()
         grass_to_path = counts[TileType.GRASS] / max(1, counts[TileType.PATH])
+        tile_counts = {tile.value: value for tile, value in counts.items()}
 
-        LOGGER.info("  Walkable ratio=%.3f", walkable_ratio)
-        LOGGER.info("  Dead-end ratio=%.3f", dead_end_ratio)
-        LOGGER.info("  Walkable components=%s", len(components))
-        LOGGER.info("  Path network components=%s", len(path_components))
-        LOGGER.info("  S-G path length=%s", path_length)
-        LOGGER.info("  S-G Manhattan=%s", manhattan)
-        LOGGER.info("  S-G tortuosity=%.3f", tortuosity)
-        LOGGER.info("  Grass/path ratio=%.3f", grass_to_path)
-        LOGGER.info("  Tile counts=%s", {tile.value: value for tile, value in counts.items()})
+        self._validation_metrics = {
+            "walkable_ratio": round(walkable_ratio, 3),
+            "dead_end_ratio": round(dead_end_ratio, 3),
+            "walkable_components": len(components),
+            "path_network_components": len(path_components),
+            "start_goal_path_length": path_length,
+            "start_goal_manhattan": manhattan,
+            "start_goal_tortuosity": None if tortuosity is None else round(tortuosity, 3),
+            "grass_path_ratio": round(grass_to_path, 3),
+            "tile_counts": tile_counts,
+        }
+
+        LOGGER.debug("  Walkable ratio=%.3f", walkable_ratio)
+        LOGGER.debug("  Dead-end ratio=%.3f", dead_end_ratio)
+        LOGGER.debug("  Walkable components=%s", len(components))
+        LOGGER.debug("  Path network components=%s", len(path_components))
+        LOGGER.debug("  S-G path length=%s", path_length)
+        LOGGER.debug("  S-G Manhattan=%s", manhattan)
+        LOGGER.debug("  S-G tortuosity=%s", "n/a" if tortuosity is None else f"{tortuosity:.3f}")
+        LOGGER.debug("  Grass/path ratio=%.3f", grass_to_path)
+        LOGGER.debug("  Tile counts=%s", tile_counts)
 
         if len(components) != 1:
-            raise GenerationError(f"Walkable map must be one component, got {len(components)}")
+            self._add_quality_warning(
+                "topology.walkable_components",
+                "Walkable map has more than one component.",
+                value=len(components),
+                recommended_max=1,
+            )
 
         if walkable_ratio < self._derived.min_walkable_ratio:
-            raise GenerationError(f"Walkable ratio is too low: {walkable_ratio:.3f}")
+            self._add_quality_warning(
+                "quality.walkable_ratio_low",
+                "Walkable ratio is below the recommended profile range.",
+                value=round(walkable_ratio, 3),
+                recommended_min=self._derived.min_walkable_ratio,
+            )
 
         if walkable_ratio > self._derived.max_walkable_ratio:
-            raise GenerationError(f"Walkable ratio is too high: {walkable_ratio:.3f}")
+            self._add_quality_warning(
+                "quality.walkable_ratio_high",
+                "Walkable ratio is above the recommended profile range.",
+                value=round(walkable_ratio, 3),
+                recommended_max=self._derived.max_walkable_ratio,
+            )
 
         if dead_end_ratio > self._derived.max_dead_end_ratio:
-            raise GenerationError(f"Dead-end ratio is too high: {dead_end_ratio:.3f}")
+            self._add_quality_warning(
+                "quality.dead_end_ratio_high",
+                "Dead-end ratio is above the recommended profile range.",
+                value=round(dead_end_ratio, 3),
+                recommended_max=self._derived.max_dead_end_ratio,
+            )
 
         if grass_to_path < self._derived.min_grass_to_path_ratio:
-            raise GenerationError(f"Roads are too wide: grass/path ratio={grass_to_path:.3f}")
+            self._add_quality_warning(
+                "quality.roads_too_wide",
+                "Grass/path ratio is below the recommended profile range.",
+                value=round(grass_to_path, 3),
+                recommended_min=self._derived.min_grass_to_path_ratio,
+            )
+
+    def _add_quality_warning(
+        self,
+        code: str,
+        message: str,
+        *,
+        value: float | int | None = None,
+        recommended_min: float | int | None = None,
+        recommended_max: float | int | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        """Record a non-fatal map quality warning."""
+        warning = QualityWarning(
+            code=code,
+            message=message,
+            value=value,
+            recommended_min=recommended_min,
+            recommended_max=recommended_max,
+            details=details or {},
+        )
+        self._quality_warnings.append(warning)
+        LOGGER.warning(
+            "%s value=%s recommended_min=%s recommended_max=%s",
+            code,
+            value,
+            recommended_min,
+            recommended_max,
+        )
 
     def _winding_points(self, start: Point, end: Point) -> list[Point]:
         current = start
@@ -3531,6 +3774,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable PNG rendering.",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose legacy generator logs on stderr.",
+    )
     return parser.parse_args()
 
 
@@ -3541,15 +3789,18 @@ def configure_logging(verbose: bool, log_file: Path | None) -> None:
         verbose: Whether verbose logging is enabled.
         log_file: Optional log file path.
     """
-    level = logging.INFO if verbose else logging.WARNING
-    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG if verbose else logging.WARNING)
+    handlers: list[logging.Handler] = [console_handler]
 
     if log_file is not None:
         log_file.parent.mkdir(parents=True, exist_ok=True)
-        handlers.append(logging.FileHandler(log_file, encoding="utf-8"))
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler.setLevel(logging.DEBUG)
+        handlers.append(file_handler)
 
     logging.basicConfig(
-        level=level,
+        level=logging.DEBUG,
         format="%(levelname)s: %(message)s",
         handlers=handlers,
     )
@@ -3561,7 +3812,7 @@ def main() -> int:
 
     try:
         public_config = PublicConfig.from_json_file(args.config)
-        configure_logging(True, args.log_file)
+        configure_logging(args.verbose, args.log_file)
         max_attempts = DerivedConfig.from_public(public_config).max_generation_attempts
         tactical_out = args.tactical_out or args.out.with_name("tactical_map.json")
         render_out = args.render_out or args.out.with_name("layer_base_map.png")
@@ -3590,7 +3841,7 @@ def main() -> int:
         last_error: Exception | None = None
 
         for attempt in range(1, max_attempts + 1):
-            LOGGER.info("GENERATION ATTEMPT %s/%s", attempt, max_attempts)
+            LOGGER.debug("GENERATION ATTEMPT %s/%s", attempt, max_attempts)
             try:
                 generator = MapGenerator(public_config)
                 grid = generator.generate()
@@ -3609,6 +3860,7 @@ def main() -> int:
                     tactical_data=tactical_data,
                 ).build()
                 tactical_data["connectivity_repair"] = generator.connectivity_repair_metrics()
+                tactical_data["generation_diagnostics"] = generator.generation_diagnostics()
                 TacticalExporter.export(tactical_data, tactical_out)
 
                 if not args.no_render:
@@ -3642,17 +3894,17 @@ def main() -> int:
                         enemy_spawn_zones_render_out,
                     )
 
-                LOGGER.info("Generation attempt %s succeeded", attempt)
-                LOGGER.info("Generated map saved to: %s", args.out)
-                LOGGER.info("Tactical map saved to: %s", tactical_out)
+                LOGGER.debug("Generation attempt %s succeeded", attempt)
+                LOGGER.debug("Generated map saved to: %s", args.out)
+                LOGGER.debug("Tactical map saved to: %s", tactical_out)
                 if not args.no_render:
-                    LOGGER.info("Base map layer saved to: %s", render_out)
-                    LOGGER.info("Combat zones layer saved to: %s", combat_zones_render_out)
-                    LOGGER.info("Cover points layer saved to: %s", cover_points_render_out)
-                    LOGGER.info("Choke points layer saved to: %s", choke_points_render_out)
-                    LOGGER.info("Flank routes layer saved to: %s", flank_routes_render_out)
-                    LOGGER.info("Enemy spawn zones layer saved to: %s", enemy_spawn_zones_render_out)
-                    LOGGER.info("Combined AI debug layer saved to: %s", debug_render_out)
+                    LOGGER.debug("Base map layer saved to: %s", render_out)
+                    LOGGER.debug("Combat zones layer saved to: %s", combat_zones_render_out)
+                    LOGGER.debug("Cover points layer saved to: %s", cover_points_render_out)
+                    LOGGER.debug("Choke points layer saved to: %s", choke_points_render_out)
+                    LOGGER.debug("Flank routes layer saved to: %s", flank_routes_render_out)
+                    LOGGER.debug("Enemy spawn zones layer saved to: %s", enemy_spawn_zones_render_out)
+                    LOGGER.debug("Combined AI debug layer saved to: %s", debug_render_out)
                 return 0
             except GenerationError as exc:
                 last_error = exc

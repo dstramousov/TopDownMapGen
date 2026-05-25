@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-PLACES_SCHEMA_VERSION = "places-v1"
+from ..config import PlacesConfig
+
+PLACES_SCHEMA_VERSION = "places-v2"
 MIN_PLACES = 1
 MAX_PLACES = 12
 MIN_PLACE_DISTANCE_TILES = 6
@@ -58,25 +60,36 @@ PLACE_TYPE_BY_NAME: dict[str, dict[str, Any]] = {
 }
 
 
-def attach_places(tactical_data: dict[str, Any]) -> dict[str, Any]:
+def attach_places(
+    tactical_data: dict[str, Any],
+    *,
+    config: PlacesConfig | None = None,
+) -> dict[str, Any]:
     """Attach micro-location places to tactical data.
 
     Args:
         tactical_data: Runtime tactical JSON object with runtime objects.
+        config: Optional micro-location grouping config.
 
     Returns:
         Copy of tactical data with place sections.
     """
+    places_config = config or PlacesConfig()
     enriched = dict(tactical_data)
-    enriched.setdefault("place_schema", _place_schema())
+    enriched.setdefault("place_schema", _place_schema(places_config))
 
     existing_places = enriched.get("places")
     if isinstance(existing_places, list) and existing_places:
         enriched["places_summary"] = summarize_places(existing_places)
         return enriched
 
+    if not places_config.enabled or places_config.max_places <= 0:
+        enriched["places"] = []
+        enriched["places_summary"] = summarize_places([])
+        return enriched
+
     runtime_objects = _runtime_objects(enriched)
-    places = PlaceAssembler(runtime_objects).assemble()
+    places = PlaceAssembler(runtime_objects, places_config).assemble()
     enriched["places"] = places
     enriched["places_summary"] = summarize_places(places)
     return enriched
@@ -107,12 +120,18 @@ def summarize_places(places: Any) -> dict[str, Any]:
 class PlaceAssembler:
     """Builds small map scenes from already placed runtime objects."""
 
-    def __init__(self, runtime_objects: list[dict[str, Any]]) -> None:
+    def __init__(
+        self,
+        runtime_objects: list[dict[str, Any]],
+        config: PlacesConfig,
+    ) -> None:
         """Initialize assembler.
 
         Args:
             runtime_objects: Runtime objects to group into places.
+            config: Micro-location grouping config.
         """
+        self._config = config
         self._by_type = _objects_by_type(runtime_objects)
         self._used_object_ids: set[str] = set()
         self._used_centers: list[tuple[int, int]] = []
@@ -125,7 +144,7 @@ class PlaceAssembler:
         """
         places: list[dict[str, Any]] = []
         for spec in PLACE_TYPES:
-            if len(places) >= MAX_PLACES:
+            if len(places) >= self._config.max_places:
                 break
             place = self._build_place(spec, serial=len(places))
             if place is not None:
@@ -161,7 +180,7 @@ class PlaceAssembler:
             "type": spec["type"],
             "role": spec["role"],
             "center": {"x": center[0], "y": center[1]},
-            "radius": PLACE_RADIUS_TILES,
+            "radius": self._config.radius_tiles,
             "object_ids": object_ids,
             "anchor_object_id": object_ids[0],
             "tags": list(spec.get("tags", [])),
@@ -198,18 +217,20 @@ class PlaceAssembler:
 
     def _too_close_to_existing_place(self, center: tuple[int, int]) -> bool:
         return any(
-            _manhattan(center, used_center) < MIN_PLACE_DISTANCE_TILES
+            _manhattan(center, used_center) < self._config.min_distance_tiles
             for used_center in self._used_centers
         )
 
 
-def _place_schema() -> dict[str, Any]:
+def _place_schema(config: PlacesConfig) -> dict[str, Any]:
     return {
         "schema_version": PLACES_SCHEMA_VERSION,
         "types": [dict(item) for item in PLACE_TYPES],
         "min_places": MIN_PLACES,
-        "max_places": MAX_PLACES,
-        "min_place_distance_tiles": MIN_PLACE_DISTANCE_TILES,
+        "max_places": config.max_places,
+        "min_place_distance_tiles": config.min_distance_tiles,
+        "radius_tiles": config.radius_tiles,
+        "tuning": config.to_dict(),
     }
 
 

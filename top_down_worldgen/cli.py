@@ -37,17 +37,25 @@ def configure_logging(log_file: Path | None, verbose: bool = False) -> None:
         log_file: Optional log file path.
         verbose: Whether to enable debug-level logging.
     """
-    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
+    handlers: list[logging.Handler] = [console_handler]
     if log_file is not None:
         log_file.parent.mkdir(parents=True, exist_ok=True)
-        handlers.append(logging.FileHandler(log_file, encoding="utf-8"))
-    level = logging.DEBUG if verbose else logging.INFO
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler.setLevel(logging.DEBUG)
+        handlers.append(file_handler)
     logging.basicConfig(
-        level=level,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        level=logging.DEBUG,
+        format="%(levelname)s: %(message)s",
         handlers=handlers,
     )
     logging.getLogger("PIL").setLevel(logging.WARNING)
+    if verbose:
+        logging.getLogger("top_down_worldgen").setLevel(logging.DEBUG)
+    else:
+        logging.getLogger("top_down_worldgen").setLevel(logging.WARNING)
+        LOGGER.setLevel(logging.INFO)
 
 
 def main() -> int:
@@ -62,7 +70,7 @@ def main() -> int:
                 "--no-debug-images is deprecated and has no effect; "
                 "debug PNG layers are disabled by default",
             )
-        LOGGER.info(
+        LOGGER.debug(
             "CLI args config=%s out=%s render=%s debug_layers=%s tile_size_px=%s "
             "log_file=%s verbose=%s",
             args.config,
@@ -73,7 +81,7 @@ def main() -> int:
             args.log_file,
             args.verbose,
         )
-        with timed_stage(LOGGER, "cli.main"):
+        with timed_stage(LOGGER, "cli.main", level=logging.DEBUG):
             result = WorldgenPipeline(project_root).run(
                 config_path=args.config,
                 output_map=args.out,
@@ -82,16 +90,24 @@ def main() -> int:
                 debug_images=debug_layers,
                 log_file=args.log_file,
             )
-        LOGGER.info("Generated map: %s", result.outputs.generated_map)
-        LOGGER.info("Runtime tactical map: %s", result.outputs.tactical_map)
-        LOGGER.info("Debug tactical map: %s", result.outputs.tactical_map_debug)
-        LOGGER.info("Generation manifest: %s", result.outputs.manifest)
+        LOGGER.info(
+            "Done seed=%s size=%sx%s status=%s warnings=%s errors=%s output_dir=%s",
+            result.metrics.get("resolved_seed"),
+            result.metrics.get("map_width_tiles"),
+            result.metrics.get("map_height_tiles"),
+            result.metrics.get("validation_status"),
+            result.metrics.get("validation_warnings"),
+            result.metrics.get("validation_errors"),
+            result.outputs.output_dir,
+        )
+        LOGGER.info(
+            "Outputs map=%s tactical=%s manifest=%s",
+            result.outputs.generated_map,
+            result.outputs.tactical_map,
+            result.outputs.manifest,
+        )
         if not args.no_render:
-            LOGGER.info("Rendered base PNG layer in: %s", result.outputs.output_dir)
-            if debug_layers:
-                LOGGER.info("Rendered PNG debug layers in: %s", result.outputs.output_dir)
-            else:
-                LOGGER.info("PNG debug layers were skipped by default")
+            LOGGER.debug("Rendered PNG layers in: %s", result.outputs.output_dir)
         if args.profile_performance:
             LOGGER.info("engine_time_ms=%.2f", result.metrics["engine_time_ms"])
             LOGGER.info("tactical_time_ms=%.2f", result.metrics["tactical_time_ms"])

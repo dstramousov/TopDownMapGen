@@ -5,5 +5,48 @@
   "chunk_width_tiles": 16,
   "chunk_height_tiles": 16,
   "biome_profile": "forest_ruins",
-  "objective_profile": "survival"
+  "objective_profile": "survival",
+  "generation_tuning": {
+    "water_scale": 1.0,
+    "ruins_scale": 1.0,
+    "openness_scale": 1.0,
+    "road_width_scale": 1.0,
+    "decoration_scale": 1.0
+  },
+  "runtime_objects": {
+    "enabled": true,
+    "global_scale": 1.0,
+    "max_objects": 128,
+    "type_scales": {
+      "fallen_log": 1.0,
+      "stone_chunk": 1.0,
+      "bush_thicket": 1.0,
+      "scrap_pile": 1.0,
+      "rusted_barrel": 1.0,
+      "ammo_cache": 1.0,
+      "medkit_cache": 1.0,
+      "trench": 1.0,
+      "big_dead_tree": 1.0,
+      "broken_radio_mast": 1.0,
+      "old_checkpoint": 1.0,
+      "car_wreck": 1.0,
+      "abandoned_backpack": 1.0,
+      "field_tent": 1.0,
+      "dead_campfire": 1.0,
+      "broken_generator": 1.0,
+      "cable_spool": 1.0,
+      "warning_sign": 1.0,
+      "old_grave_marker": 1.0,
+      "pit": 1.0,
+      "earth_berm": 1.0,
+      "old_well": 1.0,
+      "abandoned_cart": 1.0
+    }
+  },
+  "places": {
+    "enabled": true,
+    "max_places": 12,
+    "min_distance_tiles": 6,
+    "radius_tiles": 6
+  }
 }

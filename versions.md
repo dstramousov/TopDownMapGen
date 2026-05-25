@@ -193,3 +193,25 @@
 - Metrics header больше не содержит устаревший `v0.19` и использует текущую версию проекта.
 - Schema versions подняты до `tactical-map-v0.33`, `tactical-debug-v0.21`.
 - Версия проекта поднята до `0.0.24`.
+
+## v0.0.24 -> v0.0.25
+
+- В публичный config добавлен блок `generation_tuning` для управления водой, руинами, открытостью карты, шириной дорог и декоративными пятнами.
+- В legacy engine подключены tuning-параметры: `water_scale`, `ruins_scale`, `openness_scale`, `road_width_scale`, `decoration_scale` влияют на derived generation settings.
+- В публичный config добавлен блок `runtime_objects` с `enabled`, `global_scale`, `max_objects` и `type_scales` для настройки квот runtime-объектов по каждому типу.
+- В публичный config добавлен блок `places` с управлением включением, лимитом сцен, минимальной дистанцией и радиусом микролокаций.
+- `runtime_object_schema` и `place_schema` теперь сохраняют фактически применённый tuning, чтобы downstream-код видел, с какими настройками создана карта.
+- Smoke-тест default config синхронизирован с фактическим размером карты `192x192` из свежего архива.
+- Добавлены targeted tests для config tuning, legacy derived settings, per-type runtime object scaling и places tuning.
+- Schema versions подняты до `generation-manifest-v16`, `tactical-map-v0.34`, `runtime-objects-v10`, `places-v2`.
+- Версия проекта поднята до `0.0.25`.
+
+## v0.0.25 -> v0.0.26
+
+- Legacy quality validation no longer aborts generation for tunable gameplay/profile issues; these checks now produce `generation_diagnostics.warnings`.
+- Retry loop no longer burns all attempts on maps that are merely too open, too closed, too straight, or outside recommended quality ranges.
+- `validation_report.json` now supports `passed_with_warnings` and treats selected gameplay-density checks as warnings instead of structural errors.
+- CLI default logging is reduced to compact summary output; detailed pipeline/legacy logs are available with `--verbose` or `--log-file`.
+- Legacy failure reporting now shows a concise tail instead of dumping the full captured stdout/stderr blob into the console.
+- Schema versions подняты до `generation-manifest-v17`, `tactical-map-v0.35`, `tactical-debug-v0.22`, `validation-report-v13`.
+- Версия проекта поднята до `0.0.26`.

@@ -244,7 +244,7 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
         resolved_seed=42,
     )
 
-    assert report["status"] == "passed"
+    assert report["status"] == "passed_with_warnings"
     assert report["checks"]["runtime_objects_have_valid_types"] is True
     assert report["checks"]["trench_shapes_valid"] is True
     assert report["checks"]["trench_footprints_connected"] is True

@@ -82,7 +82,36 @@ class LegacyEngineRunner:
                 LOGGER.debug("Legacy stderr:\n%s", result.stderr)
             if result.returncode != 0:
                 raise RuntimeError(
-                    "Legacy engine failed\n"
-                    f"STDOUT:\n{result.stdout}\n"
-                    f"STDERR:\n{result.stderr}"
+                    _format_legacy_failure(
+                        returncode=result.returncode,
+                        stdout=result.stdout,
+                        stderr=result.stderr,
+                        log_file=log_file,
+                    ),
                 )
+
+
+def _format_legacy_failure(
+    *,
+    returncode: int,
+    stdout: str,
+    stderr: str,
+    log_file: Path | None,
+) -> str:
+    """Format a concise legacy engine failure message."""
+    parts = [f"Legacy engine failed returncode={returncode}"]
+    stderr_tail = _tail_lines(stderr, limit=20)
+    stdout_tail = _tail_lines(stdout, limit=10)
+    if stderr_tail:
+        parts.append("Last legacy stderr lines:\n" + stderr_tail)
+    if stdout_tail:
+        parts.append("Last legacy stdout lines:\n" + stdout_tail)
+    if log_file is not None:
+        parts.append(f"Full legacy log: {log_file}")
+    return "\n".join(parts)
+
+
+def _tail_lines(text: str, *, limit: int) -> str:
+    """Return the last non-empty lines from a text block."""
+    lines = [line for line in text.splitlines() if line.strip()]
+    return "\n".join(lines[-limit:])
