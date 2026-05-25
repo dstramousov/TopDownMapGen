@@ -184,3 +184,12 @@
 - `layer_runtime_objects.png` и `layer_all_debug.png` отображают новые runtime-объекты.
 - Schema versions подняты до `generation-manifest-v15`, `validation-report-v12`, `object-catalog-v3`, `runtime-objects-v9`, `tactical-map-v0.32`.
 - Версия проекта поднята до `0.0.23`.
+
+## v0.0.23 -> v0.0.24
+
+- Smoke-тест default config синхронизирован с текущим размером карты `192x128`.
+- `--render-tile-size 32` теперь работает без `assets/tiles_32`, масштабируя 16px tileset через nearest-neighbor.
+- В runtime/debug tactical JSON добавлены явные `schema_version`, `generator_version` и `pipeline_version`.
+- Metrics header больше не содержит устаревший `v0.19` и использует текущую версию проекта.
+- Schema versions подняты до `tactical-map-v0.33`, `tactical-debug-v0.21`.
+- Версия проекта поднята до `0.0.24`.

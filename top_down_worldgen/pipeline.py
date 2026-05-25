@@ -177,8 +177,14 @@ class WorldgenPipeline:
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data = attach_runtime_layers(runtime_data, seed=config.resolved_seed)
             runtime_data = attach_places(runtime_data)
-            runtime_data["version"] = "0.31-runtime"
-            debug_data["version"] = "0.20-debug"
+            runtime_data["schema_version"] = TACTICAL_MAP_SCHEMA_VERSION
+            runtime_data["generator_version"] = self._project_version()
+            runtime_data["pipeline_version"] = "pipeline-v1"
+            runtime_data["version"] = "0.33-runtime"
+            debug_data["schema_version"] = TACTICAL_DEBUG_SCHEMA_VERSION
+            debug_data["generator_version"] = self._project_version()
+            debug_data["pipeline_version"] = "pipeline-v1"
+            debug_data["version"] = "0.21-debug"
 
             write_json(runtime_data, outputs.tactical_map)
             write_json(debug_data, outputs.tactical_map_debug)
@@ -252,7 +258,7 @@ class WorldgenPipeline:
         connectivity_repair = runtime_data.get("connectivity_repair", {})
 
         metrics = {
-            "version": "clean_refactor",
+            "version": self._project_version(),
             "map_width_tiles": width,
             "map_height_tiles": height,
             "resolved_seed": config.resolved_seed,
@@ -482,7 +488,8 @@ class WorldgenPipeline:
 
     @staticmethod
     def _format_metrics(metrics: dict[str, Any]) -> str:
-        lines = ["Top-down worldgen v0.19 refactor metrics", ""]
+        version = WorldgenPipeline._project_version()
+        lines = [f"Top-down worldgen v{version} metrics", ""]
         for key, value in metrics.items():
             lines.append(f"{key}: {value}")
         lines.append("")

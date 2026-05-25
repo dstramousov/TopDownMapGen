@@ -71,7 +71,7 @@ class LayerRenderer:
         if tile_size_px not in {16, 32}:
             raise ValueError("tile_size_px must be 16 or 32")
         self._tile_size_px = tile_size_px
-        self._tiles_dir = assets_dir / f"tiles_{tile_size_px}"
+        self._tiles_dir = self._resolve_tiles_dir(assets_dir, tile_size_px)
         self._tiles = self._load_tiles()
 
     def render_all(
@@ -385,6 +385,23 @@ class LayerRenderer:
                 outline=(255, 245, 210, 230),
                 width=1,
             )
+
+    @staticmethod
+    def _resolve_tiles_dir(assets_dir: Path, tile_size_px: int) -> Path:
+        requested_dir = assets_dir / f"tiles_{tile_size_px}"
+        if requested_dir.exists():
+            return requested_dir
+
+        fallback_dir = assets_dir / "tiles_16"
+        if tile_size_px == 32 and fallback_dir.exists():
+            LOGGER.warning(
+                "%s is missing; scaling %s assets to 32px",
+                requested_dir,
+                fallback_dir,
+            )
+            return fallback_dir
+
+        return requested_dir
 
     def _load_tiles(self) -> dict[str, Image.Image]:
         with timed_stage(
