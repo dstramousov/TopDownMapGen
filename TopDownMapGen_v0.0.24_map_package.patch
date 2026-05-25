@@ -1,0 +1,836 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 88d2e49..a443a9e 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "top-down-worldgen"
+-version = "0.0.23"
++version = "0.0.24"
+ description = "Seed-based procedural map generator for top-down games."
+ readme = "README.md"
+ requires-python = ">=3.12"
+diff --git a/tests/test_manifest.py b/tests/test_manifest.py
+index 1c41c22..58fb660 100644
+--- a/tests/test_manifest.py
++++ b/tests/test_manifest.py
+@@ -40,9 +40,9 @@ def test_build_manifest_marks_primary_and_debug_outputs(tmp_path: Path) -> None:
+         metrics={"combat_zones": 1},
+     )
+ 
+-    assert manifest["schema_version"] == "generation-manifest-v15"
+-    assert manifest["versions"]["generator"] == "0.0.23"
+-    assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v15"
++    assert manifest["schema_version"] == "generation-manifest-v16"
++    assert manifest["versions"]["generator"] == "0.0.24"
++    assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v16"
+     assert manifest["seed"] == 42
+     assert manifest["resolved_seed"] == 42
+     assert manifest["dimensions"]["width_tiles"] == 2
+diff --git a/tests/test_map_package.py b/tests/test_map_package.py
+new file mode 100644
+index 0000000..2916531
+--- /dev/null
++++ b/tests/test_map_package.py
+@@ -0,0 +1,59 @@
++from __future__ import annotations
++
++import json
++from pathlib import Path
++
++from top_down_worldgen.export.map_package import write_map_package
++from top_down_worldgen.paths import OutputPaths
++
++
++def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
++    """Ensure structured map package files are written from runtime data."""
++    outputs = OutputPaths.from_output_map(tmp_path / "generated_map.txt")
++    runtime_data = {
++        "map": {
++            "width": 2,
++            "height": 2,
++            "tile_legend": {"S": "start", "G": "goal", "+": "grass"},
++            "tile_grid": ["S+", "+G"],
++            "tile_counts": {"S": 1, "G": 1, "+": 2},
++        },
++        "movement_costs": {"+": 1, "S": 1, "G": 1},
++        "combat_zones": [{"id": "zone_0"}],
++        "cover_points": [{"id": "cover_0"}],
++        "choke_points": [],
++        "flank_routes": [],
++        "enemy_spawn_zones": [],
++        "fallback_positions": [],
++        "runtime_objects": [{"id": "stone_0", "type": "stone_chunk"}],
++        "runtime_objects_summary": {"total": 1},
++        "places": [],
++        "places_summary": {"total": 0},
++        "elevation": {"default": 0, "cells": []},
++    }
++
++    write_map_package(
++        outputs=outputs,
++        runtime_data=runtime_data,
++        rows=["S+", "+G"],
++        width=2,
++        height=2,
++        tile_size_px=16,
++        seed="random",
++        resolved_seed=42,
++        profile="clear_map",
++    )
++
++    package_index = json.loads(outputs.map_package_map.read_text(encoding="utf-8"))
++    tile_grid = json.loads(outputs.map_package_tile_grid.read_text(encoding="utf-8"))
++    runtime_objects = json.loads(
++        outputs.map_package_runtime_objects.read_text(encoding="utf-8"),
++    )
++
++    assert package_index["schema_version"] == "map-package-map-v1"
++    assert package_index["dimensions"]["width_tiles"] == 2
++    assert package_index["points"]["start"] == {"x": 0, "y": 0}
++    assert package_index["points"]["goal"] == {"x": 1, "y": 1}
++    assert package_index["layers"]["collision"] == "layers/collision.json"
++    assert tile_grid["rows"] == ["S+", "+G"]
++    assert runtime_objects["items"][0]["type"] == "stone_chunk"
+diff --git a/tests/test_paths.py b/tests/test_paths.py
+index 16a25b8..f385d32 100644
+--- a/tests/test_paths.py
++++ b/tests/test_paths.py
+@@ -19,3 +19,16 @@ def test_output_paths_include_runtime_objects_layer(tmp_path: Path) -> None:
+     outputs = OutputPaths.from_output_map(tmp_path / "generated_map.txt")
+ 
+     assert outputs.layer_runtime_objects.name == "layer_runtime_objects.png"
++
++
++def test_output_paths_include_map_package_paths(tmp_path: Path) -> None:
++    """Ensure structured map package paths are stable."""
++    outputs = OutputPaths.from_output_map(tmp_path / "generated_map.txt")
++
++    assert outputs.map_package_map.as_posix().endswith("map_package/map.json")
++    assert outputs.map_package_tile_grid.as_posix().endswith(
++        "map_package/layers/tile_grid.json",
++    )
++    assert outputs.map_package_runtime_objects.as_posix().endswith(
++        "map_package/objects/runtime_objects.json",
++    )
+diff --git a/tests/test_runtime_objects.py b/tests/test_runtime_objects.py
+index c070bb4..ccce4cd 100644
+--- a/tests/test_runtime_objects.py
++++ b/tests/test_runtime_objects.py
+@@ -11,6 +11,27 @@ from top_down_worldgen.tactical.runtime_objects import (
+ from top_down_worldgen.validation import build_validation_report
+ 
+ 
++def _write_map_package_files(outputs: OutputPaths) -> None:
++    """Create minimal structured map package files for validation tests."""
++    for path in (
++        outputs.map_package_map,
++        outputs.map_package_tile_grid,
++        outputs.map_package_movement_costs,
++        outputs.map_package_collision,
++        outputs.map_package_elevation,
++        outputs.map_package_combat_zones,
++        outputs.map_package_cover_points,
++        outputs.map_package_choke_points,
++        outputs.map_package_flank_routes,
++        outputs.map_package_enemy_spawn_zones,
++        outputs.map_package_fallback_positions,
++        outputs.map_package_runtime_objects,
++        outputs.map_package_places,
++    ):
++        path.parent.mkdir(parents=True, exist_ok=True)
++        path.write_text("{}\n", encoding="utf-8")
++
++
+ def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
+     spec = RUNTIME_OBJECT_TYPE_BY_NAME[str(item["type"])]
+     enriched = dict(item)
+@@ -99,6 +120,7 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
+     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
+     outputs.metrics.write_text("metrics\n", encoding="utf-8")
+     outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
++    _write_map_package_files(outputs)
+ 
+     runtime_data = attach_runtime_layers(
+         {
+@@ -265,6 +287,7 @@ def test_validation_rejects_runtime_object_on_start(tmp_path: Path) -> None:
+     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
+     outputs.metrics.write_text("metrics\n", encoding="utf-8")
+     outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
++    _write_map_package_files(outputs)
+ 
+     runtime_data = attach_runtime_layers(
+         {
+diff --git a/tests/test_smoke.py b/tests/test_smoke.py
+index 353443d..8099cd3 100644
+--- a/tests/test_smoke.py
++++ b/tests/test_smoke.py
+@@ -6,14 +6,14 @@ from top_down_worldgen.config import PublicConfig
+ 
+ def test_package_version() -> None:
+     """Ensure package exposes the current version."""
+-    assert __version__ == "0.0.23"
++    assert __version__ == "0.0.24"
+ 
+ 
+ def test_default_config_can_be_loaded() -> None:
+     """Ensure the default config remains loadable."""
+     config = PublicConfig.from_file(Path("configs/default.json"))
+ 
+-    assert config.map_width_tiles == 208
+-    assert config.map_height_tiles == 192
++    assert config.map_width_tiles == 160
++    assert config.map_height_tiles == 160
+     assert config.objective_profile == "clear_map"
+     assert isinstance(config.resolved_seed, int)
+diff --git a/tests/test_validation_report.py b/tests/test_validation_report.py
+index 96fe3af..94342c3 100644
+--- a/tests/test_validation_report.py
++++ b/tests/test_validation_report.py
+@@ -10,6 +10,27 @@ from top_down_worldgen.tactical.runtime_objects import (
+ from top_down_worldgen.validation import build_validation_report
+ 
+ 
++def _write_map_package_files(outputs: OutputPaths) -> None:
++    """Create minimal structured map package files for validation tests."""
++    for path in (
++        outputs.map_package_map,
++        outputs.map_package_tile_grid,
++        outputs.map_package_movement_costs,
++        outputs.map_package_collision,
++        outputs.map_package_elevation,
++        outputs.map_package_combat_zones,
++        outputs.map_package_cover_points,
++        outputs.map_package_choke_points,
++        outputs.map_package_flank_routes,
++        outputs.map_package_enemy_spawn_zones,
++        outputs.map_package_fallback_positions,
++        outputs.map_package_runtime_objects,
++        outputs.map_package_places,
++    ):
++        path.parent.mkdir(parents=True, exist_ok=True)
++        path.write_text("{}\n", encoding="utf-8")
++
++
+ def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
+     spec = RUNTIME_OBJECT_TYPE_BY_NAME[str(item["type"])]
+     enriched = dict(item)
+@@ -34,6 +55,7 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
+     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
+     outputs.metrics.write_text("metrics\n", encoding="utf-8")
+     outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
++    _write_map_package_files(outputs)
+ 
+     runtime_data = attach_runtime_layers({
+         "map": {
+@@ -190,6 +212,7 @@ def test_validation_report_rejects_broken_tile_counts(tmp_path: Path) -> None:
+     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
+     outputs.metrics.write_text("metrics\n", encoding="utf-8")
+     outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
++    _write_map_package_files(outputs)
+ 
+     runtime_data = {
+         "map": {
+diff --git a/top_down_worldgen/__init__.py b/top_down_worldgen/__init__.py
+index c9437b5..dba0258 100644
+--- a/top_down_worldgen/__init__.py
++++ b/top_down_worldgen/__init__.py
+@@ -1,3 +1,3 @@
+ """Top-down procedural world generation package."""
+ 
+-__version__ = "0.0.23"
++__version__ = "0.0.24"
+diff --git a/top_down_worldgen/export/__init__.py b/top_down_worldgen/export/__init__.py
+new file mode 100644
+index 0000000..c9e5e05
+--- /dev/null
++++ b/top_down_worldgen/export/__init__.py
+@@ -0,0 +1 @@
++"""Export helpers for generated world packages."""
+diff --git a/top_down_worldgen/export/map_package.py b/top_down_worldgen/export/map_package.py
+new file mode 100644
+index 0000000..2fb196b
+--- /dev/null
++++ b/top_down_worldgen/export/map_package.py
+@@ -0,0 +1,238 @@
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Any
++
++from top_down_worldgen import __version__
++from top_down_worldgen.manifest import (
++    COLLISION_LAYER_SCHEMA_VERSION,
++    ELEVATION_LAYER_SCHEMA_VERSION,
++    GAMEPLAY_LAYER_SCHEMA_VERSION,
++    MAP_PACKAGE_MAP_SCHEMA_VERSION,
++    MAP_PACKAGE_SCHEMA_VERSION,
++    MOVEMENT_LAYER_SCHEMA_VERSION,
++    OBJECT_INSTANCES_SCHEMA_VERSION,
++    PLACES_SCHEMA_VERSION,
++    TILE_GRID_LAYER_SCHEMA_VERSION,
++)
++from top_down_worldgen.paths import OutputPaths
++from top_down_worldgen.utils.json_io import write_json
++
++_GAMEPLAY_FILES: tuple[tuple[str, str], ...] = (
++    ("combat_zones", "combat_zones.json"),
++    ("cover_points", "cover_points.json"),
++    ("choke_points", "choke_points.json"),
++    ("flank_routes", "flank_routes.json"),
++    ("enemy_spawn_zones", "enemy_spawn_zones.json"),
++    ("fallback_positions", "fallback_positions.json"),
++)
++
++
++def write_map_package(
++    *,
++    outputs: OutputPaths,
++    runtime_data: dict[str, Any],
++    rows: list[str],
++    width: int,
++    height: int,
++    tile_size_px: int,
++    seed: Any,
++    resolved_seed: int,
++    profile: str,
++) -> None:
++    """Write the structured map package next to legacy outputs.
++
++    Args:
++        outputs: Output path bundle.
++        runtime_data: Runtime tactical map data.
++        rows: ASCII map rows.
++        width: Map width in tiles.
++        height: Map height in tiles.
++        tile_size_px: Tile size in pixels.
++        seed: Raw seed value from public config.
++        resolved_seed: Concrete uint64 seed used for the run.
++        profile: Objective profile name.
++    """
++    outputs.map_package_dir.mkdir(parents=True, exist_ok=True)
++    outputs.map_package_layers_dir.mkdir(parents=True, exist_ok=True)
++    outputs.map_package_gameplay_dir.mkdir(parents=True, exist_ok=True)
++    outputs.map_package_objects_dir.mkdir(parents=True, exist_ok=True)
++
++    map_data = _dict(runtime_data.get("map"))
++    tile_grid = _string_rows(map_data.get("tile_grid"), rows)
++    movement_costs = _dict(runtime_data.get("movement_costs"))
++    if not movement_costs:
++        movement_costs = _dict(map_data.get("movement_costs"))
++
++    write_json(
++        {
++            "schema_version": TILE_GRID_LAYER_SCHEMA_VERSION,
++            "kind": "tile_grid",
++            "width": width,
++            "height": height,
++            "format": "ascii_rows",
++            "tile_legend": _dict(map_data.get("tile_legend")),
++            "tile_counts": _dict(map_data.get("tile_counts")),
++            "rows": tile_grid,
++        },
++        outputs.map_package_tile_grid,
++    )
++    write_json(
++        {
++            "schema_version": MOVEMENT_LAYER_SCHEMA_VERSION,
++            "kind": "movement_costs",
++            "width": width,
++            "height": height,
++            "costs_by_tile": movement_costs,
++        },
++        outputs.map_package_movement_costs,
++    )
++    write_json(
++        {
++            "schema_version": COLLISION_LAYER_SCHEMA_VERSION,
++            "kind": "collision",
++            "width": width,
++            "height": height,
++            "blocked_tiles": ["T", "#"],
++            "passable_tiles": sorted(set("".join(tile_grid)) - {"T", "#"}),
++            "source": "tile_grid",
++        },
++        outputs.map_package_collision,
++    )
++    write_json(
++        {
++            "schema_version": ELEVATION_LAYER_SCHEMA_VERSION,
++            "kind": "elevation",
++            "width": width,
++            "height": height,
++            "elevation": _dict(runtime_data.get("elevation")),
++        },
++        outputs.map_package_elevation,
++    )
++
++    for key, filename in _GAMEPLAY_FILES:
++        write_json(
++            {
++                "schema_version": GAMEPLAY_LAYER_SCHEMA_VERSION,
++                "kind": key,
++                "items": _list(runtime_data.get(key)),
++            },
++            outputs.map_package_gameplay_dir / filename,
++        )
++
++    write_json(
++        {
++            "schema_version": OBJECT_INSTANCES_SCHEMA_VERSION,
++            "kind": "runtime_objects",
++            "items": _list(runtime_data.get("runtime_objects")),
++            "summary": _dict(runtime_data.get("runtime_objects_summary")),
++        },
++        outputs.map_package_runtime_objects,
++    )
++    write_json(
++        {
++            "schema_version": PLACES_SCHEMA_VERSION,
++            "kind": "places",
++            "items": _list(runtime_data.get("places")),
++            "summary": _dict(runtime_data.get("places_summary")),
++        },
++        outputs.map_package_places,
++    )
++
++    write_json(
++        {
++            "schema_version": MAP_PACKAGE_MAP_SCHEMA_VERSION,
++            "package_schema_version": MAP_PACKAGE_SCHEMA_VERSION,
++            "generator_version": __version__,
++            "pipeline_version": "pipeline-v1",
++            "seed": seed,
++            "resolved_seed": resolved_seed,
++            "profile": profile,
++            "dimensions": {
++                "width_tiles": width,
++                "height_tiles": height,
++                "tile_size_px": tile_size_px,
++            },
++            "coordinates": {
++                "origin": "top_left",
++                "unit": "tile",
++                "x_axis": "right",
++                "y_axis": "down",
++            },
++            "points": _extract_points(tile_grid),
++            "layers": {
++                "tile_grid": "layers/tile_grid.json",
++                "movement_costs": "layers/movement_costs.json",
++                "collision": "layers/collision.json",
++                "elevation": "layers/elevation.json",
++            },
++            "gameplay": {
++                key: f"gameplay/{filename}" for key, filename in _GAMEPLAY_FILES
++            },
++            "objects": {
++                "runtime_objects": "objects/runtime_objects.json",
++                "places": "objects/places.json",
++            },
++            "legacy_outputs": {
++                "ascii_map": "../generated_map.txt",
++                "tactical_map": "../tactical_map.json",
++                "tactical_debug": "../tactical_map_debug.json",
++            },
++        },
++        outputs.map_package_map,
++    )
++
++
++def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
++    """Return stable map package artifact paths.
++
++    Args:
++        outputs: Output path bundle.
++
++    Returns:
++        Ordered map package paths.
++    """
++    return [
++        outputs.map_package_map,
++        outputs.map_package_tile_grid,
++        outputs.map_package_movement_costs,
++        outputs.map_package_collision,
++        outputs.map_package_elevation,
++        outputs.map_package_combat_zones,
++        outputs.map_package_cover_points,
++        outputs.map_package_choke_points,
++        outputs.map_package_flank_routes,
++        outputs.map_package_enemy_spawn_zones,
++        outputs.map_package_fallback_positions,
++        outputs.map_package_runtime_objects,
++        outputs.map_package_places,
++    ]
++
++
++def _dict(value: Any) -> dict[str, Any]:
++    if isinstance(value, dict):
++        return value
++    return {}
++
++
++def _list(value: Any) -> list[Any]:
++    if isinstance(value, list):
++        return value
++    return []
++
++
++def _string_rows(value: Any, fallback: list[str]) -> list[str]:
++    if isinstance(value, list) and all(isinstance(item, str) for item in value):
++        return list(value)
++    return list(fallback)
++
++
++def _extract_points(rows: list[str]) -> dict[str, dict[str, int] | None]:
++    points: dict[str, dict[str, int] | None] = {"start": None, "goal": None}
++    for y, row in enumerate(rows):
++        for x, tile in enumerate(row):
++            if tile == "S" and points["start"] is None:
++                points["start"] = {"x": x, "y": y}
++            elif tile == "G" and points["goal"] is None:
++                points["goal"] = {"x": x, "y": y}
++    return points
+diff --git a/top_down_worldgen/manifest.py b/top_down_worldgen/manifest.py
+index a0be642..7b1975f 100644
+--- a/top_down_worldgen/manifest.py
++++ b/top_down_worldgen/manifest.py
+@@ -8,13 +8,13 @@ from . import __version__
+ from .utils.json_io import write_json
+ 
+ 
+-MANIFEST_SCHEMA_VERSION = "generation-manifest-v15"
++MANIFEST_SCHEMA_VERSION = "generation-manifest-v16"
+ PIPELINE_VERSION = "pipeline-v1"
+ ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
+ TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
+ TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
+ RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
+-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v12"
++VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v13"
+ METRICS_SCHEMA_VERSION = "metrics-text-v1"
+ ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v1"
+ PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
+@@ -22,6 +22,14 @@ DEBUG_LAYERS_VERSION = "debug-layers-v2"
+ RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v9"
+ PLACES_SCHEMA_VERSION = "places-v1"
+ OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
++MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
++MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v1"
++TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
++MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"
++COLLISION_LAYER_SCHEMA_VERSION = "collision-layer-v1"
++ELEVATION_LAYER_SCHEMA_VERSION = "elevation-layer-v1"
++GAMEPLAY_LAYER_SCHEMA_VERSION = "gameplay-layer-v1"
++OBJECT_INSTANCES_SCHEMA_VERSION = "object-instances-v1"
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+@@ -103,6 +111,14 @@ def build_manifest(
+         "metrics": METRICS_SCHEMA_VERSION,
+         "engine_config": ENGINE_CONFIG_SCHEMA_VERSION,
+         "png_layer": PNG_LAYER_SCHEMA_VERSION,
++        "map_package": MAP_PACKAGE_SCHEMA_VERSION,
++        "map_package_map": MAP_PACKAGE_MAP_SCHEMA_VERSION,
++        "tile_grid_layer": TILE_GRID_LAYER_SCHEMA_VERSION,
++        "movement_layer": MOVEMENT_LAYER_SCHEMA_VERSION,
++        "collision_layer": COLLISION_LAYER_SCHEMA_VERSION,
++        "elevation_layer": ELEVATION_LAYER_SCHEMA_VERSION,
++        "gameplay_layer": GAMEPLAY_LAYER_SCHEMA_VERSION,
++        "object_instances": OBJECT_INSTANCES_SCHEMA_VERSION,
+     }
+     return {
+         "schema_version": MANIFEST_SCHEMA_VERSION,
+diff --git a/top_down_worldgen/paths.py b/top_down_worldgen/paths.py
+index b5d2387..d725185 100644
+--- a/top_down_worldgen/paths.py
++++ b/top_down_worldgen/paths.py
+@@ -28,6 +28,23 @@ class OutputPaths:
+     manifest: Path
+     validation_report: Path
+     object_catalog: Path
++    map_package_dir: Path
++    map_package_map: Path
++    map_package_layers_dir: Path
++    map_package_tile_grid: Path
++    map_package_movement_costs: Path
++    map_package_collision: Path
++    map_package_elevation: Path
++    map_package_gameplay_dir: Path
++    map_package_combat_zones: Path
++    map_package_cover_points: Path
++    map_package_choke_points: Path
++    map_package_flank_routes: Path
++    map_package_enemy_spawn_zones: Path
++    map_package_fallback_positions: Path
++    map_package_objects_dir: Path
++    map_package_runtime_objects: Path
++    map_package_places: Path
+ 
+     @classmethod
+     def from_output_map(cls, map_path: Path) -> "OutputPaths":
+@@ -40,6 +57,10 @@ class OutputPaths:
+             OutputPaths instance.
+         """
+         output_dir = map_path.parent
++        map_package_dir = output_dir / "map_package"
++        map_package_layers_dir = map_package_dir / "layers"
++        map_package_gameplay_dir = map_package_dir / "gameplay"
++        map_package_objects_dir = map_package_dir / "objects"
+         return cls(
+             output_dir=output_dir,
+             generated_map=map_path,
+@@ -61,4 +82,21 @@ class OutputPaths:
+             manifest=output_dir / "_manifest.json",
+             validation_report=output_dir / "validation_report.json",
+             object_catalog=output_dir / "object_catalog.md",
++            map_package_dir=map_package_dir,
++            map_package_map=map_package_dir / "map.json",
++            map_package_layers_dir=map_package_layers_dir,
++            map_package_tile_grid=map_package_layers_dir / "tile_grid.json",
++            map_package_movement_costs=map_package_layers_dir / "movement_costs.json",
++            map_package_collision=map_package_layers_dir / "collision.json",
++            map_package_elevation=map_package_layers_dir / "elevation.json",
++            map_package_gameplay_dir=map_package_gameplay_dir,
++            map_package_combat_zones=map_package_gameplay_dir / "combat_zones.json",
++            map_package_cover_points=map_package_gameplay_dir / "cover_points.json",
++            map_package_choke_points=map_package_gameplay_dir / "choke_points.json",
++            map_package_flank_routes=map_package_gameplay_dir / "flank_routes.json",
++            map_package_enemy_spawn_zones=map_package_gameplay_dir / "enemy_spawn_zones.json",
++            map_package_fallback_positions=map_package_gameplay_dir / "fallback_positions.json",
++            map_package_objects_dir=map_package_objects_dir,
++            map_package_runtime_objects=map_package_objects_dir / "runtime_objects.json",
++            map_package_places=map_package_objects_dir / "places.json",
+         )
+diff --git a/top_down_worldgen/pipeline.py b/top_down_worldgen/pipeline.py
+index 6bbff96..bbcf562 100644
+--- a/top_down_worldgen/pipeline.py
++++ b/top_down_worldgen/pipeline.py
+@@ -7,17 +7,26 @@ from time import perf_counter
+ from typing import Any
+ 
+ from .config import PublicConfig
++from .export.map_package import write_map_package
+ from .legacy_runner import LegacyEngineRunner
+ from .logging_utils import timed_stage
+ from .manifest import (
+     ASCII_MAP_SCHEMA_VERSION,
++    COLLISION_LAYER_SCHEMA_VERSION,
++    ELEVATION_LAYER_SCHEMA_VERSION,
+     ENGINE_CONFIG_SCHEMA_VERSION,
++    GAMEPLAY_LAYER_SCHEMA_VERSION,
++    MAP_PACKAGE_MAP_SCHEMA_VERSION,
+     METRICS_SCHEMA_VERSION,
++    MOVEMENT_LAYER_SCHEMA_VERSION,
++    OBJECT_INSTANCES_SCHEMA_VERSION,
+     OBJECT_CATALOG_SCHEMA_VERSION,
++    PLACES_SCHEMA_VERSION,
+     PNG_LAYER_SCHEMA_VERSION,
+     RAW_TACTICAL_MAP_SCHEMA_VERSION,
+     TACTICAL_DEBUG_SCHEMA_VERSION,
+     TACTICAL_MAP_SCHEMA_VERSION,
++    TILE_GRID_LAYER_SCHEMA_VERSION,
+     VALIDATION_REPORT_SCHEMA_VERSION,
+     OutputArtifact,
+     build_manifest,
+@@ -182,6 +191,17 @@ class WorldgenPipeline:
+ 
+             write_json(runtime_data, outputs.tactical_map)
+             write_json(debug_data, outputs.tactical_map_debug)
++            write_map_package(
++                outputs=outputs,
++                runtime_data=runtime_data,
++                rows=rows,
++                width=config.map_width_tiles,
++                height=config.map_height_tiles,
++                tile_size_px=tile_size_px,
++                seed=config.seed,
++                resolved_seed=config.resolved_seed,
++                profile=config.objective_profile,
++            )
+             metrics.update(
+                 {
+                     "runtime_combat_zones": len(runtime_data.get("combat_zones", [])),
+@@ -449,6 +469,97 @@ class WorldgenPipeline:
+                 True,
+                 ENGINE_CONFIG_SCHEMA_VERSION,
+             ),
++            OutputArtifact(
++                outputs.map_package_map,
++                "map_package:index",
++                True,
++                False,
++                MAP_PACKAGE_MAP_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_tile_grid,
++                "map_package:tile_grid",
++                True,
++                False,
++                TILE_GRID_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_movement_costs,
++                "map_package:movement_costs",
++                True,
++                False,
++                MOVEMENT_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_collision,
++                "map_package:collision",
++                True,
++                False,
++                COLLISION_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_elevation,
++                "map_package:elevation",
++                True,
++                False,
++                ELEVATION_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_combat_zones,
++                "map_package:combat_zones",
++                True,
++                False,
++                GAMEPLAY_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_cover_points,
++                "map_package:cover_points",
++                True,
++                False,
++                GAMEPLAY_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_choke_points,
++                "map_package:choke_points",
++                True,
++                False,
++                GAMEPLAY_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_flank_routes,
++                "map_package:flank_routes",
++                True,
++                False,
++                GAMEPLAY_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_enemy_spawn_zones,
++                "map_package:enemy_spawn_zones",
++                True,
++                False,
++                GAMEPLAY_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_fallback_positions,
++                "map_package:fallback_positions",
++                True,
++                False,
++                GAMEPLAY_LAYER_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_runtime_objects,
++                "map_package:runtime_objects",
++                True,
++                False,
++                OBJECT_INSTANCES_SCHEMA_VERSION,
++            ),
++            OutputArtifact(
++                outputs.map_package_places,
++                "map_package:places",
++                True,
++                False,
++                PLACES_SCHEMA_VERSION,
++            ),
+         ]
+         if render:
+             layer_paths = {
+diff --git a/top_down_worldgen/validation.py b/top_down_worldgen/validation.py
+index fc8c083..efab20b 100644
+--- a/top_down_worldgen/validation.py
++++ b/top_down_worldgen/validation.py
+@@ -80,6 +80,15 @@ def build_validation_report(
+         "tile_grid_embedded": tile_grid == rows,
+         "metrics_exists": outputs.metrics.exists(),
+         "object_catalog_exists": outputs.object_catalog.exists(),
++        "map_package_index_exists": outputs.map_package_map.exists(),
++        "map_package_tile_grid_exists": outputs.map_package_tile_grid.exists(),
++        "map_package_movement_costs_exists": (
++            outputs.map_package_movement_costs.exists()
++        ),
++        "map_package_collision_exists": outputs.map_package_collision.exists(),
++        "map_package_elevation_exists": outputs.map_package_elevation.exists(),
++        "map_package_gameplay_exists": _map_package_gameplay_exists(outputs),
++        "map_package_objects_exist": _map_package_objects_exist(outputs),
+         "single_start_exists": _count_tiles(tile_grid, "S") == 1,
+         "single_goal_exists": _count_tiles(tile_grid, "G") == 1,
+         "tile_grid_matches_dimensions": _grid_matches_dimensions(
+@@ -270,6 +279,27 @@ def build_validation_report(
+     }
+ 
+ 
++def _map_package_gameplay_exists(outputs: OutputPaths) -> bool:
++    return all(
++        path.exists()
++        for path in (
++            outputs.map_package_combat_zones,
++            outputs.map_package_cover_points,
++            outputs.map_package_choke_points,
++            outputs.map_package_flank_routes,
++            outputs.map_package_enemy_spawn_zones,
++            outputs.map_package_fallback_positions,
++        )
++    )
++
++
++def _map_package_objects_exist(outputs: OutputPaths) -> bool:
++    return (
++        outputs.map_package_runtime_objects.exists()
++        and outputs.map_package_places.exists()
++    )
++
++
+ def write_validation_report(report: dict[str, Any], path: Path) -> None:
+     """Write a validation report to disk.
+ 
+@@ -1055,5 +1085,18 @@ def _count_existing_outputs(outputs: OutputPaths) -> int:
+         outputs.layer_fallback_positions,
+         outputs.layer_runtime_objects,
+         outputs.layer_all_debug,
++        outputs.map_package_map,
++        outputs.map_package_tile_grid,
++        outputs.map_package_movement_costs,
++        outputs.map_package_collision,
++        outputs.map_package_elevation,
++        outputs.map_package_combat_zones,
++        outputs.map_package_cover_points,
++        outputs.map_package_choke_points,
++        outputs.map_package_flank_routes,
++        outputs.map_package_enemy_spawn_zones,
++        outputs.map_package_fallback_positions,
++        outputs.map_package_runtime_objects,
++        outputs.map_package_places,
+     ]
+     return sum(path.exists() for path in candidates)
+diff --git a/versions.md b/versions.md
+index 2e36d2e..07ca0e5 100644
+--- a/versions.md
++++ b/versions.md
+@@ -184,3 +184,12 @@
+ - `layer_runtime_objects.png` и `layer_all_debug.png` отображают новые runtime-объекты.
+ - Schema versions подняты до `generation-manifest-v15`, `validation-report-v12`, `object-catalog-v3`, `runtime-objects-v9`, `tactical-map-v0.32`.
+ - Версия проекта поднята до `0.0.23`.
++
++## v0.0.23 -> v0.0.24
++
++- Добавлен структурированный экспорт `map_package/` рядом с существующими output-файлами.
++- Новый пакет содержит `map.json`, слои `tile_grid`, `movement_costs`, `collision`, `elevation`, gameplay-слои и object-слои.
++- `_manifest.json` теперь включает файлы `map_package` как primary outputs и описывает новые schema versions.
++- `validation_report.json` проверяет наличие базовых файлов нового `map_package`.
++- Schema versions подняты до `generation-manifest-v16`, `validation-report-v13`, `map-package-v1`.
++- Версия проекта поднята до `0.0.24`.

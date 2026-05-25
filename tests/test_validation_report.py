@@ -10,6 +10,27 @@ from top_down_worldgen.tactical.runtime_objects import (
 from top_down_worldgen.validation import build_validation_report
 
 
+def _write_map_package_files(outputs: OutputPaths) -> None:
+    """Create minimal structured map package files for validation tests."""
+    for path in (
+        outputs.map_package_map,
+        outputs.map_package_tile_grid,
+        outputs.map_package_movement_costs,
+        outputs.map_package_collision,
+        outputs.map_package_elevation,
+        outputs.map_package_combat_zones,
+        outputs.map_package_cover_points,
+        outputs.map_package_choke_points,
+        outputs.map_package_flank_routes,
+        outputs.map_package_enemy_spawn_zones,
+        outputs.map_package_fallback_positions,
+        outputs.map_package_runtime_objects,
+        outputs.map_package_places,
+    ):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}\n", encoding="utf-8")
+
+
 def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
     spec = RUNTIME_OBJECT_TYPE_BY_NAME[str(item["type"])]
     enriched = dict(item)
@@ -34,6 +55,7 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
     outputs.metrics.write_text("metrics\n", encoding="utf-8")
     outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
+    _write_map_package_files(outputs)
 
     runtime_data = attach_runtime_layers({
         "map": {
@@ -190,6 +212,7 @@ def test_validation_report_rejects_broken_tile_counts(tmp_path: Path) -> None:
     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
     outputs.metrics.write_text("metrics\n", encoding="utf-8")
     outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
+    _write_map_package_files(outputs)
 
     runtime_data = {
         "map": {

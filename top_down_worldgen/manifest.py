@@ -8,13 +8,13 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v15"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v16"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v12"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v13"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v1"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
@@ -22,6 +22,14 @@ DEBUG_LAYERS_VERSION = "debug-layers-v2"
 RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v9"
 PLACES_SCHEMA_VERSION = "places-v1"
 OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
+MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
+MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v1"
+TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
+MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"
+COLLISION_LAYER_SCHEMA_VERSION = "collision-layer-v1"
+ELEVATION_LAYER_SCHEMA_VERSION = "elevation-layer-v1"
+GAMEPLAY_LAYER_SCHEMA_VERSION = "gameplay-layer-v1"
+OBJECT_INSTANCES_SCHEMA_VERSION = "object-instances-v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +111,14 @@ def build_manifest(
         "metrics": METRICS_SCHEMA_VERSION,
         "engine_config": ENGINE_CONFIG_SCHEMA_VERSION,
         "png_layer": PNG_LAYER_SCHEMA_VERSION,
+        "map_package": MAP_PACKAGE_SCHEMA_VERSION,
+        "map_package_map": MAP_PACKAGE_MAP_SCHEMA_VERSION,
+        "tile_grid_layer": TILE_GRID_LAYER_SCHEMA_VERSION,
+        "movement_layer": MOVEMENT_LAYER_SCHEMA_VERSION,
+        "collision_layer": COLLISION_LAYER_SCHEMA_VERSION,
+        "elevation_layer": ELEVATION_LAYER_SCHEMA_VERSION,
+        "gameplay_layer": GAMEPLAY_LAYER_SCHEMA_VERSION,
+        "object_instances": OBJECT_INSTANCES_SCHEMA_VERSION,
     }
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,

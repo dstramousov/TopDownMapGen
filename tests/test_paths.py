@@ -19,3 +19,16 @@ def test_output_paths_include_runtime_objects_layer(tmp_path: Path) -> None:
     outputs = OutputPaths.from_output_map(tmp_path / "generated_map.txt")
 
     assert outputs.layer_runtime_objects.name == "layer_runtime_objects.png"
+
+
+def test_output_paths_include_map_package_paths(tmp_path: Path) -> None:
+    """Ensure structured map package paths are stable."""
+    outputs = OutputPaths.from_output_map(tmp_path / "generated_map.txt")
+
+    assert outputs.map_package_map.as_posix().endswith("map_package/map.json")
+    assert outputs.map_package_tile_grid.as_posix().endswith(
+        "map_package/layers/tile_grid.json",
+    )
+    assert outputs.map_package_runtime_objects.as_posix().endswith(
+        "map_package/objects/runtime_objects.json",
+    )

@@ -28,6 +28,23 @@ class OutputPaths:
     manifest: Path
     validation_report: Path
     object_catalog: Path
+    map_package_dir: Path
+    map_package_map: Path
+    map_package_layers_dir: Path
+    map_package_tile_grid: Path
+    map_package_movement_costs: Path
+    map_package_collision: Path
+    map_package_elevation: Path
+    map_package_gameplay_dir: Path
+    map_package_combat_zones: Path
+    map_package_cover_points: Path
+    map_package_choke_points: Path
+    map_package_flank_routes: Path
+    map_package_enemy_spawn_zones: Path
+    map_package_fallback_positions: Path
+    map_package_objects_dir: Path
+    map_package_runtime_objects: Path
+    map_package_places: Path
 
     @classmethod
     def from_output_map(cls, map_path: Path) -> "OutputPaths":
@@ -40,6 +57,10 @@ class OutputPaths:
             OutputPaths instance.
         """
         output_dir = map_path.parent
+        map_package_dir = output_dir / "map_package"
+        map_package_layers_dir = map_package_dir / "layers"
+        map_package_gameplay_dir = map_package_dir / "gameplay"
+        map_package_objects_dir = map_package_dir / "objects"
         return cls(
             output_dir=output_dir,
             generated_map=map_path,
@@ -61,4 +82,21 @@ class OutputPaths:
             manifest=output_dir / "_manifest.json",
             validation_report=output_dir / "validation_report.json",
             object_catalog=output_dir / "object_catalog.md",
+            map_package_dir=map_package_dir,
+            map_package_map=map_package_dir / "map.json",
+            map_package_layers_dir=map_package_layers_dir,
+            map_package_tile_grid=map_package_layers_dir / "tile_grid.json",
+            map_package_movement_costs=map_package_layers_dir / "movement_costs.json",
+            map_package_collision=map_package_layers_dir / "collision.json",
+            map_package_elevation=map_package_layers_dir / "elevation.json",
+            map_package_gameplay_dir=map_package_gameplay_dir,
+            map_package_combat_zones=map_package_gameplay_dir / "combat_zones.json",
+            map_package_cover_points=map_package_gameplay_dir / "cover_points.json",
+            map_package_choke_points=map_package_gameplay_dir / "choke_points.json",
+            map_package_flank_routes=map_package_gameplay_dir / "flank_routes.json",
+            map_package_enemy_spawn_zones=map_package_gameplay_dir / "enemy_spawn_zones.json",
+            map_package_fallback_positions=map_package_gameplay_dir / "fallback_positions.json",
+            map_package_objects_dir=map_package_objects_dir,
+            map_package_runtime_objects=map_package_objects_dir / "runtime_objects.json",
+            map_package_places=map_package_objects_dir / "places.json",
         )

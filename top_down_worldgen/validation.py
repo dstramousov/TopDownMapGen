@@ -80,6 +80,15 @@ def build_validation_report(
         "tile_grid_embedded": tile_grid == rows,
         "metrics_exists": outputs.metrics.exists(),
         "object_catalog_exists": outputs.object_catalog.exists(),
+        "map_package_index_exists": outputs.map_package_map.exists(),
+        "map_package_tile_grid_exists": outputs.map_package_tile_grid.exists(),
+        "map_package_movement_costs_exists": (
+            outputs.map_package_movement_costs.exists()
+        ),
+        "map_package_collision_exists": outputs.map_package_collision.exists(),
+        "map_package_elevation_exists": outputs.map_package_elevation.exists(),
+        "map_package_gameplay_exists": _map_package_gameplay_exists(outputs),
+        "map_package_objects_exist": _map_package_objects_exist(outputs),
         "single_start_exists": _count_tiles(tile_grid, "S") == 1,
         "single_goal_exists": _count_tiles(tile_grid, "G") == 1,
         "tile_grid_matches_dimensions": _grid_matches_dimensions(
@@ -268,6 +277,27 @@ def build_validation_report(
             "artifact_count": _count_existing_outputs(outputs),
         },
     }
+
+
+def _map_package_gameplay_exists(outputs: OutputPaths) -> bool:
+    return all(
+        path.exists()
+        for path in (
+            outputs.map_package_combat_zones,
+            outputs.map_package_cover_points,
+            outputs.map_package_choke_points,
+            outputs.map_package_flank_routes,
+            outputs.map_package_enemy_spawn_zones,
+            outputs.map_package_fallback_positions,
+        )
+    )
+
+
+def _map_package_objects_exist(outputs: OutputPaths) -> bool:
+    return (
+        outputs.map_package_runtime_objects.exists()
+        and outputs.map_package_places.exists()
+    )
 
 
 def write_validation_report(report: dict[str, Any], path: Path) -> None:
@@ -1055,5 +1085,18 @@ def _count_existing_outputs(outputs: OutputPaths) -> int:
         outputs.layer_fallback_positions,
         outputs.layer_runtime_objects,
         outputs.layer_all_debug,
+        outputs.map_package_map,
+        outputs.map_package_tile_grid,
+        outputs.map_package_movement_costs,
+        outputs.map_package_collision,
+        outputs.map_package_elevation,
+        outputs.map_package_combat_zones,
+        outputs.map_package_cover_points,
+        outputs.map_package_choke_points,
+        outputs.map_package_flank_routes,
+        outputs.map_package_enemy_spawn_zones,
+        outputs.map_package_fallback_positions,
+        outputs.map_package_runtime_objects,
+        outputs.map_package_places,
     ]
     return sum(path.exists() for path in candidates)

@@ -184,3 +184,12 @@
 - `layer_runtime_objects.png` и `layer_all_debug.png` отображают новые runtime-объекты.
 - Schema versions подняты до `generation-manifest-v15`, `validation-report-v12`, `object-catalog-v3`, `runtime-objects-v9`, `tactical-map-v0.32`.
 - Версия проекта поднята до `0.0.23`.
+
+## v0.0.23 -> v0.0.24
+
+- Добавлен структурированный экспорт `map_package/` рядом с существующими output-файлами.
+- Новый пакет содержит `map.json`, слои `tile_grid`, `movement_costs`, `collision`, `elevation`, gameplay-слои и object-слои.
+- `_manifest.json` теперь включает файлы `map_package` как primary outputs и описывает новые schema versions.
+- `validation_report.json` проверяет наличие базовых файлов нового `map_package`.
+- Schema versions подняты до `generation-manifest-v16`, `validation-report-v13`, `map-package-v1`.
+- Версия проекта поднята до `0.0.24`.
