@@ -244,3 +244,12 @@
 - Документация формата и game consumer guide дополнены использованием инспектора перед передачей пакета в игру или renderer.
 - Добавлены тесты для успешной проверки минимального пакета и ошибки на отсутствующем пакете.
 - Версия проекта поднята до `0.0.30`.
+
+## v0.0.30 -> v0.0.31
+
+- Добавлен внешний preview renderer `examples/render_world_preview.py`, который строит простую PNG-картинку только из публичного `output/_manifest.json` и `map_package/`.
+- Preview renderer выводит краткую консольную сводку по карте, terrain, collision, runtime objects, start/goal и пути к PNG.
+- Renderer поддерживает разные входные пути: output root, `_manifest.json`, `map_package/` или `map_package/map.json`.
+- Документация формата и game consumer guide дополнены визуальным smoke-test сценарием после инспектора.
+- Добавлены тесты для успешного PNG preview и понятной ошибки на отсутствующем пакете.
+- Версия проекта поднята до `0.0.31`.

@@ -286,3 +286,42 @@ Result:
 ```
 
 Если пакет неполный или сломан, команда завершается с ненулевым кодом и выводит `World package: FAILED`. Это удобно использовать как smoke-check перед передачей output-папки в игру или отдельный renderer.
+
+## Визуальная smoke-проверка пакета
+
+После `examples/inspect_world_package.py` можно запустить внешний preview renderer:
+
+```bash
+python3 examples/render_world_preview.py output
+```
+
+Он читает только публичный контракт:
+
+```text
+output/_manifest.json
+output/map_package/map.json
+output/map_package/layers/*
+output/map_package/objects/*
+```
+
+и создаёт:
+
+```text
+output/world_preview.png
+```
+
+Это не игровой renderer и не финальная графика. Это проверка, что из файлов пакета реально можно
+собрать видимое представление мира: terrain, collision overlay, runtime object markers, start и goal.
+
+Полезные варианты:
+
+```bash
+python3 examples/render_world_preview.py output --collision-overlay
+python3 examples/render_world_preview.py output --cell-size 8 --grid
+python3 examples/render_world_preview.py output --no-objects
+python3 examples/render_world_preview.py output --output output/debug/world_preview.png
+```
+
+Если preview выглядит как каша, но инспектор говорит `World package: OK`, значит пакет формально
+валиден, но семантические слои или render hints требуют отдельной настройки. Это нормальная роль
+preview: быстро показать глазами, что данные дают осмысленный мир.

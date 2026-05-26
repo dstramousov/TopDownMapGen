@@ -346,3 +346,43 @@ python3 examples/inspect_world_package.py output/map_package/map.json
 The inspector verifies that the package can be loaded from public artifacts only. It checks the manifest entrypoint, `map.json`, layer dimensions, collision encoding, movement costs, elevation summary, object counts, gameplay layer counts, catalogs, and render hint counts.
 
 This tool is not the game loader and not a visual renderer. It is a consumer-contract smoke test: if it passes, an external project has enough information to start loading the generated world package without reading generator internals.
+
+## Visual preview smoke test
+
+`examples/render_world_preview.py` is a tiny external preview renderer for `map_package v1`.
+It is intentionally not a game renderer and not a final art pipeline. Its job is to prove that
+an external consumer can resolve `_manifest.json`, read `map_package/map.json`, load public layers,
+and produce a visible world preview without importing generator internals.
+
+Typical usage:
+
+```bash
+python3 examples/render_world_preview.py output
+```
+
+Alternative entrypoints:
+
+```bash
+python3 examples/render_world_preview.py output/_manifest.json
+python3 examples/render_world_preview.py output/map_package
+python3 examples/render_world_preview.py output/map_package/map.json
+```
+
+Useful options:
+
+```bash
+python3 examples/render_world_preview.py output --collision-overlay
+python3 examples/render_world_preview.py output --cell-size 8 --grid
+python3 examples/render_world_preview.py output --no-objects
+python3 examples/render_world_preview.py output --output output/debug/world_preview.png
+```
+
+By default it writes:
+
+```text
+output/world_preview.png
+```
+
+The preview is a visual smoke test only. It uses simple semantic colors and object markers instead
+of production sprites. A game renderer should still read the same package contract and apply its own
+asset pipeline.
