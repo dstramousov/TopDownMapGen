@@ -225,3 +225,12 @@
 - `_manifest.json` и validation расширены новыми schema version и проверками render hint outputs.
 - Документация и пример загрузчика обновлены для render hints.
 - Версия проекта поднята до `0.0.28`.
+
+## v0.0.28 -> v0.0.29
+
+- Унифицирован CLI output contract: `-o output` теперь создаёт `output/generated_map.txt` и все остальные артефакты в этой же папке.
+- `-o output/generated_map.txt` сохраняет прежнее поведение, но явно подтверждает единый output root для legacy-файлов и `map_package/`.
+- Pipeline теперь нормализует output target через `OutputPaths.from_cli_output`, чтобы manifest, legacy outputs и structured package всегда относились к одному root.
+- Документация формата и game consumer guide дополнены правилом “один запуск = одна output-папка = один manifest”.
+- Добавлены тесты для directory/file CLI output targets.
+- Версия проекта поднята до `0.0.29`.

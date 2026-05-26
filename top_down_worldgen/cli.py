@@ -15,7 +15,16 @@ def parse_args() -> argparse.Namespace:
     """Parse CLI arguments."""
     parser = argparse.ArgumentParser(description="Generate top-down world map.")
     parser.add_argument("--config", required=True, type=Path)
-    parser.add_argument("-o", "--out", required=True, type=Path)
+    parser.add_argument(
+        "-o",
+        "--out",
+        required=True,
+        type=Path,
+        help=(
+            "Output directory or generated map .txt path. "
+            "Directory targets use generated_map.txt inside that directory."
+        ),
+    )
     parser.add_argument("--render-tile-size", type=int, choices=[16, 32], default=16)
     parser.add_argument("--no-render", action="store_true")
     parser.add_argument("--include-debug-layers", action="store_true")
@@ -82,6 +91,7 @@ def main() -> int:
                 debug_images=debug_layers,
                 log_file=args.log_file,
             )
+        LOGGER.info("Output root: %s", result.outputs.output_dir)
         LOGGER.info("Generated map: %s", result.outputs.generated_map)
         LOGGER.info("Runtime tactical map: %s", result.outputs.tactical_map)
         LOGGER.info("Debug tactical map: %s", result.outputs.tactical_map_debug)

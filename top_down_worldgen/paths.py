@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+DEFAULT_MAP_FILENAME = "generated_map.txt"
+
+
 @dataclass(frozen=True, slots=True)
 class OutputPaths:
     """All generated output paths."""
@@ -54,6 +57,18 @@ class OutputPaths:
     map_package_render_profile: Path
     map_package_tile_render_hints: Path
     map_package_object_render_hints: Path
+
+    @classmethod
+    def from_cli_output(cls, output_path: Path) -> "OutputPaths":
+        """Build standard output paths from a CLI output target.
+
+        Args:
+            output_path: Output directory or ASCII map output path.
+
+        Returns:
+            OutputPaths instance.
+        """
+        return cls.from_output_map(resolve_output_map_path(output_path))
 
     @classmethod
     def from_output_map(cls, map_path: Path) -> "OutputPaths":
@@ -120,3 +135,19 @@ class OutputPaths:
             map_package_tile_render_hints=map_package_render_dir / "tile_render_hints.json",
             map_package_object_render_hints=map_package_render_dir / "object_render_hints.json",
         )
+
+
+def resolve_output_map_path(output_path: Path) -> Path:
+    """Resolve a CLI output target to the ASCII map output file.
+
+    Args:
+        output_path: Directory target or concrete map file target.
+
+    Returns:
+        Path to the generated ASCII map file.
+    """
+    if output_path.exists() and output_path.is_dir():
+        return output_path / DEFAULT_MAP_FILENAME
+    if output_path.suffix:
+        return output_path
+    return output_path / DEFAULT_MAP_FILENAME

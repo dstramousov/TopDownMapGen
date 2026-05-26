@@ -132,14 +132,15 @@ class WorldgenPipeline:
         with timed_stage(
             LOGGER,
             "pipeline.prepare_outputs",
-            output_map=output_map,
+            output_target=output_map,
         ) as metrics:
-            outputs = OutputPaths.from_output_map(output_map)
+            outputs = OutputPaths.from_cli_output(output_map)
             outputs.output_dir.mkdir(parents=True, exist_ok=True)
             config.write_engine_config(outputs.engine_config)
             metrics.update(
                 {
                     "output_dir": outputs.output_dir,
+                    "generated_map": outputs.generated_map,
                     "engine_config": outputs.engine_config,
                 },
             )

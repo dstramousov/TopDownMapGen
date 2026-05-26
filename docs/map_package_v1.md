@@ -23,6 +23,41 @@ map_package/map.json
 
 `map.json` — индекс пакета. Он содержит размеры карты, seed, профиль генерации, систему координат и относительные пути к слоям.
 
+
+## Единый output root с v0.0.29
+
+Один запуск генератора создаёт один связанный output root. Все legacy-файлы, `map_package/`, validation report, manifest, metrics и PNG-слои одного мира должны лежать в одной папке результата.
+
+CLI `-o/--out` принимает два варианта:
+
+```text
+-o output
+-o output/generated_map.txt
+```
+
+Оба варианта создают один и тот же контракт результата:
+
+```text
+output/
+  generated_map.txt
+  tactical_map.json
+  tactical_map_debug.json
+  _raw_tactical_map.json
+  _manifest.json
+  validation_report.json
+  metrics.txt
+  object_catalog.md
+  map_package/
+    map.json
+    layers/
+    gameplay/
+    objects/
+    catalogs/
+    render/
+```
+
+Главное правило: потребитель получает путь к output root, открывает `_manifest.json` и дальше читает только файлы, перечисленные в manifest или `map_package/map.json`. Не нужно искать часть результата в `out/`, часть в `output/`, часть рядом с проектом.
+
 ## Структура каталогов
 
 ```text

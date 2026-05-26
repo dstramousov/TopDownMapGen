@@ -2,6 +2,22 @@
 
 Этот документ описывает, как игре читать `map_package/` без знания внутренних деталей генератора.
 
+
+## Единый output root
+
+Начиная с v0.0.29 игра должна получать один путь — output root конкретного запуска. В этой папке лежат и legacy-файлы, и новый `map_package/`, и `_manifest.json`.
+
+Допустимые команды генерации:
+
+```bash
+PYTHONPATH=. python3 top_down_generator.py --config configs/default.json -o output --no-render
+PYTHONPATH=. python3 top_down_generator.py --config configs/default.json -o output/generated_map.txt --no-render
+```
+
+Для consumer-а оба запуска эквивалентны: entrypoint остаётся `output/_manifest.json`, а основной пакет мира — `output/map_package/map.json`.
+
+Consumer не должен знать про `out/`, `old/`, `new` или другие папки. Если manifest ссылается на файл, путь считается относительным к тому же output root.
+
 ## Минимальный сценарий загрузки
 
 Игра должна читать карту в таком порядке:

@@ -38,3 +38,23 @@ def test_output_paths_include_map_package_paths(tmp_path: Path) -> None:
     assert outputs.map_package_runtime_objects.as_posix().endswith(
         "map_package/objects/runtime_objects.json",
     )
+
+
+def test_from_cli_output_accepts_output_directory_target(tmp_path: Path) -> None:
+    """Ensure directory CLI target writes all artifacts under one output root."""
+    outputs = OutputPaths.from_cli_output(tmp_path / "output")
+
+    assert outputs.output_dir == tmp_path / "output"
+    assert outputs.generated_map == tmp_path / "output" / "generated_map.txt"
+    assert outputs.manifest == tmp_path / "output" / "_manifest.json"
+    assert outputs.map_package_map == tmp_path / "output" / "map_package" / "map.json"
+
+
+def test_from_cli_output_accepts_generated_map_file_target(tmp_path: Path) -> None:
+    """Ensure file CLI target keeps legacy and package outputs together."""
+    outputs = OutputPaths.from_cli_output(tmp_path / "output" / "custom_map.txt")
+
+    assert outputs.output_dir == tmp_path / "output"
+    assert outputs.generated_map == tmp_path / "output" / "custom_map.txt"
+    assert outputs.tactical_map == tmp_path / "output" / "tactical_map.json"
+    assert outputs.map_package_map == tmp_path / "output" / "map_package" / "map.json"
