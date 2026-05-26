@@ -329,3 +329,20 @@ map_package/render/
 - `footprint_source` — поле экземпляра, из которого renderer может брать footprint.
 
 Игра может полностью игнорировать каталог `render/`. Он нужен renderer-у, редактору и будущему tileset pipeline. Runtime-логика должна продолжать опираться на `layers/`, `objects/`, `gameplay/` и `catalogs/`.
+
+## External inspection since v0.0.30
+
+`examples/inspect_world_package.py` is a small external-consumer smoke checker for `map_package v1`.
+
+It accepts any common public entrypoint:
+
+```bash
+python3 examples/inspect_world_package.py output
+python3 examples/inspect_world_package.py output/_manifest.json
+python3 examples/inspect_world_package.py output/map_package
+python3 examples/inspect_world_package.py output/map_package/map.json
+```
+
+The inspector verifies that the package can be loaded from public artifacts only. It checks the manifest entrypoint, `map.json`, layer dimensions, collision encoding, movement costs, elevation summary, object counts, gameplay layer counts, catalogs, and render hint counts.
+
+This tool is not the game loader and not a visual renderer. It is a consumer-contract smoke test: if it passes, an external project has enough information to start loading the generated world package without reading generator internals.

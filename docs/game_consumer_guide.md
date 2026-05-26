@@ -249,3 +249,40 @@ for object in runtime_objects:
 Важно: `visual_group` — это не путь к PNG. Это стабильное семантическое имя, например `terrain/grass`, `terrain/road/old_overgrown`, `objects/cover/stone_chunk`. Конкретный движок или renderer сам решает, какой tileset/objectset соответствует этой группе.
 
 Игровой runtime не должен принимать решения о проходимости по render hints. Для этого есть `collision.json`, `movement_costs.json`, `tile_types.json` и `object_types.json`.
+
+## Проверка пакета внешним consumer-ом since v0.0.30
+
+Для быстрой проверки результата генерации добавлен пример-инспектор:
+
+```bash
+python3 examples/inspect_world_package.py output
+```
+
+Он намеренно читает только публичные файлы результата:
+
+```text
+output/_manifest.json
+output/map_package/map.json
+output/map_package/layers/*
+output/map_package/objects/*
+output/map_package/gameplay/*
+output/map_package/catalogs/*
+output/map_package/render/*
+```
+
+Инспектор не импортирует pipeline генератора и не использует внутренние runtime-классы. Его задача — вести себя как внешний клиент: открыть output root, найти `map_package:index` через manifest, загрузить `map_package/map.json`, проверить базовые размеры слоёв и вывести короткую сводку.
+
+Нормальный результат выглядит так:
+
+```text
+World package: OK
+Map: 160x160 tiles, tile size 16 px
+Layers:
+- collision: OK, passable=..., blocked=..., blocked_ratio=...
+Objects:
+- runtime objects: ... total, ... types
+Result:
+- package is loadable by an external consumer
+```
+
+Если пакет неполный или сломан, команда завершается с ненулевым кодом и выводит `World package: FAILED`. Это удобно использовать как smoke-check перед передачей output-папки в игру или отдельный renderer.

@@ -41,7 +41,7 @@ def test_build_manifest_marks_primary_and_debug_outputs(tmp_path: Path) -> None:
     )
 
     assert manifest["schema_version"] == "generation-manifest-v20"
-    assert manifest["versions"]["generator"] == "0.0.29"
+    assert manifest["versions"]["generator"] == "0.0.30"
     assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v20"
     assert manifest["seed"] == 42
     assert manifest["resolved_seed"] == 42
