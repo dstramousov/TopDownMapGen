@@ -279,7 +279,24 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
             "object_ids": ["trench_000", "stone_chunk_000", "ammo_cache_000"],
             "anchor_object_id": "trench_000",
             "tags": ["defense", "trench", "human_trace"],
-        },
+
+            "story_role": "old_battle_position",
+            "encounter_type": "defensive_encounter",
+            "danger_level": 0.65,
+            "loot_level": 0.4,
+            "bounds": {"min_x": 2, "min_y": 1, "max_x": 4, "max_y": 2},
+            "entrances": [
+                {"id": "entrance_north", "side": "north", "position": {"x": 3, "y": 0}},
+            ],
+            "object_refs": [
+                {"id": "trench_000", "type": "trench", "center": {"x": 3, "y": 1}},
+                {"id": "stone_chunk_000", "type": "stone_chunk", "center": {"x": 4, "y": 2}},
+                {"id": "ammo_cache_000", "type": "ammo_cache", "center": {"x": 0, "y": 2}},
+            ],
+            "marker_refs": [],
+            "route_refs": [],
+            "connected_places": [],
+            "biome_tags": ["open_field", "ruins"],        },
     ]
     runtime_data["places_summary"] = {
         "total": 1,

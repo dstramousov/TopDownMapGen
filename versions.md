@@ -308,3 +308,12 @@
 - Inspector выводит количество markers и runtime grids.
 - Validation проверяет наличие новых package-файлов.
 - Версия проекта поднята до `0.0.37`.
+
+## v0.0.37 -> v0.0.38
+
+- `places.json` обновлён до `places-v2`: места теперь имеют `bounds`, `entrances`, `danger_level`, `loot_level`, `story_role`, `encounter_type`, `connected_places`, `object_refs`, `marker_refs`, `route_refs` и `biome_tags`.
+- Добавлен новый тип `bunker_site`, который группирует заглублённые бункеры и ближайшие defensive/runtime objects в осмысленную локацию.
+- Генератор теперь связывает места между собой через ближайшие `connected_places`, чтобы подготовить основу для будущего `world_graph.json`.
+- Validation расширена проверками v2-полей places: bounds, entrances, metadata и связей между местами.
+- Документация world package и алгоритма построения мира обновлена под places v2.
+- Версия проекта поднята до `0.0.38`.

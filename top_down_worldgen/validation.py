@@ -294,6 +294,10 @@ def build_validation_report(
         "places_have_unique_ids": _places_have_unique_ids(runtime_data),
         "places_have_valid_types": _places_have_valid_types(runtime_data),
         "places_have_valid_object_refs": _places_have_valid_object_refs(runtime_data),
+        "places_have_v2_metadata": _places_have_v2_metadata(runtime_data),
+        "places_have_bounds": _places_have_bounds(runtime_data),
+        "places_have_entrances": _places_have_entrances(runtime_data),
+        "places_have_connections": _places_have_connections(runtime_data),
         "places_inside_map": _places_inside_map(
             runtime_data,
             width=width,
@@ -1152,6 +1156,76 @@ def _places_have_valid_object_refs(runtime_data: dict[str, Any]) -> bool:
         if not isinstance(anchor_ref, str) or anchor_ref not in normalized_refs:
             return False
     return True
+
+
+
+
+def _places_have_v2_metadata(runtime_data: dict[str, Any]) -> bool:
+    for place in _places(runtime_data):
+        if not isinstance(place.get("story_role"), str) or not place.get("story_role"):
+            return False
+        if not isinstance(place.get("encounter_type"), str) or not place.get("encounter_type"):
+            return False
+        if not _normalized_float(place.get("danger_level")):
+            return False
+        if not _normalized_float(place.get("loot_level")):
+            return False
+        if not isinstance(place.get("biome_tags"), list):
+            return False
+    return True
+
+
+def _places_have_bounds(runtime_data: dict[str, Any]) -> bool:
+    for place in _places(runtime_data):
+        bounds = place.get("bounds")
+        if not isinstance(bounds, dict):
+            return False
+        values = []
+        for key in ("min_x", "min_y", "max_x", "max_y"):
+            value = bounds.get(key)
+            if not isinstance(value, int):
+                return False
+            values.append(value)
+        min_x, min_y, max_x, max_y = values
+        if min_x > max_x or min_y > max_y:
+            return False
+    return True
+
+
+def _places_have_entrances(runtime_data: dict[str, Any]) -> bool:
+    for place in _places(runtime_data):
+        entrances = place.get("entrances")
+        if not isinstance(entrances, list) or not entrances:
+            return False
+        for entrance in entrances:
+            if not isinstance(entrance, dict):
+                return False
+            if not isinstance(entrance.get("side"), str):
+                return False
+            position = entrance.get("position")
+            if not isinstance(position, dict) or _point_from_xy(position) is None:
+                return False
+    return True
+
+
+def _places_have_connections(runtime_data: dict[str, Any]) -> bool:
+    place_ids = {
+        str(place.get("id"))
+        for place in _places(runtime_data)
+        if isinstance(place.get("id"), str)
+    }
+    for place in _places(runtime_data):
+        connected = place.get("connected_places")
+        if not isinstance(connected, list):
+            return False
+        for place_id in connected:
+            if not isinstance(place_id, str) or place_id not in place_ids:
+                return False
+    return True
+
+
+def _normalized_float(value: Any) -> bool:
+    return isinstance(value, int | float) and 0.0 <= float(value) <= 1.0
 
 
 def _places_inside_map(

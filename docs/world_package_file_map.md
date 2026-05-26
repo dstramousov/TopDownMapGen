@@ -74,7 +74,7 @@ map_package/
 | Файл | Назначение |
 |---|---|
 | `runtime_objects.json` | Конкретные объекты на карте. |
-| `places.json` | Микролокации и смысловые сцены. |
+| `places.json` | Микролокации и смысловые сцены с bounds, entrances, danger/loot/story metadata и connected places. |
 
 ## catalogs
 
