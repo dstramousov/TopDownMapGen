@@ -1,2 +1,7 @@
 ./c
-python3 top_down_generator.py --config configs/default.json --out out/generated_map.txt --include-debug-layers  --verbose --profile-performance
+PYTHONPATH=. python3 top_down_generator.py \
+  --config configs/default.json \
+  -o output \
+  --include-debug-layers
+
+python3 examples/inspect_world_package.py output
