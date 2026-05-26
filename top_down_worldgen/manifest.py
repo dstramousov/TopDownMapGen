@@ -8,7 +8,7 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v23"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v24"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
@@ -23,7 +23,7 @@ RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v11"
 PLACES_SCHEMA_VERSION = "places-v1"
 OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
 MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
-MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v1"
+MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v2"
 TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
 TERRAIN_LAYER_SCHEMA_VERSION = "terrain-layer-v1"
 MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"

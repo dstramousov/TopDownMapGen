@@ -14,7 +14,7 @@ from .utils.json_io import read_json, write_json
 LOGGER = logging.getLogger(__name__)
 UINT64_MAX = (1 << 64) - 1
 MIN_TUNING_SCALE = 0.0
-MAX_TUNING_SCALE = 4.0
+MAX_TUNING_SCALE = 10.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,6 +22,9 @@ class GenerationTuning:
     """User-facing world density tuning scales."""
 
     water_scale: float = 1.0
+    water_patch_count_scale: float = 1.0
+    water_patch_size_scale: float = 1.0
+    water_patch_density: float = 0.62
     forest_scale: float = 1.0
     open_space_scale: float = 1.0
     ruins_scale: float = 1.0
@@ -46,13 +49,20 @@ class GenerationTuning:
         fields = defaults.to_dict()
         sanitized: dict[str, float] = {}
         for key, default in fields.items():
-            sanitized[key] = _sanitize_scale(value.get(key, default), key=key)
+            raw_value = value.get(key, default)
+            if key == "water_patch_density":
+                sanitized[key] = _sanitize_ratio(raw_value, key=key)
+            else:
+                sanitized[key] = _sanitize_scale(raw_value, key=key)
         return cls(**sanitized)
 
     def to_dict(self) -> dict[str, float]:
         """Return JSON-serializable tuning values."""
         return {
             "water_scale": self.water_scale,
+            "water_patch_count_scale": self.water_patch_count_scale,
+            "water_patch_size_scale": self.water_patch_size_scale,
+            "water_patch_density": self.water_patch_density,
             "forest_scale": self.forest_scale,
             "open_space_scale": self.open_space_scale,
             "ruins_scale": self.ruins_scale,
@@ -63,13 +73,18 @@ class GenerationTuning:
         }
 
 
+def _sanitize_float(value: Any, *, key: str, default: float) -> float:
+    """Convert a user-provided tuning value to float."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid generation_tuning.%s=%r; using %.2f", key, value, default)
+        return default
+
+
 def _sanitize_scale(value: Any, *, key: str) -> float:
     """Clamp a user-provided scale to a safe range."""
-    try:
-        scale = float(value)
-    except (TypeError, ValueError):
-        LOGGER.warning("Invalid generation_tuning.%s=%r; using 1.0", key, value)
-        return 1.0
+    scale = _sanitize_float(value, key=key, default=1.0)
     if scale < MIN_TUNING_SCALE or scale > MAX_TUNING_SCALE:
         LOGGER.warning(
             "generation_tuning.%s=%s is outside %.1f..%.1f; clamping",
@@ -79,6 +94,18 @@ def _sanitize_scale(value: Any, *, key: str) -> float:
             MAX_TUNING_SCALE,
         )
     return max(MIN_TUNING_SCALE, min(scale, MAX_TUNING_SCALE))
+
+
+def _sanitize_ratio(value: Any, *, key: str) -> float:
+    """Clamp a user-provided ratio to the inclusive 0..1 range."""
+    ratio = _sanitize_float(value, key=key, default=0.62)
+    if ratio < 0.0 or ratio > 1.0:
+        LOGGER.warning(
+            "generation_tuning.%s=%s is outside 0.0..1.0; clamping",
+            key,
+            ratio,
+        )
+    return max(0.0, min(ratio, 1.0))
 
 
 @dataclass(frozen=True, slots=True)

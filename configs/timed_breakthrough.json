@@ -14,6 +14,9 @@
     "buildings_scale": 1.0,
     "road_width_scale": 1.0,
     "decoration_scale": 1.0,
-    "bunker_scale": 1.0
+    "bunker_scale": 1.0,
+    "water_patch_count_scale": 1.0,
+    "water_patch_size_scale": 1.0,
+    "water_patch_density": 0.62
   }
 }

@@ -35,11 +35,14 @@ python3 examples/render_world_preview.py output --collision-overlay
 
 ## Пользовательская настройка плотности мира
 
-В `configs/*.json` есть блок `generation_tuning`. Все значения — масштабы, где `1.0` означает стандартную плотность, `0.5` примерно вдвое меньше, `2.0` примерно вдвое больше. Значения за пределами безопасного диапазона `0.0..4.0` будут зажаты и записаны как warning в `output/generation.log`.
+В `configs/*.json` есть блок `generation_tuning`. Масштабы обычно читаются так: `1.0` — стандартная плотность, `0.5` — примерно вдвое меньше, `2.0` — примерно вдвое больше. Scale-поля за пределами безопасного диапазона `0.0..10.0` будут зажаты и записаны как warning в `output/generation.log`; `water_patch_density` отдельно зажимается в диапазон `0.0..1.0`.
 
 ```json
 "generation_tuning": {
   "water_scale": 1.0,
+  "water_patch_count_scale": 1.0,
+  "water_patch_size_scale": 1.0,
+  "water_patch_density": 0.62,
   "forest_scale": 1.0,
   "open_space_scale": 1.0,
   "ruins_scale": 1.0,
@@ -50,7 +53,7 @@ python3 examples/render_world_preview.py output --collision-overlay
 }
 ```
 
-Эти параметры нужны именно для экспериментов с видом мира: больше/меньше воды, лесной массы, открытых мест, руин/строений, декора и бункеров. Если пользовательские параметры дают неидеальную карту, генератор должен писать warning в `generation.log`, `_manifest.json` и `validation_report.json`, а не падать из-за quality-чеков.
+Эти параметры нужны именно для экспериментов с видом мира: больше/меньше воды, лесной массы, открытых мест, руин/строений, декора и бункеров. Для воды `water_scale` и `water_patch_count_scale` увеличивают количество попыток размещения луж, `water_patch_size_scale` меняет радиус луж, а `water_patch_density` меняет заполненность пятна водой. Если пользовательские параметры дают неидеальную карту, генератор должен писать warning в `generation.log`, `_manifest.json` и `validation_report.json`, а не падать из-за quality-чеков.
 
 ## Текущая модель генерации карты
 
