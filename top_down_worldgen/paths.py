@@ -47,6 +47,13 @@ class OutputPaths:
     map_package_objects_dir: Path
     map_package_runtime_objects: Path
     map_package_places: Path
+    map_package_catalogs_dir: Path
+    map_package_tile_types: Path
+    map_package_object_types: Path
+    map_package_render_dir: Path
+    map_package_render_profile: Path
+    map_package_tile_render_hints: Path
+    map_package_object_render_hints: Path
 
     @classmethod
     def from_output_map(cls, map_path: Path) -> "OutputPaths":
@@ -63,6 +70,8 @@ class OutputPaths:
         map_package_layers_dir = map_package_dir / "layers"
         map_package_gameplay_dir = map_package_dir / "gameplay"
         map_package_objects_dir = map_package_dir / "objects"
+        map_package_catalogs_dir = map_package_dir / "catalogs"
+        map_package_render_dir = map_package_dir / "render"
         return cls(
             output_dir=output_dir,
             generated_map=map_path,
@@ -103,4 +112,11 @@ class OutputPaths:
             map_package_objects_dir=map_package_objects_dir,
             map_package_runtime_objects=map_package_objects_dir / "runtime_objects.json",
             map_package_places=map_package_objects_dir / "places.json",
+            map_package_catalogs_dir=map_package_catalogs_dir,
+            map_package_tile_types=map_package_catalogs_dir / "tile_types.json",
+            map_package_object_types=map_package_catalogs_dir / "object_types.json",
+            map_package_render_dir=map_package_render_dir,
+            map_package_render_profile=map_package_render_dir / "render_profile.json",
+            map_package_tile_render_hints=map_package_render_dir / "tile_render_hints.json",
+            map_package_object_render_hints=map_package_render_dir / "object_render_hints.json",
         )

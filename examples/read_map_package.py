@@ -27,6 +27,10 @@ class MapPackageSummary:
         runtime_object_count: Number of runtime objects.
         blocked_tile_count: Number of blocked cells from tile collision.
         gameplay_layers: Gameplay layer names declared by the package.
+        tile_type_count: Number of declared tile type definitions.
+        object_type_count: Number of declared object type definitions.
+        tile_render_hint_count: Number of declared terrain render hints.
+        object_render_hint_count: Number of declared object render hints.
     """
 
     width: int
@@ -37,6 +41,10 @@ class MapPackageSummary:
     runtime_object_count: int
     blocked_tile_count: int
     gameplay_layers: list[str]
+    tile_type_count: int
+    object_type_count: int
+    tile_render_hint_count: int
+    object_render_hint_count: int
 
 
 def load_summary(path: Path) -> MapPackageSummary:
@@ -65,6 +73,8 @@ def load_summary(path: Path) -> MapPackageSummary:
     layers = _require_object(map_index, "layers")
     objects = _require_object(map_index, "objects")
     gameplay = _optional_object(map_index.get("gameplay"))
+    catalogs = _optional_object(map_index.get("catalogs"))
+    render = _optional_object(map_index.get("render"))
 
     collision = _read_object(package_dir / _require_str(layers, "collision"))
     start_goal_path = layers.get("start_goal")
@@ -75,6 +85,16 @@ def load_summary(path: Path) -> MapPackageSummary:
     )
     runtime_objects = _read_object(
         package_dir / _require_str(objects, "runtime_objects"),
+    )
+    tile_types = _read_optional_object(package_dir, catalogs.get("tile_types"))
+    object_types = _read_optional_object(package_dir, catalogs.get("object_types"))
+    tile_render_hints = _read_optional_object(
+        package_dir,
+        render.get("tile_render_hints"),
+    )
+    object_render_hints = _read_optional_object(
+        package_dir,
+        render.get("object_render_hints"),
     )
 
     collision_rows = _require_string_list(collision, "rows")
@@ -92,6 +112,10 @@ def load_summary(path: Path) -> MapPackageSummary:
         runtime_object_count=len(object_items),
         blocked_tile_count=blocked_count,
         gameplay_layers=sorted(gameplay),
+        tile_type_count=len(_optional_object(tile_types.get("types"))),
+        object_type_count=len(_optional_object(object_types.get("types"))),
+        tile_render_hint_count=len(_optional_object(tile_render_hints.get("hints"))),
+        object_render_hint_count=len(_optional_object(object_render_hints.get("hints"))),
     )
 
 
@@ -149,6 +173,12 @@ def _map_json_from_manifest(manifest_path: Path) -> Path:
                 raise ValueError("Map package artifact path must be a string")
             return _require_file(output_dir / relative_path)
     raise ValueError("Manifest does not contain a map_package:index artifact")
+
+
+def _read_optional_object(package_dir: Path, relative_path: Any) -> dict[str, Any]:
+    if not isinstance(relative_path, str):
+        return {}
+    return _read_object(package_dir / relative_path)
 
 
 def _read_object(path: Path) -> dict[str, Any]:
@@ -247,6 +277,10 @@ def main() -> int:
     LOGGER.info("Start: %s", summary.start)
     LOGGER.info("Goal: %s", summary.goal)
     LOGGER.info("Runtime objects: %s", summary.runtime_object_count)
+    LOGGER.info("Tile types: %s", summary.tile_type_count)
+    LOGGER.info("Object types: %s", summary.object_type_count)
+    LOGGER.info("Tile render hints: %s", summary.tile_render_hint_count)
+    LOGGER.info("Object render hints: %s", summary.object_render_hint_count)
     LOGGER.info("Blocked cells: %s", summary.blocked_tile_count)
     LOGGER.info("Gameplay layers: %s", ", ".join(summary.gameplay_layers))
     return 0

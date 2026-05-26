@@ -210,3 +210,18 @@
 - `_manifest.json` и validation расширены новыми слоями пакета карты.
 - Документация и пример загрузчика обновлены под новые слои.
 - Версия проекта поднята до `0.0.26`.
+
+## v0.0.26 -> v0.0.27
+
+- Добавлены machine-readable catalogs для `map_package`: `catalogs/tile_types.json` и `catalogs/object_types.json`.
+- `map_package/map.json`, `_manifest.json`, validation и пример загрузчика обновлены под новые catalogs.
+- Документация формата и game consumer guide дополнены разделами про type catalogs.
+- Версия проекта поднята до `0.0.27`.
+
+## v0.0.27 -> v0.0.28
+
+- Добавлен renderer-ready каталог `map_package/render/` с `render_profile.json`, `tile_render_hints.json` и `object_render_hints.json`.
+- `map_package/map.json` теперь содержит секцию `render` со ссылками на render hint-файлы.
+- `_manifest.json` и validation расширены новыми schema version и проверками render hint outputs.
+- Документация и пример загрузчика обновлены для render hints.
+- Версия проекта поднята до `0.0.28`.

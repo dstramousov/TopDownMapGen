@@ -12,10 +12,15 @@ from top_down_worldgen.manifest import (
     MAP_PACKAGE_SCHEMA_VERSION,
     MOVEMENT_LAYER_SCHEMA_VERSION,
     OBJECT_INSTANCES_SCHEMA_VERSION,
+    OBJECT_TYPES_CATALOG_SCHEMA_VERSION,
+    OBJECT_RENDER_HINTS_SCHEMA_VERSION,
+    RENDER_PROFILE_SCHEMA_VERSION,
+    TILE_RENDER_HINTS_SCHEMA_VERSION,
     PLACES_SCHEMA_VERSION,
     START_GOAL_LAYER_SCHEMA_VERSION,
     TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
+    TILE_TYPES_CATALOG_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.utils.json_io import write_json
@@ -59,6 +64,8 @@ def write_map_package(
     outputs.map_package_layers_dir.mkdir(parents=True, exist_ok=True)
     outputs.map_package_gameplay_dir.mkdir(parents=True, exist_ok=True)
     outputs.map_package_objects_dir.mkdir(parents=True, exist_ok=True)
+    outputs.map_package_catalogs_dir.mkdir(parents=True, exist_ok=True)
+    outputs.map_package_render_dir.mkdir(parents=True, exist_ok=True)
 
     map_data = _dict(runtime_data.get("map"))
     tile_grid = _string_rows(map_data.get("tile_grid"), rows)
@@ -165,6 +172,30 @@ def write_map_package(
     )
 
     write_json(
+        _build_tile_types_catalog(
+            tile_legend=tile_legend,
+            movement_costs=movement_costs,
+            collision=collision,
+        ),
+        outputs.map_package_tile_types,
+    )
+    object_types_catalog = _build_object_types_catalog(
+        _list(runtime_data.get("runtime_objects")),
+    )
+    write_json(object_types_catalog, outputs.map_package_object_types)
+
+    tile_render_hints = _build_tile_render_hints(tile_legend=tile_legend)
+    object_render_hints = _build_object_render_hints(object_types_catalog)
+    render_profile = _build_render_profile(
+        width=width,
+        height=height,
+        tile_size_px=tile_size_px,
+    )
+    write_json(render_profile, outputs.map_package_render_profile)
+    write_json(tile_render_hints, outputs.map_package_tile_render_hints)
+    write_json(object_render_hints, outputs.map_package_object_render_hints)
+
+    write_json(
         {
             "schema_version": MAP_PACKAGE_MAP_SCHEMA_VERSION,
             "package_schema_version": MAP_PACKAGE_SCHEMA_VERSION,
@@ -199,6 +230,15 @@ def write_map_package(
             "objects": {
                 "runtime_objects": "objects/runtime_objects.json",
                 "places": "objects/places.json",
+            },
+            "catalogs": {
+                "tile_types": "catalogs/tile_types.json",
+                "object_types": "catalogs/object_types.json",
+            },
+            "render": {
+                "profile": "render/render_profile.json",
+                "tile_render_hints": "render/tile_render_hints.json",
+                "object_render_hints": "render/object_render_hints.json",
             },
             "legacy_outputs": {
                 "ascii_map": "../generated_map.txt",
@@ -235,9 +275,289 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_fallback_positions,
         outputs.map_package_runtime_objects,
         outputs.map_package_places,
+        outputs.map_package_tile_types,
+        outputs.map_package_object_types,
+        outputs.map_package_render_profile,
+        outputs.map_package_tile_render_hints,
+        outputs.map_package_object_render_hints,
     ]
 
 
+
+
+def _build_render_profile(*, width: int, height: int, tile_size_px: int) -> dict[str, Any]:
+    return {
+        "schema_version": RENDER_PROFILE_SCHEMA_VERSION,
+        "kind": "render_profile",
+        "purpose": "renderer_ready_semantic_hints",
+        "dimensions": {
+            "width_tiles": width,
+            "height_tiles": height,
+            "tile_size_px": tile_size_px,
+        },
+        "coordinate_space": "tile",
+        "draw_order": [
+            "terrain",
+            "terrain_overlays",
+            "objects_below_actor",
+            "actors",
+            "objects_above_actor",
+            "debug_overlays",
+        ],
+        "inputs": {
+            "terrain": "../layers/terrain.json",
+            "tile_types": "../catalogs/tile_types.json",
+            "runtime_objects": "../objects/runtime_objects.json",
+            "object_types": "../catalogs/object_types.json",
+            "tile_render_hints": "tile_render_hints.json",
+            "object_render_hints": "object_render_hints.json",
+        },
+        "notes": [
+            "Hints are semantic and renderer-ready, not bound to a concrete PNG atlas.",
+            "A renderer may ignore unknown hints and use fallback groups.",
+        ],
+    }
+
+
+def _build_tile_render_hints(*, tile_legend: dict[str, Any]) -> dict[str, Any]:
+    hints: dict[str, Any] = {}
+    for raw_type in sorted({
+        item for item in tile_legend.values() if isinstance(item, str) and item
+    }):
+        hints[raw_type] = _tile_render_hint(raw_type)
+    return {
+        "schema_version": TILE_RENDER_HINTS_SCHEMA_VERSION,
+        "kind": "tile_render_hints",
+        "hints": hints,
+        "fallback": {
+            "render_mode": "single_tile",
+            "visual_group": "terrain/unknown",
+            "variant_policy": "stable_by_coordinate",
+        },
+    }
+
+
+def _tile_render_hint(tile_type: str) -> dict[str, Any]:
+    render_mode = "single_tile"
+    visual_group = f"terrain/{tile_type}"
+    layer = "terrain"
+    variant_policy = "stable_by_coordinate"
+    blend_edges = False
+    autotile_group: str | None = None
+
+    if "road" in tile_type:
+        render_mode = "autotile"
+        autotile_group = "old_overgrown_road"
+        visual_group = "terrain/road/old_overgrown"
+        blend_edges = True
+    elif "water" in tile_type:
+        render_mode = "autotile"
+        autotile_group = "water_puddle"
+        visual_group = "terrain/water/puddle"
+        blend_edges = True
+    elif "ruin_wall" in tile_type:
+        render_mode = "autotile"
+        autotile_group = "ruin_wall"
+        visual_group = "structure/ruin_wall"
+        layer = "terrain_overlays"
+    elif "ruin_floor" in tile_type:
+        visual_group = "terrain/ruin_floor"
+        blend_edges = True
+    elif "tree" in tile_type:
+        visual_group = "vegetation/tree_blocker"
+        layer = "objects_above_actor"
+    elif "bush" in tile_type:
+        visual_group = "vegetation/bush"
+        layer = "objects_below_actor"
+    elif "flower" in tile_type or "mushroom" in tile_type:
+        visual_group = "terrain/decor"
+        layer = "terrain_overlays"
+    elif tile_type in {"start", "goal"}:
+        visual_group = f"marker/{tile_type}"
+        layer = "debug_overlays"
+        variant_policy = "fixed"
+    elif "cracked" in tile_type:
+        visual_group = "terrain/cracked_ground"
+        blend_edges = True
+    elif tile_type == "grass":
+        visual_group = "terrain/grass"
+        blend_edges = True
+
+    hint: dict[str, Any] = {
+        "render_mode": render_mode,
+        "visual_group": visual_group,
+        "draw_layer": layer,
+        "variant_policy": variant_policy,
+        "blend_edges": blend_edges,
+    }
+    if autotile_group is not None:
+        hint["autotile_group"] = autotile_group
+        hint["autotile_neighbors"] = "same_terrain_type"
+    return hint
+
+
+def _build_object_render_hints(object_types_catalog: dict[str, Any]) -> dict[str, Any]:
+    object_types = _dict(object_types_catalog.get("types"))
+    hints = {
+        object_type: _object_render_hint(object_type, _dict(definition))
+        for object_type, definition in sorted(object_types.items())
+        if isinstance(object_type, str)
+    }
+    return {
+        "schema_version": OBJECT_RENDER_HINTS_SCHEMA_VERSION,
+        "kind": "object_render_hints",
+        "hints": hints,
+        "fallback": {
+            "render_mode": "sprite",
+            "visual_group": "objects/unknown",
+            "draw_layer": "objects_below_actor",
+            "anchor": "bottom_center",
+            "variant_policy": "stable_by_instance_id",
+        },
+    }
+
+
+def _object_render_hint(object_type: str, definition: dict[str, Any]) -> dict[str, Any]:
+    tags = set(_string_list(definition.get("tags")))
+    height = definition.get("height")
+    role = definition.get("role")
+    visual_group = f"objects/{object_type}"
+    draw_layer = "objects_below_actor"
+    anchor = "bottom_center"
+    render_mode = "sprite"
+
+    if "below_floor" in tags or definition.get("elevation") == -1:
+        draw_layer = "terrain_overlays"
+        anchor = "center"
+    elif height in {2, 3} or "landmark" in tags:
+        draw_layer = "objects_above_actor"
+    elif "loot" in tags or "interactive" in tags:
+        draw_layer = "objects_below_actor"
+    elif role == "soft_cover":
+        draw_layer = "objects_below_actor"
+
+    if "explosive" in tags:
+        visual_group = f"objects/hazard/{object_type}"
+    elif "loot" in tags:
+        visual_group = f"objects/loot/{object_type}"
+    elif "cover" in tags:
+        visual_group = f"objects/cover/{object_type}"
+
+    return {
+        "render_mode": render_mode,
+        "visual_group": visual_group,
+        "draw_layer": draw_layer,
+        "anchor": anchor,
+        "variant_policy": "stable_by_instance_id",
+        "orientation_source": "orientation",
+        "footprint_source": "footprint",
+    }
+
+def _build_tile_types_catalog(
+    *,
+    tile_legend: dict[str, Any],
+    movement_costs: dict[str, Any],
+    collision: dict[str, Any],
+) -> dict[str, Any]:
+    blocked_types = set(_string_list(collision.get("blocked_tile_types")))
+    passable_types = set(_string_list(collision.get("passable_tile_types")))
+    costs_by_type = _movement_costs_by_type(movement_costs, tile_legend)
+    types: dict[str, Any] = {}
+    for symbol, raw_type in sorted(tile_legend.items()):
+        if not isinstance(symbol, str) or not isinstance(raw_type, str):
+            continue
+        collision_value = "blocked" if raw_type in blocked_types else "passable"
+        if raw_type not in passable_types and raw_type not in blocked_types:
+            collision_value = "unknown"
+        types[raw_type] = {
+            "symbol": symbol,
+            "movement_cost": costs_by_type.get(raw_type),
+            "collision": collision_value,
+            "walkable": collision_value == "passable",
+            "tags": _tile_type_tags(raw_type),
+        }
+    return {
+        "schema_version": TILE_TYPES_CATALOG_SCHEMA_VERSION,
+        "kind": "tile_types",
+        "types": types,
+    }
+
+
+def _tile_type_tags(tile_type: str) -> list[str]:
+    tags: set[str] = set()
+    if "blocker" in tile_type:
+        tags.add("blocker")
+    if "slow" in tile_type:
+        tags.add("slow")
+    if "road" in tile_type:
+        tags.add("road")
+    if "water" in tile_type:
+        tags.add("water")
+    if "ruin" in tile_type:
+        tags.add("ruin")
+    if "decor" in tile_type or "flower" in tile_type or "mushroom" in tile_type:
+        tags.add("decor")
+    if "tree" in tile_type or "bush" in tile_type:
+        tags.add("vegetation")
+    if tile_type in {"start", "goal"}:
+        tags.add("marker")
+    if not tags:
+        tags.add("terrain")
+    return sorted(tags)
+
+
+def _build_object_types_catalog(objects: list[Any]) -> dict[str, Any]:
+    type_map: dict[str, dict[str, Any]] = {}
+    for item in objects:
+        if not isinstance(item, dict):
+            continue
+        object_type = item.get("type")
+        if not isinstance(object_type, str) or not object_type:
+            continue
+        entry = type_map.setdefault(
+            object_type,
+            {
+                "role": item.get("role"),
+                "cover_type": item.get("cover_type"),
+                "height": item.get("height"),
+                "elevation": item.get("elevation"),
+                "blocks_movement": item.get("blocks_movement"),
+                "blocks_projectiles": item.get("blocks_projectiles"),
+                "blocks_vision": item.get("blocks_vision"),
+                "interactive": item.get("interactive"),
+                "collision_profile": item.get("collision_profile"),
+                "combat_properties": item.get("combat_properties"),
+                "tags": sorted(_object_tags(item)),
+                "instance_count": 0,
+            },
+        )
+        entry["instance_count"] = int(entry["instance_count"]) + 1
+        entry["tags"] = sorted(set(_string_list(entry.get("tags"))) | _object_tags(item))
+    return {
+        "schema_version": OBJECT_TYPES_CATALOG_SCHEMA_VERSION,
+        "kind": "object_types",
+        "types": dict(sorted(type_map.items())),
+    }
+
+
+def _object_tags(item: dict[str, Any]) -> set[str]:
+    tags = set(_string_list(item.get("tags")))
+    role = item.get("role")
+    if isinstance(role, str) and role:
+        tags.add(role)
+    cover_type = item.get("cover_type")
+    if isinstance(cover_type, str) and cover_type and cover_type != "none":
+        tags.add("cover")
+    combat_properties = _dict(item.get("combat_properties"))
+    if combat_properties.get("explosive") is True:
+        tags.add("explosive")
+    if combat_properties.get("loot") is True:
+        tags.add("loot")
+    if item.get("interactive") is True:
+        tags.add("interactive")
+    if item.get("blocks_movement") is True:
+        tags.add("movement_blocker")
+    return tags
 
 def _terrain_rows(
     tile_grid: list[str],
@@ -325,6 +645,12 @@ def _dict(value: Any) -> dict[str, Any]:
 def _list(value: Any) -> list[Any]:
     if isinstance(value, list):
         return value
+    return []
+
+
+def _string_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, str)]
     return []
 
 

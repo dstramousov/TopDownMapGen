@@ -91,6 +91,8 @@ def build_validation_report(
         "map_package_start_goal_exists": outputs.map_package_start_goal.exists(),
         "map_package_gameplay_exists": _map_package_gameplay_exists(outputs),
         "map_package_objects_exist": _map_package_objects_exist(outputs),
+        "map_package_catalogs_exist": _map_package_catalogs_exist(outputs),
+        "map_package_render_hints_exist": _map_package_render_hints_exist(outputs),
         "single_start_exists": _count_tiles(tile_grid, "S") == 1,
         "single_goal_exists": _count_tiles(tile_grid, "G") == 1,
         "tile_grid_matches_dimensions": _grid_matches_dimensions(
@@ -299,6 +301,21 @@ def _map_package_objects_exist(outputs: OutputPaths) -> bool:
     return (
         outputs.map_package_runtime_objects.exists()
         and outputs.map_package_places.exists()
+    )
+
+
+def _map_package_catalogs_exist(outputs: OutputPaths) -> bool:
+    return (
+        outputs.map_package_tile_types.exists()
+        and outputs.map_package_object_types.exists()
+    )
+
+
+def _map_package_render_hints_exist(outputs: OutputPaths) -> bool:
+    return (
+        outputs.map_package_render_profile.exists()
+        and outputs.map_package_tile_render_hints.exists()
+        and outputs.map_package_object_render_hints.exists()
     )
 
 
@@ -1102,5 +1119,10 @@ def _count_existing_outputs(outputs: OutputPaths) -> int:
         outputs.map_package_fallback_positions,
         outputs.map_package_runtime_objects,
         outputs.map_package_places,
+        outputs.map_package_tile_types,
+        outputs.map_package_object_types,
+        outputs.map_package_render_profile,
+        outputs.map_package_tile_render_hints,
+        outputs.map_package_object_render_hints,
     ]
     return sum(path.exists() for path in candidates)

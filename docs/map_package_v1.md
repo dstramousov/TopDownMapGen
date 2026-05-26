@@ -30,9 +30,11 @@ map_package/
   map.json
   layers/
     tile_grid.json
+    terrain.json
     movement_costs.json
     collision.json
     elevation.json
+    start_goal.json
   gameplay/
     combat_zones.json
     cover_points.json
@@ -43,6 +45,13 @@ map_package/
   objects/
     runtime_objects.json
     places.json
+  catalogs/
+    tile_types.json
+    object_types.json
+  render/
+    render_profile.json
+    tile_render_hints.json
+    object_render_hints.json
 ```
 
 ## Координаты
@@ -75,7 +84,8 @@ unit: tile
 - `layers` — относительные пути к слоям;
 - `gameplay` — относительные пути к tactical/gameplay слоям;
 - `objects` — относительные пути к runtime-объектам и places;
-- `legacy_outputs` — ссылки на старые output-файлы.
+- `legacy_outputs` — ссылки на старые output-файлы;
+- `render` — относительные пути к renderer-ready подсказкам.
 
 ## layers/tile_grid.json
 
@@ -151,11 +161,15 @@ Runtime-объекты — это сущности поверх tile grid: бр�
 ```text
 map_package/map.json
 map_package/layers/tile_grid.json
+map_package/layers/terrain.json
 map_package/layers/movement_costs.json
 map_package/layers/collision.json
 map_package/layers/elevation.json
+map_package/layers/start_goal.json
 map_package/objects/runtime_objects.json
 map_package/objects/places.json
+map_package/catalogs/tile_types.json
+map_package/catalogs/object_types.json
 ```
 
 Gameplay-слои сейчас тоже генерируются штатно, но игра может игнорировать часть из них.
@@ -206,3 +220,77 @@ tactical_map_debug.json
 Старые поля `legacy_blocked_tiles` и `legacy_passable_tiles` оставлены только для диагностики и переходного периода. Игровой runtime должен использовать `rows`, `blocked_tile_types` и `passable_tile_types`.
 
 `layers/movement_costs.json` дополнен `costs_by_type`. Это позволяет читать стоимость движения по типам поверхности, а не по ASCII-символам.
+
+## v0.0.27 catalogs
+
+`map_package v1` теперь содержит машинные каталоги типов:
+
+```text
+map_package/catalogs/
+  tile_types.json
+  object_types.json
+```
+
+`catalogs/tile_types.json` описывает типы поверхности, которые встречаются в `terrain.json`:
+
+- `symbol` — legacy ASCII-символ для диагностики;
+- `movement_cost` — стоимость движения, если она известна;
+- `collision` — `passable`, `blocked` или `unknown`;
+- `walkable` — быстрый boolean-флаг для game loader-а;
+- `tags` — простые семантические признаки: `road`, `water`, `blocker`, `vegetation`, `ruin`, `decor`, `marker`.
+
+`catalogs/object_types.json` агрегирует runtime-объекты по типу. Это не список экземпляров, а справочник типов, построенный из фактически сгенерированных объектов текущей карты:
+
+- `role`;
+- `cover_type`;
+- `height`;
+- `elevation`;
+- `blocks_movement`;
+- `blocks_projectiles`;
+- `blocks_vision`;
+- `interactive`;
+- `collision_profile`;
+- `combat_properties`;
+- `tags`;
+- `instance_count`.
+
+Игра теперь может не хардкодить смысл `tree_blocker`, `water_slow`, `fallen_log`, `stone_chunk`, `trench` и других типов. На первом этапе catalogs можно читать как runtime metadata. Позже их можно будет заменить или дополнить внешними tileset/objectset definition-файлами.
+
+## v0.0.28 render hints
+
+`map_package v1` теперь содержит renderer-ready подсказки. Это не готовый tileset и не привязка к конкретному PNG-атласу. Это промежуточный контракт между семантической картой и будущим renderer-ом.
+
+```text
+map_package/render/
+  render_profile.json
+  tile_render_hints.json
+  object_render_hints.json
+```
+
+`render/render_profile.json` описывает общий профиль рендера:
+
+- размеры карты и `tile_size_px`;
+- рекомендуемый порядок рисования слоёв;
+- ссылки на входные слои, каталоги и hint-файлы;
+- правило, что hint-ы являются семантическими и могут иметь fallback.
+
+`render/tile_render_hints.json` объясняет, как потенциально рисовать типы поверхности из `layers/terrain.json`:
+
+- `render_mode = single_tile` — обычный одиночный тайл;
+- `render_mode = autotile` — renderer должен выбирать вариант по соседям;
+- `visual_group` — стабильная семантическая группа будущего tileset-а;
+- `draw_layer` — рекомендуемый слой отрисовки;
+- `variant_policy` — как выбирать варианты;
+- `blend_edges` — можно ли визуально смешивать края с соседями.
+
+Например, `old_overgrown_road`, `water_slow` и `ruin_wall_blocker` получают `autotile`-подсказки, но генератор всё ещё не требует конкретных PNG-файлов.
+
+`render/object_render_hints.json` объясняет, как потенциально рисовать runtime-объекты из `objects/runtime_objects.json`:
+
+- `visual_group` — семантическая группа будущих sprite/object assets;
+- `draw_layer` — где рисовать объект относительно terrain/actor/debug;
+- `anchor` — базовая точка привязки;
+- `orientation_source` — поле экземпляра, из которого renderer может брать ориентацию;
+- `footprint_source` — поле экземпляра, из которого renderer может брать footprint.
+
+Игра может полностью игнорировать каталог `render/`. Он нужен renderer-у, редактору и будущему tileset pipeline. Runtime-логика должна продолжать опираться на `layers/`, `objects/`, `gameplay/` и `catalogs/`.

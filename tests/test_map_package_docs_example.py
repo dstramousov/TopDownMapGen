@@ -24,6 +24,7 @@ def test_read_map_package_example_loads_summary(tmp_path: Path) -> None:
     (package_dir / "layers").mkdir(parents=True)
     (package_dir / "gameplay").mkdir()
     (package_dir / "objects").mkdir()
+    (package_dir / "catalogs").mkdir()
 
     _write_json(
         output_dir / "_manifest.json",
@@ -62,6 +63,10 @@ def test_read_map_package_example_loads_summary(tmp_path: Path) -> None:
             "objects": {
                 "runtime_objects": "objects/runtime_objects.json",
             },
+            "catalogs": {
+                "tile_types": "catalogs/tile_types.json",
+                "object_types": "catalogs/object_types.json",
+            },
         },
     )
     _write_json(package_dir / "layers" / "tile_grid.json", {"rows": ["S+", "TG"]})
@@ -86,6 +91,14 @@ def test_read_map_package_example_loads_summary(tmp_path: Path) -> None:
         {"items": [{"id": "tree_0", "type": "tree"}]},
     )
     _write_json(package_dir / "gameplay" / "enemy_spawn_zones.json", {"items": []})
+    _write_json(
+        package_dir / "catalogs" / "tile_types.json",
+        {"types": {"grass": {}, "tree_blocker": {}}},
+    )
+    _write_json(
+        package_dir / "catalogs" / "object_types.json",
+        {"types": {"tree": {}}},
+    )
 
     module = _load_example_module()
     summary = module.load_summary(output_dir)
@@ -98,6 +111,10 @@ def test_read_map_package_example_loads_summary(tmp_path: Path) -> None:
     assert summary.runtime_object_count == 1
     assert summary.blocked_tile_count == 1
     assert summary.gameplay_layers == ["enemy_spawn_zones"]
+    assert summary.tile_type_count == 2
+    assert summary.object_type_count == 1
+    assert summary.tile_render_hint_count == 0
+    assert summary.object_render_hint_count == 0
 
 
 def _load_example_module() -> ModuleType:

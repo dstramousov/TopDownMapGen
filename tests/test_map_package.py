@@ -55,6 +55,19 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     runtime_objects = json.loads(
         outputs.map_package_runtime_objects.read_text(encoding="utf-8"),
     )
+    tile_types = json.loads(outputs.map_package_tile_types.read_text(encoding="utf-8"))
+    object_types = json.loads(
+        outputs.map_package_object_types.read_text(encoding="utf-8"),
+    )
+    render_profile = json.loads(
+        outputs.map_package_render_profile.read_text(encoding="utf-8"),
+    )
+    tile_render_hints = json.loads(
+        outputs.map_package_tile_render_hints.read_text(encoding="utf-8"),
+    )
+    object_render_hints = json.loads(
+        outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
+    )
 
     assert package_index["schema_version"] == "map-package-map-v1"
     assert package_index["dimensions"]["width_tiles"] == 2
@@ -63,6 +76,15 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["layers"]["collision"] == "layers/collision.json"
     assert package_index["layers"]["terrain"] == "layers/terrain.json"
     assert package_index["layers"]["start_goal"] == "layers/start_goal.json"
+    assert package_index["catalogs"]["tile_types"] == "catalogs/tile_types.json"
+    assert package_index["catalogs"]["object_types"] == "catalogs/object_types.json"
+    assert package_index["render"]["profile"] == "render/render_profile.json"
+    assert package_index["render"]["tile_render_hints"] == (
+        "render/tile_render_hints.json"
+    )
+    assert package_index["render"]["object_render_hints"] == (
+        "render/object_render_hints.json"
+    )
     assert tile_grid["rows"] == ["S+", "+G"]
     assert terrain["rows"] == [["start", "grass"], ["grass", "goal"]]
     assert movement["costs_by_type"]["grass"] == 1
@@ -71,3 +93,9 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert start_goal["start"] == {"x": 0, "y": 0}
     assert start_goal["goal"] == {"x": 1, "y": 1}
     assert runtime_objects["items"][0]["type"] == "stone_chunk"
+    assert tile_types["types"]["grass"]["walkable"] is True
+    assert object_types["types"]["stone_chunk"]["instance_count"] == 1
+    assert render_profile["schema_version"] == "render-profile-v1"
+    assert "terrain" in render_profile["draw_order"]
+    assert tile_render_hints["hints"]["grass"]["visual_group"] == "terrain/grass"
+    assert object_render_hints["hints"]["stone_chunk"]["render_mode"] == "sprite"

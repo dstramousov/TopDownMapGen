@@ -172,3 +172,64 @@ _manifest.json.versions.schemas
 8. `gameplay/enemy_spawn_zones.json` — подключить спавны врагов, если они нужны.
 
 `tile_grid.json` остаётся полезным для отладки и legacy-инструментов, но игра не должна строить логику напрямую на символах `+`, `T`, `#` и других ASCII-тайлах.
+
+## Type catalogs since v0.0.27
+
+После загрузки `map.json` игра может открыть:
+
+```text
+catalogs/tile_types.json
+catalogs/object_types.json
+```
+
+Рекомендуемый порядок:
+
+1. загрузить `terrain.json`;
+2. загрузить `collision.json`;
+3. загрузить `movement_costs.json`;
+4. загрузить `catalogs/tile_types.json`;
+5. загрузить `objects/runtime_objects.json`;
+6. загрузить `catalogs/object_types.json`.
+
+`tile_types.json` нужен, чтобы не держать в игре таблицу вида “`tree_blocker` значит blocked, `water_slow` значит slow”. `object_types.json` нужен, чтобы игра понимала свойства типов объектов без ручного хардкода по каждому экземпляру.
+
+Для первой интеграции catalogs можно использовать так:
+
+```text
+for terrain_type in terrain row:
+  tile_def = tile_types[terrain_type]
+  walkable = tile_def.walkable
+  movement_cost = tile_def.movement_cost
+```
+
+Для объектов:
+
+```text
+for object in runtime_objects:
+  object_def = object_types[object.type]
+  blocks_movement = object_def.blocks_movement
+  cover_type = object_def.cover_type
+```
+
+Если catalog отсутствует, loader может fallback-нуться на поля самого объекта или на `collision.json`, но для новых интеграций это уже нежелательно.
+
+## Render hints для клиента
+
+Папка `map_package/render/` не обязательна для первой игровой интеграции. Она нужна тем клиентам, которые хотят построить preview, редактор или собственный renderer без знания внутренних эвристик генератора.
+
+Рекомендуемый порядок чтения для renderer-а:
+
+```text
+1. открыть map_package/map.json;
+2. прочитать map_json.render.profile;
+3. открыть render/render_profile.json;
+4. открыть layers/terrain.json;
+5. открыть objects/runtime_objects.json;
+6. открыть render/tile_render_hints.json;
+7. открыть render/object_render_hints.json;
+8. применить fallback для неизвестных visual_group.
+```
+
+Важно: `visual_group` — это не путь к PNG. Это стабильное семантическое имя, например `terrain/grass`, `terrain/road/old_overgrown`, `objects/cover/stone_chunk`. Конкретный движок или renderer сам решает, какой tileset/objectset соответствует этой группе.
+
+Игровой runtime не должен принимать решения о проходимости по render hints. Для этого есть `collision.json`, `movement_costs.json`, `tile_types.json` и `object_types.json`.

@@ -28,6 +28,11 @@ def _write_map_package_files(outputs: OutputPaths) -> None:
         outputs.map_package_fallback_positions,
         outputs.map_package_runtime_objects,
         outputs.map_package_places,
+        outputs.map_package_tile_types,
+        outputs.map_package_object_types,
+        outputs.map_package_render_profile,
+        outputs.map_package_tile_render_hints,
+        outputs.map_package_object_render_hints,
     ):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("{}\n", encoding="utf-8")
