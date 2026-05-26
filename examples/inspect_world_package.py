@@ -105,6 +105,9 @@ class InspectionReport:
         gameplay_counts: Per-gameplay-layer item counts.
         runtime_object_count: Number of runtime objects.
         runtime_object_type_count: Number of runtime object types used by instances.
+        multi_tile_object_count: Number of objects with more than one footprint tile.
+        max_object_footprint_tiles: Largest runtime object footprint size.
+        max_collision_footprint_tiles: Largest collision footprint size.
         place_count: Number of semantic places.
         tile_type_count: Number of tile type definitions.
         object_type_count: Number of object type definitions.
@@ -132,6 +135,9 @@ class InspectionReport:
     gameplay_counts: dict[str, int]
     runtime_object_count: int
     runtime_object_type_count: int
+    multi_tile_object_count: int
+    max_object_footprint_tiles: int
+    max_collision_footprint_tiles: int
     place_count: int
     tile_type_count: int
     object_type_count: int
@@ -255,6 +261,15 @@ def inspect_world_package(path: Path) -> InspectionReport:
         gameplay_counts=gameplay_counts,
         runtime_object_count=len(runtime_items),
         runtime_object_type_count=len(_unique_types(runtime_items)),
+        multi_tile_object_count=sum(_footprint_size(item) > 1 for item in runtime_items),
+        max_object_footprint_tiles=max(
+            (_footprint_size(item) for item in runtime_items),
+            default=0,
+        ),
+        max_collision_footprint_tiles=max(
+            (_collision_footprint_size(item) for item in runtime_items),
+            default=0,
+        ),
         place_count=len(place_items),
         tile_type_count=len(_optional_object(tile_types.get("types"))),
         object_type_count=len(_optional_object(object_types.get("types"))),
@@ -357,6 +372,12 @@ def print_report(report: InspectionReport) -> None:
         "- runtime objects: %s total, %s types",
         report.runtime_object_count,
         report.runtime_object_type_count,
+    )
+    LOGGER.info(
+        "- multi-tile objects: %s, max footprint=%s, max collision footprint=%s",
+        report.multi_tile_object_count,
+        report.max_object_footprint_tiles,
+        report.max_collision_footprint_tiles,
     )
     LOGGER.info("- places: %s total", report.place_count)
     LOGGER.info("")
@@ -614,6 +635,33 @@ def _optional_str(value: Any, fallback: str) -> str:
 
 def _numeric_values(data: dict[str, Any]) -> list[int | float]:
     return [value for value in data.values() if isinstance(value, int | float)]
+
+
+def _footprint_size(item: Any) -> int:
+    if not isinstance(item, dict):
+        return 0
+    footprint = item.get("footprint")
+    if not isinstance(footprint, list):
+        return 0
+    return sum(1 for point in footprint if _is_point_list(point))
+
+
+def _collision_footprint_size(item: Any) -> int:
+    if not isinstance(item, dict):
+        return 0
+    footprint = item.get("collision_footprint")
+    if not isinstance(footprint, list):
+        return 0
+    return sum(1 for point in footprint if _is_point_list(point))
+
+
+def _is_point_list(value: Any) -> bool:
+    return (
+        isinstance(value, list)
+        and len(value) == 2
+        and isinstance(value[0], int)
+        and isinstance(value[1], int)
+    )
 
 
 def _unique_types(items: list[Any]) -> set[str]:

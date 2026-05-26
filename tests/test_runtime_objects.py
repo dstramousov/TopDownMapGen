@@ -50,6 +50,18 @@ def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
     enriched.setdefault("tags", list(spec["tags"]))
     enriched.setdefault("collision_profile", dict(spec["collision_profile"]))
     enriched.setdefault("combat_properties", dict(spec["combat_properties"]))
+    x = int(enriched.get("x", 0))
+    y = int(enriched.get("y", 0))
+    footprint = enriched.setdefault("footprint", [[x, y]])
+    if not isinstance(footprint, list):
+        footprint = [[x, y]]
+        enriched["footprint"] = footprint
+    if spec["blocks_movement"] or enriched.get("type") == "trench":
+        enriched.setdefault("collision_footprint", list(footprint))
+    else:
+        enriched.setdefault("collision_footprint", [])
+    enriched.setdefault("visual_bounds", {"x": x, "y": y, "width": 1, "height": 1})
+    enriched.setdefault("pivot", {"x": 0, "y": 0, "space": "tile_offset"})
     if "stance_hints" in spec:
         enriched.setdefault("stance_hints", dict(spec["stance_hints"]))
     return enriched
@@ -110,6 +122,14 @@ def test_attach_runtime_layers_generates_interest_points() -> None:
     assert runtime_data["runtime_objects_summary"]["landmarks"]["total"] >= 1
     assert all("collision_profile" in item for item in runtime_data["runtime_objects"])
     assert all("combat_properties" in item for item in runtime_data["runtime_objects"])
+    assert all("footprint" in item for item in runtime_data["runtime_objects"])
+    assert all("collision_footprint" in item for item in runtime_data["runtime_objects"])
+    assert all("visual_bounds" in item for item in runtime_data["runtime_objects"])
+    assert any(
+        len(item["footprint"]) > 1
+        for item in runtime_data["runtime_objects"]
+        if item["type"] in {"field_tent", "car_wreck", "old_well", "pit"}
+    )
     assert all(
         "stance_hints" in item
         for item in runtime_data["runtime_objects"]

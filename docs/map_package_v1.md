@@ -386,3 +386,9 @@ output/world_preview.png
 The preview is a visual smoke test only. It uses simple semantic colors and object markers instead
 of production sprites. A game renderer should still read the same package contract and apply its own
 asset pipeline.
+
+## Object footprints
+
+Object instances are no longer guaranteed to be single-tile markers. Consumers must read `footprint`, `collision_footprint`, `visual_bounds`, and `pivot` from `objects/runtime_objects.json` instead of assuming that `x`/`y` is the full object size.
+
+The `x`, `y`, `position`, and `anchor` fields identify the object's anchor tile. The `footprint` field is the logical occupied shape. The `collision_footprint` field is the subset where the object affects movement, projectiles, or vision according to its `collision_profile`. The `visual_bounds` field is a coarse tile-space rectangle for preview/render placement.

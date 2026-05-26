@@ -1,3 +1,37 @@
+# TopDownMapGen
+
+TopDownMapGen генерирует один самодостаточный `output/`-пакет мира: legacy-файлы, новый `map_package/`, manifest, validation report, debug/preview-картинки и машинные описания для будущей игры или внешнего renderer-а.
+
+## Быстрый запуск
+
+```bash
+PYTHONPATH=. python3 top_down_generator.py \
+  --config configs/default.json \
+  -o output \
+  --include-debug-layers
+```
+
+После запуска основной вход для любых внешних потребителей — `output/_manifest.json`. Новый структурированный пакет мира лежит в `output/map_package/`, а legacy-файлы (`generated_map.txt`, `tactical_map.json`, `validation_report.json`, `metrics.txt`, `object_catalog.md`) остаются рядом для совместимости и диагностики.
+
+Проверить пакет как внешний consumer:
+
+```bash
+python3 examples/inspect_world_package.py output
+```
+
+Собрать простой визуальный smoke-test из публичного пакета:
+
+```bash
+python3 examples/render_world_preview.py output --collision-overlay
+```
+
+Документы для интеграции:
+
+- `docs/map_package_v1.md` — формат `map_package/`;
+- `docs/game_consumer_guide.md` — как игре читать пакет;
+- `docs/world_building_algorithm.md` — порядок построения runtime-мира из файлов;
+- `docs/world_package_file_map.md` — назначение файлов в `output/`.
+
 ## Текущая модель генерации карты
 
 Генератор строит процедурную top-down карту как многослойное игровое пространство. Базовая карта остаётся двумерной ASCII-сеткой, но поверх неё постепенно наращиваются дополнительные смысловые слои: тактические зоны, runtime-объекты, микролокации, высотные отметки, debug-слои, manifest и отчёты валидации.

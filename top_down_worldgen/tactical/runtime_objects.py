@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v9"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v10"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
@@ -367,8 +367,71 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
 
 
 
+def _rect_offsets(width: int, height: int) -> tuple[tuple[int, int], ...]:
+    return tuple((x, y) for y in range(height) for x in range(width))
+
+
+def _footprint_defaults_for_type(object_type: str) -> dict[str, Any]:
+    defaults: dict[str, dict[str, Any]] = {
+        "fallen_log": _footprint_default(width=2, height=1, rotatable=True),
+        "stone_chunk": _footprint_default(width=1, height=1),
+        "bush_thicket": _footprint_default(width=1, height=1),
+        "rusted_barrel": _footprint_default(width=1, height=1),
+        "scrap_pile": _footprint_default(width=2, height=1, rotatable=True),
+        "ammo_cache": _footprint_default(width=1, height=1, blocks_movement=False),
+        "medkit_cache": _footprint_default(width=1, height=1, blocks_movement=False),
+        "big_dead_tree": _footprint_default(width=2, height=2, visual_width=2, visual_height=3),
+        "broken_radio_mast": _footprint_default(width=1, height=1, visual_width=1, visual_height=3),
+        "old_checkpoint": _footprint_default(width=3, height=2, rotatable=True),
+        "car_wreck": _footprint_default(width=2, height=1, rotatable=True),
+        "abandoned_backpack": _footprint_default(width=1, height=1, blocks_movement=False),
+        "field_tent": _footprint_default(width=2, height=2),
+        "dead_campfire": _footprint_default(width=1, height=1, blocks_movement=False),
+        "broken_generator": _footprint_default(width=2, height=1, rotatable=True),
+        "cable_spool": _footprint_default(width=1, height=1),
+        "warning_sign": _footprint_default(width=1, height=1, blocks_movement=False),
+        "old_grave_marker": _footprint_default(width=1, height=1, blocks_movement=False),
+        "pit": _footprint_default(width=2, height=2, blocks_movement=False),
+        "earth_berm": _footprint_default(width=2, height=1, rotatable=True, blocks_movement=False),
+        "old_well": _footprint_default(width=2, height=2),
+        "abandoned_cart": _footprint_default(width=2, height=1, rotatable=True),
+        "trench": _footprint_default(width=1, height=1, blocks_movement=False),
+    }
+    return dict(defaults.get(object_type, _footprint_default(width=1, height=1)))
+
+
+def _footprint_default(
+    *,
+    width: int,
+    height: int,
+    rotatable: bool = False,
+    blocks_movement: bool = True,
+    visual_width: int | None = None,
+    visual_height: int | None = None,
+) -> dict[str, Any]:
+    footprint = _rect_offsets(width, height)
+    collision_footprint = footprint if blocks_movement else ()
+    return {
+        "default_footprint": [[x, y] for x, y in footprint],
+        "default_collision_footprint": [[x, y] for x, y in collision_footprint],
+        "default_visual_bounds": {
+            "offset_x": 0,
+            "offset_y": 0,
+            "width": visual_width or width,
+            "height": visual_height or height,
+        },
+        "default_pivot": {
+            "x": max(0, width // 2),
+            "y": height - 1,
+            "space": "tile_offset",
+        },
+        "rotatable_footprint": rotatable,
+    }
+
+
 def _runtime_type_with_gameplay(spec: dict[str, Any]) -> dict[str, Any]:
     enriched = dict(spec)
+    enriched.update(_footprint_defaults_for_type(str(spec["type"])))
     enriched["collision_profile"] = _collision_profile_for_spec(spec)
     enriched["combat_properties"] = _combat_properties_for_type(str(spec["type"]))
     if spec["type"] == "trench":
@@ -800,12 +863,70 @@ def _footprints_for_point(
 ) -> list[tuple[list[tuple[int, int]], str, str]]:
     if object_type == "trench":
         return _trench_footprints_for_point(rows, point, rng, desired_shape)
-    # Fallen-log-shaped footprints are deliberately avoided here because this
-    # patch keeps non-trench runtime objects as one-cell descriptors.
     _ = rows
-    _ = rng
     _ = desired_shape
-    return [([point], "point", "point")]
+    spec = RUNTIME_OBJECT_TYPE_BY_NAME[object_type]
+    offsets = _offset_points(spec.get("default_footprint"))
+    if not offsets:
+        offsets = [(0, 0)]
+    variants = _oriented_offset_variants(
+        offsets,
+        rotatable=spec.get("rotatable_footprint") is True,
+    )
+    rng.shuffle(variants)
+    return [
+        (
+            [(point[0] + offset_x, point[1] + offset_y) for offset_x, offset_y in variant],
+            orientation,
+            _shape_name(variant),
+        )
+        for variant, orientation in variants
+    ]
+
+
+def _offset_points(value: Any) -> list[tuple[int, int]]:
+    if not isinstance(value, list):
+        return []
+    points: list[tuple[int, int]] = []
+    for point in value:
+        parsed = _point(point)
+        if parsed is not None:
+            points.append(parsed)
+    return points
+
+
+def _oriented_offset_variants(
+    offsets: list[tuple[int, int]],
+    *,
+    rotatable: bool,
+) -> list[tuple[list[tuple[int, int]], str]]:
+    normalized = _normalize_offsets(offsets)
+    variants: list[tuple[list[tuple[int, int]], str]] = [(normalized, "east_west")]
+    if rotatable:
+        rotated = _normalize_offsets([(y, x) for x, y in normalized])
+        if rotated != normalized:
+            variants.append((rotated, "north_south"))
+    return variants
+
+
+def _normalize_offsets(offsets: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    if not offsets:
+        return []
+    min_x = min(x for x, _ in offsets)
+    min_y = min(y for _, y in offsets)
+    return sorted({(x - min_x, y - min_y) for x, y in offsets})
+
+
+def _shape_name(offsets: list[tuple[int, int]]) -> str:
+    if not offsets:
+        return "empty"
+    width = max(x for x, _ in offsets) + 1
+    height = max(y for _, y in offsets) + 1
+    if len(offsets) == 1:
+        return "single"
+    if len(offsets) == width * height:
+        return f"rect_{width}x{height}"
+    return "multi_cell"
 
 
 def _trench_footprints_for_point(
@@ -900,6 +1021,13 @@ def _build_runtime_object(
 ) -> dict[str, Any]:
     spec = RUNTIME_OBJECT_TYPE_BY_NAME[object_type]
     x, y = footprint[0]
+    collision_footprint = _world_collision_footprint(
+        anchor=(x, y),
+        footprint=footprint,
+        spec=spec,
+        orientation=orientation,
+    )
+    visual_bounds = _world_visual_bounds(anchor=(x, y), spec=spec, orientation=orientation)
     item: dict[str, Any] = {
         "id": object_id,
         "type": object_type,
@@ -907,6 +1035,7 @@ def _build_runtime_object(
         "x": x,
         "y": y,
         "position": [x, y],
+        "anchor": [x, y],
         "elevation": spec["default_elevation"],
         "height": spec["default_height"],
         "cover_type": spec["cover_type"],
@@ -916,15 +1045,71 @@ def _build_runtime_object(
         "interactive": spec["interactive"],
         "orientation": orientation,
         "shape": shape,
+        "footprint": [[point_x, point_y] for point_x, point_y in footprint],
+        "collision_footprint": [
+            [point_x, point_y] for point_x, point_y in collision_footprint
+        ],
+        "visual_bounds": visual_bounds,
+        "pivot": dict(spec["default_pivot"]),
         "tags": list(spec["tags"]),
         "collision_profile": dict(spec["collision_profile"]),
         "combat_properties": dict(spec["combat_properties"]),
     }
     if "stance_hints" in spec:
         item["stance_hints"] = dict(spec["stance_hints"])
-    if len(footprint) > 1:
-        item["footprint"] = [[point_x, point_y] for point_x, point_y in footprint]
     return item
+
+
+def _world_collision_footprint(
+    *,
+    anchor: tuple[int, int],
+    footprint: list[tuple[int, int]],
+    spec: dict[str, Any],
+    orientation: str,
+) -> list[tuple[int, int]]:
+    if spec.get("type") == "trench":
+        return list(footprint)
+    offsets = _offset_points(spec.get("default_collision_footprint"))
+    if not offsets:
+        return []
+    variants = {
+        variant_orientation: variant_offsets
+        for variant_offsets, variant_orientation in _oriented_offset_variants(
+            offsets,
+            rotatable=spec.get("rotatable_footprint") is True,
+        )
+    }
+    selected_offsets = variants.get(orientation, offsets)
+    return [(anchor[0] + offset_x, anchor[1] + offset_y) for offset_x, offset_y in selected_offsets]
+
+
+def _world_visual_bounds(
+    *,
+    anchor: tuple[int, int],
+    spec: dict[str, Any],
+    orientation: str,
+) -> dict[str, int]:
+    bounds = spec.get("default_visual_bounds")
+    if not isinstance(bounds, dict):
+        bounds = {"offset_x": 0, "offset_y": 0, "width": 1, "height": 1}
+    try:
+        offset_x = int(bounds.get("offset_x", 0))
+        offset_y = int(bounds.get("offset_y", 0))
+        width = max(1, int(bounds.get("width", 1)))
+        height = max(1, int(bounds.get("height", 1)))
+    except (TypeError, ValueError):
+        offset_x = 0
+        offset_y = 0
+        width = 1
+        height = 1
+    if orientation == "north_south" and spec.get("rotatable_footprint") is True:
+        width, height = height, width
+    return {
+        "x": anchor[0] + offset_x,
+        "y": anchor[1] + offset_y,
+        "width": width,
+        "height": height,
+    }
 
 
 def _attach_trench_elevation(

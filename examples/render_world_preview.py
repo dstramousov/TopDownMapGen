@@ -34,6 +34,8 @@ FALLBACK_TERRAIN_COLOR = (96, 96, 96, 255)
 BLOCKED_OVERLAY_COLOR = (0, 0, 0, 80)
 OBJECT_COLOR = (220, 210, 130, 230)
 OBJECT_FOOTPRINT_COLOR = (255, 236, 150, 120)
+OBJECT_COLLISION_FOOTPRINT_COLOR = (255, 160, 80, 140)
+OBJECT_VISUAL_BOUNDS_COLOR = (255, 255, 255, 105)
 START_COLOR = (70, 230, 100, 255)
 GOAL_COLOR = (240, 80, 70, 255)
 GRID_COLOR = (0, 0, 0, 35)
@@ -53,6 +55,7 @@ class PreviewSummary:
         terrain_type_count: Number of terrain types observed.
         blocked_tiles: Number of blocked tiles in the collision layer.
         runtime_objects: Number of runtime objects drawn or read.
+        multi_tile_objects: Number of runtime objects with multi-cell footprints.
         start: Start point.
         goal: Goal point.
     """
@@ -66,6 +69,7 @@ class PreviewSummary:
     terrain_type_count: int
     blocked_tiles: int
     runtime_objects: int
+    multi_tile_objects: int
     start: dict[str, int] | None
     goal: dict[str, int] | None
 
@@ -165,6 +169,7 @@ def render_preview(
         terrain_type_count=len({cell for row in terrain_rows for cell in row}),
         blocked_tiles=sum(cell == "1" for row in collision_rows for cell in row),
         runtime_objects=len(object_items),
+        multi_tile_objects=sum(_has_multi_tile_footprint(item) for item in object_items),
         start=start,
         goal=goal,
     )
@@ -217,6 +222,7 @@ def print_summary(summary: PreviewSummary) -> None:
     LOGGER.info("- terrain types: %s", summary.terrain_type_count)
     LOGGER.info("- blocked tiles: %s", summary.blocked_tiles)
     LOGGER.info("- runtime object markers: %s", summary.runtime_objects)
+    LOGGER.info("- multi-tile objects: %s", summary.multi_tile_objects)
     LOGGER.info("- start: %s", _format_point(summary.start))
     LOGGER.info("- goal: %s", _format_point(summary.goal))
     LOGGER.info("Output: %s", summary.output_path)
@@ -259,11 +265,28 @@ def _draw_runtime_objects(
     for item in objects:
         if not isinstance(item, dict):
             continue
+        visual_bounds = _visual_bounds(item.get("visual_bounds"), width=width, height=height)
+        if visual_bounds is not None:
+            draw.rectangle(
+                _bounds_rect(visual_bounds, cell_size_px),
+                outline=OBJECT_VISUAL_BOUNDS_COLOR,
+                width=1,
+            )
         footprint = _footprint(item.get("footprint"), width=width, height=height)
         for x, y in footprint:
             draw.rectangle(
                 _cell_rect(x, y, cell_size_px),
                 fill=OBJECT_FOOTPRINT_COLOR,
+            )
+        collision_footprint = _footprint(
+            item.get("collision_footprint"),
+            width=width,
+            height=height,
+        )
+        for x, y in collision_footprint:
+            draw.rectangle(
+                _cell_rect(x, y, cell_size_px),
+                fill=OBJECT_COLLISION_FOOTPRINT_COLOR,
             )
         point = _object_point(item, width=width, height=height)
         if point is None:
@@ -335,6 +358,51 @@ def _cell_rect(x: int, y: int, cell_size_px: int) -> tuple[int, int, int, int]:
         (x + 1) * cell_size_px - 1,
         (y + 1) * cell_size_px - 1,
     )
+
+
+def _bounds_rect(
+    bounds: dict[str, int],
+    cell_size_px: int,
+) -> tuple[int, int, int, int]:
+    return (
+        bounds["x"] * cell_size_px,
+        bounds["y"] * cell_size_px,
+        (bounds["x"] + bounds["width"]) * cell_size_px - 1,
+        (bounds["y"] + bounds["height"]) * cell_size_px - 1,
+    )
+
+
+def _visual_bounds(
+    value: Any,
+    *,
+    width: int,
+    height: int,
+) -> dict[str, int] | None:
+    if not isinstance(value, dict):
+        return None
+    x = value.get("x")
+    y = value.get("y")
+    bounds_width = value.get("width")
+    bounds_height = value.get("height")
+    if not all(isinstance(item, int) for item in (x, y, bounds_width, bounds_height)):
+        return None
+    if bounds_width <= 0 or bounds_height <= 0:
+        return None
+    if x >= width or y >= height or x + bounds_width <= 0 or y + bounds_height <= 0:
+        return None
+    return {
+        "x": max(0, x),
+        "y": max(0, y),
+        "width": min(bounds_width, width - max(0, x)),
+        "height": min(bounds_height, height - max(0, y)),
+    }
+
+
+def _has_multi_tile_footprint(item: Any) -> bool:
+    if not isinstance(item, dict):
+        return False
+    footprint = item.get("footprint")
+    return isinstance(footprint, list) and len(footprint) > 1
 
 
 def _footprint(value: Any, *, width: int, height: int) -> list[tuple[int, int]]:

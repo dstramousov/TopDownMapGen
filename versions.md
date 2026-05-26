@@ -253,3 +253,22 @@
 - Документация формата и game consumer guide дополнены визуальным smoke-test сценарием после инспектора.
 - Добавлены тесты для успешного PNG preview и понятной ошибки на отсутствующем пакете.
 - Версия проекта поднята до `0.0.31`.
+
+## v0.0.31 -> v0.0.32
+
+- Добавлен `docs/world_building_algorithm.md` с пошаговым алгоритмом построения runtime-мира из `output/_manifest.json` и `map_package/`.
+- Добавлен `docs/world_package_file_map.md` с картой файлов output root, назначением слоёв, catalogs, render hints и проверочных tools.
+- `README.md` дополнен быстрым запуском, проверкой world package и ссылками на основные документы интеграции.
+- `docs/game_consumer_guide.md` теперь ссылается на новые документы для внешних consumers.
+- Тест документации расширен проверкой новых файлов.
+- Версия проекта поднята до `0.0.32`.
+
+
+## v0.0.32 -> v0.0.33
+
+- Добавлена footprint model v1 для runtime objects: `footprint`, `collision_footprint`, `visual_bounds`, `pivot` и `anchor` теперь доступны на объектных instances.
+- Крупные объекты вроде палаток, машин, колодцев, блокпостов, ям, брёвен, насыпей и траншей теперь могут занимать несколько тайлов.
+- `object_types.json`, inspector и preview renderer дополнены footprint/collision/visual metadata.
+- Validation расширена проверками footprint, collision footprint, visual bounds и pivot у runtime objects.
+- Документация world package и алгоритма построения мира дополнена правилами чтения multi-tile объектов.
+- Версия проекта поднята до `0.0.33`.

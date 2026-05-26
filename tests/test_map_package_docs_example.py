@@ -15,6 +15,8 @@ def test_map_package_docs_exist() -> None:
     """Ensure map package documentation is present."""
     assert (ROOT / "docs" / "map_package_v1.md").is_file()
     assert (ROOT / "docs" / "game_consumer_guide.md").is_file()
+    assert (ROOT / "docs" / "world_building_algorithm.md").is_file()
+    assert (ROOT / "docs" / "world_package_file_map.md").is_file()
 
 
 def test_read_map_package_example_loads_summary(tmp_path: Path) -> None:

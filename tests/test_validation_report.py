@@ -49,6 +49,18 @@ def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
     enriched.setdefault("tags", list(spec["tags"]))
     enriched.setdefault("collision_profile", dict(spec["collision_profile"]))
     enriched.setdefault("combat_properties", dict(spec["combat_properties"]))
+    x = int(enriched.get("x", 0))
+    y = int(enriched.get("y", 0))
+    footprint = enriched.setdefault("footprint", [[x, y]])
+    if not isinstance(footprint, list):
+        footprint = [[x, y]]
+        enriched["footprint"] = footprint
+    if spec["blocks_movement"] or enriched.get("type") == "trench":
+        enriched.setdefault("collision_footprint", list(footprint))
+    else:
+        enriched.setdefault("collision_footprint", [])
+    enriched.setdefault("visual_bounds", {"x": x, "y": y, "width": 1, "height": 1})
+    enriched.setdefault("pivot", {"x": 0, "y": 0, "space": "tile_offset"})
     if "stance_hints" in spec:
         enriched.setdefault("stance_hints", dict(spec["stance_hints"]))
     return enriched

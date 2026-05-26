@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "top-down-worldgen"
-version = "0.0.31"
+version = "0.0.33"
 description = "Seed-based procedural map generator for top-down games."
 readme = "README.md"
 requires-python = ">=3.12"

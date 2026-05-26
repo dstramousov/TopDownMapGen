@@ -527,17 +527,46 @@ def _build_object_types_catalog(objects: list[Any]) -> dict[str, Any]:
                 "interactive": item.get("interactive"),
                 "collision_profile": item.get("collision_profile"),
                 "combat_properties": item.get("combat_properties"),
+                "default_footprint": item.get("footprint"),
+                "default_collision_footprint": item.get("collision_footprint"),
+                "default_visual_bounds": item.get("visual_bounds"),
+                "default_pivot": item.get("pivot"),
                 "tags": sorted(_object_tags(item)),
                 "instance_count": 0,
+                "max_footprint_tiles": 0,
+                "max_collision_footprint_tiles": 0,
             },
         )
         entry["instance_count"] = int(entry["instance_count"]) + 1
         entry["tags"] = sorted(set(_string_list(entry.get("tags"))) | _object_tags(item))
+        entry["max_footprint_tiles"] = max(
+            int(entry.get("max_footprint_tiles", 0)),
+            len(_point_list(item.get("footprint"))),
+        )
+        entry["max_collision_footprint_tiles"] = max(
+            int(entry.get("max_collision_footprint_tiles", 0)),
+            len(_point_list(item.get("collision_footprint"))),
+        )
     return {
         "schema_version": OBJECT_TYPES_CATALOG_SCHEMA_VERSION,
         "kind": "object_types",
         "types": dict(sorted(type_map.items())),
     }
+
+
+def _point_list(value: Any) -> list[list[int]]:
+    if not isinstance(value, list):
+        return []
+    points: list[list[int]] = []
+    for point in value:
+        if (
+            isinstance(point, list)
+            and len(point) == 2
+            and isinstance(point[0], int)
+            and isinstance(point[1], int)
+        ):
+            points.append([point[0], point[1]])
+    return points
 
 
 def _object_tags(item: dict[str, Any]) -> set[str]:

@@ -2,6 +2,8 @@
 
 Этот документ описывает, как игре читать `map_package/` без знания внутренних деталей генератора.
 
+См. также `docs/world_building_algorithm.md` для пошагового алгоритма построения runtime-мира и `docs/world_package_file_map.md` для карты файлов output-пакета.
+
 
 ## Единый output root
 
@@ -325,3 +327,7 @@ python3 examples/render_world_preview.py output --output output/debug/world_prev
 Если preview выглядит как каша, но инспектор говорит `World package: OK`, значит пакет формально
 валиден, но семантические слои или render hints требуют отдельной настройки. Это нормальная роль
 preview: быстро показать глазами, что данные дают осмысленный мир.
+
+## Multi-tile object handling
+
+A game consumer must not treat runtime objects as single-tile markers. Read `footprint` for occupied cells, `collision_footprint` for gameplay collision, `visual_bounds` for coarse sprite placement, and `pivot` for renderer anchoring. The object's `x`, `y`, `position`, and `anchor` fields describe the anchor tile, not the full occupied size.

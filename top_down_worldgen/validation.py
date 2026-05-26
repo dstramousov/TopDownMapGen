@@ -133,6 +133,23 @@ def build_validation_report(
         "runtime_objects_have_valid_elevation": _runtime_objects_have_valid_elevation(
             runtime_data,
         ),
+        "runtime_objects_have_footprints": _runtime_objects_have_footprints(
+            runtime_data,
+        ),
+        "runtime_objects_have_collision_footprints": (
+            _runtime_objects_have_collision_footprints(runtime_data)
+        ),
+        "runtime_objects_have_visual_bounds": _runtime_objects_have_visual_bounds(
+            runtime_data,
+        ),
+        "runtime_objects_have_pivots": _runtime_objects_have_pivots(runtime_data),
+        "runtime_object_collision_footprints_inside_map": (
+            _runtime_object_collision_footprints_inside_map(
+                runtime_data,
+                width=width,
+                height=height,
+            )
+        ),
         "runtime_objects_have_collision_profiles": (
             _runtime_objects_have_collision_profiles(runtime_data)
         ),
@@ -835,6 +852,73 @@ def _loot_objects_tagged(runtime_data: dict[str, Any]) -> bool:
             return False
     return True
 
+def _runtime_objects_have_footprints(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        points = _runtime_object_points(item)
+        if not points:
+            return False
+        footprint = item.get("footprint")
+        if not isinstance(footprint, list):
+            return False
+    return True
+
+
+def _runtime_objects_have_collision_footprints(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        value = item.get("collision_footprint")
+        if not isinstance(value, list):
+            return False
+        if any(_point(point) is None for point in value):
+            return False
+    return True
+
+
+def _runtime_objects_have_visual_bounds(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        bounds = item.get("visual_bounds")
+        if not isinstance(bounds, dict):
+            return False
+        try:
+            width = int(bounds.get("width"))
+            height = int(bounds.get("height"))
+            int(bounds.get("x"))
+            int(bounds.get("y"))
+        except (TypeError, ValueError):
+            return False
+        if width <= 0 or height <= 0:
+            return False
+    return True
+
+
+def _runtime_objects_have_pivots(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        pivot = item.get("pivot")
+        if not isinstance(pivot, dict):
+            return False
+        try:
+            int(pivot.get("x"))
+            int(pivot.get("y"))
+        except (TypeError, ValueError):
+            return False
+        if not isinstance(pivot.get("space"), str):
+            return False
+    return True
+
+
+def _runtime_object_collision_footprints_inside_map(
+    runtime_data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for item in _runtime_objects(runtime_data):
+        for point in _runtime_object_collision_points(item):
+            if not _point_in_bounds(point, width=width, height=height):
+                return False
+    return True
+
+
+
 def _runtime_objects_do_not_overlap_start_goal(
     runtime_data: dict[str, Any],
     tile_grid: list[str],
@@ -928,6 +1012,14 @@ def _runtime_object_points(item: dict[str, Any]) -> list[tuple[int, int]]:
     point = _point_from_xy(item)
     if point is not None:
         return [point]
+    return []
+
+
+def _runtime_object_collision_points(item: dict[str, Any]) -> list[tuple[int, int]]:
+    collision_footprint = item.get("collision_footprint")
+    if isinstance(collision_footprint, list):
+        points = [_point(point) for point in collision_footprint]
+        return [point for point in points if point is not None]
     return []
 
 
