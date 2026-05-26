@@ -1,0 +1,484 @@
+{
+  "schema_version": "places-v2",
+  "kind": "places",
+  "items": [
+    {
+      "schema_version": "places-v2",
+      "id": "abandoned_checkpoint_000",
+      "type": "abandoned_checkpoint",
+      "role": "roadside_landmark",
+      "story_role": "old_control_point",
+      "encounter_type": "roadside_encounter",
+      "danger_level": 0.45,
+      "loot_level": 0.35,
+      "center": {
+        "x": 114,
+        "y": 139
+      },
+      "radius": 6,
+      "bounds": {
+        "min_x": 111,
+        "min_y": 138,
+        "max_x": 115,
+        "max_y": 140
+      },
+      "entrances": [
+        {
+          "id": "entrance_north",
+          "side": "north",
+          "position": {
+            "x": 113,
+            "y": 137
+          }
+        },
+        {
+          "id": "entrance_south",
+          "side": "south",
+          "position": {
+            "x": 113,
+            "y": 141
+          }
+        },
+        {
+          "id": "entrance_west",
+          "side": "west",
+          "position": {
+            "x": 110,
+            "y": 139
+          }
+        },
+        {
+          "id": "entrance_east",
+          "side": "east",
+          "position": {
+            "x": 116,
+            "y": 139
+          }
+        }
+      ],
+      "object_ids": [
+        "old_checkpoint_000",
+        "scrap_pile_006"
+      ],
+      "object_refs": [
+        {
+          "id": "old_checkpoint_000",
+          "type": "old_checkpoint",
+          "center": {
+            "x": 114,
+            "y": 139
+          }
+        },
+        {
+          "id": "scrap_pile_006",
+          "type": "scrap_pile",
+          "center": {
+            "x": 111,
+            "y": 138
+          }
+        }
+      ],
+      "anchor_object_id": "old_checkpoint_000",
+      "marker_refs": [],
+      "route_refs": [],
+      "connected_places": [
+        "forest_obstruction_003",
+        "broken_radio_site_001",
+        "small_ruin_site_004"
+      ],
+      "tags": [
+        "checkpoint",
+        "human_trace",
+        "roadside"
+      ],
+      "biome_tags": [
+        "abandoned",
+        "ruins"
+      ]
+    },
+    {
+      "schema_version": "places-v2",
+      "id": "broken_radio_site_001",
+      "type": "broken_radio_site",
+      "role": "zone_landmark",
+      "story_role": "lost_expedition_trace",
+      "encounter_type": "landmark_encounter",
+      "danger_level": 0.35,
+      "loot_level": 0.45,
+      "center": {
+        "x": 112,
+        "y": 73
+      },
+      "radius": 6,
+      "bounds": {
+        "min_x": 110,
+        "min_y": 73,
+        "max_x": 112,
+        "max_y": 74
+      },
+      "entrances": [
+        {
+          "id": "entrance_north",
+          "side": "north",
+          "position": {
+            "x": 111,
+            "y": 72
+          }
+        },
+        {
+          "id": "entrance_south",
+          "side": "south",
+          "position": {
+            "x": 111,
+            "y": 75
+          }
+        },
+        {
+          "id": "entrance_west",
+          "side": "west",
+          "position": {
+            "x": 109,
+            "y": 74
+          }
+        },
+        {
+          "id": "entrance_east",
+          "side": "east",
+          "position": {
+            "x": 113,
+            "y": 74
+          }
+        }
+      ],
+      "object_ids": [
+        "broken_radio_mast_000",
+        "ammo_cache_001"
+      ],
+      "object_refs": [
+        {
+          "id": "broken_radio_mast_000",
+          "type": "broken_radio_mast",
+          "center": {
+            "x": 112,
+            "y": 73
+          }
+        },
+        {
+          "id": "ammo_cache_001",
+          "type": "ammo_cache",
+          "center": {
+            "x": 110,
+            "y": 74
+          }
+        }
+      ],
+      "anchor_object_id": "broken_radio_mast_000",
+      "marker_refs": [],
+      "route_refs": [],
+      "connected_places": [
+        "small_ruin_site_004",
+        "abandoned_checkpoint_000",
+        "bunker_site_002"
+      ],
+      "tags": [
+        "expedition_trace",
+        "landmark",
+        "signal"
+      ],
+      "biome_tags": [
+        "abandoned",
+        "forest"
+      ]
+    },
+    {
+      "schema_version": "places-v2",
+      "id": "bunker_site_002",
+      "type": "bunker_site",
+      "role": "defensive_site",
+      "story_role": "buried_defense_node",
+      "encounter_type": "bunker_encounter",
+      "danger_level": 0.75,
+      "loot_level": 0.45,
+      "center": {
+        "x": 42,
+        "y": 44
+      },
+      "radius": 6,
+      "bounds": {
+        "min_x": 42,
+        "min_y": 43,
+        "max_x": 43,
+        "max_y": 45
+      },
+      "entrances": [
+        {
+          "id": "entrance_north",
+          "side": "north",
+          "position": {
+            "x": 42,
+            "y": 42
+          }
+        },
+        {
+          "id": "entrance_south",
+          "side": "south",
+          "position": {
+            "x": 42,
+            "y": 46
+          }
+        },
+        {
+          "id": "entrance_west",
+          "side": "west",
+          "position": {
+            "x": 41,
+            "y": 44
+          }
+        },
+        {
+          "id": "entrance_east",
+          "side": "east",
+          "position": {
+            "x": 44,
+            "y": 44
+          }
+        }
+      ],
+      "object_ids": [
+        "buried_bunker_2x3_000"
+      ],
+      "object_refs": [
+        {
+          "id": "buried_bunker_2x3_000",
+          "type": "buried_bunker_2x3",
+          "center": {
+            "x": 42,
+            "y": 44
+          }
+        }
+      ],
+      "anchor_object_id": "buried_bunker_2x3_000",
+      "marker_refs": [],
+      "route_refs": [],
+      "connected_places": [
+        "broken_radio_site_001",
+        "small_ruin_site_004",
+        "forest_obstruction_003"
+      ],
+      "tags": [
+        "below_floor",
+        "bunker",
+        "defense",
+        "human_trace"
+      ],
+      "biome_tags": [
+        "abandoned",
+        "ruins"
+      ]
+    },
+    {
+      "schema_version": "places-v2",
+      "id": "forest_obstruction_003",
+      "type": "forest_obstruction",
+      "role": "natural_micro_location",
+      "story_role": "natural_blockage",
+      "encounter_type": "traversal_obstacle",
+      "danger_level": 0.3,
+      "loot_level": 0.15,
+      "center": {
+        "x": 76,
+        "y": 144
+      },
+      "radius": 6,
+      "bounds": {
+        "min_x": 75,
+        "min_y": 143,
+        "max_x": 78,
+        "max_y": 145
+      },
+      "entrances": [
+        {
+          "id": "entrance_north",
+          "side": "north",
+          "position": {
+            "x": 76,
+            "y": 142
+          }
+        },
+        {
+          "id": "entrance_south",
+          "side": "south",
+          "position": {
+            "x": 76,
+            "y": 146
+          }
+        },
+        {
+          "id": "entrance_west",
+          "side": "west",
+          "position": {
+            "x": 74,
+            "y": 144
+          }
+        },
+        {
+          "id": "entrance_east",
+          "side": "east",
+          "position": {
+            "x": 79,
+            "y": 144
+          }
+        }
+      ],
+      "object_ids": [
+        "big_dead_tree_000",
+        "bush_thicket_010"
+      ],
+      "object_refs": [
+        {
+          "id": "big_dead_tree_000",
+          "type": "big_dead_tree",
+          "center": {
+            "x": 76,
+            "y": 144
+          }
+        },
+        {
+          "id": "bush_thicket_010",
+          "type": "bush_thicket",
+          "center": {
+            "x": 78,
+            "y": 143
+          }
+        }
+      ],
+      "anchor_object_id": "big_dead_tree_000",
+      "marker_refs": [],
+      "route_refs": [],
+      "connected_places": [
+        "abandoned_checkpoint_000",
+        "broken_radio_site_001",
+        "bunker_site_002"
+      ],
+      "tags": [
+        "forest",
+        "natural",
+        "obstruction"
+      ],
+      "biome_tags": [
+        "forest"
+      ]
+    },
+    {
+      "schema_version": "places-v2",
+      "id": "small_ruin_site_004",
+      "type": "small_ruin_site",
+      "role": "ruin_micro_location",
+      "story_role": "minor_ruins",
+      "encounter_type": "ruin_encounter",
+      "danger_level": 0.45,
+      "loot_level": 0.35,
+      "center": {
+        "x": 144,
+        "y": 75
+      },
+      "radius": 6,
+      "bounds": {
+        "min_x": 138,
+        "min_y": 75,
+        "max_x": 144,
+        "max_y": 82
+      },
+      "entrances": [
+        {
+          "id": "entrance_north",
+          "side": "north",
+          "position": {
+            "x": 141,
+            "y": 74
+          }
+        },
+        {
+          "id": "entrance_south",
+          "side": "south",
+          "position": {
+            "x": 141,
+            "y": 83
+          }
+        },
+        {
+          "id": "entrance_west",
+          "side": "west",
+          "position": {
+            "x": 137,
+            "y": 78
+          }
+        },
+        {
+          "id": "entrance_east",
+          "side": "east",
+          "position": {
+            "x": 145,
+            "y": 78
+          }
+        }
+      ],
+      "object_ids": [
+        "scrap_pile_000",
+        "rusted_barrel_001"
+      ],
+      "object_refs": [
+        {
+          "id": "scrap_pile_000",
+          "type": "scrap_pile",
+          "center": {
+            "x": 144,
+            "y": 75
+          }
+        },
+        {
+          "id": "rusted_barrel_001",
+          "type": "rusted_barrel",
+          "center": {
+            "x": 138,
+            "y": 82
+          }
+        }
+      ],
+      "anchor_object_id": "scrap_pile_000",
+      "marker_refs": [],
+      "route_refs": [],
+      "connected_places": [
+        "broken_radio_site_001",
+        "abandoned_checkpoint_000",
+        "bunker_site_002"
+      ],
+      "tags": [
+        "human_trace",
+        "ruin",
+        "scrap"
+      ],
+      "biome_tags": [
+        "abandoned",
+        "ruins"
+      ]
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "by_type": {
+      "abandoned_checkpoint": 1,
+      "broken_radio_site": 1,
+      "bunker_site": 1,
+      "forest_obstruction": 1,
+      "small_ruin_site": 1
+    },
+    "by_encounter_type": {
+      "bunker_encounter": 1,
+      "landmark_encounter": 1,
+      "roadside_encounter": 1,
+      "ruin_encounter": 1,
+      "traversal_obstacle": 1
+    }
+  }
+}

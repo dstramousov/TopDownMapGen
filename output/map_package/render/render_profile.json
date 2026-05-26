@@ -1,0 +1,31 @@
+{
+  "schema_version": "render-profile-v1",
+  "kind": "render_profile",
+  "purpose": "renderer_ready_semantic_hints",
+  "dimensions": {
+    "width_tiles": 192,
+    "height_tiles": 192,
+    "tile_size_px": 16
+  },
+  "coordinate_space": "tile",
+  "draw_order": [
+    "terrain",
+    "terrain_overlays",
+    "objects_below_actor",
+    "actors",
+    "objects_above_actor",
+    "debug_overlays"
+  ],
+  "inputs": {
+    "terrain": "../layers/terrain.json",
+    "tile_types": "../catalogs/tile_types.json",
+    "runtime_objects": "../objects/runtime_objects.json",
+    "object_types": "../catalogs/object_types.json",
+    "tile_render_hints": "tile_render_hints.json",
+    "object_render_hints": "object_render_hints.json"
+  },
+  "notes": [
+    "Hints are semantic and renderer-ready, not bound to a concrete PNG atlas.",
+    "A renderer may ignore unknown hints and use fallback groups."
+  ]
+}

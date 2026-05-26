@@ -1,0 +1,118 @@
+{
+  "schema_version": "tile-types-catalog-v1",
+  "kind": "tile_types",
+  "types": {
+    "ruin_wall_blocker": {
+      "symbol": "#",
+      "movement_cost": null,
+      "collision": "blocked",
+      "walkable": false,
+      "tags": [
+        "blocker",
+        "ruin"
+      ]
+    },
+    "grass": {
+      "symbol": "+",
+      "movement_cost": 1,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "terrain"
+      ]
+    },
+    "old_overgrown_road": {
+      "symbol": ".",
+      "movement_cost": 1,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "road"
+      ]
+    },
+    "goal": {
+      "symbol": "G",
+      "movement_cost": 1,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "marker"
+      ]
+    },
+    "ruin_floor": {
+      "symbol": "R",
+      "movement_cost": 1,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "ruin"
+      ]
+    },
+    "start": {
+      "symbol": "S",
+      "movement_cost": 1,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "marker"
+      ]
+    },
+    "tree_blocker": {
+      "symbol": "T",
+      "movement_cost": null,
+      "collision": "blocked",
+      "walkable": false,
+      "tags": [
+        "blocker",
+        "vegetation"
+      ]
+    },
+    "bush_slow_concealment": {
+      "symbol": "b",
+      "movement_cost": 2,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "slow",
+        "vegetation"
+      ]
+    },
+    "cracked_ground": {
+      "symbol": "c",
+      "movement_cost": 1,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "terrain"
+      ]
+    },
+    "flower_decor": {
+      "symbol": "f",
+      "movement_cost": 1,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "decor"
+      ]
+    },
+    "mushroom_decor": {
+      "symbol": "m",
+      "movement_cost": 1,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "decor"
+      ]
+    },
+    "water_slow": {
+      "symbol": "w",
+      "movement_cost": 3,
+      "collision": "passable",
+      "walkable": true,
+      "tags": [
+        "slow",
+        "water"
+      ]
+    }
+  }
+}

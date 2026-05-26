@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import json
 from pathlib import Path
 from typing import Any
 
@@ -308,6 +309,13 @@ def build_validation_report(
         "places_counts_within_limits": _places_counts_within_limits(runtime_data),
         "places_min_distance": _places_min_distance(runtime_data),
     }
+    checks.update(
+        _build_map_package_consistency_checks(
+            outputs=outputs,
+            width=width,
+            height=height,
+        ),
+    )
     failed_checks = [name for name, passed in checks.items() if not passed]
     errors = [name for name in failed_checks if name not in SOFT_VALIDATION_CHECKS]
     warnings = build_validation_warnings(
@@ -385,6 +393,455 @@ def _map_package_render_hints_exist(outputs: OutputPaths) -> bool:
         and outputs.map_package_tile_render_hints.exists()
         and outputs.map_package_object_render_hints.exists()
     )
+
+
+def _build_map_package_consistency_checks(
+    *,
+    outputs: OutputPaths,
+    width: int,
+    height: int,
+) -> dict[str, bool]:
+    if not outputs.map_package_map.exists():
+        return _failed_package_checks()
+    package = _load_package_context(outputs)
+    if package is None:
+        return _failed_package_checks()
+    return {
+        "map_package_files_have_schema_versions": (
+            _package_files_have_schema_versions(package)
+        ),
+        "map_package_dimensions_match_layers": _package_dimensions_match_layers(
+            package,
+            width=width,
+            height=height,
+        ),
+        "map_package_runtime_grids_have_required_grids": (
+            _runtime_grids_have_required_grids(package)
+        ),
+        "map_package_runtime_grids_match_dimensions": (
+            _runtime_grids_match_dimensions(package, width=width, height=height)
+        ),
+        "map_package_markers_inside_map": _package_markers_inside_map(
+            package,
+            width=width,
+            height=height,
+        ),
+        "map_package_start_goal_markers_match_layer": (
+            _package_start_goal_markers_match_layer(package)
+        ),
+        "map_package_start_goal_not_blocked": _package_start_goal_not_blocked(package),
+        "map_package_runtime_object_refs_valid": _package_runtime_object_refs_valid(
+            package,
+        ),
+        "map_package_places_reference_existing_objects": (
+            _package_places_reference_existing_objects(package)
+        ),
+        "map_package_places_reference_existing_markers": (
+            _package_places_reference_existing_markers(package)
+        ),
+        "map_package_places_entrances_inside_map": (
+            _package_places_entrances_inside_map(package, width=width, height=height)
+        ),
+        "map_package_world_graph_refs_valid": _package_world_graph_refs_valid(
+            package,
+        ),
+        "map_package_world_graph_main_path_valid": (
+            _package_world_graph_main_path_valid(package)
+        ),
+        "map_package_routes_refs_valid": _package_routes_refs_valid(package),
+        "map_package_route_waypoints_inside_map": _package_route_waypoints_inside_map(
+            package,
+            width=width,
+            height=height,
+        ),
+    }
+
+
+def _failed_package_checks() -> dict[str, bool]:
+    return {
+        "map_package_files_have_schema_versions": False,
+        "map_package_dimensions_match_layers": False,
+        "map_package_runtime_grids_have_required_grids": False,
+        "map_package_runtime_grids_match_dimensions": False,
+        "map_package_markers_inside_map": False,
+        "map_package_start_goal_markers_match_layer": False,
+        "map_package_start_goal_not_blocked": False,
+        "map_package_runtime_object_refs_valid": False,
+        "map_package_places_reference_existing_objects": False,
+        "map_package_places_reference_existing_markers": False,
+        "map_package_places_entrances_inside_map": False,
+        "map_package_world_graph_refs_valid": False,
+        "map_package_world_graph_main_path_valid": False,
+        "map_package_routes_refs_valid": False,
+        "map_package_route_waypoints_inside_map": False,
+    }
+
+
+def _load_package_context(outputs: OutputPaths) -> dict[str, Any] | None:
+    try:
+        package_dir = outputs.map_package_dir
+        map_index = _read_json_object(outputs.map_package_map)
+        layers = _json_object(map_index.get("layers"))
+        objects = _json_object(map_index.get("objects"))
+        catalogs = _json_object(map_index.get("catalogs"))
+        render = _json_object(map_index.get("render"))
+        return {
+            "map_index": map_index,
+            "tile_grid": _read_json_object(package_dir / str(layers.get("tile_grid"))),
+            "terrain": _read_json_object(package_dir / str(layers.get("terrain"))),
+            "collision": _read_json_object(package_dir / str(layers.get("collision"))),
+            "movement_costs": _read_json_object(
+                package_dir / str(layers.get("movement_costs")),
+            ),
+            "elevation": _read_json_object(package_dir / str(layers.get("elevation"))),
+            "start_goal": _read_json_object(package_dir / str(layers.get("start_goal"))),
+            "markers": _read_json_object(package_dir / str(map_index.get("markers"))),
+            "runtime_grids": _read_json_object(
+                package_dir / str(map_index.get("runtime_grids")),
+            ),
+            "world_graph": _read_json_object(
+                package_dir / str(map_index.get("world_graph")),
+            ),
+            "routes": _read_json_object(package_dir / str(map_index.get("routes"))),
+            "runtime_objects": _read_json_object(
+                package_dir / str(objects.get("runtime_objects")),
+            ),
+            "places": _read_json_object(package_dir / str(objects.get("places"))),
+            "tile_types": _read_json_object(package_dir / str(catalogs.get("tile_types"))),
+            "object_types": _read_json_object(
+                package_dir / str(catalogs.get("object_types")),
+            ),
+            "render_profile": _read_json_object(package_dir / str(render.get("profile"))),
+            "tile_render_hints": _read_json_object(
+                package_dir / str(render.get("tile_render_hints")),
+            ),
+            "object_render_hints": _read_json_object(
+                package_dir / str(render.get("object_render_hints")),
+            ),
+        }
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def _read_json_object(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as file_obj:
+        data = json.load(file_obj)
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected JSON object in {path}")
+    return data
+
+
+def _json_object(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _package_files_have_schema_versions(package: dict[str, Any]) -> bool:
+    required = (
+        "map_index",
+        "tile_grid",
+        "terrain",
+        "collision",
+        "movement_costs",
+        "elevation",
+        "start_goal",
+        "markers",
+        "runtime_grids",
+        "world_graph",
+        "routes",
+        "runtime_objects",
+        "places",
+        "tile_types",
+        "object_types",
+        "render_profile",
+        "tile_render_hints",
+        "object_render_hints",
+    )
+    for key in required:
+        schema_version = _json_object(package.get(key)).get("schema_version")
+        if not isinstance(schema_version, str) or not schema_version:
+            return False
+    return True
+
+
+def _package_dimensions_match_layers(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    return all(
+        _package_layer_dimensions_match(_json_object(package.get(key)), width=width, height=height)
+        for key in ("tile_grid", "terrain", "collision", "elevation", "start_goal")
+    )
+
+
+def _package_layer_dimensions_match(
+    data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    return data.get("width") == width and data.get("height") == height
+
+
+def _runtime_grids_have_required_grids(package: dict[str, Any]) -> bool:
+    grids = _json_object(_json_object(package.get("runtime_grids")).get("grids"))
+    required = {
+        "movement_grid",
+        "collision_grid",
+        "projectile_block_grid",
+        "vision_block_grid",
+        "cover_grid",
+        "concealment_grid",
+        "height_grid",
+    }
+    return required.issubset(grids)
+
+
+def _runtime_grids_match_dimensions(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    grids = _json_object(_json_object(package.get("runtime_grids")).get("grids"))
+    for grid in grids.values():
+        if not isinstance(grid, dict):
+            return False
+        rows = grid.get("rows")
+        if not isinstance(rows, list) or len(rows) != height:
+            return False
+        for row in rows:
+            if isinstance(row, str):
+                if len(row) != width:
+                    return False
+            elif isinstance(row, list):
+                if len(row) != width:
+                    return False
+            else:
+                return False
+    return True
+
+
+def _package_markers_inside_map(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for marker in _dict_list(_json_object(package.get("markers")).get("items")):
+        point = _mapping_point(marker.get("position"))
+        if point is None or not _point_in_bounds(point, width=width, height=height):
+            return False
+    return True
+
+
+def _package_start_goal_markers_match_layer(package: dict[str, Any]) -> bool:
+    start_goal = _json_object(package.get("start_goal"))
+    start = _mapping_point(start_goal.get("start"))
+    goal = _mapping_point(start_goal.get("goal"))
+    if start is None or goal is None:
+        return False
+    markers = _dict_list(_json_object(package.get("markers")).get("items"))
+    marker_by_type = {str(marker.get("type")): marker for marker in markers}
+    return (
+        _mapping_point(_json_object(marker_by_type.get("start")).get("position")) == start
+        and _mapping_point(_json_object(marker_by_type.get("goal")).get("position")) == goal
+    )
+
+
+def _package_start_goal_not_blocked(package: dict[str, Any]) -> bool:
+    start_goal = _json_object(package.get("start_goal"))
+    for point in (_mapping_point(start_goal.get("start")), _mapping_point(start_goal.get("goal"))):
+        if point is None or _collision_grid_value(package, point) != "0":
+            return False
+    return True
+
+
+def _collision_grid_value(package: dict[str, Any], point: tuple[int, int]) -> str | None:
+    grids = _json_object(_json_object(package.get("runtime_grids")).get("grids"))
+    collision_grid = _json_object(grids.get("collision_grid"))
+    rows = collision_grid.get("rows")
+    if not isinstance(rows, list):
+        return None
+    x, y = point
+    try:
+        row = rows[y]
+    except IndexError:
+        return None
+    if isinstance(row, str) and 0 <= x < len(row):
+        return row[x]
+    if isinstance(row, list) and 0 <= x < len(row):
+        return str(row[x])
+    return None
+
+
+def _package_runtime_object_refs_valid(package: dict[str, Any]) -> bool:
+    object_types = set(_json_object(_json_object(package.get("object_types")).get("types")))
+    for item in _dict_list(_json_object(package.get("runtime_objects")).get("items")):
+        object_id = item.get("id")
+        object_type = item.get("type")
+        if not isinstance(object_id, str) or not object_id:
+            return False
+        if not isinstance(object_type, str) or object_type not in object_types:
+            return False
+    return True
+
+
+def _package_places_reference_existing_objects(package: dict[str, Any]) -> bool:
+    object_ids = _package_runtime_object_ids(package)
+    for place in _dict_list(_json_object(package.get("places")).get("items")):
+        refs = _place_object_ref_ids(place)
+        if not refs:
+            return False
+        if any(ref not in object_ids for ref in refs):
+            return False
+    return True
+
+
+def _place_object_ref_ids(place: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    object_refs = place.get("object_refs")
+    if isinstance(object_refs, list):
+        for ref in object_refs:
+            if isinstance(ref, str):
+                refs.append(ref)
+            elif isinstance(ref, dict) and isinstance(ref.get("id"), str):
+                refs.append(ref["id"])
+    refs.extend(_string_list(place.get("object_ids")))
+    return sorted(set(refs))
+
+
+def _package_places_reference_existing_markers(package: dict[str, Any]) -> bool:
+    marker_ids = _package_marker_ids(package)
+    for place in _dict_list(_json_object(package.get("places")).get("items")):
+        refs = _string_list(place.get("marker_refs"))
+        if any(ref not in marker_ids for ref in refs):
+            return False
+    return True
+
+
+def _package_places_entrances_inside_map(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for place in _dict_list(_json_object(package.get("places")).get("items")):
+        entrances = _dict_list(place.get("entrances"))
+        if not entrances:
+            return False
+        for entrance in entrances:
+            point = _mapping_point(entrance.get("position"))
+            if point is None or not _point_in_bounds(point, width=width, height=height):
+                return False
+    return True
+
+
+def _package_world_graph_refs_valid(package: dict[str, Any]) -> bool:
+    nodes = _dict_list(_json_object(package.get("world_graph")).get("nodes"))
+    edges = _dict_list(_json_object(package.get("world_graph")).get("edges"))
+    node_ids = {str(node.get("id")) for node in nodes if isinstance(node.get("id"), str)}
+    if not {"marker:start", "marker:goal"}.issubset(node_ids):
+        return False
+    marker_ids = _package_marker_ids(package)
+    place_ids = _package_place_ids(package)
+    for node in nodes:
+        source = node.get("source")
+        if source == "markers" and str(node.get("marker_ref")) not in marker_ids:
+            return False
+        if source == "places" and str(node.get("place_ref")) not in place_ids:
+            return False
+    for edge in edges:
+        if str(edge.get("source")) not in node_ids or str(edge.get("target")) not in node_ids:
+            return False
+    return True
+
+
+def _package_world_graph_main_path_valid(package: dict[str, Any]) -> bool:
+    graph = _json_object(package.get("world_graph"))
+    node_ids = {
+        str(node.get("id"))
+        for node in _dict_list(graph.get("nodes"))
+        if isinstance(node.get("id"), str)
+    }
+    main_path = _json_object(graph.get("main_path"))
+    path_nodes = _string_list(main_path.get("node_ids"))
+    if len(path_nodes) < 2:
+        return False
+    if path_nodes[0] != "marker:start" or path_nodes[-1] != "marker:goal":
+        return False
+    return all(node_id in node_ids for node_id in path_nodes)
+
+
+def _package_routes_refs_valid(package: dict[str, Any]) -> bool:
+    graph = _json_object(package.get("world_graph"))
+    node_ids = {
+        str(node.get("id"))
+        for node in _dict_list(graph.get("nodes"))
+        if isinstance(node.get("id"), str)
+    }
+    edge_ids = {
+        str(edge.get("id"))
+        for edge in _dict_list(graph.get("edges"))
+        if isinstance(edge.get("id"), str)
+    }
+    valid_types = {"main_road", "side_path", "hidden_path", "patrol_route", "escape_route"}
+    for route in _dict_list(_json_object(package.get("routes")).get("items")):
+        if route.get("type") not in valid_types:
+            return False
+        if any(node_id not in node_ids for node_id in _string_list(route.get("node_ids"))):
+            return False
+        if any(edge_id not in edge_ids for edge_id in _string_list(route.get("edge_ids"))):
+            return False
+    return True
+
+
+def _package_route_waypoints_inside_map(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for route in _dict_list(_json_object(package.get("routes")).get("items")):
+        for waypoint in _dict_list(route.get("waypoints")):
+            point = _mapping_point(waypoint)
+            if point is None or not _point_in_bounds(point, width=width, height=height):
+                return False
+    return True
+
+
+def _package_runtime_object_ids(package: dict[str, Any]) -> set[str]:
+    return {
+        str(item.get("id"))
+        for item in _dict_list(_json_object(package.get("runtime_objects")).get("items"))
+        if isinstance(item.get("id"), str)
+    }
+
+
+def _package_marker_ids(package: dict[str, Any]) -> set[str]:
+    return {
+        str(item.get("id"))
+        for item in _dict_list(_json_object(package.get("markers")).get("items"))
+        if isinstance(item.get("id"), str)
+    }
+
+
+def _package_place_ids(package: dict[str, Any]) -> set[str]:
+    return {
+        str(item.get("id"))
+        for item in _dict_list(_json_object(package.get("places")).get("items"))
+        if isinstance(item.get("id"), str)
+    }
+
+
+def _mapping_point(value: Any) -> tuple[int, int] | None:
+    if not isinstance(value, dict):
+        return None
+    try:
+        return int(value["x"]), int(value["y"])
+    except (KeyError, TypeError, ValueError):
+        return None
 
 
 def write_validation_report(report: dict[str, Any], path: Path) -> None:
@@ -1342,6 +1799,10 @@ def _count_existing_outputs(outputs: OutputPaths) -> int:
         outputs.layer_runtime_objects,
         outputs.layer_all_debug,
         outputs.map_package_map,
+        outputs.map_package_markers,
+        outputs.map_package_runtime_grids,
+        outputs.map_package_world_graph,
+        outputs.map_package_routes,
         outputs.map_package_tile_grid,
         outputs.map_package_terrain,
         outputs.map_package_movement_costs,

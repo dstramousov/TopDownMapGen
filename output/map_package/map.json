@@ -1,0 +1,81 @@
+{
+  "schema_version": "map-package-map-v5",
+  "package_schema_version": "map-package-v1",
+  "generator_version": "0.0.41",
+  "pipeline_version": "pipeline-v1",
+  "seed": "random",
+  "resolved_seed": 87936569934845906,
+  "profile": "clear_map",
+  "generation_tuning": {
+    "water_scale": 5.0,
+    "water_patch_count_scale": 1.0,
+    "water_patch_size_scale": 2.0,
+    "water_patch_density": 0.62,
+    "forest_scale": 1.0,
+    "open_space_scale": 1.0,
+    "ruins_scale": 1.0,
+    "buildings_scale": 1.0,
+    "road_width_scale": 1.0,
+    "decoration_scale": 1.0,
+    "bunker_scale": 1.0
+  },
+  "dimensions": {
+    "width_tiles": 192,
+    "height_tiles": 192,
+    "tile_size_px": 16
+  },
+  "coordinates": {
+    "origin": "top_left",
+    "unit": "tile",
+    "x_axis": "right",
+    "y_axis": "down"
+  },
+  "points": {
+    "start": {
+      "x": 14,
+      "y": 175
+    },
+    "goal": {
+      "x": 174,
+      "y": 15
+    }
+  },
+  "markers": "markers.json",
+  "runtime_grids": "runtime_grids.json",
+  "world_graph": "world_graph.json",
+  "routes": "routes.json",
+  "layers": {
+    "tile_grid": "layers/tile_grid.json",
+    "terrain": "layers/terrain.json",
+    "movement_costs": "layers/movement_costs.json",
+    "collision": "layers/collision.json",
+    "elevation": "layers/elevation.json",
+    "start_goal": "layers/start_goal.json"
+  },
+  "gameplay": {
+    "combat_zones": "gameplay/combat_zones.json",
+    "cover_points": "gameplay/cover_points.json",
+    "choke_points": "gameplay/choke_points.json",
+    "flank_routes": "gameplay/flank_routes.json",
+    "enemy_spawn_zones": "gameplay/enemy_spawn_zones.json",
+    "fallback_positions": "gameplay/fallback_positions.json"
+  },
+  "objects": {
+    "runtime_objects": "objects/runtime_objects.json",
+    "places": "objects/places.json"
+  },
+  "catalogs": {
+    "tile_types": "catalogs/tile_types.json",
+    "object_types": "catalogs/object_types.json"
+  },
+  "render": {
+    "profile": "render/render_profile.json",
+    "tile_render_hints": "render/tile_render_hints.json",
+    "object_render_hints": "render/object_render_hints.json"
+  },
+  "legacy_outputs": {
+    "ascii_map": "../generated_map.txt",
+    "tactical_map": "../tactical_map.json",
+    "tactical_debug": "../tactical_map_debug.json"
+  }
+}

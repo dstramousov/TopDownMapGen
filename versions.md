@@ -333,3 +333,9 @@
 - Документация world package обновлена: routes описывают смысл маршрутов, а не заменяют tile pathfinding.
 - Версия проекта поднята до `0.0.40`.
 
+## v0.0.40 -> v0.0.41
+
+- Усилена package validation для `markers`, `runtime_grids`, `places`, `world_graph` и `routes`.
+- Validation теперь проверяет ссылки между package-файлами, совпадение размеров runtime-сеток и валидность start/goal относительно collision grid.
+- Schema versions обновлены до `generation-manifest-v28` и `validation-report-v24`.
+- Версия проекта поднята до `0.0.41`.

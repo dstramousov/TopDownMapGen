@@ -1,0 +1,8596 @@
+{
+  "schema_version": "object-instances-v3",
+  "kind": "runtime_objects",
+  "items": [
+    {
+      "id": "trench_000",
+      "type": "trench",
+      "role": "defensive_position",
+      "x": 49,
+      "y": 146,
+      "position": [
+        49,
+        146
+      ],
+      "anchor": [
+        49,
+        146
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "trench",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "l_shape_east_north",
+      "shape": "l_shape",
+      "footprint": [
+        [
+          49,
+          146
+        ],
+        [
+          50,
+          146
+        ],
+        [
+          51,
+          146
+        ],
+        [
+          49,
+          145
+        ],
+        [
+          49,
+          144
+        ],
+        [
+          49,
+          143
+        ]
+      ],
+      "collision_footprint": [
+        [
+          49,
+          146
+        ],
+        [
+          50,
+          146
+        ],
+        [
+          51,
+          146
+        ],
+        [
+          49,
+          145
+        ],
+        [
+          49,
+          144
+        ],
+        [
+          49,
+          143
+        ]
+      ],
+      "visual_bounds": {
+        "x": 49,
+        "y": 146,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "cover",
+        "below_floor"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.8,
+        "concealment_value": 0.25,
+        "explosive": false,
+        "loot": false,
+        "stance_dependent": true
+      },
+      "stance_hints": {
+        "standing": "exposed",
+        "crouching": "protected_from_flat_fire"
+      }
+    },
+    {
+      "id": "trench_001",
+      "type": "trench",
+      "role": "defensive_position",
+      "x": 171,
+      "y": 47,
+      "position": [
+        171,
+        47
+      ],
+      "anchor": [
+        171,
+        47
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "trench",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "horizontal",
+      "shape": "line",
+      "footprint": [
+        [
+          171,
+          47
+        ],
+        [
+          172,
+          47
+        ],
+        [
+          173,
+          47
+        ]
+      ],
+      "collision_footprint": [
+        [
+          171,
+          47
+        ],
+        [
+          172,
+          47
+        ],
+        [
+          173,
+          47
+        ]
+      ],
+      "visual_bounds": {
+        "x": 171,
+        "y": 47,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "cover",
+        "below_floor"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.8,
+        "concealment_value": 0.25,
+        "explosive": false,
+        "loot": false,
+        "stance_dependent": true
+      },
+      "stance_hints": {
+        "standing": "exposed",
+        "crouching": "protected_from_flat_fire"
+      }
+    },
+    {
+      "id": "trench_002",
+      "type": "trench",
+      "role": "defensive_position",
+      "x": 77,
+      "y": 113,
+      "position": [
+        77,
+        113
+      ],
+      "anchor": [
+        77,
+        113
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "trench",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "horizontal",
+      "shape": "line",
+      "footprint": [
+        [
+          77,
+          113
+        ],
+        [
+          78,
+          113
+        ],
+        [
+          79,
+          113
+        ],
+        [
+          80,
+          113
+        ]
+      ],
+      "collision_footprint": [
+        [
+          77,
+          113
+        ],
+        [
+          78,
+          113
+        ],
+        [
+          79,
+          113
+        ],
+        [
+          80,
+          113
+        ]
+      ],
+      "visual_bounds": {
+        "x": 77,
+        "y": 113,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "cover",
+        "below_floor"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.8,
+        "concealment_value": 0.25,
+        "explosive": false,
+        "loot": false,
+        "stance_dependent": true
+      },
+      "stance_hints": {
+        "standing": "exposed",
+        "crouching": "protected_from_flat_fire"
+      }
+    },
+    {
+      "id": "trench_003",
+      "type": "trench",
+      "role": "defensive_position",
+      "x": 50,
+      "y": 119,
+      "position": [
+        50,
+        119
+      ],
+      "anchor": [
+        50,
+        119
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "trench",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "horizontal",
+      "shape": "line",
+      "footprint": [
+        [
+          50,
+          119
+        ],
+        [
+          51,
+          119
+        ],
+        [
+          52,
+          119
+        ],
+        [
+          53,
+          119
+        ]
+      ],
+      "collision_footprint": [
+        [
+          50,
+          119
+        ],
+        [
+          51,
+          119
+        ],
+        [
+          52,
+          119
+        ],
+        [
+          53,
+          119
+        ]
+      ],
+      "visual_bounds": {
+        "x": 50,
+        "y": 119,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "cover",
+        "below_floor"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.8,
+        "concealment_value": 0.25,
+        "explosive": false,
+        "loot": false,
+        "stance_dependent": true
+      },
+      "stance_hints": {
+        "standing": "exposed",
+        "crouching": "protected_from_flat_fire"
+      }
+    },
+    {
+      "id": "trench_004",
+      "type": "trench",
+      "role": "defensive_position",
+      "x": 13,
+      "y": 112,
+      "position": [
+        13,
+        112
+      ],
+      "anchor": [
+        13,
+        112
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "trench",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "vertical",
+      "shape": "line",
+      "footprint": [
+        [
+          13,
+          112
+        ],
+        [
+          13,
+          113
+        ],
+        [
+          13,
+          114
+        ],
+        [
+          13,
+          115
+        ],
+        [
+          13,
+          116
+        ],
+        [
+          13,
+          117
+        ],
+        [
+          13,
+          118
+        ]
+      ],
+      "collision_footprint": [
+        [
+          13,
+          112
+        ],
+        [
+          13,
+          113
+        ],
+        [
+          13,
+          114
+        ],
+        [
+          13,
+          115
+        ],
+        [
+          13,
+          116
+        ],
+        [
+          13,
+          117
+        ],
+        [
+          13,
+          118
+        ]
+      ],
+      "visual_bounds": {
+        "x": 13,
+        "y": 112,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "cover",
+        "below_floor"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.8,
+        "concealment_value": 0.25,
+        "explosive": false,
+        "loot": false,
+        "stance_dependent": true
+      },
+      "stance_hints": {
+        "standing": "exposed",
+        "crouching": "protected_from_flat_fire"
+      }
+    },
+    {
+      "id": "trench_005",
+      "type": "trench",
+      "role": "defensive_position",
+      "x": 39,
+      "y": 85,
+      "position": [
+        39,
+        85
+      ],
+      "anchor": [
+        39,
+        85
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "trench",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "horizontal",
+      "shape": "line",
+      "footprint": [
+        [
+          39,
+          85
+        ],
+        [
+          40,
+          85
+        ],
+        [
+          41,
+          85
+        ],
+        [
+          42,
+          85
+        ],
+        [
+          43,
+          85
+        ],
+        [
+          44,
+          85
+        ],
+        [
+          45,
+          85
+        ]
+      ],
+      "collision_footprint": [
+        [
+          39,
+          85
+        ],
+        [
+          40,
+          85
+        ],
+        [
+          41,
+          85
+        ],
+        [
+          42,
+          85
+        ],
+        [
+          43,
+          85
+        ],
+        [
+          44,
+          85
+        ],
+        [
+          45,
+          85
+        ]
+      ],
+      "visual_bounds": {
+        "x": 39,
+        "y": 85,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "cover",
+        "below_floor"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.8,
+        "concealment_value": 0.25,
+        "explosive": false,
+        "loot": false,
+        "stance_dependent": true
+      },
+      "stance_hints": {
+        "standing": "exposed",
+        "crouching": "protected_from_flat_fire"
+      }
+    },
+    {
+      "id": "big_dead_tree_000",
+      "type": "big_dead_tree",
+      "role": "landmark",
+      "x": 75,
+      "y": 144,
+      "position": [
+        75,
+        144
+      ],
+      "anchor": [
+        75,
+        144
+      ],
+      "elevation": 0,
+      "height": 10,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          75,
+          144
+        ],
+        [
+          75,
+          145
+        ],
+        [
+          76,
+          144
+        ],
+        [
+          76,
+          145
+        ]
+      ],
+      "collision_footprint": [
+        [
+          75,
+          144
+        ],
+        [
+          75,
+          145
+        ],
+        [
+          76,
+          144
+        ],
+        [
+          76,
+          145
+        ]
+      ],
+      "visual_bounds": {
+        "x": 75,
+        "y": 144,
+        "width": 2,
+        "height": 3
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "landmark",
+        "natural",
+        "high_cover"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.8,
+        "concealment_value": 0.25,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "big_dead_tree_001",
+      "type": "big_dead_tree",
+      "role": "landmark",
+      "x": 82,
+      "y": 176,
+      "position": [
+        82,
+        176
+      ],
+      "anchor": [
+        82,
+        176
+      ],
+      "elevation": 0,
+      "height": 10,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          82,
+          176
+        ],
+        [
+          82,
+          177
+        ],
+        [
+          83,
+          176
+        ],
+        [
+          83,
+          177
+        ]
+      ],
+      "collision_footprint": [
+        [
+          82,
+          176
+        ],
+        [
+          82,
+          177
+        ],
+        [
+          83,
+          176
+        ],
+        [
+          83,
+          177
+        ]
+      ],
+      "visual_bounds": {
+        "x": 82,
+        "y": 176,
+        "width": 2,
+        "height": 3
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "landmark",
+        "natural",
+        "high_cover"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.8,
+        "concealment_value": 0.25,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "broken_radio_mast_000",
+      "type": "broken_radio_mast",
+      "role": "landmark",
+      "x": 112,
+      "y": 73,
+      "position": [
+        112,
+        73
+      ],
+      "anchor": [
+        112,
+        73
+      ],
+      "elevation": 0,
+      "height": 10,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          112,
+          73
+        ]
+      ],
+      "collision_footprint": [
+        [
+          112,
+          73
+        ]
+      ],
+      "visual_bounds": {
+        "x": 112,
+        "y": 73,
+        "width": 1,
+        "height": 3
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "landmark",
+        "signal",
+        "navigation_landmark"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.2,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "old_checkpoint_000",
+      "type": "old_checkpoint",
+      "role": "defensive_landmark",
+      "x": 114,
+      "y": 138,
+      "position": [
+        114,
+        138
+      ],
+      "anchor": [
+        114,
+        138
+      ],
+      "elevation": 0,
+      "height": 4,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_2x3",
+      "footprint": [
+        [
+          114,
+          138
+        ],
+        [
+          114,
+          139
+        ],
+        [
+          114,
+          140
+        ],
+        [
+          115,
+          138
+        ],
+        [
+          115,
+          139
+        ],
+        [
+          115,
+          140
+        ]
+      ],
+      "collision_footprint": [
+        [
+          114,
+          138
+        ],
+        [
+          114,
+          139
+        ],
+        [
+          114,
+          140
+        ],
+        [
+          115,
+          138
+        ],
+        [
+          115,
+          139
+        ],
+        [
+          115,
+          140
+        ]
+      ],
+      "visual_bounds": {
+        "x": 114,
+        "y": 138,
+        "width": 2,
+        "height": 3
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "landmark",
+        "cover",
+        "checkpoint",
+        "ruin"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.85,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "buried_bunker_2x2_000",
+      "type": "buried_bunker_2x2",
+      "role": "defensive_position",
+      "x": 104,
+      "y": 175,
+      "position": [
+        104,
+        175
+      ],
+      "anchor": [
+        104,
+        175
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          104,
+          175
+        ],
+        [
+          104,
+          176
+        ],
+        [
+          105,
+          175
+        ],
+        [
+          105,
+          176
+        ]
+      ],
+      "collision_footprint": [
+        [
+          104,
+          175
+        ],
+        [
+          104,
+          176
+        ],
+        [
+          105,
+          175
+        ],
+        [
+          105,
+          176
+        ]
+      ],
+      "visual_bounds": {
+        "x": 104,
+        "y": 175,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "bunker",
+        "cover",
+        "defensive",
+        "below_floor",
+        "firing_ports"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.95,
+        "concealment_value": 0.35,
+        "explosive": false,
+        "loot": false,
+        "firing_ports": true
+      },
+      "surface_elevation": 0,
+      "interior_elevation": -1,
+      "firing_ports": [
+        {
+          "side": "north",
+          "positions": [
+            [
+              104,
+              175
+            ],
+            [
+              105,
+              175
+            ]
+          ],
+          "elevation": -1,
+          "arc": "outward"
+        },
+        {
+          "side": "south",
+          "positions": [
+            [
+              104,
+              176
+            ],
+            [
+              105,
+              176
+            ]
+          ],
+          "elevation": -1,
+          "arc": "outward"
+        }
+      ]
+    },
+    {
+      "id": "buried_bunker_2x2_001",
+      "type": "buried_bunker_2x2",
+      "role": "defensive_position",
+      "x": 140,
+      "y": 9,
+      "position": [
+        140,
+        9
+      ],
+      "anchor": [
+        140,
+        9
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          140,
+          9
+        ],
+        [
+          140,
+          10
+        ],
+        [
+          141,
+          9
+        ],
+        [
+          141,
+          10
+        ]
+      ],
+      "collision_footprint": [
+        [
+          140,
+          9
+        ],
+        [
+          140,
+          10
+        ],
+        [
+          141,
+          9
+        ],
+        [
+          141,
+          10
+        ]
+      ],
+      "visual_bounds": {
+        "x": 140,
+        "y": 9,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "bunker",
+        "cover",
+        "defensive",
+        "below_floor",
+        "firing_ports"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.95,
+        "concealment_value": 0.35,
+        "explosive": false,
+        "loot": false,
+        "firing_ports": true
+      },
+      "surface_elevation": 0,
+      "interior_elevation": -1,
+      "firing_ports": [
+        {
+          "side": "north",
+          "positions": [
+            [
+              140,
+              9
+            ],
+            [
+              141,
+              9
+            ]
+          ],
+          "elevation": -1,
+          "arc": "outward"
+        },
+        {
+          "side": "south",
+          "positions": [
+            [
+              140,
+              10
+            ],
+            [
+              141,
+              10
+            ]
+          ],
+          "elevation": -1,
+          "arc": "outward"
+        }
+      ]
+    },
+    {
+      "id": "buried_bunker_2x3_000",
+      "type": "buried_bunker_2x3",
+      "role": "defensive_position",
+      "x": 42,
+      "y": 43,
+      "position": [
+        42,
+        43
+      ],
+      "anchor": [
+        42,
+        43
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x3",
+      "footprint": [
+        [
+          42,
+          43
+        ],
+        [
+          42,
+          44
+        ],
+        [
+          42,
+          45
+        ],
+        [
+          43,
+          43
+        ],
+        [
+          43,
+          44
+        ],
+        [
+          43,
+          45
+        ]
+      ],
+      "collision_footprint": [
+        [
+          42,
+          43
+        ],
+        [
+          42,
+          44
+        ],
+        [
+          42,
+          45
+        ],
+        [
+          43,
+          43
+        ],
+        [
+          43,
+          44
+        ],
+        [
+          43,
+          45
+        ]
+      ],
+      "visual_bounds": {
+        "x": 42,
+        "y": 43,
+        "width": 2,
+        "height": 3
+      },
+      "pivot": {
+        "x": 1,
+        "y": 2,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "bunker",
+        "cover",
+        "defensive",
+        "below_floor",
+        "firing_ports"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.95,
+        "concealment_value": 0.35,
+        "explosive": false,
+        "loot": false,
+        "firing_ports": true
+      },
+      "surface_elevation": 0,
+      "interior_elevation": -1,
+      "firing_ports": [
+        {
+          "side": "west",
+          "positions": [
+            [
+              42,
+              43
+            ],
+            [
+              42,
+              44
+            ],
+            [
+              42,
+              45
+            ]
+          ],
+          "elevation": -1,
+          "arc": "outward"
+        },
+        {
+          "side": "east",
+          "positions": [
+            [
+              43,
+              43
+            ],
+            [
+              43,
+              44
+            ],
+            [
+              43,
+              45
+            ]
+          ],
+          "elevation": -1,
+          "arc": "outward"
+        }
+      ]
+    },
+    {
+      "id": "buried_bunker_2x3_001",
+      "type": "buried_bunker_2x3",
+      "role": "defensive_position",
+      "x": 184,
+      "y": 47,
+      "position": [
+        184,
+        47
+      ],
+      "anchor": [
+        184,
+        47
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x3",
+      "footprint": [
+        [
+          184,
+          47
+        ],
+        [
+          184,
+          48
+        ],
+        [
+          184,
+          49
+        ],
+        [
+          185,
+          47
+        ],
+        [
+          185,
+          48
+        ],
+        [
+          185,
+          49
+        ]
+      ],
+      "collision_footprint": [
+        [
+          184,
+          47
+        ],
+        [
+          184,
+          48
+        ],
+        [
+          184,
+          49
+        ],
+        [
+          185,
+          47
+        ],
+        [
+          185,
+          48
+        ],
+        [
+          185,
+          49
+        ]
+      ],
+      "visual_bounds": {
+        "x": 184,
+        "y": 47,
+        "width": 2,
+        "height": 3
+      },
+      "pivot": {
+        "x": 1,
+        "y": 2,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "bunker",
+        "cover",
+        "defensive",
+        "below_floor",
+        "firing_ports"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.95,
+        "concealment_value": 0.35,
+        "explosive": false,
+        "loot": false,
+        "firing_ports": true
+      },
+      "surface_elevation": 0,
+      "interior_elevation": -1,
+      "firing_ports": [
+        {
+          "side": "west",
+          "positions": [
+            [
+              184,
+              47
+            ],
+            [
+              184,
+              48
+            ],
+            [
+              184,
+              49
+            ]
+          ],
+          "elevation": -1,
+          "arc": "outward"
+        },
+        {
+          "side": "east",
+          "positions": [
+            [
+              185,
+              47
+            ],
+            [
+              185,
+              48
+            ],
+            [
+              185,
+              49
+            ]
+          ],
+          "elevation": -1,
+          "arc": "outward"
+        }
+      ]
+    },
+    {
+      "id": "old_well_000",
+      "type": "old_well",
+      "role": "story_landmark",
+      "x": 8,
+      "y": 83,
+      "position": [
+        8,
+        83
+      ],
+      "anchor": [
+        8,
+        83
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          8,
+          83
+        ],
+        [
+          8,
+          84
+        ],
+        [
+          9,
+          83
+        ],
+        [
+          9,
+          84
+        ]
+      ],
+      "collision_footprint": [
+        [
+          8,
+          83
+        ],
+        [
+          8,
+          84
+        ],
+        [
+          9,
+          83
+        ],
+        [
+          9,
+          84
+        ]
+      ],
+      "visual_bounds": {
+        "x": 8,
+        "y": 83,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "landmark",
+        "story_marker",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "old_well_001",
+      "type": "old_well",
+      "role": "story_landmark",
+      "x": 20,
+      "y": 88,
+      "position": [
+        20,
+        88
+      ],
+      "anchor": [
+        20,
+        88
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          20,
+          88
+        ],
+        [
+          20,
+          89
+        ],
+        [
+          21,
+          88
+        ],
+        [
+          21,
+          89
+        ]
+      ],
+      "collision_footprint": [
+        [
+          20,
+          88
+        ],
+        [
+          20,
+          89
+        ],
+        [
+          21,
+          88
+        ],
+        [
+          21,
+          89
+        ]
+      ],
+      "visual_bounds": {
+        "x": 20,
+        "y": 88,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "landmark",
+        "story_marker",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "car_wreck_000",
+      "type": "car_wreck",
+      "role": "roadside_debris",
+      "x": 73,
+      "y": 21,
+      "position": [
+        73,
+        21
+      ],
+      "anchor": [
+        73,
+        21
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          73,
+          21
+        ],
+        [
+          74,
+          21
+        ]
+      ],
+      "collision_footprint": [
+        [
+          73,
+          21
+        ],
+        [
+          74,
+          21
+        ]
+      ],
+      "visual_bounds": {
+        "x": 73,
+        "y": 21,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "debris",
+        "roadside",
+        "vehicle",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.6,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "car_wreck_001",
+      "type": "car_wreck",
+      "role": "roadside_debris",
+      "x": 120,
+      "y": 87,
+      "position": [
+        120,
+        87
+      ],
+      "anchor": [
+        120,
+        87
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          120,
+          87
+        ],
+        [
+          120,
+          88
+        ]
+      ],
+      "collision_footprint": [
+        [
+          120,
+          87
+        ],
+        [
+          120,
+          88
+        ]
+      ],
+      "visual_bounds": {
+        "x": 120,
+        "y": 87,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "debris",
+        "roadside",
+        "vehicle",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.6,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "car_wreck_002",
+      "type": "car_wreck",
+      "role": "roadside_debris",
+      "x": 89,
+      "y": 86,
+      "position": [
+        89,
+        86
+      ],
+      "anchor": [
+        89,
+        86
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          89,
+          86
+        ],
+        [
+          89,
+          87
+        ]
+      ],
+      "collision_footprint": [
+        [
+          89,
+          86
+        ],
+        [
+          89,
+          87
+        ]
+      ],
+      "visual_bounds": {
+        "x": 89,
+        "y": 86,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "debris",
+        "roadside",
+        "vehicle",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.6,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "field_tent_000",
+      "type": "field_tent",
+      "role": "camp_object",
+      "x": 175,
+      "y": 146,
+      "position": [
+        175,
+        146
+      ],
+      "anchor": [
+        175,
+        146
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "soft",
+      "blocks_movement": true,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          175,
+          146
+        ],
+        [
+          175,
+          147
+        ],
+        [
+          176,
+          146
+        ],
+        [
+          176,
+          147
+        ]
+      ],
+      "collision_footprint": [
+        [
+          175,
+          146
+        ],
+        [
+          175,
+          147
+        ],
+        [
+          176,
+          146
+        ],
+        [
+          176,
+          147
+        ]
+      ],
+      "visual_bounds": {
+        "x": 175,
+        "y": 146,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "camp",
+        "shelter",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.1,
+        "concealment_value": 0.45,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "field_tent_001",
+      "type": "field_tent",
+      "role": "camp_object",
+      "x": 144,
+      "y": 78,
+      "position": [
+        144,
+        78
+      ],
+      "anchor": [
+        144,
+        78
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "soft",
+      "blocks_movement": true,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          144,
+          78
+        ],
+        [
+          144,
+          79
+        ],
+        [
+          145,
+          78
+        ],
+        [
+          145,
+          79
+        ]
+      ],
+      "collision_footprint": [
+        [
+          144,
+          78
+        ],
+        [
+          144,
+          79
+        ],
+        [
+          145,
+          78
+        ],
+        [
+          145,
+          79
+        ]
+      ],
+      "visual_bounds": {
+        "x": 144,
+        "y": 78,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "camp",
+        "shelter",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.1,
+        "concealment_value": 0.45,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "field_tent_002",
+      "type": "field_tent",
+      "role": "camp_object",
+      "x": 101,
+      "y": 125,
+      "position": [
+        101,
+        125
+      ],
+      "anchor": [
+        101,
+        125
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "soft",
+      "blocks_movement": true,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          101,
+          125
+        ],
+        [
+          101,
+          126
+        ],
+        [
+          102,
+          125
+        ],
+        [
+          102,
+          126
+        ]
+      ],
+      "collision_footprint": [
+        [
+          101,
+          125
+        ],
+        [
+          101,
+          126
+        ],
+        [
+          102,
+          125
+        ],
+        [
+          102,
+          126
+        ]
+      ],
+      "visual_bounds": {
+        "x": 101,
+        "y": 125,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "camp",
+        "shelter",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.1,
+        "concealment_value": 0.45,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "broken_generator_000",
+      "type": "broken_generator",
+      "role": "tech_debris",
+      "x": 118,
+      "y": 11,
+      "position": [
+        118,
+        11
+      ],
+      "anchor": [
+        118,
+        11
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          118,
+          11
+        ],
+        [
+          118,
+          12
+        ]
+      ],
+      "collision_footprint": [
+        [
+          118,
+          11
+        ],
+        [
+          118,
+          12
+        ]
+      ],
+      "visual_bounds": {
+        "x": 118,
+        "y": 11,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "tech",
+        "debris",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "broken_generator_001",
+      "type": "broken_generator",
+      "role": "tech_debris",
+      "x": 120,
+      "y": 9,
+      "position": [
+        120,
+        9
+      ],
+      "anchor": [
+        120,
+        9
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          120,
+          9
+        ],
+        [
+          120,
+          10
+        ]
+      ],
+      "collision_footprint": [
+        [
+          120,
+          9
+        ],
+        [
+          120,
+          10
+        ]
+      ],
+      "visual_bounds": {
+        "x": 120,
+        "y": 9,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "tech",
+        "debris",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "cable_spool_000",
+      "type": "cable_spool",
+      "role": "tech_debris",
+      "x": 161,
+      "y": 54,
+      "position": [
+        161,
+        54
+      ],
+      "anchor": [
+        161,
+        54
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          161,
+          54
+        ]
+      ],
+      "collision_footprint": [
+        [
+          161,
+          54
+        ]
+      ],
+      "visual_bounds": {
+        "x": 161,
+        "y": 54,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "tech",
+        "cover",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.35,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "cable_spool_001",
+      "type": "cable_spool",
+      "role": "tech_debris",
+      "x": 17,
+      "y": 119,
+      "position": [
+        17,
+        119
+      ],
+      "anchor": [
+        17,
+        119
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          17,
+          119
+        ]
+      ],
+      "collision_footprint": [
+        [
+          17,
+          119
+        ]
+      ],
+      "visual_bounds": {
+        "x": 17,
+        "y": 119,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "tech",
+        "cover",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.35,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "cable_spool_002",
+      "type": "cable_spool",
+      "role": "tech_debris",
+      "x": 112,
+      "y": 49,
+      "position": [
+        112,
+        49
+      ],
+      "anchor": [
+        112,
+        49
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          112,
+          49
+        ]
+      ],
+      "collision_footprint": [
+        [
+          112,
+          49
+        ]
+      ],
+      "visual_bounds": {
+        "x": 112,
+        "y": 49,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "tech",
+        "cover",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.35,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "warning_sign_000",
+      "type": "warning_sign",
+      "role": "marker",
+      "x": 143,
+      "y": 70,
+      "position": [
+        143,
+        70
+      ],
+      "anchor": [
+        143,
+        70
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          143,
+          70
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 143,
+        "y": 70,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "marker",
+        "warning",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "warning_sign_001",
+      "type": "warning_sign",
+      "role": "marker",
+      "x": 82,
+      "y": 15,
+      "position": [
+        82,
+        15
+      ],
+      "anchor": [
+        82,
+        15
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          82,
+          15
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 82,
+        "y": 15,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "marker",
+        "warning",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "warning_sign_002",
+      "type": "warning_sign",
+      "role": "marker",
+      "x": 132,
+      "y": 152,
+      "position": [
+        132,
+        152
+      ],
+      "anchor": [
+        132,
+        152
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          132,
+          152
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 132,
+        "y": 152,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "marker",
+        "warning",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "old_grave_marker_000",
+      "type": "old_grave_marker",
+      "role": "story_marker",
+      "x": 89,
+      "y": 118,
+      "position": [
+        89,
+        118
+      ],
+      "anchor": [
+        89,
+        118
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          89,
+          118
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 89,
+        "y": 118,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "story_marker",
+        "grave",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "old_grave_marker_001",
+      "type": "old_grave_marker",
+      "role": "story_marker",
+      "x": 114,
+      "y": 169,
+      "position": [
+        114,
+        169
+      ],
+      "anchor": [
+        114,
+        169
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          114,
+          169
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 114,
+        "y": 169,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "story_marker",
+        "grave",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "pit_000",
+      "type": "pit",
+      "role": "depression",
+      "x": 143,
+      "y": 148,
+      "position": [
+        143,
+        148
+      ],
+      "anchor": [
+        143,
+        148
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          143,
+          148
+        ],
+        [
+          143,
+          149
+        ],
+        [
+          144,
+          148
+        ],
+        [
+          144,
+          149
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 143,
+        "y": 148,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "below_floor",
+        "terrain_feature"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.25,
+        "concealment_value": 0.15,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "pit_001",
+      "type": "pit",
+      "role": "depression",
+      "x": 103,
+      "y": 101,
+      "position": [
+        103,
+        101
+      ],
+      "anchor": [
+        103,
+        101
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          103,
+          101
+        ],
+        [
+          103,
+          102
+        ],
+        [
+          104,
+          101
+        ],
+        [
+          104,
+          102
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 103,
+        "y": 101,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "below_floor",
+        "terrain_feature"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.25,
+        "concealment_value": 0.15,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "pit_002",
+      "type": "pit",
+      "role": "depression",
+      "x": 133,
+      "y": 58,
+      "position": [
+        133,
+        58
+      ],
+      "anchor": [
+        133,
+        58
+      ],
+      "elevation": -1,
+      "height": 0,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x2",
+      "footprint": [
+        [
+          133,
+          58
+        ],
+        [
+          133,
+          59
+        ],
+        [
+          134,
+          58
+        ],
+        [
+          134,
+          59
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 133,
+        "y": 58,
+        "width": 2,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 1,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "elevation",
+        "below_floor",
+        "terrain_feature"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.25,
+        "concealment_value": 0.15,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "earth_berm_000",
+      "type": "earth_berm",
+      "role": "terrain_cover",
+      "x": 53,
+      "y": 168,
+      "position": [
+        53,
+        168
+      ],
+      "anchor": [
+        53,
+        168
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": false,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          53,
+          168
+        ],
+        [
+          53,
+          169
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 53,
+        "y": 168,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "terrain_feature",
+        "cover",
+        "earthwork"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "earth_berm_001",
+      "type": "earth_berm",
+      "role": "terrain_cover",
+      "x": 44,
+      "y": 114,
+      "position": [
+        44,
+        114
+      ],
+      "anchor": [
+        44,
+        114
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": false,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          44,
+          114
+        ],
+        [
+          45,
+          114
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 44,
+        "y": 114,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "terrain_feature",
+        "cover",
+        "earthwork"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "earth_berm_002",
+      "type": "earth_berm",
+      "role": "terrain_cover",
+      "x": 14,
+      "y": 187,
+      "position": [
+        14,
+        187
+      ],
+      "anchor": [
+        14,
+        187
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": false,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          14,
+          187
+        ],
+        [
+          15,
+          187
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 14,
+        "y": 187,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "terrain_feature",
+        "cover",
+        "earthwork"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "earth_berm_003",
+      "type": "earth_berm",
+      "role": "terrain_cover",
+      "x": 138,
+      "y": 85,
+      "position": [
+        138,
+        85
+      ],
+      "anchor": [
+        138,
+        85
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": false,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          138,
+          85
+        ],
+        [
+          138,
+          86
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 138,
+        "y": 85,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "terrain_feature",
+        "cover",
+        "earthwork"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "abandoned_cart_000",
+      "type": "abandoned_cart",
+      "role": "roadside_debris",
+      "x": 141,
+      "y": 54,
+      "position": [
+        141,
+        54
+      ],
+      "anchor": [
+        141,
+        54
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          141,
+          54
+        ],
+        [
+          142,
+          54
+        ]
+      ],
+      "collision_footprint": [
+        [
+          141,
+          54
+        ],
+        [
+          142,
+          54
+        ]
+      ],
+      "visual_bounds": {
+        "x": 141,
+        "y": 54,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "debris",
+        "roadside",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.4,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "abandoned_cart_001",
+      "type": "abandoned_cart",
+      "role": "roadside_debris",
+      "x": 2,
+      "y": 83,
+      "position": [
+        2,
+        83
+      ],
+      "anchor": [
+        2,
+        83
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          2,
+          83
+        ],
+        [
+          3,
+          83
+        ]
+      ],
+      "collision_footprint": [
+        [
+          2,
+          83
+        ],
+        [
+          3,
+          83
+        ]
+      ],
+      "visual_bounds": {
+        "x": 2,
+        "y": 83,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "debris",
+        "roadside",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.4,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "abandoned_cart_002",
+      "type": "abandoned_cart",
+      "role": "roadside_debris",
+      "x": 25,
+      "y": 179,
+      "position": [
+        25,
+        179
+      ],
+      "anchor": [
+        25,
+        179
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "partial",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          25,
+          179
+        ],
+        [
+          26,
+          179
+        ]
+      ],
+      "collision_footprint": [
+        [
+          25,
+          179
+        ],
+        [
+          26,
+          179
+        ]
+      ],
+      "visual_bounds": {
+        "x": 25,
+        "y": 179,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "debris",
+        "roadside",
+        "human_trace"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.4,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "abandoned_backpack_000",
+      "type": "abandoned_backpack",
+      "role": "interest_point",
+      "x": 108,
+      "y": 66,
+      "position": [
+        108,
+        66
+      ],
+      "anchor": [
+        108,
+        66
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          108,
+          66
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 108,
+        "y": 66,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "human_trace",
+        "camp"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "abandoned_backpack_001",
+      "type": "abandoned_backpack",
+      "role": "interest_point",
+      "x": 75,
+      "y": 58,
+      "position": [
+        75,
+        58
+      ],
+      "anchor": [
+        75,
+        58
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          75,
+          58
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 75,
+        "y": 58,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "human_trace",
+        "camp"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "abandoned_backpack_002",
+      "type": "abandoned_backpack",
+      "role": "interest_point",
+      "x": 21,
+      "y": 15,
+      "position": [
+        21,
+        15
+      ],
+      "anchor": [
+        21,
+        15
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          21,
+          15
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 21,
+        "y": 15,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "human_trace",
+        "camp"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "abandoned_backpack_003",
+      "type": "abandoned_backpack",
+      "role": "interest_point",
+      "x": 139,
+      "y": 158,
+      "position": [
+        139,
+        158
+      ],
+      "anchor": [
+        139,
+        158
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          139,
+          158
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 139,
+        "y": 158,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "human_trace",
+        "camp"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "dead_campfire_000",
+      "type": "dead_campfire",
+      "role": "camp_object",
+      "x": 34,
+      "y": 141,
+      "position": [
+        34,
+        141
+      ],
+      "anchor": [
+        34,
+        141
+      ],
+      "elevation": 0,
+      "height": 0,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          34,
+          141
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 34,
+        "y": 141,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "camp",
+        "human_trace",
+        "story_marker"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "dead_campfire_001",
+      "type": "dead_campfire",
+      "role": "camp_object",
+      "x": 117,
+      "y": 44,
+      "position": [
+        117,
+        44
+      ],
+      "anchor": [
+        117,
+        44
+      ],
+      "elevation": 0,
+      "height": 0,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          117,
+          44
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 117,
+        "y": 44,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "camp",
+        "human_trace",
+        "story_marker"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "dead_campfire_002",
+      "type": "dead_campfire",
+      "role": "camp_object",
+      "x": 142,
+      "y": 77,
+      "position": [
+        142,
+        77
+      ],
+      "anchor": [
+        142,
+        77
+      ],
+      "elevation": 0,
+      "height": 0,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          142,
+          77
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 142,
+        "y": 77,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "camp",
+        "human_trace",
+        "story_marker"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_000",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 112,
+      "y": 52,
+      "position": [
+        112,
+        52
+      ],
+      "anchor": [
+        112,
+        52
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          112,
+          52
+        ]
+      ],
+      "collision_footprint": [
+        [
+          112,
+          52
+        ]
+      ],
+      "visual_bounds": {
+        "x": 112,
+        "y": 52,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_001",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 169,
+      "y": 181,
+      "position": [
+        169,
+        181
+      ],
+      "anchor": [
+        169,
+        181
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          169,
+          181
+        ]
+      ],
+      "collision_footprint": [
+        [
+          169,
+          181
+        ]
+      ],
+      "visual_bounds": {
+        "x": 169,
+        "y": 181,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_002",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 42,
+      "y": 101,
+      "position": [
+        42,
+        101
+      ],
+      "anchor": [
+        42,
+        101
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          42,
+          101
+        ]
+      ],
+      "collision_footprint": [
+        [
+          42,
+          101
+        ]
+      ],
+      "visual_bounds": {
+        "x": 42,
+        "y": 101,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_003",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 184,
+      "y": 13,
+      "position": [
+        184,
+        13
+      ],
+      "anchor": [
+        184,
+        13
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          184,
+          13
+        ]
+      ],
+      "collision_footprint": [
+        [
+          184,
+          13
+        ]
+      ],
+      "visual_bounds": {
+        "x": 184,
+        "y": 13,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_004",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 28,
+      "y": 36,
+      "position": [
+        28,
+        36
+      ],
+      "anchor": [
+        28,
+        36
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          28,
+          36
+        ]
+      ],
+      "collision_footprint": [
+        [
+          28,
+          36
+        ]
+      ],
+      "visual_bounds": {
+        "x": 28,
+        "y": 36,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_005",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 140,
+      "y": 110,
+      "position": [
+        140,
+        110
+      ],
+      "anchor": [
+        140,
+        110
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          140,
+          110
+        ]
+      ],
+      "collision_footprint": [
+        [
+          140,
+          110
+        ]
+      ],
+      "visual_bounds": {
+        "x": 140,
+        "y": 110,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_006",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 182,
+      "y": 169,
+      "position": [
+        182,
+        169
+      ],
+      "anchor": [
+        182,
+        169
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          182,
+          169
+        ]
+      ],
+      "collision_footprint": [
+        [
+          182,
+          169
+        ]
+      ],
+      "visual_bounds": {
+        "x": 182,
+        "y": 169,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_007",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 183,
+      "y": 172,
+      "position": [
+        183,
+        172
+      ],
+      "anchor": [
+        183,
+        172
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          183,
+          172
+        ]
+      ],
+      "collision_footprint": [
+        [
+          183,
+          172
+        ]
+      ],
+      "visual_bounds": {
+        "x": 183,
+        "y": 172,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_008",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 49,
+      "y": 178,
+      "position": [
+        49,
+        178
+      ],
+      "anchor": [
+        49,
+        178
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          49,
+          178
+        ]
+      ],
+      "collision_footprint": [
+        [
+          49,
+          178
+        ]
+      ],
+      "visual_bounds": {
+        "x": 49,
+        "y": 178,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_009",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 52,
+      "y": 171,
+      "position": [
+        52,
+        171
+      ],
+      "anchor": [
+        52,
+        171
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          52,
+          171
+        ]
+      ],
+      "collision_footprint": [
+        [
+          52,
+          171
+        ]
+      ],
+      "visual_bounds": {
+        "x": 52,
+        "y": 171,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_010",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 100,
+      "y": 164,
+      "position": [
+        100,
+        164
+      ],
+      "anchor": [
+        100,
+        164
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          100,
+          164
+        ]
+      ],
+      "collision_footprint": [
+        [
+          100,
+          164
+        ]
+      ],
+      "visual_bounds": {
+        "x": 100,
+        "y": 164,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_011",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 21,
+      "y": 18,
+      "position": [
+        21,
+        18
+      ],
+      "anchor": [
+        21,
+        18
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          21,
+          18
+        ]
+      ],
+      "collision_footprint": [
+        [
+          21,
+          18
+        ]
+      ],
+      "visual_bounds": {
+        "x": 21,
+        "y": 18,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_012",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 42,
+      "y": 40,
+      "position": [
+        42,
+        40
+      ],
+      "anchor": [
+        42,
+        40
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          42,
+          40
+        ]
+      ],
+      "collision_footprint": [
+        [
+          42,
+          40
+        ]
+      ],
+      "visual_bounds": {
+        "x": 42,
+        "y": 40,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_013",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 127,
+      "y": 38,
+      "position": [
+        127,
+        38
+      ],
+      "anchor": [
+        127,
+        38
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          127,
+          38
+        ]
+      ],
+      "collision_footprint": [
+        [
+          127,
+          38
+        ]
+      ],
+      "visual_bounds": {
+        "x": 127,
+        "y": 38,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "stone_chunk_014",
+      "type": "stone_chunk",
+      "role": "hard_cover",
+      "x": 82,
+      "y": 18,
+      "position": [
+        82,
+        18
+      ],
+      "anchor": [
+        82,
+        18
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          82,
+          18
+        ]
+      ],
+      "collision_footprint": [
+        [
+          82,
+          18
+        ]
+      ],
+      "visual_bounds": {
+        "x": 82,
+        "y": 18,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "stone"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.9,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_000",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 79,
+      "y": 110,
+      "position": [
+        79,
+        110
+      ],
+      "anchor": [
+        79,
+        110
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          79,
+          110
+        ]
+      ],
+      "collision_footprint": [
+        [
+          79,
+          110
+        ]
+      ],
+      "visual_bounds": {
+        "x": 79,
+        "y": 110,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_001",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 141,
+      "y": 107,
+      "position": [
+        141,
+        107
+      ],
+      "anchor": [
+        141,
+        107
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          141,
+          107
+        ]
+      ],
+      "collision_footprint": [
+        [
+          141,
+          107
+        ]
+      ],
+      "visual_bounds": {
+        "x": 141,
+        "y": 107,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_002",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 47,
+      "y": 147,
+      "position": [
+        47,
+        147
+      ],
+      "anchor": [
+        47,
+        147
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          47,
+          147
+        ]
+      ],
+      "collision_footprint": [
+        [
+          47,
+          147
+        ]
+      ],
+      "visual_bounds": {
+        "x": 47,
+        "y": 147,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_003",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 117,
+      "y": 47,
+      "position": [
+        117,
+        47
+      ],
+      "anchor": [
+        117,
+        47
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          117,
+          47
+        ]
+      ],
+      "collision_footprint": [
+        [
+          117,
+          47
+        ]
+      ],
+      "visual_bounds": {
+        "x": 117,
+        "y": 47,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_004",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 141,
+      "y": 71,
+      "position": [
+        141,
+        71
+      ],
+      "anchor": [
+        141,
+        71
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          141,
+          71
+        ]
+      ],
+      "collision_footprint": [
+        [
+          141,
+          71
+        ]
+      ],
+      "visual_bounds": {
+        "x": 141,
+        "y": 71,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_005",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 34,
+      "y": 155,
+      "position": [
+        34,
+        155
+      ],
+      "anchor": [
+        34,
+        155
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          34,
+          155
+        ]
+      ],
+      "collision_footprint": [
+        [
+          34,
+          155
+        ]
+      ],
+      "visual_bounds": {
+        "x": 34,
+        "y": 155,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_006",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 110,
+      "y": 51,
+      "position": [
+        110,
+        51
+      ],
+      "anchor": [
+        110,
+        51
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          110,
+          51
+        ]
+      ],
+      "collision_footprint": [
+        [
+          110,
+          51
+        ]
+      ],
+      "visual_bounds": {
+        "x": 110,
+        "y": 51,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_007",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 111,
+      "y": 71,
+      "position": [
+        111,
+        71
+      ],
+      "anchor": [
+        111,
+        71
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          111,
+          71
+        ]
+      ],
+      "collision_footprint": [
+        [
+          111,
+          71
+        ]
+      ],
+      "visual_bounds": {
+        "x": 111,
+        "y": 71,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_008",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 49,
+      "y": 149,
+      "position": [
+        49,
+        149
+      ],
+      "anchor": [
+        49,
+        149
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          49,
+          149
+        ]
+      ],
+      "collision_footprint": [
+        [
+          49,
+          149
+        ]
+      ],
+      "visual_bounds": {
+        "x": 49,
+        "y": 149,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_009",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 143,
+      "y": 110,
+      "position": [
+        143,
+        110
+      ],
+      "anchor": [
+        143,
+        110
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          143,
+          110
+        ]
+      ],
+      "collision_footprint": [
+        [
+          143,
+          110
+        ]
+      ],
+      "visual_bounds": {
+        "x": 143,
+        "y": 110,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_010",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 78,
+      "y": 143,
+      "position": [
+        78,
+        143
+      ],
+      "anchor": [
+        78,
+        143
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          78,
+          143
+        ]
+      ],
+      "collision_footprint": [
+        [
+          78,
+          143
+        ]
+      ],
+      "visual_bounds": {
+        "x": 78,
+        "y": 143,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_011",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 137,
+      "y": 9,
+      "position": [
+        137,
+        9
+      ],
+      "anchor": [
+        137,
+        9
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          137,
+          9
+        ]
+      ],
+      "collision_footprint": [
+        [
+          137,
+          9
+        ]
+      ],
+      "visual_bounds": {
+        "x": 137,
+        "y": 9,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_012",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 115,
+      "y": 45,
+      "position": [
+        115,
+        45
+      ],
+      "anchor": [
+        115,
+        45
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          115,
+          45
+        ]
+      ],
+      "collision_footprint": [
+        [
+          115,
+          45
+        ]
+      ],
+      "visual_bounds": {
+        "x": 115,
+        "y": 45,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_013",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 24,
+      "y": 16,
+      "position": [
+        24,
+        16
+      ],
+      "anchor": [
+        24,
+        16
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          24,
+          16
+        ]
+      ],
+      "collision_footprint": [
+        [
+          24,
+          16
+        ]
+      ],
+      "visual_bounds": {
+        "x": 24,
+        "y": 16,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_014",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 172,
+      "y": 146,
+      "position": [
+        172,
+        146
+      ],
+      "anchor": [
+        172,
+        146
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          172,
+          146
+        ]
+      ],
+      "collision_footprint": [
+        [
+          172,
+          146
+        ]
+      ],
+      "visual_bounds": {
+        "x": 172,
+        "y": 146,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_015",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 143,
+      "y": 145,
+      "position": [
+        143,
+        145
+      ],
+      "anchor": [
+        143,
+        145
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          143,
+          145
+        ]
+      ],
+      "collision_footprint": [
+        [
+          143,
+          145
+        ]
+      ],
+      "visual_bounds": {
+        "x": 143,
+        "y": 145,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_016",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 117,
+      "y": 9,
+      "position": [
+        117,
+        9
+      ],
+      "anchor": [
+        117,
+        9
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          117,
+          9
+        ]
+      ],
+      "collision_footprint": [
+        [
+          117,
+          9
+        ]
+      ],
+      "visual_bounds": {
+        "x": 117,
+        "y": 9,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_017",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 140,
+      "y": 148,
+      "position": [
+        140,
+        148
+      ],
+      "anchor": [
+        140,
+        148
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          140,
+          148
+        ]
+      ],
+      "collision_footprint": [
+        [
+          140,
+          148
+        ]
+      ],
+      "visual_bounds": {
+        "x": 140,
+        "y": 148,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_018",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 112,
+      "y": 76,
+      "position": [
+        112,
+        76
+      ],
+      "anchor": [
+        112,
+        76
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          112,
+          76
+        ]
+      ],
+      "collision_footprint": [
+        [
+          112,
+          76
+        ]
+      ],
+      "visual_bounds": {
+        "x": 112,
+        "y": 76,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_019",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 119,
+      "y": 45,
+      "position": [
+        119,
+        45
+      ],
+      "anchor": [
+        119,
+        45
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          119,
+          45
+        ]
+      ],
+      "collision_footprint": [
+        [
+          119,
+          45
+        ]
+      ],
+      "visual_bounds": {
+        "x": 119,
+        "y": 45,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "bush_thicket_020",
+      "type": "bush_thicket",
+      "role": "soft_cover",
+      "x": 114,
+      "y": 135,
+      "position": [
+        114,
+        135
+      ],
+      "anchor": [
+        114,
+        135
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "soft",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": true,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          114,
+          135
+        ]
+      ],
+      "collision_footprint": [
+        [
+          114,
+          135
+        ]
+      ],
+      "visual_bounds": {
+        "x": 114,
+        "y": 135,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "concealment",
+        "vegetation"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "soft_blocked"
+      },
+      "combat_properties": {
+        "cover_value": 0.15,
+        "concealment_value": 0.7,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_000",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 101,
+      "y": 175,
+      "position": [
+        101,
+        175
+      ],
+      "anchor": [
+        101,
+        175
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          101,
+          175
+        ],
+        [
+          101,
+          176
+        ]
+      ],
+      "collision_footprint": [
+        [
+          101,
+          175
+        ],
+        [
+          101,
+          176
+        ]
+      ],
+      "visual_bounds": {
+        "x": 101,
+        "y": 175,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_001",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 52,
+      "y": 116,
+      "position": [
+        52,
+        116
+      ],
+      "anchor": [
+        52,
+        116
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          52,
+          116
+        ],
+        [
+          53,
+          116
+        ]
+      ],
+      "collision_footprint": [
+        [
+          52,
+          116
+        ],
+        [
+          53,
+          116
+        ]
+      ],
+      "visual_bounds": {
+        "x": 52,
+        "y": 116,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_002",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 142,
+      "y": 80,
+      "position": [
+        142,
+        80
+      ],
+      "anchor": [
+        142,
+        80
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          142,
+          80
+        ],
+        [
+          142,
+          81
+        ]
+      ],
+      "collision_footprint": [
+        [
+          142,
+          80
+        ],
+        [
+          142,
+          81
+        ]
+      ],
+      "visual_bounds": {
+        "x": 142,
+        "y": 80,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_003",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 37,
+      "y": 142,
+      "position": [
+        37,
+        142
+      ],
+      "anchor": [
+        37,
+        142
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          37,
+          142
+        ],
+        [
+          38,
+          142
+        ]
+      ],
+      "collision_footprint": [
+        [
+          37,
+          142
+        ],
+        [
+          38,
+          142
+        ]
+      ],
+      "visual_bounds": {
+        "x": 37,
+        "y": 142,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_004",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 72,
+      "y": 23,
+      "position": [
+        72,
+        23
+      ],
+      "anchor": [
+        72,
+        23
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          72,
+          23
+        ],
+        [
+          72,
+          24
+        ]
+      ],
+      "collision_footprint": [
+        [
+          72,
+          23
+        ],
+        [
+          72,
+          24
+        ]
+      ],
+      "visual_bounds": {
+        "x": 72,
+        "y": 23,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_005",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 90,
+      "y": 120,
+      "position": [
+        90,
+        120
+      ],
+      "anchor": [
+        90,
+        120
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          90,
+          120
+        ],
+        [
+          91,
+          120
+        ]
+      ],
+      "collision_footprint": [
+        [
+          90,
+          120
+        ],
+        [
+          91,
+          120
+        ]
+      ],
+      "visual_bounds": {
+        "x": 90,
+        "y": 120,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_006",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 100,
+      "y": 102,
+      "position": [
+        100,
+        102
+      ],
+      "anchor": [
+        100,
+        102
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          100,
+          102
+        ],
+        [
+          100,
+          103
+        ]
+      ],
+      "collision_footprint": [
+        [
+          100,
+          102
+        ],
+        [
+          100,
+          103
+        ]
+      ],
+      "visual_bounds": {
+        "x": 100,
+        "y": 102,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_007",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 79,
+      "y": 116,
+      "position": [
+        79,
+        116
+      ],
+      "anchor": [
+        79,
+        116
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          79,
+          116
+        ],
+        [
+          80,
+          116
+        ]
+      ],
+      "collision_footprint": [
+        [
+          79,
+          116
+        ],
+        [
+          80,
+          116
+        ]
+      ],
+      "visual_bounds": {
+        "x": 79,
+        "y": 116,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_008",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 102,
+      "y": 104,
+      "position": [
+        102,
+        104
+      ],
+      "anchor": [
+        102,
+        104
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          102,
+          104
+        ],
+        [
+          102,
+          105
+        ]
+      ],
+      "collision_footprint": [
+        [
+          102,
+          104
+        ],
+        [
+          102,
+          105
+        ]
+      ],
+      "visual_bounds": {
+        "x": 102,
+        "y": 104,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_009",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 146,
+      "y": 70,
+      "position": [
+        146,
+        70
+      ],
+      "anchor": [
+        146,
+        70
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          146,
+          70
+        ],
+        [
+          146,
+          71
+        ]
+      ],
+      "collision_footprint": [
+        [
+          146,
+          70
+        ],
+        [
+          146,
+          71
+        ]
+      ],
+      "visual_bounds": {
+        "x": 146,
+        "y": 70,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_010",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 52,
+      "y": 122,
+      "position": [
+        52,
+        122
+      ],
+      "anchor": [
+        52,
+        122
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          52,
+          122
+        ],
+        [
+          52,
+          123
+        ]
+      ],
+      "collision_footprint": [
+        [
+          52,
+          122
+        ],
+        [
+          52,
+          123
+        ]
+      ],
+      "visual_bounds": {
+        "x": 52,
+        "y": 122,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "fallen_log_011",
+      "type": "fallen_log",
+      "role": "hard_cover",
+      "x": 114,
+      "y": 72,
+      "position": [
+        114,
+        72
+      ],
+      "anchor": [
+        114,
+        72
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          114,
+          72
+        ],
+        [
+          115,
+          72
+        ]
+      ],
+      "collision_footprint": [
+        [
+          114,
+          72
+        ],
+        [
+          115,
+          72
+        ]
+      ],
+      "visual_bounds": {
+        "x": 114,
+        "y": 72,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "natural"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.55,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_000",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 143,
+      "y": 75,
+      "position": [
+        143,
+        75
+      ],
+      "anchor": [
+        143,
+        75
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          143,
+          75
+        ],
+        [
+          144,
+          75
+        ]
+      ],
+      "collision_footprint": [
+        [
+          143,
+          75
+        ],
+        [
+          144,
+          75
+        ]
+      ],
+      "visual_bounds": {
+        "x": 143,
+        "y": 75,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_001",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 135,
+      "y": 152,
+      "position": [
+        135,
+        152
+      ],
+      "anchor": [
+        135,
+        152
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          135,
+          152
+        ],
+        [
+          135,
+          153
+        ]
+      ],
+      "collision_footprint": [
+        [
+          135,
+          152
+        ],
+        [
+          135,
+          153
+        ]
+      ],
+      "visual_bounds": {
+        "x": 135,
+        "y": 152,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_002",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 73,
+      "y": 18,
+      "position": [
+        73,
+        18
+      ],
+      "anchor": [
+        73,
+        18
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          73,
+          18
+        ],
+        [
+          74,
+          18
+        ]
+      ],
+      "collision_footprint": [
+        [
+          73,
+          18
+        ],
+        [
+          74,
+          18
+        ]
+      ],
+      "visual_bounds": {
+        "x": 73,
+        "y": 18,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_003",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 70,
+      "y": 21,
+      "position": [
+        70,
+        21
+      ],
+      "anchor": [
+        70,
+        21
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          70,
+          21
+        ],
+        [
+          70,
+          22
+        ]
+      ],
+      "collision_footprint": [
+        [
+          70,
+          21
+        ],
+        [
+          70,
+          22
+        ]
+      ],
+      "visual_bounds": {
+        "x": 70,
+        "y": 21,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_004",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 172,
+      "y": 44,
+      "position": [
+        172,
+        44
+      ],
+      "anchor": [
+        172,
+        44
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          172,
+          44
+        ],
+        [
+          173,
+          44
+        ]
+      ],
+      "collision_footprint": [
+        [
+          172,
+          44
+        ],
+        [
+          173,
+          44
+        ]
+      ],
+      "visual_bounds": {
+        "x": 172,
+        "y": 44,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_005",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 16,
+      "y": 115,
+      "position": [
+        16,
+        115
+      ],
+      "anchor": [
+        16,
+        115
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "east_west",
+      "shape": "rect_2x1",
+      "footprint": [
+        [
+          16,
+          115
+        ],
+        [
+          17,
+          115
+        ]
+      ],
+      "collision_footprint": [
+        [
+          16,
+          115
+        ],
+        [
+          17,
+          115
+        ]
+      ],
+      "visual_bounds": {
+        "x": 16,
+        "y": 115,
+        "width": 2,
+        "height": 1
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_006",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 111,
+      "y": 138,
+      "position": [
+        111,
+        138
+      ],
+      "anchor": [
+        111,
+        138
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          111,
+          138
+        ],
+        [
+          111,
+          139
+        ]
+      ],
+      "collision_footprint": [
+        [
+          111,
+          138
+        ],
+        [
+          111,
+          139
+        ]
+      ],
+      "visual_bounds": {
+        "x": 111,
+        "y": 138,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_007",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 118,
+      "y": 89,
+      "position": [
+        118,
+        89
+      ],
+      "anchor": [
+        118,
+        89
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          118,
+          89
+        ],
+        [
+          118,
+          90
+        ]
+      ],
+      "collision_footprint": [
+        [
+          118,
+          89
+        ],
+        [
+          118,
+          90
+        ]
+      ],
+      "visual_bounds": {
+        "x": 118,
+        "y": 89,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_008",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 142,
+      "y": 151,
+      "position": [
+        142,
+        151
+      ],
+      "anchor": [
+        142,
+        151
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          142,
+          151
+        ],
+        [
+          142,
+          152
+        ]
+      ],
+      "collision_footprint": [
+        [
+          142,
+          151
+        ],
+        [
+          142,
+          152
+        ]
+      ],
+      "visual_bounds": {
+        "x": 142,
+        "y": 151,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "scrap_pile_009",
+      "type": "scrap_pile",
+      "role": "partial_cover",
+      "x": 174,
+      "y": 143,
+      "position": [
+        174,
+        143
+      ],
+      "anchor": [
+        174,
+        143
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "low",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": false,
+      "orientation": "north_south",
+      "shape": "rect_1x2",
+      "footprint": [
+        [
+          174,
+          143
+        ],
+        [
+          174,
+          144
+        ]
+      ],
+      "collision_footprint": [
+        [
+          174,
+          143
+        ],
+        [
+          174,
+          144
+        ]
+      ],
+      "visual_bounds": {
+        "x": 174,
+        "y": 143,
+        "width": 1,
+        "height": 2
+      },
+      "pivot": {
+        "x": 1,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "scrap",
+        "ruins"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.45,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": false
+      }
+    },
+    {
+      "id": "rusted_barrel_000",
+      "type": "rusted_barrel",
+      "role": "risky_cover",
+      "x": 141,
+      "y": 112,
+      "position": [
+        141,
+        112
+      ],
+      "anchor": [
+        141,
+        112
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          141,
+          112
+        ]
+      ],
+      "collision_footprint": [
+        [
+          141,
+          112
+        ]
+      ],
+      "visual_bounds": {
+        "x": 141,
+        "y": 112,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "explosive_candidate",
+        "metal"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": true,
+        "loot": false
+      }
+    },
+    {
+      "id": "rusted_barrel_001",
+      "type": "rusted_barrel",
+      "role": "risky_cover",
+      "x": 138,
+      "y": 82,
+      "position": [
+        138,
+        82
+      ],
+      "anchor": [
+        138,
+        82
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          138,
+          82
+        ]
+      ],
+      "collision_footprint": [
+        [
+          138,
+          82
+        ]
+      ],
+      "visual_bounds": {
+        "x": 138,
+        "y": 82,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "explosive_candidate",
+        "metal"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": true,
+        "loot": false
+      }
+    },
+    {
+      "id": "rusted_barrel_002",
+      "type": "rusted_barrel",
+      "role": "risky_cover",
+      "x": 138,
+      "y": 11,
+      "position": [
+        138,
+        11
+      ],
+      "anchor": [
+        138,
+        11
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          138,
+          11
+        ]
+      ],
+      "collision_footprint": [
+        [
+          138,
+          11
+        ]
+      ],
+      "visual_bounds": {
+        "x": 138,
+        "y": 11,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "explosive_candidate",
+        "metal"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": true,
+        "loot": false
+      }
+    },
+    {
+      "id": "rusted_barrel_003",
+      "type": "rusted_barrel",
+      "role": "risky_cover",
+      "x": 121,
+      "y": 12,
+      "position": [
+        121,
+        12
+      ],
+      "anchor": [
+        121,
+        12
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          121,
+          12
+        ]
+      ],
+      "collision_footprint": [
+        [
+          121,
+          12
+        ]
+      ],
+      "visual_bounds": {
+        "x": 121,
+        "y": 12,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "explosive_candidate",
+        "metal"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": true,
+        "loot": false
+      }
+    },
+    {
+      "id": "rusted_barrel_004",
+      "type": "rusted_barrel",
+      "role": "risky_cover",
+      "x": 123,
+      "y": 10,
+      "position": [
+        123,
+        10
+      ],
+      "anchor": [
+        123,
+        10
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          123,
+          10
+        ]
+      ],
+      "collision_footprint": [
+        [
+          123,
+          10
+        ]
+      ],
+      "visual_bounds": {
+        "x": 123,
+        "y": 10,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "explosive_candidate",
+        "metal"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": true,
+        "loot": false
+      }
+    },
+    {
+      "id": "rusted_barrel_005",
+      "type": "rusted_barrel",
+      "role": "risky_cover",
+      "x": 169,
+      "y": 48,
+      "position": [
+        169,
+        48
+      ],
+      "anchor": [
+        169,
+        48
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          169,
+          48
+        ]
+      ],
+      "collision_footprint": [
+        [
+          169,
+          48
+        ]
+      ],
+      "visual_bounds": {
+        "x": 169,
+        "y": 48,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "explosive_candidate",
+        "metal"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": true,
+        "loot": false
+      }
+    },
+    {
+      "id": "rusted_barrel_006",
+      "type": "rusted_barrel",
+      "role": "risky_cover",
+      "x": 75,
+      "y": 141,
+      "position": [
+        75,
+        141
+      ],
+      "anchor": [
+        75,
+        141
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          75,
+          141
+        ]
+      ],
+      "collision_footprint": [
+        [
+          75,
+          141
+        ]
+      ],
+      "visual_bounds": {
+        "x": 75,
+        "y": 141,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "explosive_candidate",
+        "metal"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": true,
+        "loot": false
+      }
+    },
+    {
+      "id": "rusted_barrel_007",
+      "type": "rusted_barrel",
+      "role": "risky_cover",
+      "x": 53,
+      "y": 173,
+      "position": [
+        53,
+        173
+      ],
+      "anchor": [
+        53,
+        173
+      ],
+      "elevation": 0,
+      "height": 2,
+      "cover_type": "full",
+      "blocks_movement": true,
+      "blocks_projectiles": true,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          53,
+          173
+        ]
+      ],
+      "collision_footprint": [
+        [
+          53,
+          173
+        ]
+      ],
+      "visual_bounds": {
+        "x": 53,
+        "y": 173,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "cover",
+        "explosive_candidate",
+        "metal"
+      ],
+      "collision_profile": {
+        "movement": "blocked",
+        "projectiles": "blocked",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.5,
+        "concealment_value": 0.0,
+        "explosive": true,
+        "loot": false
+      }
+    },
+    {
+      "id": "ammo_cache_000",
+      "type": "ammo_cache",
+      "role": "interest_point",
+      "x": 170,
+      "y": 45,
+      "position": [
+        170,
+        45
+      ],
+      "anchor": [
+        170,
+        45
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          170,
+          45
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 170,
+        "y": 45,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "ammo"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "ammo_cache_001",
+      "type": "ammo_cache",
+      "role": "interest_point",
+      "x": 110,
+      "y": 74,
+      "position": [
+        110,
+        74
+      ],
+      "anchor": [
+        110,
+        74
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          110,
+          74
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 110,
+        "y": 74,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "ammo"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "ammo_cache_002",
+      "type": "ammo_cache",
+      "role": "interest_point",
+      "x": 9,
+      "y": 115,
+      "position": [
+        9,
+        115
+      ],
+      "anchor": [
+        9,
+        115
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          9,
+          115
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 9,
+        "y": 115,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "ammo"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "ammo_cache_003",
+      "type": "ammo_cache",
+      "role": "interest_point",
+      "x": 82,
+      "y": 180,
+      "position": [
+        82,
+        180
+      ],
+      "anchor": [
+        82,
+        180
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          82,
+          180
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 82,
+        "y": 180,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "ammo"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "medkit_cache_000",
+      "type": "medkit_cache",
+      "role": "interest_point",
+      "x": 81,
+      "y": 174,
+      "position": [
+        81,
+        174
+      ],
+      "anchor": [
+        81,
+        174
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          81,
+          174
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 81,
+        "y": 174,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "healing"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "medkit_cache_001",
+      "type": "medkit_cache",
+      "role": "interest_point",
+      "x": 88,
+      "y": 116,
+      "position": [
+        88,
+        116
+      ],
+      "anchor": [
+        88,
+        116
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          88,
+          116
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 88,
+        "y": 116,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "healing"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    },
+    {
+      "id": "medkit_cache_002",
+      "type": "medkit_cache",
+      "role": "interest_point",
+      "x": 112,
+      "y": 170,
+      "position": [
+        112,
+        170
+      ],
+      "anchor": [
+        112,
+        170
+      ],
+      "elevation": 0,
+      "height": 1,
+      "cover_type": "none",
+      "blocks_movement": false,
+      "blocks_projectiles": false,
+      "blocks_vision": false,
+      "interactive": true,
+      "orientation": "east_west",
+      "shape": "single",
+      "footprint": [
+        [
+          112,
+          170
+        ]
+      ],
+      "collision_footprint": [],
+      "visual_bounds": {
+        "x": 112,
+        "y": 170,
+        "width": 1,
+        "height": 1
+      },
+      "pivot": {
+        "x": 0,
+        "y": 0,
+        "space": "tile_offset"
+      },
+      "tags": [
+        "loot",
+        "healing"
+      ],
+      "collision_profile": {
+        "movement": "passable",
+        "projectiles": "passable",
+        "vision": "passable"
+      },
+      "combat_properties": {
+        "cover_value": 0.0,
+        "concealment_value": 0.0,
+        "explosive": false,
+        "loot": true
+      }
+    }
+  ],
+  "summary": {
+    "total": 122,
+    "by_type": {
+      "abandoned_backpack": 4,
+      "abandoned_cart": 3,
+      "ammo_cache": 4,
+      "big_dead_tree": 2,
+      "broken_generator": 2,
+      "broken_radio_mast": 1,
+      "buried_bunker_2x2": 2,
+      "buried_bunker_2x3": 2,
+      "bush_thicket": 21,
+      "cable_spool": 3,
+      "car_wreck": 3,
+      "dead_campfire": 3,
+      "earth_berm": 4,
+      "fallen_log": 12,
+      "field_tent": 3,
+      "medkit_cache": 3,
+      "old_checkpoint": 1,
+      "old_grave_marker": 2,
+      "old_well": 2,
+      "pit": 3,
+      "rusted_barrel": 8,
+      "scrap_pile": 10,
+      "stone_chunk": 15,
+      "trench": 6,
+      "warning_sign": 3
+    },
+    "trench_shapes": {
+      "l_shape": 1,
+      "line": 5
+    },
+    "landmarks": {
+      "total": 4,
+      "by_type": {
+        "big_dead_tree": 2,
+        "broken_radio_mast": 1,
+        "old_checkpoint": 1
+      }
+    }
+  }
+}

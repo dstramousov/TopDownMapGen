@@ -1,0 +1,21 @@
+{
+  "seed": 87936569934845906,
+  "map_width_tiles": 192,
+  "map_height_tiles": 192,
+  "chunk_width_tiles": 16,
+  "chunk_height_tiles": 16,
+  "biome_profile": "forest_ruins",
+  "generation_tuning": {
+    "water_scale": 5.0,
+    "water_patch_count_scale": 1.0,
+    "water_patch_size_scale": 2.0,
+    "water_patch_density": 0.62,
+    "forest_scale": 1.0,
+    "open_space_scale": 1.0,
+    "ruins_scale": 1.0,
+    "buildings_scale": 1.0,
+    "road_width_scale": 1.0,
+    "decoration_scale": 1.0,
+    "bunker_scale": 1.0
+  }
+}

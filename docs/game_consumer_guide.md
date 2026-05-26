@@ -337,6 +337,11 @@ A game consumer must not treat runtime objects as single-tile markers. Read `foo
 
 `map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
 
+
+## Package consistency validation
+
+Начиная с `v0.0.41`, validation проверяет не только наличие файлов, но и согласованность публичного пакета: `markers` должны совпадать со `start_goal`, `runtime_grids` должны иметь ожидаемые размеры, `world_graph` должен ссылаться на реальные places/markers, а `routes` — на реальные nodes/edges. Start и goal также проверяются против `collision_grid`, чтобы внешний consumer не получал заблокированную стартовую или целевую клетку.
+
 Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
 
 ## Markers and runtime grids

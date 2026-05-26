@@ -240,6 +240,11 @@ Runtime-объекты не рисуются на `layer_base_map.png`, чтоб
 - корректность elevation-клеток;
 - валидность окопов и их footprint;
 - наличие и корректность places;
+- согласованность `markers.json` со стартом/целью;
+- наличие и размеры готовых `runtime_grids`;
+- валидность ссылок `world_graph.json` на places/markers;
+- валидность ссылок `routes.json` на nodes/edges графа;
+- отсутствие blocked collision на start/goal;
 - наличие `object_catalog.md`;
 - корректность manifest-описания.
 

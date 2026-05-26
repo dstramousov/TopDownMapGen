@@ -12,3 +12,4 @@ python3 examples/render_world_preview.py output \
 
 python3 examples/inspect_world_package.py output
 python3 examples/render_world_preview.py output --collision-overlay
+cat output/validation_report.json

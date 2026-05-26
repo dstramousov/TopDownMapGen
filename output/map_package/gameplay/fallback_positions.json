@@ -1,0 +1,1265 @@
+{
+  "schema_version": "gameplay-layer-v1",
+  "kind": "fallback_positions",
+  "items": [
+    {
+      "id": "fallback_0",
+      "zone_id": "goal_encounter_0",
+      "position": [
+        185,
+        15
+      ],
+      "cover_point_id": "cover_459",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_1"
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ]
+    },
+    {
+      "id": "fallback_1",
+      "zone_id": "goal_encounter_0",
+      "position": [
+        181,
+        10
+      ],
+      "cover_point_id": "cover_247",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_1"
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ]
+    },
+    {
+      "id": "fallback_2",
+      "zone_id": "goal_encounter_0",
+      "position": [
+        174,
+        4
+      ],
+      "cover_point_id": "cover_39",
+      "quality": 1.37,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman",
+        "defender"
+      ]
+    },
+    {
+      "id": "fallback_3",
+      "zone_id": "central_ruins_combat_0",
+      "position": [
+        107,
+        92
+      ],
+      "cover_point_id": "cover_2283",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_26"
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "grenadier"
+      ]
+    },
+    {
+      "id": "fallback_4",
+      "zone_id": "central_ruins_combat_0",
+      "position": [
+        114,
+        95
+      ],
+      "cover_point_id": "cover_2351",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_26"
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "grenadier"
+      ]
+    },
+    {
+      "id": "fallback_5",
+      "zone_id": "central_ruins_combat_0",
+      "position": [
+        110,
+        101
+      ],
+      "cover_point_id": "cover_2485",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_9"
+      ],
+      "preferred_roles": [
+        "rifleman",
+        "grenadier"
+      ]
+    },
+    {
+      "id": "fallback_6",
+      "zone_id": "side_ruin_encounter_0",
+      "position": [
+        171,
+        142
+      ],
+      "cover_point_id": "cover_3475",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_13"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_7",
+      "zone_id": "side_ruin_encounter_0",
+      "position": [
+        178,
+        149
+      ],
+      "cover_point_id": "cover_3727",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_13"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_8",
+      "zone_id": "side_ruin_encounter_0",
+      "position": [
+        175,
+        141
+      ],
+      "cover_point_id": "cover_3452",
+      "quality": 0.98,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_13"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_9",
+      "zone_id": "side_ruin_encounter_1",
+      "position": [
+        124,
+        13
+      ],
+      "cover_point_id": "cover_329",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_16"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_10",
+      "zone_id": "side_ruin_encounter_1",
+      "position": [
+        117,
+        6
+      ],
+      "cover_point_id": "cover_71",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_11",
+      "zone_id": "side_ruin_encounter_1",
+      "position": [
+        121,
+        18
+      ],
+      "cover_point_id": "cover_548",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_16"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_12",
+      "zone_id": "side_ruin_encounter_2",
+      "position": [
+        142,
+        99
+      ],
+      "cover_point_id": "cover_2443",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_3"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_13",
+      "zone_id": "side_ruin_encounter_2",
+      "position": [
+        138,
+        105
+      ],
+      "cover_point_id": "cover_2580",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_3"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_14",
+      "zone_id": "side_ruin_encounter_2",
+      "position": [
+        144,
+        112
+      ],
+      "cover_point_id": "cover_2789",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_22"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_15",
+      "zone_id": "side_ruin_encounter_3",
+      "position": [
+        5,
+        87
+      ],
+      "cover_point_id": "cover_2136",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_24"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_16",
+      "zone_id": "side_ruin_encounter_3",
+      "position": [
+        11,
+        88
+      ],
+      "cover_point_id": "cover_2169",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_24"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_17",
+      "zone_id": "side_ruin_encounter_3",
+      "position": [
+        2,
+        83
+      ],
+      "cover_point_id": "cover_2039",
+      "quality": 1.37,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_18",
+      "zone_id": "forest_ambush_0",
+      "position": [
+        112,
+        65
+      ],
+      "cover_point_id": "cover_1726",
+      "quality": 1.27,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_19",
+      "zone_id": "forest_ambush_0",
+      "position": [
+        105,
+        72
+      ],
+      "cover_point_id": "cover_1820",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_26"
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_20",
+      "zone_id": "forest_ambush_0",
+      "position": [
+        113,
+        80
+      ],
+      "cover_point_id": "cover_1967",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_26"
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_21",
+      "zone_id": "side_ruin_encounter_4",
+      "position": [
+        88,
+        176
+      ],
+      "cover_point_id": "cover_4482",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_31"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_22",
+      "zone_id": "side_ruin_encounter_4",
+      "position": [
+        85,
+        171
+      ],
+      "cover_point_id": "cover_4336",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_31"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_23",
+      "zone_id": "side_ruin_encounter_4",
+      "position": [
+        87,
+        180
+      ],
+      "cover_point_id": "cover_4634",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_31"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_24",
+      "zone_id": "side_ruin_encounter_5",
+      "position": [
+        110,
+        47
+      ],
+      "cover_point_id": "cover_1288",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_34"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_25",
+      "zone_id": "side_ruin_encounter_5",
+      "position": [
+        119,
+        47
+      ],
+      "cover_point_id": "cover_1296",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_34"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_26",
+      "zone_id": "side_ruin_encounter_5",
+      "position": [
+        110,
+        55
+      ],
+      "cover_point_id": "cover_1569",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_34"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_27",
+      "zone_id": "forest_ambush_1",
+      "position": [
+        121,
+        136
+      ],
+      "cover_point_id": "cover_3328",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_26"
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_28",
+      "zone_id": "forest_ambush_1",
+      "position": [
+        113,
+        144
+      ],
+      "cover_point_id": "cover_3552",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_28"
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_29",
+      "zone_id": "forest_ambush_1",
+      "position": [
+        112,
+        132
+      ],
+      "cover_point_id": "cover_3195",
+      "quality": 1.07,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_30",
+      "zone_id": "side_ruin_encounter_6",
+      "position": [
+        84,
+        21
+      ],
+      "cover_point_id": "cover_624",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_16"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_31",
+      "zone_id": "side_ruin_encounter_6",
+      "position": [
+        79,
+        24
+      ],
+      "cover_point_id": "cover_709",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_16"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_32",
+      "zone_id": "side_ruin_encounter_6",
+      "position": [
+        66,
+        21
+      ],
+      "cover_point_id": "cover_618",
+      "quality": 1.37,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_33",
+      "zone_id": "side_ruin_encounter_7",
+      "position": [
+        43,
+        38
+      ],
+      "cover_point_id": "cover_1036",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_34",
+      "zone_id": "side_ruin_encounter_7",
+      "position": [
+        38,
+        44
+      ],
+      "cover_point_id": "cover_1210",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_35",
+      "zone_id": "side_ruin_encounter_7",
+      "position": [
+        46,
+        45
+      ],
+      "cover_point_id": "cover_1231",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_36",
+      "zone_id": "side_ruin_encounter_8",
+      "position": [
+        187,
+        165
+      ],
+      "cover_point_id": "cover_4136",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_12"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_37",
+      "zone_id": "side_ruin_encounter_8",
+      "position": [
+        188,
+        174
+      ],
+      "cover_point_id": "cover_4428",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_12"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_38",
+      "zone_id": "side_ruin_encounter_8",
+      "position": [
+        178,
+        167
+      ],
+      "cover_point_id": "cover_4222",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_12"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_39",
+      "zone_id": "side_ruin_encounter_9",
+      "position": [
+        51,
+        165
+      ],
+      "cover_point_id": "cover_4105",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_40",
+      "zone_id": "side_ruin_encounter_9",
+      "position": [
+        57,
+        166
+      ],
+      "cover_point_id": "cover_4153",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_41",
+      "zone_id": "side_ruin_encounter_9",
+      "position": [
+        48,
+        168
+      ],
+      "cover_point_id": "cover_4242",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_42",
+      "zone_id": "side_ruin_encounter_10",
+      "position": [
+        76,
+        151
+      ],
+      "cover_point_id": "cover_3768",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_31"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_43",
+      "zone_id": "side_ruin_encounter_10",
+      "position": [
+        73,
+        141
+      ],
+      "cover_point_id": "cover_3433",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_28"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_44",
+      "zone_id": "side_ruin_encounter_10",
+      "position": [
+        83,
+        145
+      ],
+      "cover_point_id": "cover_3580",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_31"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_45",
+      "zone_id": "forest_ambush_2",
+      "position": [
+        44,
+        118
+      ],
+      "cover_point_id": "cover_2897",
+      "quality": 1.07,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_46",
+      "zone_id": "forest_ambush_3",
+      "position": [
+        85,
+        110
+      ],
+      "cover_point_id": "cover_2727",
+      "quality": 1.1,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_9"
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_47",
+      "zone_id": "forest_ambush_3",
+      "position": [
+        87,
+        113
+      ],
+      "cover_point_id": "cover_2805",
+      "quality": 1.1,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_9"
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_48",
+      "zone_id": "forest_ambush_3",
+      "position": [
+        85,
+        116
+      ],
+      "cover_point_id": "cover_2861",
+      "quality": 1.1,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_20"
+      ],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_49",
+      "zone_id": "forest_ambush_4",
+      "position": [
+        107,
+        170
+      ],
+      "cover_point_id": "cover_4318",
+      "quality": 1.27,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_50",
+      "zone_id": "forest_ambush_4",
+      "position": [
+        112,
+        174
+      ],
+      "cover_point_id": "cover_4421",
+      "quality": 1.27,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_51",
+      "zone_id": "forest_ambush_4",
+      "position": [
+        101,
+        170
+      ],
+      "cover_point_id": "cover_4317",
+      "quality": 1.15,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "flanker",
+        "scout"
+      ]
+    },
+    {
+      "id": "fallback_52",
+      "zone_id": "side_ruin_encounter_11",
+      "position": [
+        182,
+        48
+      ],
+      "cover_point_id": "cover_1343",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_1"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_53",
+      "zone_id": "side_ruin_encounter_11",
+      "position": [
+        175,
+        40
+      ],
+      "cover_point_id": "cover_1130",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_1"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_54",
+      "zone_id": "side_ruin_encounter_11",
+      "position": [
+        178,
+        49
+      ],
+      "cover_point_id": "cover_1368",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_35"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_55",
+      "zone_id": "side_ruin_encounter_12",
+      "position": [
+        53,
+        141
+      ],
+      "cover_point_id": "cover_3430",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_56",
+      "zone_id": "side_ruin_encounter_12",
+      "position": [
+        59,
+        145
+      ],
+      "cover_point_id": "cover_3574",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_30"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_57",
+      "zone_id": "side_ruin_encounter_12",
+      "position": [
+        46,
+        150
+      ],
+      "cover_point_id": "cover_3734",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_58",
+      "zone_id": "side_ruin_encounter_13",
+      "position": [
+        147,
+        7
+      ],
+      "cover_point_id": "cover_112",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_17"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_59",
+      "zone_id": "side_ruin_encounter_13",
+      "position": [
+        136,
+        7
+      ],
+      "cover_point_id": "cover_110",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_17"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_60",
+      "zone_id": "side_ruin_encounter_13",
+      "position": [
+        133,
+        13
+      ],
+      "cover_point_id": "cover_331",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_17"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_61",
+      "zone_id": "side_ruin_encounter_14",
+      "position": [
+        140,
+        71
+      ],
+      "cover_point_id": "cover_1804",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_27"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_62",
+      "zone_id": "side_ruin_encounter_14",
+      "position": [
+        135,
+        75
+      ],
+      "cover_point_id": "cover_1868",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_27"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_63",
+      "zone_id": "side_ruin_encounter_14",
+      "position": [
+        151,
+        77
+      ],
+      "cover_point_id": "cover_1909",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_27"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_64",
+      "zone_id": "side_ruin_encounter_15",
+      "position": [
+        140,
+        143
+      ],
+      "cover_point_id": "cover_3498",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_65",
+      "zone_id": "side_ruin_encounter_15",
+      "position": [
+        139,
+        150
+      ],
+      "cover_point_id": "cover_3754",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_66",
+      "zone_id": "side_ruin_encounter_15",
+      "position": [
+        146,
+        154
+      ],
+      "cover_point_id": "cover_3864",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_67",
+      "zone_id": "side_ruin_encounter_16",
+      "position": [
+        47,
+        83
+      ],
+      "cover_point_id": "cover_2055",
+      "quality": 1.5,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_23"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_68",
+      "zone_id": "side_ruin_encounter_16",
+      "position": [
+        39,
+        88
+      ],
+      "cover_point_id": "cover_2174",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_23"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_69",
+      "zone_id": "side_ruin_encounter_16",
+      "position": [
+        40,
+        81
+      ],
+      "cover_point_id": "cover_2002",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_70",
+      "zone_id": "side_ruin_encounter_17",
+      "position": [
+        21,
+        7
+      ],
+      "cover_point_id": "cover_96",
+      "quality": 1.37,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_71",
+      "zone_id": "side_ruin_encounter_17",
+      "position": [
+        13,
+        15
+      ],
+      "cover_point_id": "cover_411",
+      "quality": 1.37,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_72",
+      "zone_id": "side_ruin_encounter_17",
+      "position": [
+        29,
+        15
+      ],
+      "cover_point_id": "cover_423",
+      "quality": 1.37,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_73",
+      "zone_id": "side_ruin_encounter_18",
+      "position": [
+        10,
+        111
+      ],
+      "cover_point_id": "cover_2744",
+      "quality": 1.43,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_24"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_74",
+      "zone_id": "side_ruin_encounter_18",
+      "position": [
+        4,
+        115
+      ],
+      "cover_point_id": "cover_2840",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [
+        "flank_route_24"
+      ],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    },
+    {
+      "id": "fallback_75",
+      "zone_id": "side_ruin_encounter_18",
+      "position": [
+        10,
+        118
+      ],
+      "cover_point_id": "cover_2890",
+      "quality": 1.25,
+      "fallback_type": "covered_retreat",
+      "linked_flank_routes": [],
+      "preferred_roles": [
+        "rifleman"
+      ]
+    }
+  ]
+}

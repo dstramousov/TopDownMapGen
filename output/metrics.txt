@@ -1,0 +1,38 @@
+Top-down worldgen v0.19 refactor metrics
+
+version: clean_refactor
+map_width_tiles: 192
+map_height_tiles: 192
+resolved_seed: 87936569934845906
+tile_size_px: 16
+engine_time_ms: 1753.37
+tactical_time_ms: 2577.97
+render_time_ms: 3476.14
+total_time_ms: 7808.08
+render_enabled: True
+debug_images_enabled: True
+rendered_layers: ['base', 'combat', 'cover', 'choke', 'flank', 'spawn', 'fallback', 'runtime_objects', 'all']
+objective_profile: clear_map
+generation_tuning: {'water_scale': 5.0, 'water_patch_count_scale': 1.0, 'water_patch_size_scale': 2.0, 'water_patch_density': 0.62, 'forest_scale': 1.0, 'open_space_scale': 1.0, 'ruins_scale': 1.0, 'buildings_scale': 1.0, 'road_width_scale': 1.0, 'decoration_scale': 1.0, 'bunker_scale': 1.0}
+spawn_selection_policy: one_initial_spawn_per_combat_zone
+candidate_spawn_count: 78
+selected_spawn_count: 27
+combat_zones: 27
+cover_points: 480
+choke_points: 32
+flank_routes: 21
+enemy_spawn_zones: 27
+fallback_positions: 76
+runtime_objects: 122
+runtime_object_types: 25
+runtime_objects_summary: {'total': 122, 'by_type': {'abandoned_backpack': 4, 'abandoned_cart': 3, 'ammo_cache': 4, 'big_dead_tree': 2, 'broken_generator': 2, 'broken_radio_mast': 1, 'buried_bunker_2x2': 2, 'buried_bunker_2x3': 2, 'bush_thicket': 21, 'cable_spool': 3, 'car_wreck': 3, 'dead_campfire': 3, 'earth_berm': 4, 'fallen_log': 12, 'field_tent': 3, 'medkit_cache': 3, 'old_checkpoint': 1, 'old_grave_marker': 2, 'old_well': 2, 'pit': 3, 'rusted_barrel': 8, 'scrap_pile': 10, 'stone_chunk': 15, 'trench': 6, 'warning_sign': 3}, 'trench_shapes': {'l_shape': 1, 'line': 5}, 'landmarks': {'total': 4, 'by_type': {'big_dead_tree': 2, 'broken_radio_mast': 1, 'old_checkpoint': 1}}}
+places: 5
+places_summary: {'total': 5, 'by_type': {'abandoned_checkpoint': 1, 'broken_radio_site': 1, 'bunker_site': 1, 'forest_obstruction': 1, 'small_ruin_site': 1}, 'by_encounter_type': {'bunker_encounter': 1, 'landmark_encounter': 1, 'roadside_encounter': 1, 'ruin_encounter': 1, 'traversal_obstacle': 1}}
+elevation_cells: 63
+original_cover_points: 4914
+selected_cover_points: 480
+connectivity_components_before: 1
+connectivity_components_after: 1
+connectivity_filled_components: 0
+connectivity_connected_components: 0
+connectivity_tiles_changed: 0

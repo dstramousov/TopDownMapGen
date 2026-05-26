@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from top_down_worldgen.export.map_package import write_map_package
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.tactical.runtime_objects import (
     RUNTIME_OBJECT_TYPE_BY_NAME,
@@ -231,6 +232,18 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
         "by_type": {"old_defensive_position": 1},
     }
 
+    write_map_package(
+        outputs=outputs,
+        runtime_data=runtime_data,
+        rows=runtime_data["map"]["tile_grid"],
+        width=runtime_data["map"]["width"],
+        height=runtime_data["map"]["height"],
+        tile_size_px=16,
+        seed="test",
+        resolved_seed=42,
+        profile="test",
+    )
+
     report = build_validation_report(
         outputs=outputs,
         rows=["SG+++", "+++++", "+++++"],
@@ -268,6 +281,18 @@ def test_validation_report_rejects_broken_tile_counts(tmp_path: Path) -> None:
         "flank_routes": [],
         "choke_points": [],
     }
+
+    write_map_package(
+        outputs=outputs,
+        runtime_data=runtime_data,
+        rows=runtime_data["map"]["tile_grid"],
+        width=runtime_data["map"]["width"],
+        height=runtime_data["map"]["height"],
+        tile_size_px=16,
+        seed="test",
+        resolved_seed=42,
+        profile="test",
+    )
 
     report = build_validation_report(
         outputs=outputs,
