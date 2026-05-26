@@ -17,6 +17,7 @@ from top_down_worldgen.manifest import (
     OBJECT_RENDER_HINTS_SCHEMA_VERSION,
     RENDER_PROFILE_SCHEMA_VERSION,
     RUNTIME_GRIDS_SCHEMA_VERSION,
+    WORLD_GRAPH_SCHEMA_VERSION,
     TILE_RENDER_HINTS_SCHEMA_VERSION,
     PLACES_SCHEMA_VERSION,
     START_GOAL_LAYER_SCHEMA_VERSION,
@@ -165,6 +166,16 @@ def write_map_package(
     write_json(markers, outputs.map_package_markers)
     write_json(runtime_grids, outputs.map_package_runtime_grids)
 
+    places_items = _list(runtime_data.get("places"))
+    world_graph = _build_world_graph(
+        points=points,
+        markers=markers,
+        places=places_items,
+        width=width,
+        height=height,
+    )
+    write_json(world_graph, outputs.map_package_world_graph)
+
     for key, filename in _GAMEPLAY_FILES:
         write_json(
             {
@@ -188,7 +199,7 @@ def write_map_package(
         {
             "schema_version": PLACES_SCHEMA_VERSION,
             "kind": "places",
-            "items": _list(runtime_data.get("places")),
+            "items": places_items,
             "summary": _dict(runtime_data.get("places_summary")),
         },
         outputs.map_package_places,
@@ -240,6 +251,7 @@ def write_map_package(
             "points": points,
             "markers": "markers.json",
             "runtime_grids": "runtime_grids.json",
+            "world_graph": "world_graph.json",
             "layers": {
                 "tile_grid": "layers/tile_grid.json",
                 "terrain": "layers/terrain.json",
@@ -287,6 +299,7 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_map,
         outputs.map_package_markers,
         outputs.map_package_runtime_grids,
+        outputs.map_package_world_graph,
         outputs.map_package_tile_grid,
         outputs.map_package_terrain,
         outputs.map_package_movement_costs,
@@ -308,6 +321,399 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_object_render_hints,
     ]
 
+
+
+def _build_world_graph(
+    *,
+    points: dict[str, dict[str, int] | None],
+    markers: dict[str, Any],
+    places: list[Any],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    """Build a compact graph of semantic world locations.
+
+    Args:
+        points: Primary map points extracted from the tile grid.
+        markers: Marker package object.
+        places: Semantic place objects.
+        width: Map width in tiles.
+        height: Map height in tiles.
+
+    Returns:
+        World graph JSON object.
+    """
+    nodes: list[dict[str, Any]] = []
+    place_nodes: dict[str, dict[str, Any]] = {}
+    marker_nodes: dict[str, dict[str, Any]] = {}
+
+    for place in places:
+        if not isinstance(place, dict):
+            continue
+        node = _world_graph_place_node(place)
+        if node is None:
+            continue
+        nodes.append(node)
+        place_nodes[node["id"]] = node
+
+    marker_items = _list(markers.get("items"))
+    for marker in marker_items:
+        if not isinstance(marker, dict):
+            continue
+        node = _world_graph_marker_node(marker)
+        if node is None:
+            continue
+        nodes.append(node)
+        marker_nodes[node["id"]] = node
+
+    edges: list[dict[str, Any]] = []
+    edge_keys: set[tuple[str, str, str]] = set()
+    for place in places:
+        if not isinstance(place, dict):
+            continue
+        source = place.get("id")
+        if not isinstance(source, str) or source not in place_nodes:
+            continue
+        for target in _string_list(place.get("connected_places")):
+            if target not in place_nodes:
+                continue
+            _append_world_graph_edge(
+                edges=edges,
+                edge_keys=edge_keys,
+                source=source,
+                target=target,
+                edge_type="place_connection",
+                nodes_by_id=place_nodes,
+            )
+
+    all_place_nodes = list(place_nodes.values())
+    start_id = _nearest_marker_node_id(
+        marker_nodes,
+        marker_type="start",
+        fallback=points.get("start"),
+    )
+    goal_id = _nearest_marker_node_id(
+        marker_nodes,
+        marker_type="goal",
+        fallback=points.get("goal"),
+    )
+    if start_id is not None and all_place_nodes:
+        nearest = _nearest_node(marker_nodes[start_id], all_place_nodes)
+        if nearest is not None:
+            _append_world_graph_edge(
+                edges=edges,
+                edge_keys=edge_keys,
+                source=start_id,
+                target=nearest["id"],
+                edge_type="start_connection",
+                nodes_by_id={**place_nodes, **marker_nodes},
+            )
+    if goal_id is not None and all_place_nodes:
+        nearest = _nearest_node(marker_nodes[goal_id], all_place_nodes)
+        if nearest is not None:
+            _append_world_graph_edge(
+                edges=edges,
+                edge_keys=edge_keys,
+                source=nearest["id"],
+                target=goal_id,
+                edge_type="goal_connection",
+                nodes_by_id={**place_nodes, **marker_nodes},
+            )
+
+    node_ids = [node["id"] for node in nodes]
+    main_path = _build_main_path(
+        start_id=start_id,
+        goal_id=goal_id,
+        place_nodes=place_nodes,
+        marker_nodes=marker_nodes,
+        edges=edges,
+    )
+    main_path_nodes = set(_string_list(main_path.get("node_ids")))
+    side_paths = _build_side_paths(place_nodes=place_nodes, main_path_nodes=main_path_nodes)
+    dead_ends = _build_dead_ends(edges=edges, node_ids=node_ids, main_path_nodes=main_path_nodes)
+    secret_areas = _build_secret_areas(place_nodes=place_nodes)
+
+    return {
+        "schema_version": WORLD_GRAPH_SCHEMA_VERSION,
+        "kind": "world_graph",
+        "coordinate_space": "tile",
+        "width": width,
+        "height": height,
+        "nodes": nodes,
+        "edges": edges,
+        "main_path": main_path,
+        "side_paths": side_paths,
+        "dead_ends": dead_ends,
+        "secret_areas": secret_areas,
+        "summary": {
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "place_node_count": len(place_nodes),
+            "marker_node_count": len(marker_nodes),
+            "side_path_count": len(side_paths),
+            "dead_end_count": len(dead_ends),
+            "secret_area_count": len(secret_areas),
+        },
+        "notes": [
+            "This graph is a semantic world/navigation contract, not a pathfinding grid.",
+            "Edges describe intended location connectivity; use runtime grids for exact movement.",
+        ],
+    }
+
+
+def _world_graph_place_node(place: dict[str, Any]) -> dict[str, Any] | None:
+    place_id = place.get("id")
+    place_type = place.get("type")
+    if not isinstance(place_id, str) or not isinstance(place_type, str):
+        return None
+    position = _mapping_point(place.get("center")) or _bounds_center(place.get("bounds"))
+    if position is None:
+        return None
+    return {
+        "id": place_id,
+        "type": place_type,
+        "node_type": "place",
+        "source": "places",
+        "place_ref": place_id,
+        "position": {"x": position[0], "y": position[1]},
+        "bounds": _dict(place.get("bounds")),
+        "entrances": _list(place.get("entrances")),
+        "danger_level": place.get("danger_level", 0.0),
+        "loot_level": place.get("loot_level", 0.0),
+        "story_role": place.get("story_role"),
+        "encounter_type": place.get("encounter_type"),
+        "tags": sorted(set(_string_list(place.get("tags"))) | set(_string_list(place.get("biome_tags")))),
+    }
+
+
+def _world_graph_marker_node(marker: dict[str, Any]) -> dict[str, Any] | None:
+    marker_id = marker.get("id")
+    marker_type = marker.get("type")
+    position = _mapping_point(marker.get("position"))
+    if not isinstance(marker_id, str) or not isinstance(marker_type, str) or position is None:
+        return None
+    node_id = f"marker:{marker_id}"
+    return {
+        "id": node_id,
+        "type": marker_type,
+        "node_type": "marker",
+        "source": "markers",
+        "marker_ref": marker_id,
+        "object_ref": marker.get("object_ref"),
+        "position": {"x": position[0], "y": position[1]},
+        "tags": sorted(set(_string_list(marker.get("tags"))) | {marker_type}),
+    }
+
+
+def _append_world_graph_edge(
+    *,
+    edges: list[dict[str, Any]],
+    edge_keys: set[tuple[str, str, str]],
+    source: str,
+    target: str,
+    edge_type: str,
+    nodes_by_id: dict[str, dict[str, Any]],
+) -> None:
+    if source == target:
+        return
+    ordered = tuple(sorted((source, target)))
+    key = (ordered[0], ordered[1], edge_type)
+    if key in edge_keys:
+        return
+    source_node = nodes_by_id.get(source)
+    target_node = nodes_by_id.get(target)
+    if source_node is None or target_node is None:
+        return
+    distance = _node_distance(source_node, target_node)
+    edge_id = f"edge_{len(edges):03d}"
+    edges.append(
+        {
+            "id": edge_id,
+            "source": source,
+            "target": target,
+            "type": edge_type,
+            "bidirectional": True,
+            "cost_tiles": distance,
+        },
+    )
+    edge_keys.add(key)
+
+
+def _nearest_marker_node_id(
+    marker_nodes: dict[str, dict[str, Any]],
+    *,
+    marker_type: str,
+    fallback: dict[str, int] | None,
+) -> str | None:
+    for node_id, node in marker_nodes.items():
+        if node.get("type") == marker_type:
+            return node_id
+    if fallback is None:
+        return None
+    return None
+
+
+def _nearest_node(
+    source: dict[str, Any],
+    candidates: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    if not candidates:
+        return None
+    return min(candidates, key=lambda node: _node_distance(source, node))
+
+
+def _build_main_path(
+    *,
+    start_id: str | None,
+    goal_id: str | None,
+    place_nodes: dict[str, dict[str, Any]],
+    marker_nodes: dict[str, dict[str, Any]],
+    edges: list[dict[str, Any]],
+) -> dict[str, Any]:
+    nodes_by_id = {**place_nodes, **marker_nodes}
+    if start_id is None or goal_id is None:
+        return {"node_ids": [], "edge_ids": [], "complete": False}
+    ordered_places = sorted(
+        place_nodes.values(),
+        key=lambda node: _node_distance(nodes_by_id[start_id], node),
+    )
+    if ordered_places:
+        midpoint_goal = nodes_by_id[goal_id]
+        ordered_places = sorted(
+            ordered_places,
+            key=lambda node: (
+                _node_distance(nodes_by_id[start_id], node)
+                + _node_distance(node, midpoint_goal)
+            ),
+        )
+        # Keep the path compact: start, up to three semantic places, goal.
+        node_ids = [start_id, *[node["id"] for node in ordered_places[:3]], goal_id]
+    else:
+        node_ids = [start_id, goal_id]
+    edge_ids = _edge_ids_for_node_sequence(edges=edges, node_ids=node_ids)
+    return {
+        "node_ids": node_ids,
+        "edge_ids": edge_ids,
+        "complete": bool(node_ids and node_ids[0] == start_id and node_ids[-1] == goal_id),
+        "description": "Approximate intended semantic route through key places.",
+    }
+
+
+def _edge_ids_for_node_sequence(*, edges: list[dict[str, Any]], node_ids: list[str]) -> list[str]:
+    edge_ids: list[str] = []
+    for source, target in zip(node_ids, node_ids[1:], strict=False):
+        edge_id = _find_edge_id(edges=edges, source=source, target=target)
+        if edge_id is not None:
+            edge_ids.append(edge_id)
+    return edge_ids
+
+
+def _find_edge_id(*, edges: list[dict[str, Any]], source: str, target: str) -> str | None:
+    pair = {source, target}
+    for edge in edges:
+        if {edge.get("source"), edge.get("target")} == pair:
+            edge_id = edge.get("id")
+            return edge_id if isinstance(edge_id, str) else None
+    return None
+
+
+def _build_side_paths(
+    *,
+    place_nodes: dict[str, dict[str, Any]],
+    main_path_nodes: set[str],
+) -> list[dict[str, Any]]:
+    side_paths: list[dict[str, Any]] = []
+    for node_id, node in sorted(place_nodes.items()):
+        if node_id in main_path_nodes:
+            continue
+        path_type = "side_path"
+        tags = set(_string_list(node.get("tags")))
+        if node.get("loot_level", 0.0) and float(node.get("loot_level", 0.0)) >= 0.6:
+            path_type = "loot_side_path"
+        if "hidden" in tags or "secret" in tags:
+            path_type = "hidden_path"
+        side_paths.append(
+            {
+                "id": f"side_path_{len(side_paths):03d}",
+                "type": path_type,
+                "node_ids": [node_id],
+                "target_place": node_id,
+            },
+        )
+    return side_paths
+
+
+def _build_dead_ends(
+    *,
+    edges: list[dict[str, Any]],
+    node_ids: list[str],
+    main_path_nodes: set[str],
+) -> list[dict[str, Any]]:
+    degree = {node_id: 0 for node_id in node_ids}
+    for edge in edges:
+        source = edge.get("source")
+        target = edge.get("target")
+        if isinstance(source, str) and source in degree:
+            degree[source] += 1
+        if isinstance(target, str) and target in degree:
+            degree[target] += 1
+    return [
+        {
+            "id": f"dead_end_{index:03d}",
+            "node_id": node_id,
+            "reason": "single_connection_non_main_path",
+        }
+        for index, node_id in enumerate(sorted(node_ids))
+        if degree.get(node_id, 0) <= 1 and node_id not in main_path_nodes
+    ]
+
+
+def _build_secret_areas(place_nodes: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    secret_areas: list[dict[str, Any]] = []
+    for node_id, node in sorted(place_nodes.items()):
+        tags = set(_string_list(node.get("tags")))
+        story_role = node.get("story_role")
+        loot_level = node.get("loot_level")
+        if "secret" not in tags and story_role != "secret" and not (
+            isinstance(loot_level, int | float) and loot_level >= 0.75
+        ):
+            continue
+        secret_areas.append(
+            {
+                "id": f"secret_area_{len(secret_areas):03d}",
+                "node_id": node_id,
+                "reason": "secret_tag_or_high_loot",
+            },
+        )
+    return secret_areas
+
+
+def _node_distance(source: dict[str, Any], target: dict[str, Any]) -> int:
+    source_pos = _mapping_point(source.get("position")) or (0, 0)
+    target_pos = _mapping_point(target.get("position")) or (0, 0)
+    return abs(source_pos[0] - target_pos[0]) + abs(source_pos[1] - target_pos[1])
+
+
+def _mapping_point(value: Any) -> tuple[int, int] | None:
+    if not isinstance(value, dict):
+        return None
+    x = value.get("x")
+    y = value.get("y")
+    if isinstance(x, int) and isinstance(y, int):
+        return x, y
+    return None
+
+
+def _bounds_center(value: Any) -> tuple[int, int] | None:
+    bounds = _dict(value)
+    try:
+        min_x = int(bounds["min_x"])
+        min_y = int(bounds["min_y"])
+        max_x = int(bounds["max_x"])
+        max_y = int(bounds["max_y"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    return round((min_x + max_x) / 2), round((min_y + max_y) / 2)
 
 
 def _build_markers(

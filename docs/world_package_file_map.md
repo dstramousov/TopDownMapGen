@@ -157,3 +157,18 @@ Non-critical quality violations caused by aggressive tuning are reported as warn
 - `height_grid`
 
 A game may load these grids directly instead of deriving them from terrain, objects, and catalogs on startup. Source layers are still exported for debugging, validation, and editor use.
+
+## `map_package/world_graph.json`
+
+`map_package/world_graph.json` contains the semantic graph of the generated world.
+It is a higher-level navigation and pacing contract built from places and markers.
+It contains:
+
+- `nodes`: semantic places and important markers such as start/goal.
+- `edges`: intended links between nodes.
+- `main_path`: approximate start-to-goal semantic route.
+- `side_paths`: optional branches through non-main places.
+- `dead_ends`: low-degree nodes that can become loot/story branches.
+- `secret_areas`: places marked or inferred as high-reward/secret areas.
+
+Use `runtime_grids.json` for exact movement/pathfinding and `world_graph.json` for world structure.

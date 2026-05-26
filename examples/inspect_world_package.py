@@ -104,6 +104,9 @@ class InspectionReport:
         elevation: Elevation summary.
         marker_count: Number of gameplay markers.
         runtime_grid_count: Number of ready-to-use runtime grids.
+        world_graph_node_count: Number of semantic world graph nodes.
+        world_graph_edge_count: Number of semantic world graph edges.
+        world_graph_main_path_length: Number of nodes in the main semantic path.
         gameplay_counts: Per-gameplay-layer item counts.
         runtime_object_count: Number of runtime objects.
         runtime_object_type_count: Number of runtime object types used by instances.
@@ -136,6 +139,9 @@ class InspectionReport:
     elevation: ElevationStats
     marker_count: int
     runtime_grid_count: int
+    world_graph_node_count: int
+    world_graph_edge_count: int
+    world_graph_main_path_length: int
     gameplay_counts: dict[str, int]
     runtime_object_count: int
     runtime_object_type_count: int
@@ -189,6 +195,10 @@ def inspect_world_package(path: Path) -> InspectionReport:
     runtime_grids = _read_optional_package_object(
         package_dir,
         map_index.get("runtime_grids"),
+    )
+    world_graph = _read_optional_package_object(
+        package_dir,
+        map_index.get("world_graph"),
     )
 
     runtime_objects = _read_required_package_object(
@@ -269,6 +279,11 @@ def inspect_world_package(path: Path) -> InspectionReport:
         elevation=elevation_stats,
         marker_count=len(_optional_list(markers.get("items"))),
         runtime_grid_count=len(_optional_object(runtime_grids.get("grids"))),
+        world_graph_node_count=len(_optional_list(world_graph.get("nodes"))),
+        world_graph_edge_count=len(_optional_list(world_graph.get("edges"))),
+        world_graph_main_path_length=len(
+            _optional_list(_optional_object(world_graph.get("main_path")).get("node_ids")),
+        ),
         gameplay_counts=gameplay_counts,
         runtime_object_count=len(runtime_items),
         runtime_object_type_count=len(_unique_types(runtime_items)),
@@ -379,6 +394,12 @@ def print_report(report: InspectionReport) -> None:
     )
     LOGGER.info("- markers: OK, count=%s", report.marker_count)
     LOGGER.info("- runtime_grids: OK, grids=%s", report.runtime_grid_count)
+    LOGGER.info(
+        "- world_graph: OK, nodes=%s, edges=%s, main_path_nodes=%s",
+        report.world_graph_node_count,
+        report.world_graph_edge_count,
+        report.world_graph_main_path_length,
+    )
     LOGGER.info("")
     LOGGER.info("Objects:")
     LOGGER.info(

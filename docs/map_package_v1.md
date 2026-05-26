@@ -409,3 +409,8 @@ The `x`, `y`, `position`, and `anchor` fields identify the object's anchor tile.
 `map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
 
 Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
+
+### World graph
+
+`world_graph.json` is the semantic graph of the map package. It links places and markers into a world-level structure.
+It is intended for pacing, routing, encounter planning, and debugging. It is not a tile-level pathfinding grid.

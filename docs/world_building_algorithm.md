@@ -213,3 +213,17 @@ Non-critical quality violations caused by aggressive tuning are reported as warn
 For a quick runtime integration, load `map_package/runtime_grids.json` after `map_package/map.json`. The file contains movement, collision, projectile, vision, cover, concealment, and height grids with the same dimensions as the map.
 
 Use `map_package/markers.json` for start, goal, loot, story, point-of-interest, and defensive markers. Do not parse markers from `terrain.json`; terrain describes the ground, markers describe gameplay points.
+
+## Semantic world graph
+
+After loading markers, runtime grids, and places, a consumer may load `map_package/world_graph.json`.
+This file is not a replacement for pathfinding. It describes the intended semantic structure of the world:
+main route, side branches, dead ends, and secret/high-reward areas.
+
+Recommended usage:
+
+1. Load `world_graph.json` from the path listed in `map_package/map.json`.
+2. Use `nodes` to show or reason about important semantic locations.
+3. Use `main_path.node_ids` as the high-level route from start to goal.
+4. Use `side_paths` and `dead_ends` for optional exploration, loot, story hooks, or encounter placement.
+5. Use runtime grids to verify exact tile-level movement before committing gameplay decisions.

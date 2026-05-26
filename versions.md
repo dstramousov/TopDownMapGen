@@ -317,3 +317,10 @@
 - Validation расширена проверками v2-полей places: bounds, entrances, metadata и связей между местами.
 - Документация world package и алгоритма построения мира обновлена под places v2.
 - Версия проекта поднята до `0.0.38`.
+
+## v0.0.38 -> v0.0.39
+
+- Добавлен `map_package/world_graph.json` как семантический граф мира.
+- `map.json`, manifest, inspector и validation знают про world graph.
+- Документация world package обновлена под новый файл графа.
+- Версия проекта поднята до `0.0.39`.
