@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import secrets
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +13,72 @@ from .utils.json_io import read_json, write_json
 
 LOGGER = logging.getLogger(__name__)
 UINT64_MAX = (1 << 64) - 1
+MIN_TUNING_SCALE = 0.0
+MAX_TUNING_SCALE = 4.0
+
+
+@dataclass(frozen=True, slots=True)
+class GenerationTuning:
+    """User-facing world density tuning scales."""
+
+    water_scale: float = 1.0
+    forest_scale: float = 1.0
+    open_space_scale: float = 1.0
+    ruins_scale: float = 1.0
+    buildings_scale: float = 1.0
+    road_width_scale: float = 1.0
+    decoration_scale: float = 1.0
+    bunker_scale: float = 1.0
+
+    @classmethod
+    def from_raw(cls, value: Any) -> "GenerationTuning":
+        """Build tuning from an optional config object.
+
+        Args:
+            value: Raw generation_tuning config value.
+
+        Returns:
+            Sanitized tuning instance.
+        """
+        if not isinstance(value, dict):
+            return cls()
+        defaults = cls()
+        fields = defaults.to_dict()
+        sanitized: dict[str, float] = {}
+        for key, default in fields.items():
+            sanitized[key] = _sanitize_scale(value.get(key, default), key=key)
+        return cls(**sanitized)
+
+    def to_dict(self) -> dict[str, float]:
+        """Return JSON-serializable tuning values."""
+        return {
+            "water_scale": self.water_scale,
+            "forest_scale": self.forest_scale,
+            "open_space_scale": self.open_space_scale,
+            "ruins_scale": self.ruins_scale,
+            "buildings_scale": self.buildings_scale,
+            "road_width_scale": self.road_width_scale,
+            "decoration_scale": self.decoration_scale,
+            "bunker_scale": self.bunker_scale,
+        }
+
+
+def _sanitize_scale(value: Any, *, key: str) -> float:
+    """Clamp a user-provided scale to a safe range."""
+    try:
+        scale = float(value)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid generation_tuning.%s=%r; using 1.0", key, value)
+        return 1.0
+    if scale < MIN_TUNING_SCALE or scale > MAX_TUNING_SCALE:
+        LOGGER.warning(
+            "generation_tuning.%s=%s is outside %.1f..%.1f; clamping",
+            key,
+            scale,
+            MIN_TUNING_SCALE,
+            MAX_TUNING_SCALE,
+        )
+    return max(MIN_TUNING_SCALE, min(scale, MAX_TUNING_SCALE))
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +93,7 @@ class PublicConfig:
     chunk_height_tiles: int
     biome_profile: str
     objective_profile: str = "clear_map"
+    generation_tuning: GenerationTuning = field(default_factory=GenerationTuning)
 
     @classmethod
     def from_file(cls, path: Path) -> "PublicConfig":
@@ -59,6 +126,7 @@ class PublicConfig:
                 chunk_height_tiles=int(data["chunk_height_tiles"]),
                 biome_profile=str(data["biome_profile"]),
                 objective_profile=objective_profile,
+                generation_tuning=GenerationTuning.from_raw(data.get("generation_tuning")),
             )
             metrics.update(
                 {
@@ -70,6 +138,7 @@ class PublicConfig:
                     "chunk_height_tiles": config.chunk_height_tiles,
                     "biome_profile": config.biome_profile,
                     "objective_profile": config.objective_profile,
+                    "generation_tuning": config.generation_tuning.to_dict(),
                 },
             )
             return config
@@ -87,6 +156,7 @@ class PublicConfig:
             "chunk_width_tiles": self.chunk_width_tiles,
             "chunk_height_tiles": self.chunk_height_tiles,
             "biome_profile": self.biome_profile,
+            "generation_tuning": self.generation_tuning.to_dict(),
         }
         output = {key: value for key, value in data.items() if key in ENGINE_CONFIG_FIELDS}
         LOGGER.debug("Engine config fields created count=%s", len(output))

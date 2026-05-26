@@ -46,6 +46,7 @@ def write_map_package(
     seed: Any,
     resolved_seed: int,
     profile: str,
+    generation_tuning: dict[str, Any] | None = None,
 ) -> None:
     """Write the structured map package next to legacy outputs.
 
@@ -59,6 +60,7 @@ def write_map_package(
         seed: Raw seed value from public config.
         resolved_seed: Concrete uint64 seed used for the run.
         profile: Objective profile name.
+        generation_tuning: Optional user-facing world density tuning scales.
     """
     outputs.map_package_dir.mkdir(parents=True, exist_ok=True)
     outputs.map_package_layers_dir.mkdir(parents=True, exist_ok=True)
@@ -204,6 +206,7 @@ def write_map_package(
             "seed": seed,
             "resolved_seed": resolved_seed,
             "profile": profile,
+            "generation_tuning": generation_tuning or {},
             "dimensions": {
                 "width_tiles": width,
                 "height_tiles": height,

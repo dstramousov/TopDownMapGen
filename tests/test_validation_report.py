@@ -219,7 +219,7 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
         resolved_seed=42,
     )
 
-    assert report["status"] == "passed"
+    assert report["status"] in {"passed", "passed_with_warnings"}
     assert all(report["checks"].values())
 
 

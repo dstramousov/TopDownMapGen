@@ -200,3 +200,10 @@ Runtime objects must be treated as tile-space entities, not as single points. Ea
 - `visual_bounds`: a rectangular tile-space box used by preview/render consumers to estimate sprite coverage.
 
 Consumers should use `footprint` for placement/overlap checks, `collision_footprint` for movement/projectile/vision rules, and `visual_bounds` only for drawing order or coarse sprite placement. Large objects such as tents, carts, wrecks, wells, checkpoints, trenches, pits, logs, berms, big trees, and buried bunkers may occupy multiple tiles. Bunkers additionally expose `firing_ports` on two opposite sides and mark their interior footprint as elevation `-1`.
+
+
+## Generation tuning
+
+`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These scales are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+
+Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.

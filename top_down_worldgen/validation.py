@@ -43,6 +43,23 @@ from .paths import OutputPaths
 from .utils.json_io import write_json
 
 EDGE_WARNING_MARGIN_TILES = 1
+SOFT_VALIDATION_CHECKS = frozenset(
+    {
+        "combat_zones_non_empty",
+        "runtime_objects_non_empty",
+        "runtime_objects_counts_within_limits",
+        "interest_points_non_empty",
+        "ammo_caches_within_limits",
+        "medkit_caches_within_limits",
+        "trenches_non_empty",
+        "trenches_within_limits",
+        "landmarks_within_limits",
+        "landmarks_min_distance",
+        "places_non_empty",
+        "places_counts_within_limits",
+        "places_min_distance",
+    },
+)
 
 
 def build_validation_report(
@@ -283,15 +300,17 @@ def build_validation_report(
         "places_counts_within_limits": _places_counts_within_limits(runtime_data),
         "places_min_distance": _places_min_distance(runtime_data),
     }
-    errors = [name for name, passed in checks.items() if not passed]
+    failed_checks = [name for name, passed in checks.items() if not passed]
+    errors = [name for name in failed_checks if name not in SOFT_VALIDATION_CHECKS]
     warnings = build_validation_warnings(
         runtime_data=runtime_data,
         width=width,
         height=height,
     )
+    warnings.extend(_soft_check_warnings(failed_checks))
     return {
         "schema_version": VALIDATION_REPORT_SCHEMA_VERSION,
-        "status": "passed" if not errors else "failed",
+        "status": _validation_status(errors=errors, warnings=warnings),
         "checks": checks,
         "errors": errors,
         "warnings": warnings,
@@ -302,6 +321,26 @@ def build_validation_report(
             "artifact_count": _count_existing_outputs(outputs),
         },
     }
+
+
+def _validation_status(*, errors: list[str], warnings: list[dict[str, Any]]) -> str:
+    if errors:
+        return "failed"
+    if warnings:
+        return "passed_with_warnings"
+    return "passed"
+
+
+def _soft_check_warnings(failed_checks: list[str]) -> list[dict[str, Any]]:
+    return [
+        {
+            "code": f"quality.{name}",
+            "level": "warning",
+            "message": f"Soft validation check failed: {name}",
+        }
+        for name in failed_checks
+        if name in SOFT_VALIDATION_CHECKS
+    ]
 
 
 def _map_package_gameplay_exists(outputs: OutputPaths) -> bool:

@@ -8,6 +8,7 @@ ENGINE_CONFIG_FIELDS = {
     "chunk_width_tiles",
     "chunk_height_tiles",
     "biome_profile",
+    "generation_tuning",
 }
 
 WALKABLE_SYMBOLS = "+.bfmwcRSG"

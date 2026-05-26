@@ -33,6 +33,9 @@ TERRAIN_COLORS: dict[str, tuple[int, int, int, int]] = {
 FALLBACK_TERRAIN_COLOR = (96, 96, 96, 255)
 BLOCKED_OVERLAY_COLOR = (0, 0, 0, 80)
 OBJECT_COLOR = (220, 210, 130, 230)
+BUNKER_FILL_COLOR = (94, 78, 62, 245)
+BUNKER_OUTLINE_COLOR = (255, 238, 120, 255)
+BUNKER_TEXT_COLOR = (255, 245, 190, 255)
 OBJECT_FOOTPRINT_COLOR = (255, 236, 150, 120)
 OBJECT_COLLISION_FOOTPRINT_COLOR = (255, 160, 80, 140)
 OBJECT_VISUAL_BOUNDS_COLOR = (255, 255, 255, 105)
@@ -266,6 +269,15 @@ def _draw_runtime_objects(
     for item in objects:
         if not isinstance(item, dict):
             continue
+        if _is_bunker(item):
+            _draw_bunker(
+                draw,
+                item,
+                cell_size_px=cell_size_px,
+                width=width,
+                height=height,
+            )
+            continue
         visual_bounds = _visual_bounds(item.get("visual_bounds"), width=width, height=height)
         if visual_bounds is not None:
             draw.rectangle(
@@ -300,6 +312,53 @@ def _draw_runtime_objects(
         if point is None:
             continue
         _draw_small_marker(draw, point["x"], point["y"], cell_size_px, OBJECT_COLOR)
+
+
+def _is_bunker(item: dict[str, Any]) -> bool:
+    """Return whether an object should use the explicit bunker preview style."""
+    object_type = item.get("type")
+    return isinstance(object_type, str) and object_type.startswith("buried_bunker_")
+
+
+def _draw_bunker(
+    draw: ImageDraw.ImageDraw,
+    item: dict[str, Any],
+    *,
+    cell_size_px: int,
+    width: int,
+    height: int,
+) -> None:
+    """Draw a bunker as bold B-marked footprint cells."""
+    footprint = _footprint(item.get("footprint"), width=width, height=height)
+    collision_footprint = _footprint(
+        item.get("collision_footprint"),
+        width=width,
+        height=height,
+    )
+    cells = collision_footprint or footprint
+    for x, y in cells:
+        rect = _cell_rect(x, y, cell_size_px)
+        draw.rectangle(rect, fill=BUNKER_FILL_COLOR, outline=BUNKER_OUTLINE_COLOR)
+        if cell_size_px >= 6:
+            draw.text(
+                (x * cell_size_px + max(1, cell_size_px // 4), y * cell_size_px),
+                "B",
+                fill=BUNKER_TEXT_COLOR,
+            )
+    visual_bounds = _visual_bounds(item.get("visual_bounds"), width=width, height=height)
+    if visual_bounds is not None:
+        draw.rectangle(
+            _bounds_rect(visual_bounds, cell_size_px),
+            outline=BUNKER_OUTLINE_COLOR,
+            width=max(1, cell_size_px // 4),
+        )
+    _draw_firing_ports(
+        draw,
+        item.get("firing_ports"),
+        cell_size_px=cell_size_px,
+        width=width,
+        height=height,
+    )
 
 
 def _draw_firing_ports(

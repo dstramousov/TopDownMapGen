@@ -595,12 +595,14 @@ def attach_runtime_layers(
     tactical_data: dict[str, Any],
     *,
     seed: int | None = None,
+    generation_tuning: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Attach runtime object and elevation layers to tactical data.
 
     Args:
         tactical_data: Runtime tactical JSON object.
         seed: Optional deterministic seed for runtime object placement.
+        generation_tuning: Optional user-facing world density tuning scales.
 
     Returns:
         Copy of tactical data with map-level sections.
@@ -638,7 +640,7 @@ def attach_runtime_layers(
         )
         return enriched
 
-    objects = RuntimeObjectPlacer(seed).place(enriched)
+    objects = RuntimeObjectPlacer(seed, generation_tuning=generation_tuning).place(enriched)
     enriched["runtime_objects"] = objects
     _attach_trench_elevation(enriched, objects)
     enriched["runtime_objects_summary"] = summarize_runtime_objects(objects)
@@ -688,13 +690,15 @@ def summarize_runtime_objects(objects: Any) -> dict[str, Any]:
 class RuntimeObjectPlacer:
     """Places deterministic gameplay objects on an existing tactical map."""
 
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int, *, generation_tuning: dict[str, Any] | None = None) -> None:
         """Initialize placer.
 
         Args:
             seed: Resolved uint64 map seed.
+            generation_tuning: Optional user-facing world density tuning scales.
         """
         self._rng = random.Random(seed ^ 0x5EED_0B1E_C7)
+        self._generation_tuning = generation_tuning or {}
 
     def place(self, tactical_data: dict[str, Any]) -> list[dict[str, Any]]:
         """Place runtime objects on passable map cells.
@@ -723,10 +727,7 @@ class RuntimeObjectPlacer:
         anchors = _anchors(tactical_data)
 
         for quota in quotas:
-            if quota.object_type in LANDMARK_TYPES or quota.object_type in BUNKER_TYPES:
-                target_count = quota.base_count
-            else:
-                target_count = max(1, round(quota.base_count * scale))
+            target_count = self._target_count(quota, area_scale=scale)
             placed = 0
             for _ in range(target_count):
                 desired_shape = self._desired_shape(
@@ -761,6 +762,14 @@ class RuntimeObjectPlacer:
                 if len(objects) >= MAX_RUNTIME_OBJECTS:
                     return objects
         return objects
+
+    def _target_count(self, quota: RuntimeObjectQuota, *, area_scale: float) -> int:
+        """Return tuned target count for a runtime object quota."""
+        if quota.object_type in BUNKER_TYPES:
+            return max(0, round(quota.base_count * _tuning_scale(self._generation_tuning, "bunker_scale")))
+        if quota.object_type in LANDMARK_TYPES:
+            return quota.base_count
+        return max(1, round(quota.base_count * area_scale))
 
     def _desired_shape(
         self,
@@ -812,6 +821,14 @@ class RuntimeObjectPlacer:
                 if _footprint_is_available(footprint, rows=rows, occupied=occupied):
                     return footprint, orientation, shape
         return None
+
+
+def _tuning_scale(tuning: dict[str, Any], key: str) -> float:
+    """Return a sanitized tuning scale from a runtime tuning dictionary."""
+    try:
+        return max(0.0, min(4.0, float(tuning.get(key, 1.0))))
+    except (TypeError, ValueError):
+        return 1.0
 
 
 def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:

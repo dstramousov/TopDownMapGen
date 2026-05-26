@@ -5,5 +5,15 @@
   "chunk_width_tiles": 16,
   "chunk_height_tiles": 16,
   "biome_profile": "forest_ruins",
-  "objective_profile": "survival"
+  "objective_profile": "survival",
+  "generation_tuning": {
+    "water_scale": 1.0,
+    "forest_scale": 1.0,
+    "open_space_scale": 1.0,
+    "ruins_scale": 1.0,
+    "buildings_scale": 1.0,
+    "road_width_scale": 1.0,
+    "decoration_scale": 1.0,
+    "bunker_scale": 1.0
+  }
 }

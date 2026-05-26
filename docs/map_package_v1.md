@@ -392,3 +392,10 @@ asset pipeline.
 Object instances are no longer guaranteed to be single-tile markers. Consumers must read `footprint`, `collision_footprint`, `visual_bounds`, and `pivot` from `objects/runtime_objects.json` instead of assuming that `x`/`y` is the full object size.
 
 The `x`, `y`, `position`, and `anchor` fields identify the object's anchor tile. The `footprint` field is the logical occupied shape. The `collision_footprint` field is the subset where the object affects movement, projectiles, or vision according to its `collision_profile`. The `visual_bounds` field is a coarse tile-space rectangle for preview/render placement. Bunker-like objects may also expose `firing_ports`, `surface_elevation`, and `interior_elevation`; consumers should treat those as gameplay metadata, not as sprite instructions.
+
+
+## Generation tuning
+
+`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These scales are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+
+Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.

@@ -126,6 +126,7 @@ class WorldgenPipeline:
                     "chunk_height_tiles": config.chunk_height_tiles,
                     "biome_profile": config.biome_profile,
                     "objective_profile": config.objective_profile,
+                    "generation_tuning": config.generation_tuning.to_dict(),
                 },
             )
 
@@ -152,7 +153,7 @@ class WorldgenPipeline:
                 config_path=outputs.engine_config,
                 map_out=outputs.generated_map,
                 tactical_out=outputs.raw_tactical_map,
-                log_file=log_file,
+                log_file=log_file or outputs.log_file,
             )
             rows = outputs.generated_map.read_text(encoding="utf-8").splitlines()
             metrics.update(
@@ -192,7 +193,11 @@ class WorldgenPipeline:
                 debug_data,
             )
             runtime_data = attach_tile_grid(runtime_data, rows)
-            runtime_data = attach_runtime_layers(runtime_data, seed=config.resolved_seed)
+            runtime_data = attach_runtime_layers(
+                runtime_data,
+                seed=config.resolved_seed,
+                generation_tuning=config.generation_tuning.to_dict(),
+            )
             runtime_data = attach_places(runtime_data)
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"
@@ -209,6 +214,7 @@ class WorldgenPipeline:
                 seed=config.seed,
                 resolved_seed=config.resolved_seed,
                 profile=config.objective_profile,
+                generation_tuning=config.generation_tuning.to_dict(),
             )
             metrics.update(
                 {
@@ -293,6 +299,7 @@ class WorldgenPipeline:
             "debug_images_enabled": debug_images and render,
             "rendered_layers": rendered_layers,
             "objective_profile": config.objective_profile,
+            "generation_tuning": config.generation_tuning.to_dict(),
             "spawn_selection_policy": objective.get("spawn_selection_policy"),
             "candidate_spawn_count": objective.get("candidate_spawn_count"),
             "selected_spawn_count": objective.get("selected_spawn_count"),
@@ -394,6 +401,7 @@ class WorldgenPipeline:
             artifacts=artifacts,
             validation_summary=validation_summary_from_report(validation_report),
             metrics=metrics,
+            generation_tuning=config.generation_tuning.to_dict(),
             validation_report_path=outputs.validation_report,
         )
         with timed_stage(
@@ -476,6 +484,13 @@ class WorldgenPipeline:
                 False,
                 True,
                 ENGINE_CONFIG_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.log_file,
+                "generation_log",
+                False,
+                True,
+                METRICS_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.map_package_map,

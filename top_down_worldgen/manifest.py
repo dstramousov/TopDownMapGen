@@ -8,15 +8,15 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v22"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v23"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v18"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v19"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
-ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v1"
+ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v2"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
 DEBUG_LAYERS_VERSION = "debug-layers-v2"
 RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v11"
@@ -72,6 +72,7 @@ def build_manifest(
     validation_summary: dict[str, Any],
     metrics: dict[str, Any],
     validation_report_path: Path | None = None,
+    generation_tuning: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a machine-readable generation manifest.
 
@@ -96,6 +97,7 @@ def build_manifest(
         validation_summary: Compact output validation summary.
         metrics: Final pipeline metrics.
         validation_report_path: Optional detailed validation report path.
+        generation_tuning: Optional user-facing world density tuning scales.
 
     Returns:
         JSON-serializable manifest dictionary.
@@ -145,6 +147,7 @@ def build_manifest(
         "seed": seed,
         "resolved_seed": resolved_seed,
         "profile": profile,
+        "generation_tuning": generation_tuning or {},
         "dimensions": {
             "width_tiles": width,
             "height_tiles": height,

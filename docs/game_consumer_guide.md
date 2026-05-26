@@ -331,3 +331,10 @@ preview: быстро показать глазами, что данные да�
 ## Multi-tile object handling
 
 A game consumer must not treat runtime objects as single-tile markers. Read `footprint` for occupied cells, `collision_footprint` for gameplay collision, `visual_bounds` for coarse sprite placement, and `pivot` for renderer anchoring. The object's `x`, `y`, `position`, and `anchor` fields describe the anchor tile, not the full occupied size. Bunkers can also provide `firing_ports`, `surface_elevation`, and `interior_elevation` for directional interaction/line-of-fire rules.
+
+
+## Generation tuning
+
+`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These scales are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+
+Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.

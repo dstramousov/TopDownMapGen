@@ -134,3 +134,10 @@ Important fields:
 - `firing_ports`: optional directional firing/interaction edges for bunker-like objects.
 
 `buried_bunker_2x2` and `buried_bunker_2x3` are the first explicit bunker test objects. They use multi-tile footprints, full collision footprints, `interior_elevation = -1`, and firing ports on two opposite sides.
+
+
+## Generation tuning
+
+`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These scales are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+
+Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
