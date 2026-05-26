@@ -14,6 +14,8 @@ def _write_map_package_files(outputs: OutputPaths) -> None:
     """Create minimal structured map package files for validation tests."""
     for path in (
         outputs.map_package_map,
+        outputs.map_package_markers,
+        outputs.map_package_runtime_grids,
         outputs.map_package_tile_grid,
         outputs.map_package_terrain,
         outputs.map_package_movement_costs,

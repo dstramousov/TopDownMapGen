@@ -102,6 +102,8 @@ class InspectionReport:
         collision: Collision summary.
         movement: Movement cost summary.
         elevation: Elevation summary.
+        marker_count: Number of gameplay markers.
+        runtime_grid_count: Number of ready-to-use runtime grids.
         gameplay_counts: Per-gameplay-layer item counts.
         runtime_object_count: Number of runtime objects.
         runtime_object_type_count: Number of runtime object types used by instances.
@@ -132,6 +134,8 @@ class InspectionReport:
     collision: CollisionStats
     movement: MovementStats
     elevation: ElevationStats
+    marker_count: int
+    runtime_grid_count: int
     gameplay_counts: dict[str, int]
     runtime_object_count: int
     runtime_object_type_count: int
@@ -181,6 +185,11 @@ def inspect_world_package(path: Path) -> InspectionReport:
     movement = _read_required_package_object(package_dir, layers, "movement_costs")
     elevation = _read_required_package_object(package_dir, layers, "elevation")
     start_goal = _read_optional_package_object(package_dir, layers.get("start_goal"))
+    markers = _read_optional_package_object(package_dir, map_index.get("markers"))
+    runtime_grids = _read_optional_package_object(
+        package_dir,
+        map_index.get("runtime_grids"),
+    )
 
     runtime_objects = _read_required_package_object(
         package_dir,
@@ -258,6 +267,8 @@ def inspect_world_package(path: Path) -> InspectionReport:
         collision=collision_stats,
         movement=movement_stats,
         elevation=elevation_stats,
+        marker_count=len(_optional_list(markers.get("items"))),
+        runtime_grid_count=len(_optional_object(runtime_grids.get("grids"))),
         gameplay_counts=gameplay_counts,
         runtime_object_count=len(runtime_items),
         runtime_object_type_count=len(_unique_types(runtime_items)),
@@ -366,6 +377,8 @@ def print_report(report: InspectionReport) -> None:
         _format_point(report.start),
         _format_point(report.goal),
     )
+    LOGGER.info("- markers: OK, count=%s", report.marker_count)
+    LOGGER.info("- runtime_grids: OK, grids=%s", report.runtime_grid_count)
     LOGGER.info("")
     LOGGER.info("Objects:")
     LOGGER.info(

@@ -10,11 +10,13 @@ from top_down_worldgen.manifest import (
     GAMEPLAY_LAYER_SCHEMA_VERSION,
     MAP_PACKAGE_MAP_SCHEMA_VERSION,
     MAP_PACKAGE_SCHEMA_VERSION,
+    MARKERS_SCHEMA_VERSION,
     MOVEMENT_LAYER_SCHEMA_VERSION,
     OBJECT_INSTANCES_SCHEMA_VERSION,
     OBJECT_TYPES_CATALOG_SCHEMA_VERSION,
     OBJECT_RENDER_HINTS_SCHEMA_VERSION,
     RENDER_PROFILE_SCHEMA_VERSION,
+    RUNTIME_GRIDS_SCHEMA_VERSION,
     TILE_RENDER_HINTS_SCHEMA_VERSION,
     PLACES_SCHEMA_VERSION,
     START_GOAL_LAYER_SCHEMA_VERSION,
@@ -144,6 +146,25 @@ def write_map_package(
         outputs.map_package_start_goal,
     )
 
+    runtime_objects = _list(runtime_data.get("runtime_objects"))
+    markers = _build_markers(
+        points=points,
+        runtime_objects=runtime_objects,
+        width=width,
+        height=height,
+    )
+    runtime_grids = _build_runtime_grids(
+        tile_grid=tile_grid,
+        movement_costs=movement_costs,
+        collision=collision,
+        elevation=_dict(runtime_data.get("elevation")),
+        runtime_objects=runtime_objects,
+        width=width,
+        height=height,
+    )
+    write_json(markers, outputs.map_package_markers)
+    write_json(runtime_grids, outputs.map_package_runtime_grids)
+
     for key, filename in _GAMEPLAY_FILES:
         write_json(
             {
@@ -158,7 +179,7 @@ def write_map_package(
         {
             "schema_version": OBJECT_INSTANCES_SCHEMA_VERSION,
             "kind": "runtime_objects",
-            "items": _list(runtime_data.get("runtime_objects")),
+            "items": runtime_objects,
             "summary": _dict(runtime_data.get("runtime_objects_summary")),
         },
         outputs.map_package_runtime_objects,
@@ -181,9 +202,7 @@ def write_map_package(
         ),
         outputs.map_package_tile_types,
     )
-    object_types_catalog = _build_object_types_catalog(
-        _list(runtime_data.get("runtime_objects")),
-    )
+    object_types_catalog = _build_object_types_catalog(runtime_objects)
     write_json(object_types_catalog, outputs.map_package_object_types)
 
     tile_render_hints = _build_tile_render_hints(tile_legend=tile_legend)
@@ -219,6 +238,8 @@ def write_map_package(
                 "y_axis": "down",
             },
             "points": points,
+            "markers": "markers.json",
+            "runtime_grids": "runtime_grids.json",
             "layers": {
                 "tile_grid": "layers/tile_grid.json",
                 "terrain": "layers/terrain.json",
@@ -264,6 +285,8 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
     """
     return [
         outputs.map_package_map,
+        outputs.map_package_markers,
+        outputs.map_package_runtime_grids,
         outputs.map_package_tile_grid,
         outputs.map_package_terrain,
         outputs.map_package_movement_costs,
@@ -286,6 +309,257 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
     ]
 
 
+
+def _build_markers(
+    *,
+    points: dict[str, dict[str, int] | None],
+    runtime_objects: list[Any],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    for marker_type in ("start", "goal"):
+        point = points.get(marker_type)
+        if point is None:
+            continue
+        items.append(
+            {
+                "id": marker_type,
+                "type": marker_type,
+                "position": point,
+                "source": "tile_grid",
+                "tags": ["primary", marker_type],
+            },
+        )
+    for item in runtime_objects:
+        if not isinstance(item, dict):
+            continue
+        marker = _marker_from_runtime_object(item, width=width, height=height)
+        if marker is not None:
+            items.append(marker)
+    return {
+        "schema_version": MARKERS_SCHEMA_VERSION,
+        "kind": "markers",
+        "coordinate_space": "tile",
+        "items": items,
+        "summary": {
+            "total": len(items),
+            "by_type": _count_by_key(items, "type"),
+        },
+    }
+
+
+def _marker_from_runtime_object(
+    item: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> dict[str, Any] | None:
+    marker_type = _runtime_marker_type(item)
+    if marker_type is None:
+        return None
+    point = _runtime_object_anchor(item, width=width, height=height)
+    if point is None:
+        return None
+    object_id = item.get("id")
+    tags = sorted(set(_string_list(item.get("tags"))) | {marker_type})
+    return {
+        "id": f"marker_{object_id}" if isinstance(object_id, str) else marker_type,
+        "type": marker_type,
+        "position": {"x": point[0], "y": point[1]},
+        "source": "runtime_objects",
+        "object_ref": object_id,
+        "tags": tags,
+    }
+
+
+def _runtime_marker_type(item: dict[str, Any]) -> str | None:
+    object_type = item.get("type")
+    tags = set(_string_list(item.get("tags")))
+    role = item.get("role")
+    if object_type in {"ammo_cache", "medkit_cache", "abandoned_backpack"}:
+        return "loot"
+    if "loot" in tags:
+        return "loot"
+    if "story_marker" in tags or role in {"story_marker", "story_landmark"}:
+        return "story"
+    if "landmark" in tags or isinstance(role, str) and "landmark" in role:
+        return "point_of_interest"
+    if "bunker" in tags:
+        return "defensive_point"
+    return None
+
+
+def _build_runtime_grids(
+    *,
+    tile_grid: list[str],
+    movement_costs: dict[str, Any],
+    collision: dict[str, Any],
+    elevation: dict[str, Any],
+    runtime_objects: list[Any],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    collision_rows = _string_rows(collision.get("rows"), ["0" * width for _ in range(height)])
+    movement_grid = _movement_grid_rows(
+        tile_grid=tile_grid,
+        movement_costs=movement_costs,
+        width=width,
+        height=height,
+    )
+    projectile_grid = [list(row) for row in collision_rows]
+    vision_grid = [list(row) for row in collision_rows]
+    cover_grid = [[0.0 for _ in range(width)] for _ in range(height)]
+    concealment_grid = [[0.0 for _ in range(width)] for _ in range(height)]
+    height_grid = _height_grid_rows(elevation=elevation, width=width, height=height)
+
+    for item in runtime_objects:
+        if not isinstance(item, dict):
+            continue
+        points = _point_list(item.get("collision_footprint")) or _point_list(item.get("footprint"))
+        profile = _dict(item.get("collision_profile"))
+        combat = _dict(item.get("combat_properties"))
+        for x, y in points:
+            if not (0 <= x < width and 0 <= y < height):
+                continue
+            if profile.get("movement") == "blocked":
+                # Collision grid is terrain-derived. Keep object blockers in projectile/vision
+                # grids and expose object movement blockers through runtime object footprints.
+                pass
+            if profile.get("projectiles") == "blocked":
+                projectile_grid[y][x] = "1"
+            if profile.get("vision") in {"blocked", "soft_blocked"}:
+                vision_grid[y][x] = "1"
+            cover_grid[y][x] = max(cover_grid[y][x], _float_value(combat.get("cover_value")))
+            concealment_grid[y][x] = max(
+                concealment_grid[y][x],
+                _float_value(combat.get("concealment_value")),
+            )
+            elevation_level = item.get("interior_elevation", item.get("elevation"))
+            if isinstance(elevation_level, int):
+                height_grid[y][x] = elevation_level
+    return {
+        "schema_version": RUNTIME_GRIDS_SCHEMA_VERSION,
+        "kind": "runtime_grids",
+        "width": width,
+        "height": height,
+        "coordinate_space": "tile",
+        "grids": {
+            "movement_grid": {
+                "format": "numeric_rows",
+                "rows": movement_grid,
+            },
+            "collision_grid": {
+                "format": "boolean_rows",
+                "legend": {"0": "passable", "1": "blocked"},
+                "rows": collision_rows,
+            },
+            "projectile_block_grid": {
+                "format": "boolean_rows",
+                "legend": {"0": "passable", "1": "blocked"},
+                "rows": ["".join(row) for row in projectile_grid],
+            },
+            "vision_block_grid": {
+                "format": "boolean_rows",
+                "legend": {"0": "passable", "1": "blocked"},
+                "rows": ["".join(row) for row in vision_grid],
+            },
+            "cover_grid": {
+                "format": "numeric_rows",
+                "rows": _rounded_grid(cover_grid),
+            },
+            "concealment_grid": {
+                "format": "numeric_rows",
+                "rows": _rounded_grid(concealment_grid),
+            },
+            "height_grid": {
+                "format": "integer_rows",
+                "rows": height_grid,
+            },
+        },
+    }
+
+
+def _movement_grid_rows(
+    *,
+    tile_grid: list[str],
+    movement_costs: dict[str, Any],
+    width: int,
+    height: int,
+) -> list[list[int | float | None]]:
+    rows: list[list[int | float | None]] = []
+    for y in range(height):
+        source_row = tile_grid[y] if y < len(tile_grid) else ""
+        row: list[int | float | None] = []
+        for x in range(width):
+            tile = source_row[x] if x < len(source_row) else ""
+            value = movement_costs.get(tile)
+            row.append(value if isinstance(value, int | float) else None)
+        rows.append(row)
+    return rows
+
+
+def _height_grid_rows(
+    *,
+    elevation: dict[str, Any],
+    width: int,
+    height: int,
+) -> list[list[int]]:
+    default_level = elevation.get("default", 0)
+    if not isinstance(default_level, int):
+        default_level = 0
+    rows = [[default_level for _ in range(width)] for _ in range(height)]
+    for cell in _list(elevation.get("cells")):
+        if not isinstance(cell, dict):
+            continue
+        x = cell.get("x")
+        y = cell.get("y")
+        level = cell.get("level")
+        if isinstance(x, int) and isinstance(y, int) and isinstance(level, int):
+            if 0 <= x < width and 0 <= y < height:
+                rows[y][x] = level
+    return rows
+
+
+def _runtime_object_anchor(
+    item: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> tuple[int, int] | None:
+    anchor = item.get("anchor")
+    if isinstance(anchor, list) and len(anchor) == 2:
+        x, y = anchor
+        if isinstance(x, int) and isinstance(y, int) and 0 <= x < width and 0 <= y < height:
+            return (x, y)
+    x = item.get("x")
+    y = item.get("y")
+    if isinstance(x, int) and isinstance(y, int) and 0 <= x < width and 0 <= y < height:
+        return (x, y)
+    points = _point_list(item.get("footprint"))
+    for point_x, point_y in points:
+        if 0 <= point_x < width and 0 <= point_y < height:
+            return (point_x, point_y)
+    return None
+
+
+def _rounded_grid(rows: list[list[float]]) -> list[list[float]]:
+    return [[round(value, 3) for value in row] for row in rows]
+
+
+def _float_value(value: Any) -> float:
+    if isinstance(value, int | float):
+        return float(value)
+    return 0.0
+
+
+def _count_by_key(items: list[dict[str, Any]], key: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        value = item.get(key)
+        if isinstance(value, str):
+            counts[value] = counts.get(value, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def _build_render_profile(*, width: int, height: int, tile_size_px: int) -> dict[str, Any]:

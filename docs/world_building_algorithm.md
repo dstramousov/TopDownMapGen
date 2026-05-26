@@ -207,3 +207,9 @@ Consumers should use `footprint` for placement/overlap checks, `collision_footpr
 `map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
 
 Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
+
+## Runtime-ready loading shortcut
+
+For a quick runtime integration, load `map_package/runtime_grids.json` after `map_package/map.json`. The file contains movement, collision, projectile, vision, cover, concealment, and height grids with the same dimensions as the map.
+
+Use `map_package/markers.json` for start, goal, loot, story, point-of-interest, and defensive markers. Do not parse markers from `terrain.json`; terrain describes the ground, markers describe gameplay points.

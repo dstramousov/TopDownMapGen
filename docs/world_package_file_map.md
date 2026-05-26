@@ -141,3 +141,19 @@ Important fields:
 `map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
 
 Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
+
+## v0.0.37: markers and runtime grids
+
+`map_package/markers.json` contains gameplay markers that must not be mixed into terrain data. It currently includes `start`, `goal`, and marker projections for notable runtime objects such as loot, story markers, landmarks, and defensive points.
+
+`map_package/runtime_grids.json` contains ready-to-use grids for runtime consumers:
+
+- `movement_grid`
+- `collision_grid`
+- `projectile_block_grid`
+- `vision_block_grid`
+- `cover_grid`
+- `concealment_grid`
+- `height_grid`
+
+A game may load these grids directly instead of deriving them from terrain, objects, and catalogs on startup. Source layers are still exported for debugging, validation, and editor use.

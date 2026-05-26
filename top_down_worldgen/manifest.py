@@ -8,13 +8,13 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v24"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v25"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v19"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v20"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v2"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
@@ -23,7 +23,7 @@ RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v11"
 PLACES_SCHEMA_VERSION = "places-v1"
 OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
 MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
-MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v2"
+MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v3"
 TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
 TERRAIN_LAYER_SCHEMA_VERSION = "terrain-layer-v1"
 MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"
@@ -37,6 +37,8 @@ OBJECT_TYPES_CATALOG_SCHEMA_VERSION = "object-types-catalog-v3"
 RENDER_PROFILE_SCHEMA_VERSION = "render-profile-v1"
 TILE_RENDER_HINTS_SCHEMA_VERSION = "tile-render-hints-v1"
 OBJECT_RENDER_HINTS_SCHEMA_VERSION = "object-render-hints-v3"
+MARKERS_SCHEMA_VERSION = "markers-v1"
+RUNTIME_GRIDS_SCHEMA_VERSION = "runtime-grids-v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +137,8 @@ def build_manifest(
         "render_profile": RENDER_PROFILE_SCHEMA_VERSION,
         "tile_render_hints": TILE_RENDER_HINTS_SCHEMA_VERSION,
         "object_render_hints": OBJECT_RENDER_HINTS_SCHEMA_VERSION,
+        "markers": MARKERS_SCHEMA_VERSION,
+        "runtime_grids": RUNTIME_GRIDS_SCHEMA_VERSION,
     }
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,

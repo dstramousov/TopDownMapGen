@@ -33,6 +33,8 @@ class OutputPaths:
     object_catalog: Path
     map_package_dir: Path
     map_package_map: Path
+    map_package_markers: Path
+    map_package_runtime_grids: Path
     map_package_layers_dir: Path
     map_package_tile_grid: Path
     map_package_terrain: Path
@@ -110,6 +112,8 @@ class OutputPaths:
             object_catalog=output_dir / "object_catalog.md",
             map_package_dir=map_package_dir,
             map_package_map=map_package_dir / "map.json",
+            map_package_markers=map_package_dir / "markers.json",
+            map_package_runtime_grids=map_package_dir / "runtime_grids.json",
             map_package_layers_dir=map_package_layers_dir,
             map_package_tile_grid=map_package_layers_dir / "tile_grid.json",
             map_package_terrain=map_package_layers_dir / "terrain.json",

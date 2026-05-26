@@ -99,6 +99,8 @@ def build_validation_report(
         "metrics_exists": outputs.metrics.exists(),
         "object_catalog_exists": outputs.object_catalog.exists(),
         "map_package_index_exists": outputs.map_package_map.exists(),
+        "map_package_markers_exists": outputs.map_package_markers.exists(),
+        "map_package_runtime_grids_exists": outputs.map_package_runtime_grids.exists(),
         "map_package_tile_grid_exists": outputs.map_package_tile_grid.exists(),
         "map_package_terrain_exists": outputs.map_package_terrain.exists(),
         "map_package_movement_costs_exists": (
