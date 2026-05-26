@@ -426,7 +426,10 @@ def _object_render_hint(object_type: str, definition: dict[str, Any]) -> dict[st
     anchor = "bottom_center"
     render_mode = "sprite"
 
-    if "below_floor" in tags or definition.get("elevation") == -1:
+    if "bunker" in tags:
+        draw_layer = "objects_above_actor"
+        anchor = "center"
+    elif "below_floor" in tags or definition.get("elevation") == -1:
         draw_layer = "terrain_overlays"
         anchor = "center"
     elif height in {2, 3} or "landmark" in tags:
@@ -451,6 +454,9 @@ def _object_render_hint(object_type: str, definition: dict[str, Any]) -> dict[st
         "variant_policy": "stable_by_instance_id",
         "orientation_source": "orientation",
         "footprint_source": "footprint",
+        "collision_footprint_source": "collision_footprint",
+        "visual_bounds_source": "visual_bounds",
+        "firing_ports_source": "firing_ports" if "firing_ports" in tags else None,
     }
 
 def _build_tile_types_catalog(
@@ -531,6 +537,9 @@ def _build_object_types_catalog(objects: list[Any]) -> dict[str, Any]:
                 "default_collision_footprint": item.get("collision_footprint"),
                 "default_visual_bounds": item.get("visual_bounds"),
                 "default_pivot": item.get("pivot"),
+                "default_firing_ports": item.get("firing_ports"),
+                "surface_elevation": item.get("surface_elevation"),
+                "interior_elevation": item.get("interior_elevation"),
                 "tags": sorted(_object_tags(item)),
                 "instance_count": 0,
                 "max_footprint_tiles": 0,

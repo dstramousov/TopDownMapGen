@@ -12,6 +12,7 @@ from .tactical.places import (
     PLACE_TYPE_NAMES,
 )
 from .tactical.runtime_objects import (
+    BUNKER_TYPES,
     COLLISION_MOVEMENT_VALUES,
     COLLISION_PROJECTILE_VALUES,
     COLLISION_VISION_VALUES,
@@ -165,6 +166,9 @@ def build_validation_report(
             property_name="concealment_value",
         ),
         "trench_objects_have_stance_hints": _trench_objects_have_stance_hints(
+            runtime_data,
+        ),
+        "bunker_objects_have_firing_ports": _bunker_objects_have_firing_ports(
             runtime_data,
         ),
         "explosive_objects_tagged": _explosive_objects_tagged(runtime_data),
@@ -586,7 +590,7 @@ def _trench_cells_have_negative_elevation(runtime_data: dict[str, Any]) -> bool:
 def _elevation_cells_match_trench_footprints(runtime_data: dict[str, Any]) -> bool:
     negative_object_points: set[tuple[int, int]] = set()
     for item in _runtime_objects(runtime_data):
-        if item.get("type") not in {"trench", "pit"}:
+        if item.get("type") not in {"trench", "pit"} | BUNKER_TYPES:
             continue
         points = _runtime_object_points(item)
         if not points:
@@ -887,6 +891,30 @@ def _runtime_objects_have_visual_bounds(runtime_data: dict[str, Any]) -> bool:
             return False
         if width <= 0 or height <= 0:
             return False
+    return True
+
+
+def _bunker_objects_have_firing_ports(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        if item.get("type") not in BUNKER_TYPES:
+            continue
+        ports = item.get("firing_ports")
+        if not isinstance(ports, list) or len(ports) != 2:
+            return False
+        for port in ports:
+            if not isinstance(port, dict):
+                return False
+            if port.get("side") not in {"north", "south", "east", "west"}:
+                return False
+            positions = port.get("positions")
+            if not isinstance(positions, list) or not positions:
+                return False
+            if any(_point(position) is None for position in positions):
+                return False
+            try:
+                int(port.get("elevation"))
+            except (TypeError, ValueError):
+                return False
     return True
 
 

@@ -424,3 +424,46 @@ def test_attach_runtime_layers_generates_landmarks() -> None:
     assert "old_checkpoint" in object_types
     assert landmarks["total"] >= 1
     assert landmarks["by_type"]["big_dead_tree"] >= 1
+
+
+def test_attach_runtime_layers_generates_bunkers() -> None:
+    """Ensure buried bunkers are generated as multi-tile defensive objects."""
+    rows = ["+" * 120 for _ in range(80)]
+    runtime_data = attach_runtime_layers(
+        {
+            "map": {
+                "width": 120,
+                "height": 80,
+                "tile_grid": rows,
+                "tile_counts": {"+": 120 * 80},
+            },
+            "combat_zones": [{"id": "zone_0", "center": [60, 40]}],
+            "choke_points": [{"position": [60, 40]}],
+        },
+        seed=3,
+    )
+
+    bunkers = [
+        item
+        for item in runtime_data["runtime_objects"]
+        if item["type"] in {"buried_bunker_2x2", "buried_bunker_2x3"}
+    ]
+    bunker_types = {item["type"] for item in bunkers}
+    negative_points = {
+        (cell["x"], cell["y"])
+        for cell in runtime_data["elevation"]["cells"]
+        if cell["level"] == -1
+    }
+
+    assert len(bunkers) == 4
+    assert bunker_types == {"buried_bunker_2x2", "buried_bunker_2x3"}
+    assert all(len(item["footprint"]) in {4, 6} for item in bunkers)
+    assert all(item["collision_footprint"] == item["footprint"] for item in bunkers)
+    assert all(item["interior_elevation"] == -1 for item in bunkers)
+    assert all(item["surface_elevation"] == 0 for item in bunkers)
+    assert all(len(item["firing_ports"]) == 2 for item in bunkers)
+    assert all(
+        tuple(point) in negative_points
+        for item in bunkers
+        for point in item["footprint"]
+    )

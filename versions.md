@@ -272,3 +272,11 @@
 - Validation расширена проверками footprint, collision footprint, visual bounds и pivot у runtime objects.
 - Документация world package и алгоритма построения мира дополнена правилами чтения multi-tile объектов.
 - Версия проекта поднята до `0.0.33`.
+
+## v0.0.33 -> v0.0.34
+
+- Добавлены два тестовых типа заглублённых бункеров: `buried_bunker_2x2` и `buried_bunker_2x3`.
+- Бункеры размещаются как multi-tile runtime objects с footprint, collision footprint, visual bounds и firing ports.
+- Бункерные footprint-клетки помечаются как внутренний уровень `-1` для будущей модели уровней.
+- Обновлены object catalogs, render hints, validation checks и документация по package-файлам.
+- Версия проекта поднята до `0.0.34`.

@@ -330,4 +330,4 @@ preview: быстро показать глазами, что данные да�
 
 ## Multi-tile object handling
 
-A game consumer must not treat runtime objects as single-tile markers. Read `footprint` for occupied cells, `collision_footprint` for gameplay collision, `visual_bounds` for coarse sprite placement, and `pivot` for renderer anchoring. The object's `x`, `y`, `position`, and `anchor` fields describe the anchor tile, not the full occupied size.
+A game consumer must not treat runtime objects as single-tile markers. Read `footprint` for occupied cells, `collision_footprint` for gameplay collision, `visual_bounds` for coarse sprite placement, and `pivot` for renderer anchoring. The object's `x`, `y`, `position`, and `anchor` fields describe the anchor tile, not the full occupied size. Bunkers can also provide `firing_ports`, `surface_elevation`, and `interior_elevation` for directional interaction/line-of-fire rules.

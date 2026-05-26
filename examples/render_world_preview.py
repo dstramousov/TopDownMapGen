@@ -36,6 +36,7 @@ OBJECT_COLOR = (220, 210, 130, 230)
 OBJECT_FOOTPRINT_COLOR = (255, 236, 150, 120)
 OBJECT_COLLISION_FOOTPRINT_COLOR = (255, 160, 80, 140)
 OBJECT_VISUAL_BOUNDS_COLOR = (255, 255, 255, 105)
+FIRING_PORT_COLOR = (255, 235, 70, 255)
 START_COLOR = (70, 230, 100, 255)
 GOAL_COLOR = (240, 80, 70, 255)
 GRID_COLOR = (0, 0, 0, 35)
@@ -288,10 +289,44 @@ def _draw_runtime_objects(
                 _cell_rect(x, y, cell_size_px),
                 fill=OBJECT_COLLISION_FOOTPRINT_COLOR,
             )
+        _draw_firing_ports(
+            draw,
+            item.get("firing_ports"),
+            cell_size_px=cell_size_px,
+            width=width,
+            height=height,
+        )
         point = _object_point(item, width=width, height=height)
         if point is None:
             continue
         _draw_small_marker(draw, point["x"], point["y"], cell_size_px, OBJECT_COLOR)
+
+
+def _draw_firing_ports(
+    draw: ImageDraw.ImageDraw,
+    value: Any,
+    *,
+    cell_size_px: int,
+    width: int,
+    height: int,
+) -> None:
+    if not isinstance(value, list):
+        return
+    for port in value:
+        if not isinstance(port, dict):
+            continue
+        positions = _footprint(port.get("positions"), width=width, height=height)
+        for x, y in positions:
+            padding = max(1, cell_size_px // 3)
+            draw.ellipse(
+                (
+                    x * cell_size_px + padding,
+                    y * cell_size_px + padding,
+                    (x + 1) * cell_size_px - padding - 1,
+                    (y + 1) * cell_size_px - padding - 1,
+                ),
+                fill=FIRING_PORT_COLOR,
+            )
 
 
 def _draw_point(

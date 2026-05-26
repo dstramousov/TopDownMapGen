@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v10"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v11"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
@@ -25,6 +25,9 @@ MAX_MEDKIT_CACHES = 6
 INTEREST_POINT_TYPES: frozenset[str] = frozenset({"ammo_cache", "medkit_cache"})
 LANDMARK_TYPES: frozenset[str] = frozenset(
     {"big_dead_tree", "broken_radio_mast", "old_checkpoint"},
+)
+BUNKER_TYPES: frozenset[str] = frozenset(
+    {"buried_bunker_2x2", "buried_bunker_2x3"},
 )
 MIN_LANDMARKS = 1
 MAX_LANDMARKS = 6
@@ -47,6 +50,8 @@ GENERATED_RUNTIME_OBJECT_TYPES: tuple[str, ...] = (
     "big_dead_tree",
     "broken_radio_mast",
     "old_checkpoint",
+    "buried_bunker_2x2",
+    "buried_bunker_2x3",
     "car_wreck",
     "abandoned_backpack",
     "field_tent",
@@ -192,6 +197,49 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
         "blocks_vision": True,
         "interactive": False,
         "tags": ["landmark", "cover", "checkpoint", "ruin"],
+    },
+
+    {
+        "type": "buried_bunker_2x2",
+        "name_ru": "Заглублённый бункер 2x2",
+        "role": "defensive_position",
+        "default_height": 2,
+        "default_elevation": 0,
+        "surface_elevation": 0,
+        "interior_elevation": -1,
+        "cover_type": "full",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": True,
+        "interactive": False,
+        "tags": [
+            "bunker",
+            "cover",
+            "defensive",
+            "below_floor",
+            "firing_ports",
+        ],
+    },
+    {
+        "type": "buried_bunker_2x3",
+        "name_ru": "Заглублённый бункер 2x3",
+        "role": "defensive_position",
+        "default_height": 2,
+        "default_elevation": 0,
+        "surface_elevation": 0,
+        "interior_elevation": -1,
+        "cover_type": "full",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": True,
+        "interactive": False,
+        "tags": [
+            "bunker",
+            "cover",
+            "defensive",
+            "below_floor",
+            "firing_ports",
+        ],
     },
 
     {
@@ -383,6 +431,8 @@ def _footprint_defaults_for_type(object_type: str) -> dict[str, Any]:
         "big_dead_tree": _footprint_default(width=2, height=2, visual_width=2, visual_height=3),
         "broken_radio_mast": _footprint_default(width=1, height=1, visual_width=1, visual_height=3),
         "old_checkpoint": _footprint_default(width=3, height=2, rotatable=True),
+        "buried_bunker_2x2": _footprint_default(width=2, height=2),
+        "buried_bunker_2x3": _footprint_default(width=2, height=3, rotatable=True),
         "car_wreck": _footprint_default(width=2, height=1, rotatable=True),
         "abandoned_backpack": _footprint_default(width=1, height=1, blocks_movement=False),
         "field_tent": _footprint_default(width=2, height=2),
@@ -478,6 +528,16 @@ def _combat_properties_for_type(object_type: str) -> dict[str, Any]:
         "big_dead_tree": {"cover_value": 0.8, "concealment_value": 0.25},
         "broken_radio_mast": {"cover_value": 0.2, "concealment_value": 0.0},
         "old_checkpoint": {"cover_value": 0.85, "concealment_value": 0.0},
+        "buried_bunker_2x2": {
+            "cover_value": 0.95,
+            "concealment_value": 0.35,
+            "firing_ports": True,
+        },
+        "buried_bunker_2x3": {
+            "cover_value": 0.95,
+            "concealment_value": 0.35,
+            "firing_ports": True,
+        },
         "car_wreck": {"cover_value": 0.6, "concealment_value": 0.0},
         "abandoned_backpack": {"cover_value": 0.0, "concealment_value": 0.0, "loot": True},
         "field_tent": {"cover_value": 0.1, "concealment_value": 0.45},
@@ -663,7 +723,7 @@ class RuntimeObjectPlacer:
         anchors = _anchors(tactical_data)
 
         for quota in quotas:
-            if quota.object_type in LANDMARK_TYPES:
+            if quota.object_type in LANDMARK_TYPES or quota.object_type in BUNKER_TYPES:
                 target_count = quota.base_count
             else:
                 target_count = max(1, round(quota.base_count * scale))
@@ -760,6 +820,8 @@ def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
         RuntimeObjectQuota("big_dead_tree", 2, frozenset({"+"})),
         RuntimeObjectQuota("broken_radio_mast", 1, frozenset({"R", "c", "."})),
         RuntimeObjectQuota("old_checkpoint", 1, frozenset({"R", "c", "."})),
+        RuntimeObjectQuota("buried_bunker_2x2", 2, frozenset({"R", "c", ".", "+"})),
+        RuntimeObjectQuota("buried_bunker_2x3", 2, frozenset({"R", "c", ".", "+"})),
         RuntimeObjectQuota("old_well", 1, frozenset({"+", "R", "c"})),
         RuntimeObjectQuota("car_wreck", 2, frozenset({".", "c", "R"})),
         RuntimeObjectQuota("field_tent", 2, frozenset({"+", ".", "R"})),
@@ -1055,9 +1117,92 @@ def _build_runtime_object(
         "collision_profile": dict(spec["collision_profile"]),
         "combat_properties": dict(spec["combat_properties"]),
     }
+    if "surface_elevation" in spec:
+        item["surface_elevation"] = spec["surface_elevation"]
+    if "interior_elevation" in spec:
+        item["interior_elevation"] = spec["interior_elevation"]
+    firing_ports = _world_firing_ports(
+        anchor=(x, y),
+        spec=spec,
+        orientation=orientation,
+        visual_bounds=visual_bounds,
+    )
+    if firing_ports:
+        item["firing_ports"] = firing_ports
     if "stance_hints" in spec:
         item["stance_hints"] = dict(spec["stance_hints"])
     return item
+
+
+def _world_firing_ports(
+    *,
+    anchor: tuple[int, int],
+    spec: dict[str, Any],
+    orientation: str,
+    visual_bounds: dict[str, int],
+) -> list[dict[str, Any]]:
+    if spec.get("type") not in BUNKER_TYPES:
+        _ = anchor
+        return []
+    try:
+        x = int(visual_bounds["x"])
+        y = int(visual_bounds["y"])
+        width = int(visual_bounds["width"])
+        height = int(visual_bounds["height"])
+    except (KeyError, TypeError, ValueError):
+        return []
+    sides = _bunker_firing_port_sides(
+        object_type=str(spec.get("type")),
+        orientation=orientation,
+        width=width,
+        height=height,
+    )
+    elevation = int(spec.get("interior_elevation", TRENCH_ELEVATION_LEVEL))
+    ports: list[dict[str, Any]] = []
+    for side in sides:
+        positions = _edge_positions(x=x, y=y, width=width, height=height, side=side)
+        ports.append(
+            {
+                "side": side,
+                "positions": [[point_x, point_y] for point_x, point_y in positions],
+                "elevation": elevation,
+                "arc": "outward",
+            },
+        )
+    return ports
+
+
+def _bunker_firing_port_sides(
+    *,
+    object_type: str,
+    orientation: str,
+    width: int,
+    height: int,
+) -> list[str]:
+    if object_type == "buried_bunker_2x2":
+        return ["north", "south"] if orientation != "north_south" else ["east", "west"]
+    if width > height:
+        return ["north", "south"]
+    return ["west", "east"]
+
+
+def _edge_positions(
+    *,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    side: str,
+) -> list[tuple[int, int]]:
+    if side == "north":
+        return [(x + offset, y) for offset in range(width)]
+    if side == "south":
+        return [(x + offset, y + height - 1) for offset in range(width)]
+    if side == "west":
+        return [(x, y + offset) for offset in range(height)]
+    if side == "east":
+        return [(x + width - 1, y + offset) for offset in range(height)]
+    return []
 
 
 def _world_collision_footprint(
@@ -1136,7 +1281,7 @@ def _attach_trench_elevation(
         except (TypeError, ValueError):
             continue
     for item in objects:
-        if item.get("type") not in {"trench", "pit"}:
+        if item.get("type") not in {"trench", "pit"} | BUNKER_TYPES:
             continue
         for x, y in _object_footprint_points(item):
             if (x, y) in existing:

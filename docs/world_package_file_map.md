@@ -122,7 +122,7 @@ render/*.json as needed
 
 ## Runtime object footprints
 
-`map_package/objects/runtime_objects.json` uses `object-instances-v2` and includes footprint-aware object instances. Object-related catalogs in `map_package/catalogs/object_types.json` use `object-types-catalog-v2` and expose default footprint metadata derived from generated instances.
+`map_package/objects/runtime_objects.json` uses `object-instances-v3` and includes footprint-aware object instances. Object-related catalogs in `map_package/catalogs/object_types.json` use `object-types-catalog-v3` and expose default footprint metadata derived from generated instances.
 
 Important fields:
 
@@ -131,3 +131,6 @@ Important fields:
 - `collision_footprint`: cells affected by collision profile.
 - `visual_bounds`: coarse tile-space visual rectangle.
 - `pivot`: tile-space pivot hint for renderers.
+- `firing_ports`: optional directional firing/interaction edges for bunker-like objects.
+
+`buried_bunker_2x2` and `buried_bunker_2x3` are the first explicit bunker test objects. They use multi-tile footprints, full collision footprints, `interior_elevation = -1`, and firing ports on two opposite sides.
