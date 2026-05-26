@@ -59,6 +59,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     world_graph = json.loads(
         outputs.map_package_world_graph.read_text(encoding="utf-8"),
     )
+    routes = json.loads(outputs.map_package_routes.read_text(encoding="utf-8"))
     runtime_objects = json.loads(
         outputs.map_package_runtime_objects.read_text(encoding="utf-8"),
     )
@@ -76,13 +77,14 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
     )
 
-    assert package_index["schema_version"] == "map-package-map-v4"
+    assert package_index["schema_version"] == "map-package-map-v5"
     assert package_index["dimensions"]["width_tiles"] == 2
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
     assert package_index["markers"] == "markers.json"
     assert package_index["runtime_grids"] == "runtime_grids.json"
     assert package_index["world_graph"] == "world_graph.json"
+    assert package_index["routes"] == "routes.json"
     assert package_index["layers"]["collision"] == "layers/collision.json"
     assert package_index["layers"]["terrain"] == "layers/terrain.json"
     assert package_index["layers"]["start_goal"] == "layers/start_goal.json"
@@ -108,6 +110,8 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert world_graph["schema_version"] == "world-graph-v1"
     assert [node["type"] for node in world_graph["nodes"]] == ["start", "goal"]
     assert world_graph["main_path"]["node_ids"] == ["marker:start", "marker:goal"]
+    assert routes["schema_version"] == "routes-v1"
+    assert routes["items"][0]["type"] == "main_road"
     assert runtime_grids["grids"]["collision_grid"]["rows"] == ["00", "00"]
     assert runtime_grids["grids"]["height_grid"]["rows"] == [[0, 0], [0, 0]]
     assert runtime_objects["items"][0]["type"] == "stone_chunk"

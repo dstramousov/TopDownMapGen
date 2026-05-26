@@ -18,6 +18,7 @@ from top_down_worldgen.manifest import (
     RENDER_PROFILE_SCHEMA_VERSION,
     RUNTIME_GRIDS_SCHEMA_VERSION,
     WORLD_GRAPH_SCHEMA_VERSION,
+    ROUTES_SCHEMA_VERSION,
     TILE_RENDER_HINTS_SCHEMA_VERSION,
     PLACES_SCHEMA_VERSION,
     START_GOAL_LAYER_SCHEMA_VERSION,
@@ -175,6 +176,8 @@ def write_map_package(
         height=height,
     )
     write_json(world_graph, outputs.map_package_world_graph)
+    routes = _build_routes(world_graph)
+    write_json(routes, outputs.map_package_routes)
 
     for key, filename in _GAMEPLAY_FILES:
         write_json(
@@ -252,6 +255,7 @@ def write_map_package(
             "markers": "markers.json",
             "runtime_grids": "runtime_grids.json",
             "world_graph": "world_graph.json",
+            "routes": "routes.json",
             "layers": {
                 "tile_grid": "layers/tile_grid.json",
                 "terrain": "layers/terrain.json",
@@ -300,6 +304,7 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_markers,
         outputs.map_package_runtime_grids,
         outputs.map_package_world_graph,
+        outputs.map_package_routes,
         outputs.map_package_tile_grid,
         outputs.map_package_terrain,
         outputs.map_package_movement_costs,
@@ -459,6 +464,188 @@ def _build_world_graph(
             "Edges describe intended location connectivity; use runtime grids for exact movement.",
         ],
     }
+
+
+def _build_routes(world_graph: dict[str, Any]) -> dict[str, Any]:
+    """Build route records from the semantic world graph.
+
+    Args:
+        world_graph: World graph package object.
+
+    Returns:
+        Route package object.
+    """
+    nodes_by_id = {
+        node["id"]: node
+        for node in _list(world_graph.get("nodes"))
+        if isinstance(node, dict) and isinstance(node.get("id"), str)
+    }
+    edges_by_id = {
+        edge["id"]: edge
+        for edge in _list(world_graph.get("edges"))
+        if isinstance(edge, dict) and isinstance(edge.get("id"), str)
+    }
+    routes: list[dict[str, Any]] = []
+
+    main_path = _dict(world_graph.get("main_path"))
+    main_node_ids = _string_list(main_path.get("node_ids"))
+    if len(main_node_ids) >= 2:
+        routes.append(
+            _route_from_nodes(
+                route_id="main_road_000",
+                route_type="main_road",
+                node_ids=main_node_ids,
+                edge_ids=_string_list(main_path.get("edge_ids")),
+                nodes_by_id=nodes_by_id,
+                edges_by_id=edges_by_id,
+                source="world_graph.main_path",
+                tags=["primary", "guidance"],
+            ),
+        )
+
+    for index, side_path in enumerate(_list(world_graph.get("side_paths"))):
+        if not isinstance(side_path, dict):
+            continue
+        node_ids = _string_list(side_path.get("node_ids"))
+        if not node_ids:
+            target = side_path.get("target_place")
+            if isinstance(target, str):
+                node_ids = [target]
+        if not node_ids:
+            continue
+        requested_type = side_path.get("type")
+        route_type = "hidden_path" if requested_type == "hidden_path" else "side_path"
+        routes.append(
+            _route_from_nodes(
+                route_id=f"{route_type}_{index:03d}",
+                route_type=route_type,
+                node_ids=node_ids,
+                edge_ids=[],
+                nodes_by_id=nodes_by_id,
+                edges_by_id=edges_by_id,
+                source="world_graph.side_paths",
+                tags=["optional"],
+            ),
+        )
+
+    for index, edge in enumerate(_list(world_graph.get("edges"))):
+        if not isinstance(edge, dict):
+            continue
+        edge_type = edge.get("type")
+        if edge_type not in {"place_connection", "start_connection", "goal_connection"}:
+            continue
+        source = edge.get("source")
+        target = edge.get("target")
+        if not isinstance(source, str) or not isinstance(target, str):
+            continue
+        source_node = nodes_by_id.get(source, {})
+        target_node = nodes_by_id.get(target, {})
+        danger = max(
+            _safe_float(source_node.get("danger_level")),
+            _safe_float(target_node.get("danger_level")),
+        )
+        if danger < 0.45 and edge_type == "place_connection":
+            continue
+        edge_id = edge.get("id")
+        route_type = "patrol_route" if edge_type == "place_connection" else "escape_route"
+        routes.append(
+            _route_from_nodes(
+                route_id=f"{route_type}_{index:03d}",
+                route_type=route_type,
+                node_ids=[source, target],
+                edge_ids=[edge_id] if isinstance(edge_id, str) else [],
+                nodes_by_id=nodes_by_id,
+                edges_by_id=edges_by_id,
+                source="world_graph.edges",
+                tags=["ai", "derived"],
+            ),
+        )
+
+    for index, secret in enumerate(_list(world_graph.get("secret_areas"))):
+        if not isinstance(secret, dict):
+            continue
+        node_id = secret.get("node_id")
+        if not isinstance(node_id, str):
+            continue
+        routes.append(
+            _route_from_nodes(
+                route_id=f"hidden_path_secret_{index:03d}",
+                route_type="hidden_path",
+                node_ids=[node_id],
+                edge_ids=[],
+                nodes_by_id=nodes_by_id,
+                edges_by_id=edges_by_id,
+                source="world_graph.secret_areas",
+                tags=["secret", "optional"],
+            ),
+        )
+
+    return {
+        "schema_version": ROUTES_SCHEMA_VERSION,
+        "kind": "routes",
+        "coordinate_space": "tile",
+        "items": routes,
+        "route_types": {
+            "main_road": "Primary intended route from start toward goal.",
+            "side_path": "Optional branch route to a secondary place.",
+            "hidden_path": "Secret or hard-to-notice optional route.",
+            "patrol_route": "AI/NPC route derived from risky place connections.",
+            "escape_route": "Retreat or exit route derived from start/goal connections.",
+        },
+        "summary": {
+            "total": len(routes),
+            "by_type": _count_by_key(routes, "type"),
+        },
+        "notes": [
+            "Routes describe semantic intent, not exact tile-by-tile paths.",
+            "Use runtime_grids for exact pathfinding and collision checks.",
+        ],
+    }
+
+
+def _route_from_nodes(
+    *,
+    route_id: str,
+    route_type: str,
+    node_ids: list[str],
+    edge_ids: list[str],
+    nodes_by_id: dict[str, dict[str, Any]],
+    edges_by_id: dict[str, dict[str, Any]],
+    source: str,
+    tags: list[str],
+) -> dict[str, Any]:
+    waypoints = [
+        {"x": pos[0], "y": pos[1]}
+        for node_id in node_ids
+        if (pos := _mapping_point(nodes_by_id.get(node_id, {}).get("position"))) is not None
+    ]
+    cost_tiles = sum(
+        int(edges_by_id[edge_id].get("cost_tiles", 0))
+        for edge_id in edge_ids
+        if edge_id in edges_by_id and isinstance(edges_by_id[edge_id].get("cost_tiles"), int)
+    )
+    if cost_tiles <= 0 and len(waypoints) >= 2:
+        cost_tiles = sum(
+            abs(a["x"] - b["x"]) + abs(a["y"] - b["y"])
+            for a, b in zip(waypoints, waypoints[1:], strict=False)
+        )
+    return {
+        "id": route_id,
+        "type": route_type,
+        "source": source,
+        "node_ids": node_ids,
+        "edge_ids": edge_ids,
+        "waypoints": waypoints,
+        "cost_tiles": cost_tiles,
+        "bidirectional": route_type != "escape_route",
+        "tags": sorted(set(tags + [route_type])),
+    }
+
+
+def _safe_float(value: Any) -> float:
+    if isinstance(value, int | float):
+        return float(value)
+    return 0.0
 
 
 def _world_graph_place_node(place: dict[str, Any]) -> dict[str, Any] | None:

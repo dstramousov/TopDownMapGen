@@ -28,6 +28,8 @@ def test_world_package_inspector_loads_minimal_package(tmp_path: Path) -> None:
     assert report.world_graph_node_count == 3
     assert report.world_graph_edge_count == 2
     assert report.world_graph_main_path_length == 3
+    assert report.route_count == 1
+    assert report.route_type_counts == {"main_road": 1}
     assert report.runtime_object_count == 1
     assert report.runtime_object_type_count == 1
     assert report.place_count == 1
@@ -57,6 +59,7 @@ def test_world_package_inspector_cli_prints_summary(tmp_path: Path) -> None:
     assert "World package: OK" in output
     assert "Map: 2x2 tiles, tile size 16 px" in output
     assert "world_graph: OK, nodes=3, edges=2, main_path_nodes=3" in output
+    assert "routes: OK, total=1, types={'main_road': 1}" in output
     assert "runtime objects: 1 total, 1 types" in output
     assert "package is loadable by an external consumer" in output
 
@@ -107,6 +110,7 @@ def _write_minimal_package(tmp_path: Path) -> Path:
                 "goal": {"x": 1, "y": 1},
             },
             "world_graph": "world_graph.json",
+            "routes": "routes.json",
             "layers": {
                 "tile_grid": "layers/tile_grid.json",
                 "terrain": "layers/terrain.json",
@@ -170,6 +174,18 @@ def _write_minimal_package(tmp_path: Path) -> Path:
                 {"id": "edge_001", "source": "place_0", "target": "marker:goal"},
             ],
             "main_path": {"node_ids": ["marker:start", "place_0", "marker:goal"]},
+        },
+    )
+    _write_json(
+        package_dir / "routes.json",
+        {
+            "items": [
+                {
+                    "id": "main_road_000",
+                    "type": "main_road",
+                    "node_ids": ["marker:start", "place_0", "marker:goal"],
+                },
+            ],
         },
     )
     _write_json(

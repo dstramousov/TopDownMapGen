@@ -36,6 +36,7 @@ class OutputPaths:
     map_package_markers: Path
     map_package_runtime_grids: Path
     map_package_world_graph: Path
+    map_package_routes: Path
     map_package_layers_dir: Path
     map_package_tile_grid: Path
     map_package_terrain: Path
@@ -116,6 +117,7 @@ class OutputPaths:
             map_package_markers=map_package_dir / "markers.json",
             map_package_runtime_grids=map_package_dir / "runtime_grids.json",
             map_package_world_graph=map_package_dir / "world_graph.json",
+            map_package_routes=map_package_dir / "routes.json",
             map_package_layers_dir=map_package_layers_dir,
             map_package_tile_grid=map_package_layers_dir / "tile_grid.json",
             map_package_terrain=map_package_layers_dir / "terrain.json",

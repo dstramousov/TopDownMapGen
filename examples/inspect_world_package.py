@@ -107,6 +107,8 @@ class InspectionReport:
         world_graph_node_count: Number of semantic world graph nodes.
         world_graph_edge_count: Number of semantic world graph edges.
         world_graph_main_path_length: Number of nodes in the main semantic path.
+        route_count: Number of semantic routes.
+        route_type_counts: Per-route-type counts.
         gameplay_counts: Per-gameplay-layer item counts.
         runtime_object_count: Number of runtime objects.
         runtime_object_type_count: Number of runtime object types used by instances.
@@ -142,6 +144,8 @@ class InspectionReport:
     world_graph_node_count: int
     world_graph_edge_count: int
     world_graph_main_path_length: int
+    route_count: int
+    route_type_counts: dict[str, int]
     gameplay_counts: dict[str, int]
     runtime_object_count: int
     runtime_object_type_count: int
@@ -200,6 +204,7 @@ def inspect_world_package(path: Path) -> InspectionReport:
         package_dir,
         map_index.get("world_graph"),
     )
+    routes = _read_optional_package_object(package_dir, map_index.get("routes"))
 
     runtime_objects = _read_required_package_object(
         package_dir,
@@ -246,6 +251,7 @@ def inspect_world_package(path: Path) -> InspectionReport:
     movement_stats = _inspect_movement_costs(movement)
     elevation_stats = _inspect_elevation(elevation)
     gameplay_counts = _inspect_gameplay(package_dir, gameplay)
+    route_items = _optional_list(routes.get("items"))
     runtime_items = _optional_list(runtime_objects.get("items"))
     place_items = _optional_list(places.get("items"))
     warnings = _build_warnings(
@@ -284,6 +290,8 @@ def inspect_world_package(path: Path) -> InspectionReport:
         world_graph_main_path_length=len(
             _optional_list(_optional_object(world_graph.get("main_path")).get("node_ids")),
         ),
+        route_count=len(route_items),
+        route_type_counts=_count_by_key(route_items, "type"),
         gameplay_counts=gameplay_counts,
         runtime_object_count=len(runtime_items),
         runtime_object_type_count=len(_unique_types(runtime_items)),
@@ -399,6 +407,11 @@ def print_report(report: InspectionReport) -> None:
         report.world_graph_node_count,
         report.world_graph_edge_count,
         report.world_graph_main_path_length,
+    )
+    LOGGER.info(
+        "- routes: OK, total=%s, types=%s",
+        report.route_count,
+        report.route_type_counts,
     )
     LOGGER.info("")
     LOGGER.info("Objects:")
@@ -708,6 +721,18 @@ def _unique_types(items: list[Any]) -> set[str]:
             types.add(item_type)
     return types
 
+
+
+def _count_by_key(items: list[Any], key: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        value = item.get(key)
+        if not isinstance(value, str):
+            continue
+        counts[value] = counts.get(value, 0) + 1
+    return counts
 
 def _build_warnings(
     *,

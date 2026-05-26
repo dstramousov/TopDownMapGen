@@ -172,3 +172,18 @@ It contains:
 - `secret_areas`: places marked or inferred as high-reward/secret areas.
 
 Use `runtime_grids.json` for exact movement/pathfinding and `world_graph.json` for world structure.
+
+## `routes.json`
+
+`routes.json` contains semantic route records derived from `world_graph.json`. It does not replace tile pathfinding and it is not an exact step-by-step movement path. It tells a consumer what a route means in gameplay terms.
+
+Current route types:
+
+- `main_road` — primary intended route from start toward goal.
+- `side_path` — optional branch route to a secondary place.
+- `hidden_path` — secret or hard-to-notice optional route.
+- `patrol_route` — AI/NPC route derived from risky place connections.
+- `escape_route` — retreat or exit route derived from start/goal connections.
+
+Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
+

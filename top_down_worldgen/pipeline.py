@@ -27,6 +27,7 @@ from .manifest import (
     RENDER_PROFILE_SCHEMA_VERSION,
     RUNTIME_GRIDS_SCHEMA_VERSION,
     WORLD_GRAPH_SCHEMA_VERSION,
+    ROUTES_SCHEMA_VERSION,
     PLACES_SCHEMA_VERSION,
     PNG_LAYER_SCHEMA_VERSION,
     RAW_TACTICAL_MAP_SCHEMA_VERSION,
@@ -522,6 +523,13 @@ class WorldgenPipeline:
                 True,
                 False,
                 WORLD_GRAPH_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_routes,
+                "map_package:routes",
+                True,
+                False,
+                ROUTES_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.map_package_tile_grid,

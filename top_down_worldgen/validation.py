@@ -102,6 +102,7 @@ def build_validation_report(
         "map_package_markers_exists": outputs.map_package_markers.exists(),
         "map_package_runtime_grids_exists": outputs.map_package_runtime_grids.exists(),
         "map_package_world_graph_exists": outputs.map_package_world_graph.exists(),
+        "map_package_routes_exists": outputs.map_package_routes.exists(),
         "map_package_tile_grid_exists": outputs.map_package_tile_grid.exists(),
         "map_package_terrain_exists": outputs.map_package_terrain.exists(),
         "map_package_movement_costs_exists": (

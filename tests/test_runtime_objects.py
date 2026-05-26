@@ -18,6 +18,7 @@ def _write_map_package_files(outputs: OutputPaths) -> None:
         outputs.map_package_markers,
         outputs.map_package_runtime_grids,
         outputs.map_package_world_graph,
+        outputs.map_package_routes,
         outputs.map_package_tile_grid,
         outputs.map_package_terrain,
         outputs.map_package_movement_costs,

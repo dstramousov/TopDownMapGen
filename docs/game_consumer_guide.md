@@ -342,3 +342,18 @@ Non-critical quality violations caused by aggressive tuning are reported as warn
 ## Markers and runtime grids
 
 Since v0.0.37, consumers should prefer `map_package/markers.json` for start/goal and gameplay points, and `map_package/runtime_grids.json` for immediate runtime grids. This avoids rebuilding common grids from lower-level layers during game startup.
+
+## `routes.json`
+
+`routes.json` contains semantic route records derived from `world_graph.json`. It does not replace tile pathfinding and it is not an exact step-by-step movement path. It tells a consumer what a route means in gameplay terms.
+
+Current route types:
+
+- `main_road` — primary intended route from start toward goal.
+- `side_path` — optional branch route to a secondary place.
+- `hidden_path` — secret or hard-to-notice optional route.
+- `patrol_route` — AI/NPC route derived from risky place connections.
+- `escape_route` — retreat or exit route derived from start/goal connections.
+
+Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
+

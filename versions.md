@@ -324,3 +324,12 @@
 - `map.json`, manifest, inspector и validation знают про world graph.
 - Документация world package обновлена под новый файл графа.
 - Версия проекта поднята до `0.0.39`.
+
+## v0.0.39 -> v0.0.40
+
+- Добавлен `map_package/routes.json` с семантическими типами маршрутов: `main_road`, `side_path`, `hidden_path`, `patrol_route` и `escape_route`.
+- `map_package/map.json`, `_manifest.json`, validation и inspector теперь знают про routes.
+- Route records строятся из `world_graph.json` и содержат `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional` и `tags`.
+- Документация world package обновлена: routes описывают смысл маршрутов, а не заменяют tile pathfinding.
+- Версия проекта поднята до `0.0.40`.
+
