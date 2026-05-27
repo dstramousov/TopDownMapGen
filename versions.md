@@ -500,3 +500,12 @@
 - `DecorationMapper` научился матчить контекстные правила по соседним terrain-типам через `nearby_terrain_types` и `nearby_radius`, чтобы декорировать землю рядом со стенами/полами руин без изменения gameplay.
 - В debug tileset добавлены placeholder sprites для ruin decorations, чтобы `visual-debug` показывал руины менее техническими серыми зонами.
 - Версия проекта поднята до `0.0.60`.
+
+
+## v0.0.60 -> v0.0.61
+
+- Добавлен MVP place visual treatment: visual pipeline теперь читает semantic places и добавляет небольшие небоевые scene accents по типам мест.
+- `dark_forest` profile получил `place_visual_rules.json` для `ruined_camp`, `swamp_crossing`, `blocked_road`, `small_loot_pocket`, bunker areas, lowlands, defensive positions, forest obstructions и small ruin sites.
+- Visual pipeline теперь пишет `debug/place_treatment_report.json`, а `visual-debug` добавляет шаг `09_place_treatment.png` перед финальным preview.
+- В debug tileset добавлены placeholder sprites для лагерей, завалов, переходов через болото, bunker debris, defensive remnants и скрытых cache markers.
+- Версия проекта поднята до `0.0.61`.

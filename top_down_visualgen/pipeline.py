@@ -9,6 +9,7 @@ from .decoration import DecorationMapper, merge_visual_objects
 from .io import write_json_object
 from .models import VisualPipelineResult
 from .object_mapper import ObjectVisualMapper
+from .place_treatment import PlaceTreatmentMapper
 from .package_loader import WorldPackageLoader
 from .preview_renderer import PreviewRenderer
 from .profile_loader import VisualProfileLoader
@@ -27,6 +28,7 @@ class VisualPipeline:
         object_mapper: ObjectVisualMapper | None = None,
         preview_renderer: PreviewRenderer | None = None,
         decoration_mapper: DecorationMapper | None = None,
+        place_treatment_mapper: PlaceTreatmentMapper | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -37,6 +39,7 @@ class VisualPipeline:
             object_mapper: Optional object mapper.
             preview_renderer: Optional preview renderer.
             decoration_mapper: Optional decoration mapper.
+            place_treatment_mapper: Optional place treatment mapper.
         """
         self._package_loader = package_loader or WorldPackageLoader()
         self._profile_loader = profile_loader or VisualProfileLoader()
@@ -44,6 +47,7 @@ class VisualPipeline:
         self._object_mapper = object_mapper or ObjectVisualMapper()
         self._preview_renderer = preview_renderer or PreviewRenderer()
         self._decoration_mapper = decoration_mapper or DecorationMapper()
+        self._place_treatment_mapper = place_treatment_mapper or PlaceTreatmentMapper()
 
     def run(
         self,
@@ -79,9 +83,15 @@ class VisualPipeline:
             visual_layers=visual_layers,
             visual_debug=visual_debug,
         )
+        place_treatment_result = self._place_treatment_mapper.map_place_treatments(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+        )
         visual_objects = merge_visual_objects(
             runtime_visual_objects=runtime_visual_objects,
             decoration_result=decoration_result,
+            place_treatment_result=place_treatment_result,
         )
         width = _int_value(visual_layers.get("width"), 0)
         height = _int_value(visual_layers.get("height"), 0)
@@ -103,6 +113,7 @@ class VisualPipeline:
         debug_autotile_report_path = debug_dir / "autotile_report.json"
         debug_unmapped_terrain_report_path = debug_dir / "unmapped_terrain_report.json"
         debug_decoration_report_path = debug_dir / "decoration_report.json"
+        debug_place_treatment_report_path = debug_dir / "place_treatment_report.json"
 
         write_json_object(visual_layers, visual_layers_path)
         write_json_object(visual_objects, visual_objects_path)
@@ -116,6 +127,10 @@ class VisualPipeline:
         write_json_object(
             _build_decoration_report_debug(decoration_result),
             debug_decoration_report_path,
+        )
+        write_json_object(
+            _build_place_treatment_report_debug(place_treatment_result),
+            debug_place_treatment_report_path,
         )
         if preview_path is not None:
             self._preview_renderer.render(
@@ -139,6 +154,7 @@ class VisualPipeline:
             debug_autotile_report_path=debug_autotile_report_path,
             debug_unmapped_terrain_report_path=debug_unmapped_terrain_report_path,
             debug_decoration_report_path=debug_decoration_report_path,
+            debug_place_treatment_report_path=debug_place_treatment_report_path,
             visual_layers=visual_layers,
             visual_objects=visual_objects,
             visual_chunks=visual_chunks,
@@ -156,6 +172,7 @@ class VisualPipeline:
             debug_autotile_report_path=debug_autotile_report_path,
             debug_unmapped_terrain_report_path=debug_unmapped_terrain_report_path,
             debug_decoration_report_path=debug_decoration_report_path,
+            debug_place_treatment_report_path=debug_place_treatment_report_path,
         )
 
     def _build_visual_map(
@@ -173,6 +190,7 @@ class VisualPipeline:
         debug_autotile_report_path: Path,
         debug_unmapped_terrain_report_path: Path,
         debug_decoration_report_path: Path,
+        debug_place_treatment_report_path: Path,
         visual_layers: dict[str, Any],
         visual_objects: dict[str, Any],
         visual_chunks: dict[str, Any],
@@ -231,6 +249,10 @@ class VisualPipeline:
                 "debug_decoration_report": _relative(
                     output_dir,
                     debug_decoration_report_path,
+                ),
+                "debug_place_treatment_report": _relative(
+                    output_dir,
+                    debug_place_treatment_report_path,
                 ),
             },
             "contract": {
@@ -326,6 +348,26 @@ def _build_decoration_report_debug(decoration_result: dict[str, Any]) -> dict[st
         "summary": {
             "total": 0,
             "by_rule": {},
+            "by_sprite_id": {},
+            "skipped": {},
+        },
+        "quality": {"status": "missing_report"},
+    }
+
+
+def _build_place_treatment_report_debug(place_treatment_result: dict[str, Any]) -> dict[str, Any]:
+    report = place_treatment_result.get("report")
+    if isinstance(report, dict):
+        return report
+    return {
+        "schema_version": "visual-debug-place-treatment-report-v1",
+        "kind": "visual_debug_place_treatment_report",
+        "source_layer": "objects.places",
+        "rules_enabled": False,
+        "summary": {
+            "total": 0,
+            "by_rule": {},
+            "by_place_type": {},
             "by_sprite_id": {},
             "skipped": {},
         },

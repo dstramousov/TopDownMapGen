@@ -35,6 +35,7 @@ class VisualProfile:
     autotile_rules: dict[str, Any]
     decoration_rules: dict[str, Any]
     prefab_rules: dict[str, Any]
+    place_rules: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,3 +52,4 @@ class VisualPipelineResult:
     debug_autotile_report_path: Path
     debug_unmapped_terrain_report_path: Path
     debug_decoration_report_path: Path
+    debug_place_treatment_report_path: Path

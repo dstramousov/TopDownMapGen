@@ -46,6 +46,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert (visual_output / "debug/autotile_report.json").exists()
     assert (visual_output / "debug/unmapped_terrain_report.json").exists()
     assert (visual_output / "debug/decoration_report.json").exists()
+    assert (visual_output / "debug/place_treatment_report.json").exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
@@ -66,6 +67,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     visual_objects = _read_json(result.visual_objects_path)
     assert visual_objects["summary"]["runtime_total"] == 1
     assert visual_objects["summary"]["decoration_total"] >= 1
+    assert visual_objects["summary"]["place_treatment_total"] >= 1
     assert any(item["sprite_id"] == "object.trench" for item in visual_objects["items"])
     assert any(
         str(item["sprite_id"]).startswith("decor.")
@@ -74,6 +76,10 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
 
     decoration_report = _read_json(visual_output / "debug/decoration_report.json")
     assert "swamp_isolated_reeds" in decoration_report["summary"]["by_rule"]
+
+    place_report = _read_json(visual_output / "debug/place_treatment_report.json")
+    assert place_report["quality"]["status"] == "ok"
+    assert "small_loot_pocket_scene" in place_report["summary"]["by_rule"]
 
     decoration_rules = _read_json(
         Path("top_down_visualgen/profiles/dark_forest/decoration_rules.json")
@@ -84,11 +90,19 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert "ruin_floor_rubble" in rule_ids
     assert "ruin_wall_debris" in rule_ids
 
+    place_rules = _read_json(
+        Path("top_down_visualgen/profiles/dark_forest/place_visual_rules.json")
+    )
+    place_rule_ids = {rule["id"] for rule in place_rules["rules"]}
+    assert "ruined_camp_scene" in place_rule_ids
+    assert "small_loot_pocket_scene" in place_rule_ids
+
     sprite_ids = set(_read_json(
         Path("top_down_visualgen/profiles/dark_forest/visual_tilesets.json")
     )["sprites"])
     assert "decor.ruin_rubble_01" in sprite_ids
     assert "decor.fallen_bricks_01" in sprite_ids
+    assert "decor.hidden_cache_marker_01" in sprite_ids
 
     visual_chunks = _read_json(result.visual_chunks_path)
     assert visual_chunks["summary"]["total"] == 4
@@ -123,7 +137,8 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "06_autotile_fallbacks.png",
         "07_objects.png",
         "08_decoration.png",
-        "09_final_preview.png",
+        "09_place_treatment.png",
+        "10_final_preview.png",
     ]
     assert all(path.exists() for path in paths)
 
@@ -195,7 +210,18 @@ def _write_minimal_world_package(output_dir: Path) -> None:
         },
     )
     for relative_path, payload in {
-        "objects/places.json": {"schema_version": "places-v3", "items": []},
+        "objects/places.json": {
+            "schema_version": "places-v3",
+            "items": [
+                {
+                    "id": "loot_place_000",
+                    "type": "small_loot_pocket",
+                    "center": {"x": 3, "y": 0},
+                    "bounds": {"min_x": 3, "min_y": 0, "max_x": 3, "max_y": 1},
+                    "entrances": []
+                }
+            ],
+        },
         "world_graph.json": {"schema_version": "world-graph-v2", "nodes": []},
         "routes.json": {"schema_version": "routes-v1", "items": []},
         "gameplay_zones.json": {"schema_version": "gameplay-zones-v1", "items": []},

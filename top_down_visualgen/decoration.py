@@ -118,12 +118,14 @@ def merge_visual_objects(
     *,
     runtime_visual_objects: dict[str, Any],
     decoration_result: dict[str, Any],
+    place_treatment_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Merge runtime visual objects with generated decorations.
 
     Args:
         runtime_visual_objects: Object records from runtime world objects.
         decoration_result: Decoration mapper output.
+        place_treatment_result: Optional place treatment mapper output.
 
     Returns:
         Combined visual objects JSON object.
@@ -134,7 +136,16 @@ def merge_visual_objects(
     decoration_items = decoration_result.get("items", [])
     if not isinstance(decoration_items, list):
         decoration_items = []
-    items = [item for item in [*runtime_items, *decoration_items] if isinstance(item, dict)]
+    place_treatment_items = []
+    if place_treatment_result is not None:
+        raw_place_items = place_treatment_result.get("items", [])
+        if isinstance(raw_place_items, list):
+            place_treatment_items = raw_place_items
+    items = [
+        item
+        for item in [*runtime_items, *decoration_items, *place_treatment_items]
+        if isinstance(item, dict)
+    ]
     items.sort(key=lambda item: item.get("sort_key", []))
     return {
         "schema_version": "visual-objects-v2",
@@ -145,6 +156,7 @@ def merge_visual_objects(
             "total": len(items),
             "runtime_total": len(runtime_items),
             "decoration_total": len(decoration_items),
+            "place_treatment_total": len(place_treatment_items),
             "by_draw_layer": _count_by(items, "draw_layer"),
             "by_sprite_id": _count_by(items, "sprite_id"),
         },

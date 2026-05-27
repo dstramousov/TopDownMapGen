@@ -592,6 +592,39 @@
     },
     "decor.mossy_stone_01": {
       "debug_color": "#6f8063"
+    },
+    "decor.campfire_ash_01": {
+      "debug_color": "#3f3325"
+    },
+    "decor.abandoned_crate_01": {
+      "debug_color": "#8a6238"
+    },
+    "decor.firewood_stack_01": {
+      "debug_color": "#6d4b2f"
+    },
+    "decor.torn_canvas_01": {
+      "debug_color": "#a18b67"
+    },
+    "decor.swamp_log_01": {
+      "debug_color": "#5d442c"
+    },
+    "decor.roadblock_debris_01": {
+      "debug_color": "#7d6d59"
+    },
+    "decor.hidden_cache_marker_01": {
+      "debug_color": "#c9a227"
+    },
+    "decor.concrete_debris_01": {
+      "debug_color": "#8e8b82"
+    },
+    "decor.warning_bones_01": {
+      "debug_color": "#d6d1bd"
+    },
+    "decor.sandbag_remnant_01": {
+      "debug_color": "#9b8655"
+    },
+    "decor.fallen_log_01": {
+      "debug_color": "#604329"
     }
   }
 }

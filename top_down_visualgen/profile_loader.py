@@ -18,6 +18,7 @@ class VisualProfileLoader:
         "autotile_rules": "autotile_rules.json",
         "decoration_rules": "decoration_rules.json",
         "prefab_rules": "prefab_rules.json",
+        "place_rules": "place_visual_rules.json",
     }
 
     def load(self, profile_dir: Path) -> VisualProfile:
@@ -49,4 +50,5 @@ class VisualProfileLoader:
             autotile_rules=data["autotile_rules"],
             decoration_rules=data["decoration_rules"],
             prefab_rules=data["prefab_rules"],
+            place_rules=data["place_rules"],
         )

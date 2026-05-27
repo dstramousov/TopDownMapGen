@@ -1,0 +1,217 @@
+{
+  "schema_version": "place-visual-rules-v1",
+  "kind": "place_visual_rules",
+  "enabled": true,
+  "seed_salt": "dark_forest_place_treatment_v1",
+  "blocked_terrain": [
+    "start",
+    "goal",
+    "ruin_wall_blocker",
+    "tree_blocker"
+  ],
+  "rules": [
+    {
+      "id": "ruined_camp_scene",
+      "priority": 10,
+      "place_types": [
+        "ruined_camp"
+      ],
+      "terrain_types": [
+        "grass",
+        "cracked_ground",
+        "ruin_floor"
+      ],
+      "placement": "within_bounds",
+      "max_items_per_place": 4,
+      "chance_percent": 85,
+      "sprites": [
+        "decor.campfire_ash_01",
+        "decor.abandoned_crate_01",
+        "decor.firewood_stack_01",
+        "decor.torn_canvas_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "swamp_crossing_scene",
+      "priority": 20,
+      "place_types": [
+        "swamp_crossing"
+      ],
+      "terrain_types": [
+        "grass",
+        "water_slow",
+        "cracked_ground"
+      ],
+      "placement": "within_bounds",
+      "max_items_per_place": 5,
+      "chance_percent": 80,
+      "sprites": [
+        "decor.swamp_log_01",
+        "decor.reeds_03",
+        "decor.mud_patch_02",
+        "decor.wet_grass_02"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "blocked_road_scene",
+      "priority": 30,
+      "place_types": [
+        "blocked_road"
+      ],
+      "terrain_types": [
+        "grass",
+        "old_overgrown_road",
+        "road",
+        "cracked_ground"
+      ],
+      "placement": "around_center",
+      "max_items_per_place": 5,
+      "chance_percent": 90,
+      "sprites": [
+        "decor.roadblock_debris_01",
+        "decor.broken_plank_01",
+        "decor.small_stone_01",
+        "decor.fallen_bricks_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "small_loot_pocket_scene",
+      "priority": 40,
+      "place_types": [
+        "small_loot_pocket",
+        "secret_cache"
+      ],
+      "terrain_types": [
+        "grass",
+        "cracked_ground",
+        "ruin_floor"
+      ],
+      "placement": "around_center",
+      "max_items_per_place": 2,
+      "chance_percent": 100,
+      "sprites": [
+        "decor.hidden_cache_marker_01",
+        "decor.abandoned_crate_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "bunker_approach_scene",
+      "priority": 50,
+      "place_types": [
+        "bunker_outer_area",
+        "bunker_inner_area"
+      ],
+      "terrain_types": [
+        "grass",
+        "cracked_ground",
+        "ruin_floor"
+      ],
+      "placement": "within_bounds",
+      "max_items_per_place": 4,
+      "chance_percent": 80,
+      "sprites": [
+        "decor.concrete_debris_01",
+        "decor.mossy_stone_01",
+        "decor.broken_block_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "dangerous_lowland_scene",
+      "priority": 60,
+      "place_types": [
+        "dangerous_lowland"
+      ],
+      "terrain_types": [
+        "grass",
+        "cracked_ground",
+        "water_slow"
+      ],
+      "placement": "within_bounds",
+      "max_items_per_place": 4,
+      "chance_percent": 75,
+      "sprites": [
+        "decor.dead_branch_01",
+        "decor.mud_patch_02",
+        "decor.warning_bones_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "old_defensive_position_scene",
+      "priority": 70,
+      "place_types": [
+        "old_defensive_position",
+        "ambush_clearing"
+      ],
+      "terrain_types": [
+        "grass",
+        "cracked_ground",
+        "old_overgrown_road"
+      ],
+      "placement": "within_bounds",
+      "max_items_per_place": 4,
+      "chance_percent": 80,
+      "sprites": [
+        "decor.sandbag_remnant_01",
+        "decor.broken_plank_01",
+        "decor.small_stone_02"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "forest_obstruction_scene",
+      "priority": 80,
+      "place_types": [
+        "forest_obstruction"
+      ],
+      "terrain_types": [
+        "grass",
+        "bush_slow_concealment",
+        "cracked_ground"
+      ],
+      "placement": "within_bounds",
+      "max_items_per_place": 4,
+      "chance_percent": 80,
+      "sprites": [
+        "decor.fallen_log_01",
+        "decor.dead_branch_01",
+        "decor.road_grass_tuft_02"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "small_ruin_site_scene",
+      "priority": 90,
+      "place_types": [
+        "small_ruin_site",
+        "ruined_structure",
+        "raised_platform_site"
+      ],
+      "terrain_types": [
+        "grass",
+        "cracked_ground",
+        "ruin_floor"
+      ],
+      "placement": "within_bounds",
+      "max_items_per_place": 5,
+      "chance_percent": 85,
+      "sprites": [
+        "decor.ruin_rubble_01",
+        "decor.cracked_stone_01",
+        "decor.broken_block_01",
+        "decor.mossy_stone_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    }
+  ],
+  "notes": [
+    "Place visual treatment reads semantic places and adds non-blocking scene accents.",
+    "Rules are deterministic and never change terrain, movement, collision, routes or markers.",
+    "This is intentionally smaller than the future prefab system: one-tile accents only."
+  ]
+}
