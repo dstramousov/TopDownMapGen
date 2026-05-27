@@ -1,9 +1,0 @@
-QSocketNotifier: Can only be used with threads started with QThread
-Unsupported return type 65 QPixmap in method "grab"
-Unsupported return type 65 QPixmap in method "grab"
-Invalid return type in method "addAction"
-Skipped method "setDefaultShortcuts" : Pointers are not supported: QAction*
-Unsupported return type 65 QPixmap in method "grab"
-Unsupported return type 65 QPixmap in method "grab"
-Invalid return type in method "addAction"
-Skipped method "setDefaultShortcuts" : Pointers are not supported: QAction*

@@ -247,3 +247,45 @@ Current route types:
 
 Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
 
+
+## Elevation model v1
+
+After loading `runtime_grids.json`, load `map_package/elevation_model.json`. Use `runtime_grids.grids.height_grid.rows` as the per-tile source of truth and use `elevation_model.json` to interpret those integer levels.
+
+The generator currently defines levels `-1..4`. A consumer should treat level `0` as normal ground, level `-1` as below-ground/interior-low-space, levels `1..4` as increasingly higher positions. Transitions between levels are not automatically walkable: movement between different levels should require a connector such as stairs, ramp, ladder, bridge or a game-specific scripted transition.
+
+For line of sight and projectile checks, combine `height_grid`, `vision_block_grid`, `projectile_block_grid` and the semantic rules in `elevation_model.json`. This keeps the package useful for fantasy, shooter, adventure and exploration games without hardcoding one combat model into the generator.
+
+## Elevation features and transitions
+
+After loading `runtime_grids.height_grid` and `elevation_model.json`, load `elevation_features.json` and `elevation_transitions.json` when the game needs height-aware movement or rendering.
+
+Recommended order:
+
+1. Use `height_grid` as the exact per-tile level map.
+2. Use `elevation_model.json` to interpret levels and generic rules.
+3. Use `elevation_features.json` to attach meaning to local features: pit, trench, bunker interior, raised berm, hill, bridge, ramp, stairs, platform, tower and special high landmark.
+4. Use `elevation_transitions.json` to decide where movement needs ramps, stairs, ladders or scripted transitions.
+
+The game may ignore unknown feature or transition types, but it should not invent movement between levels without checking the transition records.
+
+
+### Elevation preview
+
+Для визуальной проверки уровней высоты и переходов используйте:
+
+```bash
+python3 examples/render_world_preview.py output \
+  --elevation-overlay \
+  --transition-overlay \
+  --grid \
+  --cell-size 8 \
+  --output output/elevation_preview.png
+```
+
+`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+
+
+## Elevation v1
+
+See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.

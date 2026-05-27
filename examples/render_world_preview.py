@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 LOGGER = logging.getLogger(__name__)
 MAP_PACKAGE_INDEX_KIND = "map_package:index"
@@ -43,6 +43,22 @@ FIRING_PORT_COLOR = (255, 235, 70, 255)
 START_COLOR = (70, 230, 100, 255)
 GOAL_COLOR = (240, 80, 70, 255)
 GRID_COLOR = (0, 0, 0, 35)
+ELEVATION_COLORS: dict[int, tuple[int, int, int, int]] = {
+    -1: (30, 55, 130, 140),
+    0: (0, 0, 0, 0),
+    1: (190, 170, 80, 120),
+    2: (220, 160, 70, 140),
+    3: (215, 110, 190, 155),
+    4: (245, 245, 100, 175),
+}
+TRANSITION_COLORS: dict[str, tuple[int, int, int, int]] = {
+    "connector_edge": (120, 240, 120, 240),
+    "bridge_edge": (120, 210, 255, 240),
+    "step_up": (255, 215, 80, 220),
+    "step_down": (100, 170, 255, 220),
+    "steep_transition": (255, 80, 80, 240),
+}
+TRANSITION_TEXT_COLOR = (255, 255, 255, 255)
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +76,8 @@ class PreviewSummary:
         blocked_tiles: Number of blocked tiles in the collision layer.
         runtime_objects: Number of runtime objects drawn or read.
         multi_tile_objects: Number of runtime objects with multi-cell footprints.
+        elevation_levels: Elevation levels observed in height_grid.
+        elevation_transitions: Number of elevation transitions read.
         start: Start point.
         goal: Goal point.
     """
@@ -74,6 +92,8 @@ class PreviewSummary:
     blocked_tiles: int
     runtime_objects: int
     multi_tile_objects: int
+    elevation_levels: list[int]
+    elevation_transitions: int
     start: dict[str, int] | None
     goal: dict[str, int] | None
 
@@ -85,6 +105,8 @@ def render_preview(
     cell_size_px: int = 4,
     draw_objects: bool = True,
     draw_collision_overlay: bool = False,
+    draw_elevation_overlay: bool = False,
+    draw_transition_overlay: bool = False,
     draw_grid: bool = False,
 ) -> PreviewSummary:
     """Render a simple PNG preview from public world package files.
@@ -95,6 +117,8 @@ def render_preview(
         cell_size_px: Rendered preview cell size in pixels.
         draw_objects: Whether to draw runtime object markers.
         draw_collision_overlay: Whether to overlay blocked cells.
+        draw_elevation_overlay: Whether to overlay height_grid levels.
+        draw_transition_overlay: Whether to draw elevation transitions.
         draw_grid: Whether to draw a light tile grid.
 
     Returns:
@@ -125,9 +149,19 @@ def render_preview(
         package_dir,
         objects.get("runtime_objects"),
     )
+    runtime_grids = _read_optional_package_object(
+        package_dir,
+        map_index.get("runtime_grids"),
+    )
+    elevation_transitions = _read_optional_package_object(
+        package_dir,
+        map_index.get("elevation_transitions"),
+    )
 
     terrain_rows = _read_type_rows(terrain, width=width, height=height)
     collision_rows = _read_collision_rows(collision, width=width, height=height)
+    height_rows = _read_height_rows(runtime_grids, width=width, height=height)
+    transition_items = _optional_list(elevation_transitions.get("items"))
     object_items = _optional_list(runtime_objects.get("items"))
     start = _optional_point(start_goal.get("start"))
     goal = _optional_point(start_goal.get("goal"))
@@ -145,6 +179,20 @@ def render_preview(
             draw,
             collision_rows=collision_rows,
             cell_size_px=cell_size_px,
+        )
+    if draw_elevation_overlay:
+        _draw_elevation_overlay(
+            draw,
+            height_rows=height_rows,
+            cell_size_px=cell_size_px,
+        )
+    if draw_transition_overlay:
+        _draw_transition_overlay(
+            draw,
+            transitions=transition_items,
+            cell_size_px=cell_size_px,
+            width=width,
+            height=height,
         )
     if draw_objects:
         _draw_runtime_objects(
@@ -174,6 +222,8 @@ def render_preview(
         blocked_tiles=sum(cell == "1" for row in collision_rows for cell in row),
         runtime_objects=len(object_items),
         multi_tile_objects=sum(_has_multi_tile_footprint(item) for item in object_items),
+        elevation_levels=sorted({level for row in height_rows for level in row}),
+        elevation_transitions=len(transition_items),
         start=start,
         goal=goal,
     )
@@ -227,6 +277,8 @@ def print_summary(summary: PreviewSummary) -> None:
     LOGGER.info("- blocked tiles: %s", summary.blocked_tiles)
     LOGGER.info("- runtime object markers: %s", summary.runtime_objects)
     LOGGER.info("- multi-tile objects: %s", summary.multi_tile_objects)
+    LOGGER.info("- elevation levels: %s", summary.elevation_levels)
+    LOGGER.info("- elevation transitions: %s", summary.elevation_transitions)
     LOGGER.info("- start: %s", _format_point(summary.start))
     LOGGER.info("- goal: %s", _format_point(summary.goal))
     LOGGER.info("Output: %s", summary.output_path)
@@ -256,6 +308,59 @@ def _draw_collision_overlay(
         for x, cell in enumerate(row):
             if cell == "1":
                 draw.rectangle(_cell_rect(x, y, cell_size_px), fill=BLOCKED_OVERLAY_COLOR)
+
+
+def _draw_elevation_overlay(
+    draw: ImageDraw.ImageDraw,
+    *,
+    height_rows: list[list[int]],
+    cell_size_px: int,
+) -> None:
+    font = ImageFont.load_default() if cell_size_px >= 8 else None
+    for y, row in enumerate(height_rows):
+        for x, level in enumerate(row):
+            color = ELEVATION_COLORS.get(level, (255, 255, 255, 140))
+            if color[3] > 0:
+                draw.rectangle(_cell_rect(x, y, cell_size_px), fill=color)
+            if font is not None and level != 0:
+                label = str(level) if level < 0 else f"+{level}"
+                draw.text(
+                    (x * cell_size_px + 1, y * cell_size_px),
+                    label,
+                    fill=TRANSITION_TEXT_COLOR,
+                    font=font,
+                )
+
+
+def _draw_transition_overlay(
+    draw: ImageDraw.ImageDraw,
+    *,
+    transitions: list[Any],
+    cell_size_px: int,
+    width: int,
+    height: int,
+) -> None:
+    font = ImageFont.load_default() if cell_size_px >= 8 else None
+    for transition in transitions:
+        if not isinstance(transition, dict):
+            continue
+        source = _transition_point(transition.get("from"), width=width, height=height)
+        target = _transition_point(transition.get("to"), width=width, height=height)
+        if source is None or target is None:
+            continue
+        transition_type = transition.get("type")
+        color = TRANSITION_COLORS.get(
+            transition_type if isinstance(transition_type, str) else "",
+            (255, 255, 255, 220),
+        )
+        sx, sy = _cell_center(source["x"], source["y"], cell_size_px)
+        tx, ty = _cell_center(target["x"], target["y"], cell_size_px)
+        draw.line((sx, sy, tx, ty), fill=color, width=max(1, cell_size_px // 4))
+        if font is not None:
+            label = _transition_label(transition)
+            mx = (sx + tx) // 2
+            my = (sy + ty) // 2
+            draw.text((mx, my), label, fill=TRANSITION_TEXT_COLOR, font=font)
 
 
 def _draw_runtime_objects(
@@ -454,6 +559,13 @@ def _cell_rect(x: int, y: int, cell_size_px: int) -> tuple[int, int, int, int]:
     )
 
 
+def _cell_center(x: int, y: int, cell_size_px: int) -> tuple[int, int]:
+    return (
+        x * cell_size_px + cell_size_px // 2,
+        y * cell_size_px + cell_size_px // 2,
+    )
+
+
 def _bounds_rect(
     bounds: dict[str, int],
     cell_size_px: int,
@@ -605,6 +717,57 @@ def _read_type_rows(data: dict[str, Any], *, width: int, height: int) -> list[li
     return result
 
 
+def _read_height_rows(data: dict[str, Any], *, width: int, height: int) -> list[list[int]]:
+    grids = _optional_object(data.get("grids"))
+    height_grid = _optional_object(grids.get("height_grid"))
+    rows = height_grid.get("rows")
+    if not isinstance(rows, list):
+        return [[0 for _ in range(width)] for _ in range(height)]
+    result: list[list[int]] = []
+    for y in range(height):
+        source_row = rows[y] if y < len(rows) else []
+        row: list[int] = []
+        if isinstance(source_row, list):
+            for x in range(width):
+                value = source_row[x] if x < len(source_row) else 0
+                row.append(value if isinstance(value, int) else 0)
+        else:
+            row = [0 for _ in range(width)]
+        result.append(row)
+    return result
+
+
+def _transition_point(
+    value: Any,
+    *,
+    width: int,
+    height: int,
+) -> dict[str, int] | None:
+    if not isinstance(value, dict):
+        return None
+    x = value.get("x")
+    y = value.get("y")
+    if isinstance(x, int) and isinstance(y, int) and 0 <= x < width and 0 <= y < height:
+        return {"x": x, "y": y}
+    return None
+
+
+def _transition_label(transition: dict[str, Any]) -> str:
+    connector = transition.get("suggested_connector")
+    if connector == "ramp":
+        return "R"
+    if connector == "stairs":
+        return "S"
+    if connector == "bridge":
+        return "B"
+    if connector == "slope":
+        return "/"
+    transition_type = transition.get("type")
+    if transition_type == "steep_transition":
+        return "!"
+    return "↕"
+
+
 def _read_collision_rows(data: dict[str, Any], *, width: int, height: int) -> list[str]:
     rows = data.get("rows")
     if not isinstance(rows, list) or not all(isinstance(row, str) for row in rows):
@@ -697,6 +860,16 @@ def parse_args() -> argparse.Namespace:
         help="Overlay blocked cells on top of terrain colors.",
     )
     parser.add_argument(
+        "--elevation-overlay",
+        action="store_true",
+        help="Overlay height_grid levels on top of terrain colors.",
+    )
+    parser.add_argument(
+        "--transition-overlay",
+        action="store_true",
+        help="Draw elevation transitions such as slopes, ramps, bridges, and steep edges.",
+    )
+    parser.add_argument(
         "--grid",
         action="store_true",
         help="Draw a light tile grid. Useful for small maps.",
@@ -715,6 +888,8 @@ def main() -> int:
             cell_size_px=args.cell_size,
             draw_objects=not args.no_objects,
             draw_collision_overlay=args.collision_overlay,
+            draw_elevation_overlay=args.elevation_overlay,
+            draw_transition_overlay=args.transition_overlay,
             draw_grid=args.grid,
         )
     except (FileNotFoundError, ValueError, json.JSONDecodeError, OSError) as exc:

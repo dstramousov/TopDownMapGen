@@ -5,13 +5,13 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v11"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v12"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
 MIN_OBJECT_HEIGHT = 0
 MAX_OBJECT_HEIGHT = 10
-MAX_RUNTIME_OBJECTS = 128
+MAX_RUNTIME_OBJECTS = 160
 MIN_TRENCHES = 1
 MAX_TRENCHES = 8
 TRENCH_MIN_LENGTH_TILES = 3
@@ -62,6 +62,13 @@ GENERATED_RUNTIME_OBJECT_TYPES: tuple[str, ...] = (
     "old_grave_marker",
     "pit",
     "earth_berm",
+    "hill",
+    "wooden_bridge",
+    "stone_ramp",
+    "stone_stairs",
+    "ruin_platform",
+    "watchtower",
+    "ancient_beacon",
     "old_well",
     "abandoned_cart",
 )
@@ -364,13 +371,110 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
         "name_ru": "Земляная насыпь",
         "role": "terrain_cover",
         "default_height": 1,
-        "default_elevation": 0,
+        "default_elevation": 1,
         "cover_type": "low",
         "blocks_movement": False,
         "blocks_projectiles": True,
         "blocks_vision": False,
         "interactive": False,
-        "tags": ["terrain_feature", "cover", "earthwork"],
+        "tags": ["elevation", "raised_ground", "terrain_feature", "cover", "earthwork"],
+    },
+    {
+        "type": "hill",
+        "name_ru": "Небольшой холм",
+        "role": "raised_ground",
+        "default_height": 1,
+        "default_elevation": 1,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "hill", "raised_ground", "terrain_feature"],
+    },
+    {
+        "type": "wooden_bridge",
+        "name_ru": "Деревянный мост",
+        "role": "traversal_structure",
+        "default_height": 1,
+        "default_elevation": 2,
+        "surface_elevation": 2,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "bridge", "platform", "traversal"],
+    },
+    {
+        "type": "stone_ramp",
+        "name_ru": "Каменный пандус",
+        "role": "elevation_transition",
+        "default_height": 0,
+        "default_elevation": 1,
+        "surface_elevation": 1,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "ramp", "transition", "traversal"],
+    },
+    {
+        "type": "stone_stairs",
+        "name_ru": "Каменные ступени",
+        "role": "elevation_transition",
+        "default_height": 0,
+        "default_elevation": 1,
+        "surface_elevation": 1,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "stairs", "transition", "traversal"],
+    },
+    {
+        "type": "ruin_platform",
+        "name_ru": "Приподнятая руинная платформа",
+        "role": "high_ground",
+        "default_height": 1,
+        "default_elevation": 2,
+        "surface_elevation": 2,
+        "cover_type": "partial",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "platform", "ruins", "high_ground"],
+    },
+    {
+        "type": "watchtower",
+        "name_ru": "Наблюдательная вышка",
+        "role": "high_landmark",
+        "default_height": 4,
+        "default_elevation": 3,
+        "surface_elevation": 3,
+        "cover_type": "partial",
+        "blocks_movement": True,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "tower", "high_platform", "landmark", "high_ground"],
+    },
+    {
+        "type": "ancient_beacon",
+        "name_ru": "Древний верхний маяк",
+        "role": "special_high_landmark",
+        "default_height": 5,
+        "default_elevation": 4,
+        "surface_elevation": 4,
+        "cover_type": "none",
+        "blocks_movement": True,
+        "blocks_projectiles": False,
+        "blocks_vision": True,
+        "interactive": True,
+        "tags": ["elevation", "special_high_landmark", "landmark", "high_ground", "story_marker"],
     },
     {
         "type": "old_well",
@@ -443,6 +547,13 @@ def _footprint_defaults_for_type(object_type: str) -> dict[str, Any]:
         "old_grave_marker": _footprint_default(width=1, height=1, blocks_movement=False),
         "pit": _footprint_default(width=2, height=2, blocks_movement=False),
         "earth_berm": _footprint_default(width=2, height=1, rotatable=True, blocks_movement=False),
+        "hill": _footprint_default(width=3, height=3, blocks_movement=False),
+        "wooden_bridge": _footprint_default(width=4, height=1, rotatable=True, blocks_movement=False),
+        "stone_ramp": _footprint_default(width=2, height=1, rotatable=True, blocks_movement=False),
+        "stone_stairs": _footprint_default(width=2, height=1, rotatable=True, blocks_movement=False),
+        "ruin_platform": _footprint_default(width=3, height=2, rotatable=True, blocks_movement=False),
+        "watchtower": _footprint_default(width=2, height=2, visual_width=2, visual_height=4),
+        "ancient_beacon": _footprint_default(width=1, height=1, visual_width=1, visual_height=5),
         "old_well": _footprint_default(width=2, height=2),
         "abandoned_cart": _footprint_default(width=2, height=1, rotatable=True),
         "trench": _footprint_default(width=1, height=1, blocks_movement=False),
@@ -548,6 +659,13 @@ def _combat_properties_for_type(object_type: str) -> dict[str, Any]:
         "old_grave_marker": {"cover_value": 0.0, "concealment_value": 0.0},
         "pit": {"cover_value": 0.25, "concealment_value": 0.15},
         "earth_berm": {"cover_value": 0.45, "concealment_value": 0.0},
+        "hill": {"cover_value": 0.1, "concealment_value": 0.0},
+        "wooden_bridge": {"cover_value": 0.0, "concealment_value": 0.0},
+        "stone_ramp": {"cover_value": 0.0, "concealment_value": 0.0},
+        "stone_stairs": {"cover_value": 0.0, "concealment_value": 0.0},
+        "ruin_platform": {"cover_value": 0.35, "concealment_value": 0.0},
+        "watchtower": {"cover_value": 0.65, "concealment_value": 0.0},
+        "ancient_beacon": {"cover_value": 0.1, "concealment_value": 0.0},
         "old_well": {"cover_value": 0.5, "concealment_value": 0.0},
         "abandoned_cart": {"cover_value": 0.4, "concealment_value": 0.0},
     }
@@ -848,6 +966,13 @@ def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
         RuntimeObjectQuota("old_grave_marker", 1, frozenset({"+", "c"})),
         RuntimeObjectQuota("pit", 2, frozenset({"+", "c"})),
         RuntimeObjectQuota("earth_berm", 3, frozenset({"+", ".", "c"})),
+        RuntimeObjectQuota("hill", 3, frozenset({"+", "c"})),
+        RuntimeObjectQuota("wooden_bridge", 1, frozenset({".", "R", "c", "+"})),
+        RuntimeObjectQuota("stone_ramp", 2, frozenset({"R", "c", ".", "+"})),
+        RuntimeObjectQuota("stone_stairs", 2, frozenset({"R", "c", ".", "+"})),
+        RuntimeObjectQuota("ruin_platform", 1, frozenset({"R", "c"})),
+        RuntimeObjectQuota("watchtower", 1, frozenset({"R", "c", "+"})),
+        RuntimeObjectQuota("ancient_beacon", 1, frozenset({"R", "c", "+"})),
         RuntimeObjectQuota("abandoned_cart", 2, frozenset({".", "c", "+"})),
         RuntimeObjectQuota("abandoned_backpack", 3, frozenset({"+", ".", "R", "c"})),
         RuntimeObjectQuota("dead_campfire", 2, frozenset({"+", ".", "R"})),
@@ -1298,13 +1423,25 @@ def _attach_trench_elevation(
         except (TypeError, ValueError):
             continue
     for item in objects:
-        if item.get("type") not in {"trench", "pit"} | BUNKER_TYPES:
+        level = _object_elevation_level(item)
+        if level is None or level == DEFAULT_ELEVATION_LEVEL:
             continue
         for x, y in _object_footprint_points(item):
             if (x, y) in existing:
                 continue
-            cells.append({"x": x, "y": y, "level": TRENCH_ELEVATION_LEVEL})
+            cells.append({"x": x, "y": y, "level": level})
             existing.add((x, y))
+
+
+def _object_elevation_level(item: dict[str, Any]) -> int | None:
+    object_type = item.get("type")
+    if object_type in {"trench", "pit"} | BUNKER_TYPES:
+        return TRENCH_ELEVATION_LEVEL
+    for key in ("surface_elevation", "elevation"):
+        value = item.get(key)
+        if isinstance(value, int):
+            return value
+    return None
 
 
 def _object_footprint_points(item: dict[str, Any]) -> list[tuple[int, int]]:

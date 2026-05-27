@@ -16,7 +16,12 @@ def test_world_preview_renderer_writes_png(tmp_path: Path) -> None:
     output_dir = _write_minimal_package(tmp_path)
     module = _load_renderer_module()
 
-    summary = module.render_preview(output_dir, cell_size_px=8)
+    summary = module.render_preview(
+        output_dir,
+        cell_size_px=8,
+        draw_elevation_overlay=True,
+        draw_transition_overlay=True,
+    )
 
     assert summary.width_tiles == 3
     assert summary.height_tiles == 2
@@ -33,7 +38,15 @@ def test_world_preview_renderer_cli_prints_summary(tmp_path: Path) -> None:
     output_dir = _write_minimal_package(tmp_path)
 
     result = subprocess.run(
-        [sys.executable, str(RENDERER_PATH), str(output_dir), "--cell-size", "6"],
+        [
+            sys.executable,
+            str(RENDERER_PATH),
+            str(output_dir),
+            "--cell-size",
+            "6",
+            "--elevation-overlay",
+            "--transition-overlay",
+        ],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -42,6 +55,8 @@ def test_world_preview_renderer_cli_prints_summary(tmp_path: Path) -> None:
 
     assert "World preview: OK" in result.stderr
     assert "Map: 3x2 tiles, preview cell size 6 px" in result.stderr
+    assert "elevation levels: [-1, 0, 1, 2]" in result.stderr
+    assert "elevation transitions: 2" in result.stderr
     assert "Output:" in result.stderr
     assert (output_dir / "world_preview.png").is_file()
 
@@ -83,6 +98,8 @@ def _write_minimal_package(tmp_path: Path) -> Path:
                 "height_tiles": 2,
                 "tile_size_px": 16,
             },
+            "runtime_grids": "runtime_grids.json",
+            "elevation_transitions": "elevation_transitions.json",
             "layers": {
                 "terrain": "layers/terrain.json",
                 "collision": "layers/collision.json",
@@ -106,6 +123,35 @@ def _write_minimal_package(tmp_path: Path) -> Path:
     _write_json(
         package_dir / "layers" / "start_goal.json",
         {"start": {"x": 0, "y": 0}, "goal": {"x": 2, "y": 1}},
+    )
+    _write_json(
+        package_dir / "runtime_grids.json",
+        {
+            "grids": {
+                "height_grid": {
+                    "rows": [[0, 1, 2], [0, -1, 0]],
+                },
+            },
+        },
+    )
+    _write_json(
+        package_dir / "elevation_transitions.json",
+        {
+            "items": [
+                {
+                    "type": "step_up",
+                    "from": {"x": 0, "y": 0},
+                    "to": {"x": 1, "y": 0},
+                    "suggested_connector": "slope",
+                },
+                {
+                    "type": "bridge_edge",
+                    "from": {"x": 1, "y": 0},
+                    "to": {"x": 2, "y": 0},
+                    "suggested_connector": "bridge",
+                },
+            ],
+        },
     )
     _write_json(
         package_dir / "objects" / "runtime_objects.json",

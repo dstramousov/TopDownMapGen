@@ -7,6 +7,9 @@ from top_down_worldgen import __version__
 from top_down_worldgen.manifest import (
     COLLISION_LAYER_SCHEMA_VERSION,
     ELEVATION_LAYER_SCHEMA_VERSION,
+    ELEVATION_MODEL_SCHEMA_VERSION,
+    ELEVATION_FEATURES_SCHEMA_VERSION,
+    ELEVATION_TRANSITIONS_SCHEMA_VERSION,
     GAMEPLAY_LAYER_SCHEMA_VERSION,
     MAP_PACKAGE_MAP_SCHEMA_VERSION,
     MAP_PACKAGE_SCHEMA_VERSION,
@@ -178,6 +181,26 @@ def write_map_package(
     write_json(world_graph, outputs.map_package_world_graph)
     routes = _build_routes(world_graph)
     write_json(routes, outputs.map_package_routes)
+    height_grid = _dict(runtime_grids.get("grids")).get("height_grid")
+    elevation_model = _build_elevation_model(
+        height_grid=height_grid,
+        runtime_objects=runtime_objects,
+        width=width,
+        height=height,
+    )
+    write_json(elevation_model, outputs.map_package_elevation_model)
+    elevation_features = _build_elevation_features_package(
+        elevation_model=elevation_model,
+        width=width,
+        height=height,
+    )
+    elevation_transitions = _build_elevation_transitions_package(
+        elevation_model=elevation_model,
+        width=width,
+        height=height,
+    )
+    write_json(elevation_features, outputs.map_package_elevation_features)
+    write_json(elevation_transitions, outputs.map_package_elevation_transitions)
 
     for key, filename in _GAMEPLAY_FILES:
         write_json(
@@ -256,6 +279,9 @@ def write_map_package(
             "runtime_grids": "runtime_grids.json",
             "world_graph": "world_graph.json",
             "routes": "routes.json",
+            "elevation_model": "elevation_model.json",
+            "elevation_features": "elevation_features.json",
+            "elevation_transitions": "elevation_transitions.json",
             "layers": {
                 "tile_grid": "layers/tile_grid.json",
                 "terrain": "layers/terrain.json",
@@ -305,6 +331,9 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_runtime_grids,
         outputs.map_package_world_graph,
         outputs.map_package_routes,
+        outputs.map_package_elevation_model,
+        outputs.map_package_elevation_features,
+        outputs.map_package_elevation_transitions,
         outputs.map_package_tile_grid,
         outputs.map_package_terrain,
         outputs.map_package_movement_costs,
@@ -1073,6 +1102,594 @@ def _build_runtime_grids(
     }
 
 
+
+def _build_elevation_model(
+    *,
+    height_grid: Any,
+    runtime_objects: list[Any],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    """Build the public elevation model contract.
+
+    Args:
+        height_grid: Runtime height grid object or rows.
+        runtime_objects: Runtime object instances.
+        width: Map width in tiles.
+        height: Map height in tiles.
+
+    Returns:
+        Elevation model JSON object.
+    """
+    rows = _height_rows_from_grid(height_grid=height_grid, width=width, height=height)
+    level_counts = _count_height_levels(rows)
+    features = _elevation_features(runtime_objects)
+    transitions = _elevation_transitions(
+        rows=rows,
+        features=features,
+        width=width,
+        height=height,
+    )
+    feature_types = _count_by_key(features, "type")
+    transition_connectors = _count_by_key(transitions, "suggested_connector")
+    required_feature_types = _required_elevation_feature_types()
+    required_levels = {-1, 0, 1, 2, 3, 4}
+    return {
+        "schema_version": ELEVATION_MODEL_SCHEMA_VERSION,
+        "kind": "elevation_model",
+        "coordinate_space": "tile",
+        "width": width,
+        "height": height,
+        "levels": {
+            "-1": {
+                "name": "below_ground",
+                "meaning": "Trenches, pits, bunker interiors, and other low ground.",
+                "movement": "walkable_if_connected",
+                "visibility": "reduced_against_surface",
+                "projectiles": "requires_line_of_sight_transition",
+                "render_role": "below_floor_overlay",
+            },
+            "0": {
+                "name": "ground",
+                "meaning": "Default outdoor ground level.",
+                "movement": "normal",
+                "visibility": "baseline",
+                "projectiles": "baseline",
+                "render_role": "terrain_base",
+            },
+            "1": {
+                "name": "raised_ground",
+                "meaning": "Hills, berms, raised earth, and shallow platforms.",
+                "movement": "normal_or_ramp_required",
+                "visibility": "minor_high_ground_advantage",
+                "projectiles": "minor_high_ground_advantage",
+                "render_role": "raised_terrain_overlay",
+            },
+            "2": {
+                "name": "platform",
+                "meaning": "Bridges, ruin decks, ledges, and constructed platforms.",
+                "movement": "explicit_transition_required",
+                "visibility": "high_ground",
+                "projectiles": "high_ground",
+                "render_role": "platform_layer",
+            },
+            "3": {
+                "name": "high_platform",
+                "meaning": "Towers, roofs, and strong high vantage points.",
+                "movement": "explicit_transition_required",
+                "visibility": "strong_high_ground",
+                "projectiles": "strong_high_ground",
+                "render_role": "high_object_layer",
+            },
+            "4": {
+                "name": "special_high_landmark",
+                "meaning": "Reserved for exceptional vertical landmarks.",
+                "movement": "usually_blocked_or_scripted",
+                "visibility": "special_case",
+                "projectiles": "special_case",
+                "render_role": "landmark_layer",
+            },
+        },
+        "transition_types": {
+            "ramp": "Smooth walkable elevation transition.",
+            "stairs": "Discrete walkable constructed transition.",
+            "ladder": "Actor-only vertical transition.",
+            "bridge": "Walkable platform crossing over another level.",
+            "drop": "One-way or risky descent transition.",
+        },
+        "v1_completion": {
+            "status": "ready_for_consumer_integration",
+            "required_levels": [str(level) for level in sorted(required_levels)],
+            "levels_present": [str(level) for level in sorted(level_counts)],
+            "missing_levels": [
+                str(level) for level in sorted(required_levels.difference(level_counts))
+            ],
+            "required_feature_types": sorted(required_feature_types),
+            "feature_types_present": sorted(feature_types),
+            "missing_feature_types": sorted(required_feature_types.difference(feature_types)),
+            "transition_connectors_present": sorted(transition_connectors),
+            "consumer_ready_files": [
+                "runtime_grids.height_grid",
+                "elevation_model.json",
+                "elevation_features.json",
+                "elevation_transitions.json",
+            ],
+        },
+        "rules": {
+            "movement": {
+                "same_level": "allowed_if_collision_grid_allows",
+                "level_delta_1": "requires_ramp_stairs_or_object_transition",
+                "level_delta_gt_1": "requires_ladder_bridge_script_or_is_blocked",
+            },
+            "line_of_sight": {
+                "same_level": "use_vision_block_grid",
+                "higher_to_lower": "allow_if_not_blocked_by_vision_grid",
+                "lower_to_higher": "allow_if_target_edge_visible_and_not_blocked",
+                "large_delta": "consumer_should_apply_game_specific_rule",
+            },
+            "projectiles": {
+                "same_level": "use_projectile_block_grid",
+                "higher_to_lower": "allow_if_projectile_grid_clear",
+                "lower_to_higher": "allow_if_projectile_grid_clear_and_cover_rule_allows",
+                "through_bridge_or_platform": "consumer_specific",
+            },
+            "render_order": {
+                "primary_sort": "sort_anchor_y_then_elevation_level",
+                "below_ground": "draw_as_overlay_or_cutaway",
+                "platforms": "draw_after_base_terrain_before_tall_objects",
+            },
+        },
+        "features": features,
+        "transitions": transitions,
+        "summary": {
+            "min_level": min(level_counts) if level_counts else 0,
+            "max_level": max(level_counts) if level_counts else 0,
+            "levels_present": [str(level) for level in sorted(level_counts)],
+            "level_counts": {str(level): count for level, count in sorted(level_counts.items())},
+            "feature_count": len(features),
+            "transition_count": len(transitions),
+            "required_feature_type_count": len(required_feature_types),
+            "missing_required_feature_type_count": len(required_feature_types.difference(feature_types)),
+            "missing_level_count": len(required_levels.difference(level_counts)),
+        },
+        "notes": [
+            "This model defines elevation semantics for consumers; it is not a physics engine.",
+            "Use runtime_grids.height_grid for per-tile heights and this file for meanings/rules.",
+        ],
+    }
+
+
+
+def _required_elevation_feature_types() -> set[str]:
+    return {
+        "pit",
+        "trench",
+        "bunker_interior",
+        "raised_berm",
+        "hill",
+        "bridge",
+        "ramp",
+        "stairs",
+        "platform",
+        "tower",
+        "special_high_landmark",
+    }
+
+
+def _build_elevation_features_package(
+    *,
+    elevation_model: dict[str, Any],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    """Build public elevation feature records.
+
+    Args:
+        elevation_model: Elevation model object produced for the package.
+        width: Map width in tiles.
+        height: Map height in tiles.
+
+    Returns:
+        Elevation features package object.
+    """
+    features = _dict_list(elevation_model.get("features"))
+    feature_types = _count_by_key(features, "type")
+    required_feature_types = set(_string_list(_dict(elevation_model.get("v1_completion")).get("required_feature_types")))
+    return {
+        "schema_version": ELEVATION_FEATURES_SCHEMA_VERSION,
+        "kind": "elevation_features",
+        "coordinate_space": "tile",
+        "width": width,
+        "height": height,
+        "items": features,
+        "feature_types": {
+            "pit": "Below-ground depression, usually level -1.",
+            "trench": "Below-ground defensive or traversal structure, usually level -1.",
+            "bunker_interior": "Surface structure with an interior level below ground.",
+            "raised_berm": "Raised earthwork or hill-like local feature, usually level +1.",
+            "hill": "Raised natural high ground, usually level +1.",
+            "bridge": "Raised walkable span crossing an obstacle or lower area, usually level +2.",
+            "ramp": "Smooth traversal connector between nearby levels.",
+            "stairs": "Discrete traversal connector between nearby levels.",
+            "platform": "Constructed or ruin deck high ground, usually level +2.",
+            "tower": "Tall landmark or vantage point, usually level +3.",
+            "special_high_landmark": "Exceptional high point or scripted landmark, usually level +4.",
+            "object_elevation_feature": "Generic object-derived elevation feature.",
+        },
+        "v1_completion": {
+            "required_feature_types": sorted(required_feature_types),
+            "feature_types_present": sorted(feature_types),
+            "missing_feature_types": sorted(required_feature_types.difference(feature_types)),
+        },
+        "summary": {
+            "total": len(features),
+            "by_type": feature_types,
+            "below_ground_count": sum(
+                1
+                for feature in features
+                if _feature_level(feature, "interior_elevation") < 0
+                or _feature_level(feature, "elevation") < 0
+            ),
+            "raised_count": sum(
+                1
+                for feature in features
+                if _feature_level(feature, "surface_elevation") > 0
+                or _feature_level(feature, "elevation") > 0
+            ),
+        },
+    }
+
+
+def _build_elevation_transitions_package(
+    *,
+    elevation_model: dict[str, Any],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    """Build public elevation transition records.
+
+    Args:
+        elevation_model: Elevation model object produced for the package.
+        width: Map width in tiles.
+        height: Map height in tiles.
+
+    Returns:
+        Elevation transitions package object.
+    """
+    transitions = _dict_list(elevation_model.get("transitions"))
+    transition_types = _count_by_key(transitions, "type")
+    connector_types = _count_by_key(transitions, "suggested_connector")
+    return {
+        "schema_version": ELEVATION_TRANSITIONS_SCHEMA_VERSION,
+        "kind": "elevation_transitions",
+        "coordinate_space": "tile",
+        "width": width,
+        "height": height,
+        "items": transitions,
+        "transition_types": {
+            "step_down": "Adjacent cells descend to a lower level.",
+            "step_up": "Adjacent cells ascend to a higher level.",
+            "steep_transition": "Large height delta that needs an explicit connector.",
+            "bridge_edge": "Transition involving bridge/platform semantics.",
+            "connector_edge": "Transition involving an explicit ramp or stairs connector.",
+        },
+        "connector_types": {
+            "slope": "Natural or earthwork connector for a one-level transition.",
+            "ramp": "Explicit ramp connector for a one-level transition.",
+            "stairs": "Explicit stairs connector for a one-level transition.",
+            "bridge": "Bridge or platform connector for elevated walkable traversal.",
+            "ladder_or_scripted": "Recommended connector for larger transitions.",
+            "none": "No explicit connector required.",
+        },
+        "v1_completion": {
+            "connectors_present": sorted(connector_types),
+            "movement_allowed_count": sum(
+                1 for transition in transitions if transition.get("movement_allowed") is True
+            ),
+            "movement_blocked_count": sum(
+                1 for transition in transitions if transition.get("movement_allowed") is False
+            ),
+            "notes": [
+                "Allowed transitions are directly consumable by movement/pathfinding code.",
+                "Blocked transitions mark cliffs, drops, or missing connectors for game-specific handling.",
+            ],
+        },
+        "summary": {
+            "total": len(transitions),
+            "by_type": transition_types,
+            "by_connector": connector_types,
+            "movement_allowed": sum(
+                1 for transition in transitions if transition.get("movement_allowed") is True
+            ),
+            "movement_blocked": sum(
+                1 for transition in transitions if transition.get("movement_allowed") is False
+            ),
+        },
+    }
+
+
+def _feature_level(feature: dict[str, Any], key: str) -> int:
+    value = feature.get(key)
+    return value if isinstance(value, int) else 0
+
+def _height_rows_from_grid(*, height_grid: Any, width: int, height: int) -> list[list[int]]:
+    grid = _dict(height_grid)
+    rows_value = grid.get("rows") if grid else height_grid
+    rows: list[list[int]] = []
+    if isinstance(rows_value, list):
+        for y in range(height):
+            source_row = rows_value[y] if y < len(rows_value) else []
+            row: list[int] = []
+            if isinstance(source_row, list):
+                for x in range(width):
+                    value = source_row[x] if x < len(source_row) else 0
+                    row.append(value if isinstance(value, int) else 0)
+            else:
+                row = [0 for _ in range(width)]
+            rows.append(row)
+    if not rows:
+        rows = [[0 for _ in range(width)] for _ in range(height)]
+    return rows
+
+
+def _count_height_levels(rows: list[list[int]]) -> dict[int, int]:
+    counts: dict[int, int] = {}
+    for row in rows:
+        for level in row:
+            counts[level] = counts.get(level, 0) + 1
+    return counts
+
+
+def _elevation_features(runtime_objects: list[Any]) -> list[dict[str, Any]]:
+    features: list[dict[str, Any]] = []
+    for item in runtime_objects:
+        if not isinstance(item, dict):
+            continue
+        object_id = item.get("id")
+        object_type = item.get("type")
+        if not isinstance(object_id, str) or not isinstance(object_type, str):
+            continue
+        feature_type = _elevation_feature_type(item)
+        if feature_type is None:
+            continue
+        surface = item.get("surface_elevation", item.get("elevation"))
+        interior = item.get("interior_elevation")
+        elevation = item.get("elevation")
+        feature: dict[str, Any] = {
+            "id": f"elevation_feature_{len(features):03d}",
+            "type": feature_type,
+            "object_ref": object_id,
+            "object_type": object_type,
+            "surface_elevation": surface if isinstance(surface, int) else None,
+            "interior_elevation": interior if isinstance(interior, int) else None,
+            "elevation": elevation if isinstance(elevation, int) else None,
+            "footprint": item.get("footprint", []),
+            "transition_hint": _elevation_transition_hint(item),
+        }
+        if feature_type in {"raised_berm", "hill"}:
+            feature["recommended_transition"] = "ramp_or_slope"
+        if feature_type in {"bridge", "platform"}:
+            feature["recommended_transition"] = "ramp_stairs_or_edge_connector"
+        if feature_type in {"ramp", "stairs"}:
+            feature["recommended_transition"] = feature_type
+        if feature_type == "tower":
+            feature["recommended_transition"] = "stairs_ladder_or_scripted"
+        if feature_type == "special_high_landmark":
+            feature["recommended_transition"] = "scripted_or_blocked"
+        if feature_type in {"pit", "trench", "bunker_interior"}:
+            feature["recommended_transition"] = "stairs_ramp_or_drop"
+        features.append(feature)
+    return features
+
+
+def _elevation_feature_type(item: dict[str, Any]) -> str | None:
+    object_type = item.get("type")
+    tags = set(_string_list(item.get("tags")))
+    elevation = item.get("elevation")
+    interior = item.get("interior_elevation")
+    surface = item.get("surface_elevation")
+    if "bunker" in tags:
+        return "bunker_interior"
+    if object_type == "trench":
+        return "trench"
+    if object_type == "pit":
+        return "pit"
+    if object_type == "earth_berm" or "earthwork" in tags:
+        return "raised_berm"
+    if object_type == "hill" or "hill" in tags or "raised_ground" in tags:
+        return "hill"
+    if "bridge" in tags:
+        return "bridge"
+    if "ramp" in tags:
+        return "ramp"
+    if "stairs" in tags:
+        return "stairs"
+    if "platform" in tags:
+        return "platform"
+    if "special_high_landmark" in tags:
+        return "special_high_landmark"
+    if "tower" in tags or "high_platform" in tags:
+        return "tower"
+    if "ladder" in tags:
+        return "ladder"
+    if isinstance(interior, int) and interior != 0:
+        return "object_elevation_feature"
+    if isinstance(surface, int) and surface != 0:
+        return "object_elevation_feature"
+    if isinstance(elevation, int) and elevation != 0:
+        return "object_elevation_feature"
+    if tags.intersection({"elevation", "below_floor"}):
+        return "object_elevation_feature"
+    return None
+
+
+def _elevation_transition_hint(item: dict[str, Any]) -> str | None:
+    object_type = item.get("type")
+    tags = set(_string_list(item.get("tags")))
+    if object_type in {"trench", "pit"}:
+        return "drop_or_step_down"
+    if "bunker" in tags:
+        return "entrance_or_stairs_required"
+    if "bridge" in tags:
+        return "bridge"
+    if "ramp" in tags:
+        return "ramp"
+    if "stairs" in tags:
+        return "stairs"
+    if "platform" in tags:
+        return "platform"
+    if "special_high_landmark" in tags:
+        return "special_high_landmark"
+    if "tower" in tags or "high_platform" in tags:
+        return "tower"
+    if "ladder" in tags:
+        return "ladder"
+    return None
+
+
+def _elevation_transitions(
+    *,
+    rows: list[list[int]],
+    features: list[dict[str, Any]],
+    width: int,
+    height: int,
+) -> list[dict[str, Any]]:
+    transitions: list[dict[str, Any]] = []
+    point_features = _elevation_features_by_point(features)
+    seen: set[tuple[tuple[int, int], tuple[int, int]]] = set()
+    for y in range(height):
+        for x in range(width):
+            level = rows[y][x]
+            for nx, ny in ((x + 1, y), (x, y + 1)):
+                if nx >= width or ny >= height:
+                    continue
+                other = rows[ny][nx]
+                if other == level:
+                    continue
+                source = (x, y)
+                target = (nx, ny)
+                key = (source, target)
+                if key in seen:
+                    continue
+                seen.add(key)
+                delta = other - level
+                connector = _elevation_transition_connector(
+                    source=source,
+                    target=target,
+                    delta=delta,
+                    point_features=point_features,
+                )
+                transition_type = _elevation_transition_type(delta=delta, connector=connector)
+                movement_allowed = _elevation_transition_movement_allowed(
+                    delta=delta,
+                    connector=connector,
+                )
+                transitions.append(
+                    {
+                        "id": f"elevation_transition_{len(transitions):03d}",
+                        "type": transition_type,
+                        "from": {"x": x, "y": y, "level": level},
+                        "to": {"x": nx, "y": ny, "level": other},
+                        "delta": delta,
+                        "abs_delta": abs(delta),
+                        "requires_explicit_connector": abs(delta) > 0,
+                        "suggested_connector": connector,
+                        "movement_allowed": movement_allowed,
+                        "movement_rule": _elevation_transition_movement_rule(
+                            delta=delta,
+                            connector=connector,
+                            movement_allowed=movement_allowed,
+                        ),
+                        "feature_refs": _transition_feature_refs(
+                            source=source,
+                            target=target,
+                            point_features=point_features,
+                        ),
+                    },
+                )
+    return transitions[:256]
+
+
+def _elevation_features_by_point(
+    features: list[dict[str, Any]],
+) -> dict[tuple[int, int], list[dict[str, Any]]]:
+    by_point: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    for feature in features:
+        for point in _point_list(feature.get("footprint")):
+            point_key = (point[0], point[1])
+            by_point.setdefault(point_key, []).append(feature)
+    return by_point
+
+
+def _elevation_transition_connector(
+    *,
+    source: tuple[int, int],
+    target: tuple[int, int],
+    delta: int,
+    point_features: dict[tuple[int, int], list[dict[str, Any]]],
+) -> str:
+    feature_types = {
+        str(feature.get("type"))
+        for feature in point_features.get(source, []) + point_features.get(target, [])
+        if isinstance(feature.get("type"), str)
+    }
+    if "stairs" in feature_types:
+        return "stairs"
+    if "ramp" in feature_types:
+        return "ramp"
+    if feature_types.intersection({"bridge", "platform"}):
+        return "bridge"
+    if feature_types.intersection({"hill", "raised_berm"}) and abs(delta) == 1:
+        return "slope"
+    if abs(delta) > 1:
+        return "ladder_or_scripted"
+    return "none"
+
+
+def _elevation_transition_type(*, delta: int, connector: str) -> str:
+    if connector in {"ramp", "stairs"}:
+        return "connector_edge"
+    if connector == "bridge":
+        return "bridge_edge"
+    if abs(delta) > 1:
+        return "steep_transition"
+    return "step_up" if delta > 0 else "step_down"
+
+
+def _elevation_transition_movement_allowed(*, delta: int, connector: str) -> bool:
+    if abs(delta) == 1 and connector in {"slope", "ramp", "stairs", "bridge"}:
+        return True
+    if abs(delta) > 1 and connector == "bridge":
+        return True
+    return False
+
+
+def _elevation_transition_movement_rule(
+    *,
+    delta: int,
+    connector: str,
+    movement_allowed: bool,
+) -> str:
+    if movement_allowed:
+        return f"allowed_via_{connector}"
+    if abs(delta) > 1:
+        return "blocked_without_ladder_or_scripted_connector"
+    return "blocked_without_ramp_stairs_or_slope"
+
+
+def _transition_feature_refs(
+    *,
+    source: tuple[int, int],
+    target: tuple[int, int],
+    point_features: dict[tuple[int, int], list[dict[str, Any]]],
+) -> list[str]:
+    refs = {
+        str(feature.get("id"))
+        for feature in point_features.get(source, []) + point_features.get(target, [])
+        if isinstance(feature.get("id"), str)
+    }
+    return sorted(refs)
+
 def _movement_grid_rows(
     *,
     tile_grid: list[str],
@@ -1554,6 +2171,10 @@ def _list(value: Any) -> list[Any]:
     if isinstance(value, list):
         return value
     return []
+
+
+def _dict_list(value: Any) -> list[dict[str, Any]]:
+    return [item for item in _list(value) if isinstance(item, dict)]
 
 
 def _string_list(value: Any) -> list[str]:

@@ -20,6 +20,7 @@ def _write_map_package_files(outputs: OutputPaths) -> None:
         outputs.map_package_runtime_grids,
         outputs.map_package_world_graph,
         outputs.map_package_routes,
+        outputs.map_package_elevation_model,
         outputs.map_package_tile_grid,
         outputs.map_package_terrain,
         outputs.map_package_movement_costs,
@@ -141,7 +142,12 @@ def test_attach_runtime_layers_generates_interest_points() -> None:
         if item["type"] == "trench"
     )
     assert runtime_data["elevation"]["cells"]
-    assert all(cell["level"] == -1 for cell in runtime_data["elevation"]["cells"])
+    levels = {cell["level"] for cell in runtime_data["elevation"]["cells"]}
+    assert -1 in levels
+    assert 1 in levels
+    assert 2 in levels
+    assert 3 in levels
+    assert 4 in levels
 
 
 def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:

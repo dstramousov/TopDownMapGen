@@ -192,3 +192,36 @@ Current route types:
 
 Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
 
+
+## `map_package/elevation_model.json`
+
+`elevation_model.json` describes what elevation levels mean. `runtime_grids.json` contains the actual `height_grid`; `elevation_model.json` gives the semantic contract for those values.
+
+Current levels are `-1..4`: below-ground, ground, raised ground, platform, high platform and special high landmark. The file also lists possible transition types and high-level movement, line-of-sight, projectile and render-order rules.
+
+## Elevation files
+
+The package contains three elevation-related public files:
+
+- `runtime_grids.json` / `height_grid`: exact tile height values.
+- `elevation_model.json`: semantic meaning of height levels and high-level rules.
+- `elevation_features.json`: concrete map features that explain local height changes.
+- `elevation_transitions.json`: adjacent level changes with suggested connectors.
+
+This separation keeps low-level runtime grids compact while still giving renderers and games enough context to draw and interpret pits, raised berms, bunker interiors and future bridge/ramp features.
+
+
+### Elevation preview
+
+Для визуальной проверки уровней высоты и переходов используйте:
+
+```bash
+python3 examples/render_world_preview.py output \
+  --elevation-overlay \
+  --transition-overlay \
+  --grid \
+  --cell-size 8 \
+  --output output/elevation_preview.png
+```
+
+`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.

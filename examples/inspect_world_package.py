@@ -139,6 +139,13 @@ class InspectionReport:
     collision: CollisionStats
     movement: MovementStats
     elevation: ElevationStats
+    elevation_model_levels: list[str]
+    elevation_model_feature_count: int
+    elevation_model_transition_count: int
+    elevation_missing_levels: list[str]
+    elevation_missing_feature_types: list[str]
+    elevation_feature_count: int
+    elevation_transition_count: int
     marker_count: int
     runtime_grid_count: int
     world_graph_node_count: int
@@ -205,6 +212,18 @@ def inspect_world_package(path: Path) -> InspectionReport:
         map_index.get("world_graph"),
     )
     routes = _read_optional_package_object(package_dir, map_index.get("routes"))
+    elevation_model = _read_optional_package_object(
+        package_dir,
+        map_index.get("elevation_model"),
+    )
+    elevation_features = _read_optional_package_object(
+        package_dir,
+        map_index.get("elevation_features"),
+    )
+    elevation_transitions = _read_optional_package_object(
+        package_dir,
+        map_index.get("elevation_transitions"),
+    )
 
     runtime_objects = _read_required_package_object(
         package_dir,
@@ -250,6 +269,7 @@ def inspect_world_package(path: Path) -> InspectionReport:
     )
     movement_stats = _inspect_movement_costs(movement)
     elevation_stats = _inspect_elevation(elevation)
+    elevation_model_summary = _optional_object(elevation_model.get("summary"))
     gameplay_counts = _inspect_gameplay(package_dir, gameplay)
     route_items = _optional_list(routes.get("items"))
     runtime_items = _optional_list(runtime_objects.get("items"))
@@ -283,6 +303,17 @@ def inspect_world_package(path: Path) -> InspectionReport:
         collision=collision_stats,
         movement=movement_stats,
         elevation=elevation_stats,
+        elevation_model_levels=_string_values(elevation_model_summary.get("levels_present")),
+        elevation_model_feature_count=_optional_int(elevation_model_summary.get("feature_count")),
+        elevation_model_transition_count=_optional_int(elevation_model_summary.get("transition_count")),
+        elevation_missing_levels=_string_values(
+            _optional_object(elevation_model.get("v1_completion")).get("missing_levels"),
+        ),
+        elevation_missing_feature_types=_string_values(
+            _optional_object(elevation_model.get("v1_completion")).get("missing_feature_types"),
+        ),
+        elevation_feature_count=len(_optional_list(elevation_features.get("items"))),
+        elevation_transition_count=len(_optional_list(elevation_transitions.get("items"))),
         marker_count=len(_optional_list(markers.get("items"))),
         runtime_grid_count=len(_optional_object(runtime_grids.get("grids"))),
         world_graph_node_count=len(_optional_list(world_graph.get("nodes"))),
@@ -394,6 +425,28 @@ def print_report(report: InspectionReport) -> None:
         report.elevation.cell_count,
         _format_optional(report.elevation.min_level),
         _format_optional(report.elevation.max_level),
+    )
+    LOGGER.info(
+        "- elevation_model: OK, levels=%s, features=%s, transitions=%s",
+        report.elevation_model_levels,
+        report.elevation_model_feature_count,
+        report.elevation_model_transition_count,
+    )
+    LOGGER.info(
+        "- elevation_v1: %s",
+        "complete" if not report.elevation_missing_levels and not report.elevation_missing_feature_types else "warnings",
+    )
+    if report.elevation_missing_levels:
+        LOGGER.warning("  missing elevation levels: %s", report.elevation_missing_levels)
+    if report.elevation_missing_feature_types:
+        LOGGER.warning("  missing elevation feature types: %s", report.elevation_missing_feature_types)
+    LOGGER.info(
+        "- elevation_features: OK, total=%s",
+        report.elevation_feature_count,
+    )
+    LOGGER.info(
+        "- elevation_transitions: OK, total=%s",
+        report.elevation_transition_count,
     )
     LOGGER.info(
         "- start_goal: OK, start=%s, goal=%s",
@@ -769,6 +822,16 @@ def _format_optional(value: object) -> str:
     if value is None:
         return "n/a"
     return str(value)
+
+
+def _string_values(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
+
+
+def _optional_int(value: Any) -> int:
+    return int(value) if isinstance(value, int) else 0
 
 
 def _build_parser() -> argparse.ArgumentParser:

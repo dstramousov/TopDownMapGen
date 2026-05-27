@@ -362,3 +362,31 @@ Current route types:
 
 Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
 
+
+## Elevation model
+
+Load `map_package/elevation_model.json` when the game needs height-aware movement, visibility, projectile or render-order logic. The package keeps the actual per-tile values in `runtime_grids.height_grid`; the elevation model explains the meaning of levels `-1..4` and the expected transition concepts.
+
+Do not assume that adjacent tiles with different heights are automatically walkable. Use the model's transition rules and future connector objects such as ramps, stairs, bridges or ladders.
+
+## Elevation consumer notes
+
+For simple games, `runtime_grids.height_grid` may be enough. For height-aware traversal, visibility, projectiles or rendering, also read `elevation_model.json`, `elevation_features.json` and `elevation_transitions.json`.
+
+Treat `height_grid` as exact data and the other files as semantic metadata. For example, a `+1` tile from a raised berm can be rendered and handled differently from a future bridge tile even if both are above ground level.
+
+
+### Elevation preview
+
+Для визуальной проверки уровней высоты и переходов используйте:
+
+```bash
+python3 examples/render_world_preview.py output \
+  --elevation-overlay \
+  --transition-overlay \
+  --grid \
+  --cell-size 8 \
+  --output output/elevation_preview.png
+```
+
+`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.

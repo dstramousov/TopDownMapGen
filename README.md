@@ -255,3 +255,38 @@ Runtime-объекты не рисуются на `layer_base_map.png`, чтоб
 На текущем этапе генератор уже умеет создавать не только карту-подложку, но и насыщенное игровое пространство. Базовые тайлы задают форму местности. Runtime-объекты добавляют детали, укрытия, следы людей, техногенные остатки, ориентиры и углубления. Places группируют эти объекты в маленькие сцены. Manifest, validation report и object catalog делают результат проверяемым и понятным.
 
 Дальнейшее развитие логично вести в сторону более сильных микролокаций, рельефа, heightmap, terrain features и place-aware генерации, где сначала создаётся осмысленное место, а уже потом подбираются объекты, высоты, декор и маршруты.
+
+### Elevation model
+
+Starting with `v0.0.42`, the generated world package includes `map_package/elevation_model.json`. It explains the semantic meaning of height levels `-1..4` and provides high-level rules for movement, line of sight, projectiles and render order. Use it together with `map_package/runtime_grids.json` and its `height_grid`.
+
+Starting with `v0.0.43`, elevation data is split into three consumer-facing files:
+
+- `map_package/elevation_model.json` explains levels `-1..4` and common movement/visibility/projectile rules.
+- `map_package/elevation_features.json` lists concrete elevation features such as pits, trenches, bunker interiors and raised berms.
+- `map_package/elevation_transitions.json` lists adjacent level changes and suggested connectors such as ramps, stairs or ladders.
+
+Starting with `v0.0.45`, elevation is backed by concrete generated features across the full public range `-1..4`: pits/trenches/bunker interiors, raised berms and hills, bridges, ramps, stairs, ruin platforms, watchtowers and special high landmarks.
+
+`runtime_grids.height_grid` remains the per-tile source of truth; the elevation files explain why those values exist and how a game should treat them.
+
+
+### Elevation preview
+
+Для визуальной проверки уровней высоты и переходов используйте:
+
+```bash
+python3 examples/render_world_preview.py output \
+  --elevation-overlay \
+  --transition-overlay \
+  --grid \
+  --cell-size 8 \
+  --output output/elevation_preview.png
+```
+
+`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+
+
+## Elevation v1
+
+See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.

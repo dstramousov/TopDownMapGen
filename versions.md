@@ -339,3 +339,55 @@
 - Validation теперь проверяет ссылки между package-файлами, совпадение размеров runtime-сеток и валидность start/goal относительно collision grid.
 - Schema versions обновлены до `generation-manifest-v28` и `validation-report-v24`.
 - Версия проекта поднята до `0.0.41`.
+
+## v0.0.41 -> v0.0.42
+
+- Добавлен `map_package/elevation_model.json` как публичный контракт уровней высоты `-1..4`.
+- `elevation_model.json` описывает значения уровней, типы переходов, правила movement, line-of-sight, projectiles и render order.
+- `map_package/map.json`, `_manifest.json`, validation и inspector теперь знают про elevation model.
+- Validation проверяет, что `height_grid` использует уровни, описанные в elevation model.
+- Документация world package обновлена под elevation model v1.
+- Версия проекта поднята до `0.0.42`.
+
+## v0.0.42 -> v0.0.43
+
+- Добавлены отдельные `map_package/elevation_features.json` и `map_package/elevation_transitions.json`.
+- `elevation_model.json` поднят до v2 и теперь связан с явными feature/transition пакетами.
+- `earth_berm` стал реальной raised-ground feature уровня `+1`.
+- Усилены inspector, validation, manifest и документация для elevation features/transitions.
+- Версия проекта поднята до `0.0.43`.
+
+## v0.0.43 -> v0.0.44
+
+- Добавлены реальные elevation features для полного диапазона уровней `-1..4`: `hill`, `wooden_bridge`, `stone_ramp`, `stone_stairs`, `ruin_platform`, `watchtower` и `ancient_beacon`.
+- Runtime height grid теперь получает положительные уровни от generated runtime objects, а не только `-1` от ям/траншей/бункеров.
+- `elevation_model.json`, `elevation_features.json` и `elevation_transitions.json` подняты до новых схем и описывают новые feature/transition типы.
+- Inspector и validation продолжают проверять package после расширения elevation-слоя.
+- Документация обновлена под elevation movement features v1.
+- Версия проекта поднята до `0.0.44`.
+
+## v0.0.44 -> v0.0.45
+
+- Усилена elevation-aware validation: проверяются уровни `height_grid`, соответствие transition records фактической сетке высот и наличие movement rules.
+- Validation теперь проверяет достижимость start/goal и main_path с учётом `elevation_transitions`.
+- `elevation_transitions.json` поднят до `elevation-transitions-v3` и содержит `movement_allowed`, `movement_rule`, `abs_delta` и `feature_refs`.
+- `elevation_model.json` поднят до `elevation-model-v4`.
+- Версия проекта поднята до `0.0.45`.
+
+
+## v0.0.45 -> v0.0.46
+
+- Preview renderer получил elevation overlay для уровней `-1..4`.
+- Preview renderer получил transition overlay для `ramp`, `stairs`, `bridge`, `slope` и steep elevation edges.
+- Консольная сводка preview показывает найденные elevation levels и число elevation transitions.
+- Документация обновлена командами проверки elevation/debug preview.
+- Версия проекта поднята до `0.0.46`.
+
+## v0.0.46 -> v0.0.47
+
+- Зафиксирован финальный публичный контракт `elevation v1` в `docs/elevation_v1.md`.
+- `elevation_model.json` поднят до `elevation-model-v5` и теперь содержит `v1_completion` с уровнями `-1..4`, required feature families и consumer-ready файлами.
+- `elevation_features.json` и `elevation_transitions.json` получили v1 completion metadata для внешних consumer-ов.
+- Inspector показывает статус elevation v1 и предупреждает о недостающих уровнях/features.
+- Добавлен smoke-test, который проверяет полный elevation v1 contract: уровни `-1..4` и основные feature families.
+- Версия проекта поднята до `0.0.47`.
