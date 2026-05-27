@@ -1,0 +1,91 @@
+{
+  "schema_version": "autotile-rules-v1",
+  "kind": "autotile_rules",
+  "mask_bits": {
+    "north": 1,
+    "east": 2,
+    "south": 4,
+    "west": 8
+  },
+  "groups": {
+    "road": {
+      "terrain_types": [
+        "road",
+        "path",
+        "bridge"
+      ],
+      "base_tile": "road.nesw",
+      "mask_to_tile": {
+        "0": "road.isolated",
+        "1": "road.n",
+        "2": "road.e",
+        "3": "road.ne",
+        "4": "road.s",
+        "5": "road.ns",
+        "6": "road.es",
+        "7": "road.nes",
+        "8": "road.w",
+        "9": "road.nw",
+        "10": "road.ew",
+        "11": "road.new",
+        "12": "road.sw",
+        "13": "road.nsw",
+        "14": "road.esw",
+        "15": "road.nesw"
+      }
+    },
+    "water": {
+      "terrain_types": [
+        "water",
+        "deep_water",
+        "shallow_water",
+        "swamp"
+      ],
+      "base_tile": "water.nesw",
+      "mask_to_tile": {
+        "0": "water.isolated",
+        "1": "water.n",
+        "2": "water.e",
+        "3": "water.ne",
+        "4": "water.s",
+        "5": "water.ns",
+        "6": "water.es",
+        "7": "water.nes",
+        "8": "water.w",
+        "9": "water.nw",
+        "10": "water.ew",
+        "11": "water.new",
+        "12": "water.sw",
+        "13": "water.nsw",
+        "14": "water.esw",
+        "15": "water.nesw"
+      }
+    },
+    "forest": {
+      "terrain_types": [
+        "tree_blocker",
+        "forest",
+        "bush"
+      ],
+      "base_tile": "forest.nesw",
+      "mask_to_tile": {
+        "0": "forest.isolated",
+        "1": "forest.n",
+        "2": "forest.e",
+        "3": "forest.ne",
+        "4": "forest.s",
+        "5": "forest.ns",
+        "6": "forest.es",
+        "7": "forest.nes",
+        "8": "forest.w",
+        "9": "forest.nw",
+        "10": "forest.ew",
+        "11": "forest.new",
+        "12": "forest.sw",
+        "13": "forest.nsw",
+        "14": "forest.esw",
+        "15": "forest.nesw"
+      }
+    }
+  }
+}

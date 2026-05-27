@@ -1,22 +1,99 @@
-./c
-PYTHONPATH=. python3 top_down_generator.py \
-  --config configs/default.json \
-  -o output \
-  --include-debug-layers
+#!/usr/bin/env bash
 
-python3 examples/render_world_preview.py output \
-  --collision-overlay \
-  --elevation-overlay \
-  --transition-overlay \
-  --places-overlay \
-  --gameplay-zones-overlay \
-  --routes-overlay \
-  --world-graph-overlay \
-  --grid \
-  --cell-size 16 \
-  --output output/full_world_preview.png
+set -euo pipefail
 
-#python3 examples/inspect_world_package.py output
-#python3 examples/render_world_preview.py output --collision-overlay
-#cat output/validation_report.json
-#cat output/map_package/elevation_model.json
+CMD="${1:-all}"
+OUTPUT_DIR="${OUTPUT_DIR:-output}"
+CONFIG_PATH="${CONFIG_PATH:-configs/default.json}"
+VISUAL_PROFILE="${VISUAL_PROFILE:-visual_profiles/default}"
+VISUAL_OUTPUT="${VISUAL_OUTPUT:-${OUTPUT_DIR}/visual_map}"
+
+run_world() {
+  ./c
+  PYTHONPATH=. python3 top_down_generator.py \
+    --config "${CONFIG_PATH}" \
+    -o "${OUTPUT_DIR}" \
+    --include-debug-layers
+}
+
+run_preview() {
+  python3 examples/render_world_preview.py "${OUTPUT_DIR}" \
+    --collision-overlay \
+    --elevation-overlay \
+    --transition-overlay \
+    --places-overlay \
+    --gameplay-zones-overlay \
+    --routes-overlay \
+    --world-graph-overlay \
+    --grid \
+    --cell-size 16 \
+    --output "${OUTPUT_DIR}/full_world_preview.png"
+}
+
+run_visual() {
+  PYTHONPATH=. python3 -m top_down_visualgen.cli \
+    --input "${OUTPUT_DIR}" \
+    --profile "${VISUAL_PROFILE}" \
+    --output "${VISUAL_OUTPUT}"
+}
+
+run_inspect() {
+  python3 examples/inspect_world_package.py "${OUTPUT_DIR}"
+}
+
+run_tests() {
+  python3 -m compileall top_down_worldgen top_down_visualgen examples
+  PYTHONPATH=. pytest -q
+}
+
+usage() {
+  cat <<'EOF'
+Usage: ./r [command]
+
+Commands:
+  all      Clean, generate world, render world preview, build visual map (default)
+  world    Clean and generate world package only
+  preview  Render debug world preview from existing output
+  visual   Build visual_tileset output from existing output/map_package
+  inspect  Inspect existing world package
+  test     Run compileall and pytest
+  help     Show this help
+
+Environment overrides:
+  CONFIG_PATH=...
+  OUTPUT_DIR=...
+  VISUAL_PROFILE=...
+  VISUAL_OUTPUT=...
+EOF
+}
+
+case "${CMD}" in
+  all)
+    run_world
+    run_preview
+    run_visual
+    ;;
+  world)
+    run_world
+    ;;
+  preview)
+    run_preview
+    ;;
+  visual)
+    run_visual
+    ;;
+  inspect)
+    run_inspect
+    ;;
+  test)
+    run_tests
+    ;;
+  help|-h|--help)
+    usage
+    ;;
+  *)
+    echo "Unknown command: ${CMD}" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

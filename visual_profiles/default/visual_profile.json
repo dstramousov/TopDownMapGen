@@ -1,0 +1,18 @@
+{
+  "schema_version": "visual-profile-v1",
+  "id": "default",
+  "name": "Default debug visual profile",
+  "tile_size_px": 16,
+  "draw_layer_order": {
+    "terrain": 0,
+    "terrain_overlay": 10,
+    "below_actor": 20,
+    "objects": 30,
+    "actor": 40,
+    "above_actor": 50,
+    "ui_marker": 100
+  },
+  "notes": [
+    "MVP profile for visual_tileset_pipeline contract tests and debug preview."
+  ]
+}

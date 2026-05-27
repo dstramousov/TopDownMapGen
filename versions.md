@@ -435,3 +435,11 @@
 - Object catalogs и render hints экспортируют новые поля для внешнего движка и top-down renderer-а.
 - Документация обновлена object interaction/sort model.
 - Версия проекта поднята до `0.0.52`.
+
+## v0.0.52 -> v0.0.53
+
+- Добавлен отдельный пакет `top_down_visualgen` как независимый consumer публичного `map_package`, без импорта внутренних модулей world generator-а.
+- Добавлен `visual_profiles/default` с контрактными visual rules: tilesets, terrain mapping, road/water/forest autotile rules, object sprite mapping, decoration/prefab placeholders.
+- Добавлен CLI visual pipeline, который создаёт `output/visual_map/visual_map.json`, `visual_layers.json`, `visual_objects.json`, `visual_chunks.json` и `preview.png`.
+- `./r` переведён на команды `all`, `world`, `preview`, `visual`, `inspect`, `test`; дефолтный запуск теперь делает world package, world preview и visual map.
+- Версия проекта поднята до `0.0.53`.

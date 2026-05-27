@@ -1,0 +1,300 @@
+{
+  "schema_version": "visual-tilesets-v1",
+  "kind": "visual_tilesets",
+  "tile_size_px": 16,
+  "tiles": {
+    "grass.base": {
+      "debug_color": "#4f8f3a"
+    },
+    "dirt.base": {
+      "debug_color": "#8a6e3a"
+    },
+    "mud.base": {
+      "debug_color": "#5f5138"
+    },
+    "sand.base": {
+      "debug_color": "#b8a86a"
+    },
+    "ruins.floor": {
+      "debug_color": "#77736b"
+    },
+    "wall.blocked": {
+      "debug_color": "#3c3c3c"
+    },
+    "terrain.unknown": {
+      "debug_color": "#ff00ff"
+    },
+    "road.isolated": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 0
+    },
+    "road.n": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 1
+    },
+    "road.e": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 2
+    },
+    "road.ne": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 3
+    },
+    "road.s": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 4
+    },
+    "road.ns": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 5
+    },
+    "road.es": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 6
+    },
+    "road.nes": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 7
+    },
+    "road.w": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 8
+    },
+    "road.nw": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 9
+    },
+    "road.ew": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 10
+    },
+    "road.new": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 11
+    },
+    "road.sw": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 12
+    },
+    "road.nsw": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 13
+    },
+    "road.esw": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 14
+    },
+    "road.nesw": {
+      "debug_color": "#9b8352",
+      "source": "autotile_mask",
+      "mask": 15
+    },
+    "water.isolated": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 0
+    },
+    "water.n": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 1
+    },
+    "water.e": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 2
+    },
+    "water.ne": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 3
+    },
+    "water.s": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 4
+    },
+    "water.ns": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 5
+    },
+    "water.es": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 6
+    },
+    "water.nes": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 7
+    },
+    "water.w": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 8
+    },
+    "water.nw": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 9
+    },
+    "water.ew": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 10
+    },
+    "water.new": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 11
+    },
+    "water.sw": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 12
+    },
+    "water.nsw": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 13
+    },
+    "water.esw": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 14
+    },
+    "water.nesw": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_mask",
+      "mask": 15
+    },
+    "forest.isolated": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 0
+    },
+    "forest.n": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 1
+    },
+    "forest.e": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 2
+    },
+    "forest.ne": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 3
+    },
+    "forest.s": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 4
+    },
+    "forest.ns": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 5
+    },
+    "forest.es": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 6
+    },
+    "forest.nes": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 7
+    },
+    "forest.w": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 8
+    },
+    "forest.nw": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 9
+    },
+    "forest.ew": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 10
+    },
+    "forest.new": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 11
+    },
+    "forest.sw": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 12
+    },
+    "forest.nsw": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 13
+    },
+    "forest.esw": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 14
+    },
+    "forest.nesw": {
+      "debug_color": "#245d2c",
+      "source": "autotile_mask",
+      "mask": 15
+    }
+  },
+  "sprites": {
+    "object.generic": {
+      "debug_color": "#ffffff"
+    },
+    "object.trench": {
+      "debug_color": "#4d3825"
+    },
+    "object.bunker": {
+      "debug_color": "#202020"
+    },
+    "object.bridge": {
+      "debug_color": "#b2874f"
+    },
+    "object.tree": {
+      "debug_color": "#0f4a1f"
+    },
+    "object.bush": {
+      "debug_color": "#2d7a35"
+    },
+    "object.ruin": {
+      "debug_color": "#b9b0a2"
+    },
+    "object.radio": {
+      "debug_color": "#d8d8d8"
+    },
+    "object.beacon": {
+      "debug_color": "#ffd166"
+    },
+    "object.loot": {
+      "debug_color": "#f0d000"
+    }
+  }
+}

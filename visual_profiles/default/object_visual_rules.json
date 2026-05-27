@@ -1,0 +1,19 @@
+{
+  "schema_version": "object-visual-rules-v1",
+  "kind": "object_visual_rules",
+  "default_sprite": "object.generic",
+  "object_to_sprite": {
+    "trench": "object.trench",
+    "buried_bunker_2x2": "object.bunker",
+    "buried_bunker_2x3": "object.bunker",
+    "wooden_bridge": "object.bridge",
+    "fallen_tree": "object.tree",
+    "tree_stump": "object.tree",
+    "bush_thicket": "object.bush",
+    "ruined_wall": "object.ruin",
+    "ancient_beacon": "object.beacon",
+    "broken_radio": "object.radio",
+    "secret_cache": "object.loot",
+    "supply_crate": "object.loot"
+  }
+}

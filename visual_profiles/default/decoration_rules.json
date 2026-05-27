@@ -1,0 +1,8 @@
+{
+  "schema_version": "decoration-rules-v1",
+  "kind": "decoration_rules",
+  "enabled": false,
+  "notes": [
+    "Decoration pass is intentionally disabled in v0.0.53 MVP."
+  ]
+}

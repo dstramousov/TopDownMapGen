@@ -1,0 +1,8 @@
+{
+  "schema_version": "prefab-rules-v1",
+  "kind": "prefab_rules",
+  "enabled": false,
+  "notes": [
+    "Prefab system is intentionally disabled in v0.0.53 MVP."
+  ]
+}

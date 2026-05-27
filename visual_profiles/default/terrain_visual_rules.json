@@ -1,0 +1,26 @@
+{
+  "schema_version": "terrain-visual-rules-v1",
+  "kind": "terrain_visual_rules",
+  "default_tile": "grass.base",
+  "terrain_to_tile": {
+    "grass": "grass.base",
+    "empty": "grass.base",
+    "dirt": "dirt.base",
+    "mud": "mud.base",
+    "swamp": "mud.base",
+    "sand": "sand.base",
+    "road": "road.nesw",
+    "path": "road.nesw",
+    "bridge": "road.nesw",
+    "water": "water.nesw",
+    "deep_water": "water.nesw",
+    "shallow_water": "water.nesw",
+    "tree_blocker": "forest.nesw",
+    "forest": "forest.nesw",
+    "bush": "forest.nesw",
+    "ruin": "ruins.floor",
+    "ruins": "ruins.floor",
+    "wall": "wall.blocked",
+    "rock_blocker": "wall.blocked"
+  }
+}
