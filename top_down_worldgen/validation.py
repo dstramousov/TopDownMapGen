@@ -171,6 +171,16 @@ def build_validation_report(
             runtime_data,
         ),
         "runtime_objects_have_pivots": _runtime_objects_have_pivots(runtime_data),
+        "runtime_objects_have_interaction_shapes": (
+            _runtime_objects_have_interaction_shapes(runtime_data)
+        ),
+        "runtime_objects_have_sort_anchors": _runtime_objects_have_sort_anchors(
+            runtime_data,
+        ),
+        "runtime_objects_have_draw_layers": _runtime_objects_have_draw_layers(runtime_data),
+        "runtime_objects_have_occlusion_hints": (
+            _runtime_objects_have_occlusion_hints(runtime_data)
+        ),
         "runtime_object_collision_footprints_inside_map": (
             _runtime_object_collision_footprints_inside_map(
                 runtime_data,
@@ -1859,6 +1869,58 @@ def _runtime_objects_have_visual_bounds(runtime_data: dict[str, Any]) -> bool:
             return False
     return True
 
+
+
+def _runtime_objects_have_interaction_shapes(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        shape = item.get("interaction_shape")
+        if not isinstance(shape, dict):
+            return False
+        if shape.get("type") not in {"none", "adjacent_tiles", "firing_ports", "custom"}:
+            return False
+        points = shape.get("points")
+        if not isinstance(points, list):
+            return False
+        if any(_point(point) is None for point in points):
+            return False
+    return True
+
+
+def _runtime_objects_have_sort_anchors(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        anchor = item.get("sort_anchor")
+        if not isinstance(anchor, dict):
+            return False
+        try:
+            int(anchor.get("x"))
+            int(anchor.get("y"))
+            int(anchor.get("elevation", 0))
+        except (TypeError, ValueError):
+            return False
+        if anchor.get("space") != "tile":
+            return False
+    return True
+
+
+def _runtime_objects_have_draw_layers(runtime_data: dict[str, Any]) -> bool:
+    allowed = {"terrain_overlay", "object", "structure", "tall_object", "overlay"}
+    for item in _runtime_objects(runtime_data):
+        if item.get("draw_layer") not in allowed:
+            return False
+    return True
+
+
+def _runtime_objects_have_occlusion_hints(runtime_data: dict[str, Any]) -> bool:
+    allowed_modes = {"none", "partial", "solid", "visual_only"}
+    for item in _runtime_objects(runtime_data):
+        hint = item.get("occlusion_hint")
+        if not isinstance(hint, dict):
+            return False
+        if not isinstance(hint.get("occludes_actor"), bool):
+            return False
+        if hint.get("mode") not in allowed_modes:
+            return False
+    return True
 
 def _bunker_objects_have_firing_ports(runtime_data: dict[str, Any]) -> bool:
     for item in _runtime_objects(runtime_data):

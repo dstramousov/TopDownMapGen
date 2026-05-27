@@ -426,3 +426,12 @@
 - Консольная сводка preview теперь показывает количество places, gameplay zones, routes и world graph edges.
 - Документация обновлена командами визуальной проверки graph/zones/routes/places.
 - Версия проекта поднята до `0.0.51`.
+
+## v0.0.51 -> v0.0.52
+
+- Runtime objects получили `interaction_shape`, `sort_anchor`, `draw_layer` и `occlusion_hint`.
+- Runtime object schema поднята до `runtime-objects-v13`, object instances — до `object-instances-v4`, object types catalog — до `object-types-catalog-v5`, object render hints — до `object-render-hints-v5`.
+- Validation теперь проверяет interaction shapes, sort anchors, draw layers и occlusion hints у всех runtime objects.
+- Object catalogs и render hints экспортируют новые поля для внешнего движка и top-down renderer-а.
+- Документация обновлена object interaction/sort model.
+- Версия проекта поднята до `0.0.52`.

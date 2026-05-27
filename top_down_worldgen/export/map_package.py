@@ -2667,6 +2667,10 @@ def _object_render_hint(object_type: str, definition: dict[str, Any]) -> dict[st
         "footprint_source": "footprint",
         "collision_footprint_source": "collision_footprint",
         "visual_bounds_source": "visual_bounds",
+        "interaction_shape_source": "interaction_shape",
+        "sort_anchor_source": "sort_anchor",
+        "draw_layer_source": "draw_layer",
+        "occlusion_hint_source": "occlusion_hint",
         "firing_ports_source": "firing_ports" if "firing_ports" in tags else None,
     }
 
@@ -2748,6 +2752,10 @@ def _build_object_types_catalog(objects: list[Any]) -> dict[str, Any]:
                 "default_collision_footprint": item.get("collision_footprint"),
                 "default_visual_bounds": item.get("visual_bounds"),
                 "default_pivot": item.get("pivot"),
+                "default_interaction_shape": item.get("interaction_shape"),
+                "default_sort_anchor": item.get("sort_anchor"),
+                "draw_layer": item.get("draw_layer"),
+                "occlusion_hint": item.get("occlusion_hint"),
                 "default_firing_ports": item.get("firing_ports"),
                 "surface_elevation": item.get("surface_elevation"),
                 "interior_elevation": item.get("interior_elevation"),

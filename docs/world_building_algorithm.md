@@ -199,7 +199,7 @@ Runtime objects must be treated as tile-space entities, not as single points. Ea
 - `collision_footprint`: cells where the object's collision profile applies. This may be empty for small passable loot/markers.
 - `visual_bounds`: a rectangular tile-space box used by preview/render consumers to estimate sprite coverage.
 
-Consumers should use `footprint` for placement/overlap checks, `collision_footprint` for movement/projectile/vision rules, and `visual_bounds` only for drawing order or coarse sprite placement. Large objects such as tents, carts, wrecks, wells, checkpoints, trenches, pits, logs, berms, big trees, and buried bunkers may occupy multiple tiles. Bunkers additionally expose `firing_ports` on two opposite sides and mark their interior footprint as elevation `-1`.
+Consumers should use `footprint` for placement/overlap checks, `collision_footprint` for movement/projectile/vision rules, `interaction_shape` for actor interaction queries, `sort_anchor` for top-down draw ordering, and `visual_bounds` only for coarse sprite placement. `draw_layer` and `occlusion_hint` provide renderer-friendly defaults without forcing a specific engine. Large objects such as tents, carts, wrecks, wells, checkpoints, trenches, pits, logs, berms, big trees, and buried bunkers may occupy multiple tiles. Bunkers additionally expose `firing_ports` on two opposite sides and mark their interior footprint as elevation `-1`.
 
 
 ## Generation tuning

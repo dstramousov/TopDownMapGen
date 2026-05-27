@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v12"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v13"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
@@ -1255,6 +1255,16 @@ def _build_runtime_object(
         ],
         "visual_bounds": visual_bounds,
         "pivot": dict(spec["default_pivot"]),
+        "interaction_shape": _world_interaction_shape(
+            footprint=footprint,
+            spec=spec,
+        ),
+        "sort_anchor": _world_sort_anchor(
+            visual_bounds=visual_bounds,
+            elevation=int(spec.get("default_elevation", DEFAULT_ELEVATION_LEVEL)),
+        ),
+        "draw_layer": _world_draw_layer(spec),
+        "occlusion_hint": _world_occlusion_hint(spec),
         "tags": list(spec["tags"]),
         "collision_profile": dict(spec["collision_profile"]),
         "combat_properties": dict(spec["combat_properties"]),
@@ -1398,6 +1408,93 @@ def _world_visual_bounds(
         "height": height,
     }
 
+
+
+def _interaction_points_around(
+    footprint: list[tuple[int, int]],
+) -> list[list[int]]:
+    occupied = set(footprint)
+    points: set[tuple[int, int]] = set()
+    for x, y in occupied:
+        for candidate in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if candidate not in occupied:
+                points.add(candidate)
+    return [[x, y] for x, y in sorted(points, key=lambda point: (point[1], point[0]))]
+
+
+def _world_interaction_shape(
+    *,
+    footprint: list[tuple[int, int]],
+    spec: dict[str, Any],
+) -> dict[str, Any]:
+    if spec.get("interactive") is True or "loot" in set(spec.get("tags", [])):
+        return {
+            "type": "adjacent_tiles",
+            "points": _interaction_points_around(footprint),
+            "source": "footprint_perimeter",
+        }
+    if spec.get("type") in BUNKER_TYPES:
+        return {
+            "type": "firing_ports",
+            "points": [],
+            "source": "firing_ports",
+        }
+    return {"type": "none", "points": [], "source": "none"}
+
+
+def _world_sort_anchor(
+    *,
+    visual_bounds: dict[str, int],
+    elevation: int,
+) -> dict[str, Any]:
+    try:
+        x = int(visual_bounds["x"])
+        y = int(visual_bounds["y"])
+        width = int(visual_bounds["width"])
+        height = int(visual_bounds["height"])
+    except (KeyError, TypeError, ValueError):
+        x = 0
+        y = 0
+        width = 1
+        height = 1
+    return {
+        "x": x + max(0, width // 2),
+        "y": y + max(0, height - 1),
+        "elevation": elevation,
+        "space": "tile",
+        "rule": "y_then_elevation_then_x",
+    }
+
+
+def _world_draw_layer(spec: dict[str, Any]) -> str:
+    tags = set(spec.get("tags", []))
+    object_type = str(spec.get("type", ""))
+    height = int(spec.get("default_height", 0))
+    if object_type in {"pit", "trench", "earth_berm", "hill", "wooden_bridge", "stone_ramp", "stone_stairs"}:
+        return "terrain_overlay"
+    if "below_floor" in tags:
+        return "structure"
+    if "landmark" in tags or height >= 4:
+        return "tall_object"
+    return "object"
+
+
+def _world_occlusion_hint(spec: dict[str, Any]) -> dict[str, Any]:
+    blocks_vision = spec.get("blocks_vision") is True
+    height = int(spec.get("default_height", 0))
+    if blocks_vision and height >= 3:
+        mode = "solid"
+    elif blocks_vision:
+        mode = "partial"
+    elif height >= 3:
+        mode = "visual_only"
+    else:
+        mode = "none"
+    return {
+        "occludes_actor": mode in {"solid", "partial", "visual_only"},
+        "mode": mode,
+        "source": "object_height_and_vision_profile",
+    }
 
 def _attach_trench_elevation(
     tactical_data: dict[str, Any],

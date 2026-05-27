@@ -401,7 +401,7 @@ asset pipeline.
 
 Object instances are no longer guaranteed to be single-tile markers. Consumers must read `footprint`, `collision_footprint`, `visual_bounds`, and `pivot` from `objects/runtime_objects.json` instead of assuming that `x`/`y` is the full object size.
 
-The `x`, `y`, `position`, and `anchor` fields identify the object's anchor tile. The `footprint` field is the logical occupied shape. The `collision_footprint` field is the subset where the object affects movement, projectiles, or vision according to its `collision_profile`. The `visual_bounds` field is a coarse tile-space rectangle for preview/render placement. Bunker-like objects may also expose `firing_ports`, `surface_elevation`, and `interior_elevation`; consumers should treat those as gameplay metadata, not as sprite instructions.
+The `x`, `y`, `position`, and `anchor` fields identify the object's anchor tile. The `footprint` field is the logical occupied shape. The `collision_footprint` field is the subset where the object affects movement, projectiles, or vision according to its `collision_profile`. The `visual_bounds` field is a coarse tile-space rectangle for preview/render placement. `interaction_shape` describes where an actor may interact with the object, `sort_anchor` is the recommended top-down draw-sort point, `draw_layer` is the coarse rendering layer, and `occlusion_hint` tells renderers whether the object may visually cover actors. Bunker-like objects may also expose `firing_ports`, `surface_elevation`, and `interior_elevation`; consumers should treat those as gameplay metadata, not as sprite instructions.
 
 
 ## Generation tuning

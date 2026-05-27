@@ -122,7 +122,7 @@ render/*.json as needed
 
 ## Runtime object footprints
 
-`map_package/objects/runtime_objects.json` uses `object-instances-v3` and includes footprint-aware object instances. Object-related catalogs in `map_package/catalogs/object_types.json` use `object-types-catalog-v3` and expose default footprint metadata derived from generated instances.
+`map_package/objects/runtime_objects.json` uses `object-instances-v4` and includes footprint-aware object instances. Object-related catalogs in `map_package/catalogs/object_types.json` use `object-types-catalog-v5` and expose default footprint, interaction, sorting, draw-layer and occlusion metadata derived from generated instances.
 
 Important fields:
 

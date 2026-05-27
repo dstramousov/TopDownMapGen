@@ -67,6 +67,10 @@ def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
         enriched.setdefault("collision_footprint", [])
     enriched.setdefault("visual_bounds", {"x": x, "y": y, "width": 1, "height": 1})
     enriched.setdefault("pivot", {"x": 0, "y": 0, "space": "tile_offset"})
+    enriched.setdefault("interaction_shape", {"type": "none", "points": [], "source": "none"})
+    enriched.setdefault("sort_anchor", {"x": x, "y": y, "elevation": 0, "space": "tile"})
+    enriched.setdefault("draw_layer", "object")
+    enriched.setdefault("occlusion_hint", {"occludes_actor": False, "mode": "none", "source": "test"})
     if "stance_hints" in spec:
         enriched.setdefault("stance_hints", dict(spec["stance_hints"]))
     return enriched
