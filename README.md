@@ -1,3 +1,60 @@
+# TopDownMapGen
+
+TopDownMapGen генерирует один самодостаточный `output/`-пакет мира: legacy-файлы, новый `map_package/`, manifest, validation report, debug/preview-картинки и машинные описания для будущей игры или внешнего renderer-а.
+
+## Быстрый запуск
+
+```bash
+PYTHONPATH=. python3 top_down_generator.py \
+  --config configs/default.json \
+  -o output \
+  --include-debug-layers
+```
+
+После запуска основной вход для любых внешних потребителей — `output/_manifest.json`. Новый структурированный пакет мира лежит в `output/map_package/`, а legacy-файлы (`generated_map.txt`, `tactical_map.json`, `validation_report.json`, `metrics.txt`, `object_catalog.md`) остаются рядом для совместимости и диагностики.
+
+Проверить пакет как внешний consumer:
+
+```bash
+python3 examples/inspect_world_package.py output
+```
+
+Собрать простой визуальный smoke-test из публичного пакета:
+
+```bash
+python3 examples/render_world_preview.py output --collision-overlay
+```
+
+Документы для интеграции:
+
+- `docs/map_package_v1.md` — формат `map_package/`;
+- `docs/game_consumer_guide.md` — как игре читать пакет;
+- `docs/world_building_algorithm.md` — порядок построения runtime-мира из файлов;
+- `docs/world_package_file_map.md` — назначение файлов в `output/`.
+
+
+## Пользовательская настройка плотности мира
+
+В `configs/*.json` есть блок `generation_tuning`. Масштабы обычно читаются так: `1.0` — стандартная плотность, `0.5` — примерно вдвое меньше, `2.0` — примерно вдвое больше. Scale-поля за пределами безопасного диапазона `0.0..10.0` будут зажаты и записаны как warning в `output/generation.log`; `water_patch_density` отдельно зажимается в диапазон `0.0..1.0`.
+
+```json
+"generation_tuning": {
+  "water_scale": 1.0,
+  "water_patch_count_scale": 1.0,
+  "water_patch_size_scale": 1.0,
+  "water_patch_density": 0.62,
+  "forest_scale": 1.0,
+  "open_space_scale": 1.0,
+  "ruins_scale": 1.0,
+  "buildings_scale": 1.0,
+  "road_width_scale": 1.0,
+  "decoration_scale": 1.0,
+  "bunker_scale": 1.0
+}
+```
+
+Эти параметры нужны именно для экспериментов с видом мира: больше/меньше воды, лесной массы, открытых мест, руин/строений, декора и бункеров. Для воды `water_scale` и `water_patch_count_scale` увеличивают количество попыток размещения луж, `water_patch_size_scale` меняет радиус луж, а `water_patch_density` меняет заполненность пятна водой. Если пользовательские параметры дают неидеальную карту, генератор должен писать warning в `generation.log`, `_manifest.json` и `validation_report.json`, а не падать из-за quality-чеков.
+
 ## Текущая модель генерации карты
 
 Генератор строит процедурную top-down карту как многослойное игровое пространство. Базовая карта остаётся двумерной ASCII-сеткой, но поверх неё постепенно наращиваются дополнительные смысловые слои: тактические зоны, runtime-объекты, микролокации, высотные отметки, debug-слои, manifest и отчёты валидации.
@@ -98,7 +155,7 @@ Runtime-объекты — это новый слой поверх базово�
 
 Важно: текущая реализация не является полноценной 3D-картой. Это 2D-карта с дополнительной информацией о высоте и углублениях. Такой подход позволяет постепенно двигаться к более выразительному рельефу без превращения карты в дискретную Minecraft-подобную сетку.
 
-Окопи (`trench`) представлены как multi-tile runtime-объекты с `footprint`. Для каждой клетки footprint-а в `elevation.cells` записывается уровень `-1`. Ямы (`pit`) также могут добавлять клетки уровня `-1`.
+Окопы (`trench`) представлены как multi-tile runtime-объекты с `footprint`. Для каждой клетки footprint-а в `elevation.cells` записывается уровень `-1`. Ямы (`pit`) также могут добавлять клетки уровня `-1`. Заглублённые бункеры (`buried_bunker_2x2`, `buried_bunker_2x3`) также используют внутренний уровень `-1`, но остаются полноценными multi-tile объектами с collision footprint и бойницами (`firing_ports`).
 
 ## Collision и combat-свойства
 
@@ -117,7 +174,7 @@ Runtime-объекты — это новый слой поверх базово�
 - `explosive`;
 - `loot`.
 
-Например, каменная глыба является жёстким укрытием, кустарник больше подходит для маскировки, бочка отмечается как рискованный объект, а тайники имеют loot-смысл. Окопи имеют дополнительные `stance_hints`: стоя персонаж считается открытым, а в будущем crouching-стойка может давать защиту от прямого огня.
+Например, каменная глыба является жёстким укрытием, кустарник больше подходит для маскировки, бочка отмечается как рискованный объект, а тайники имеют loot-смысл. Окопы имеют дополнительные `stance_hints`: стоя персонаж считается открытым, а в будущем crouching-стойка может давать защиту от прямого огня.
 
 ## Places / микролокации
 
@@ -183,6 +240,11 @@ Runtime-объекты не рисуются на `layer_base_map.png`, чтоб
 - корректность elevation-клеток;
 - валидность окопов и их footprint;
 - наличие и корректность places;
+- согласованность `markers.json` со стартом/целью;
+- наличие и размеры готовых `runtime_grids`;
+- валидность ссылок `world_graph.json` на places/markers;
+- валидность ссылок `routes.json` на nodes/edges графа;
+- отсутствие blocked collision на start/goal;
 - наличие `object_catalog.md`;
 - корректность manifest-описания.
 
@@ -193,3 +255,55 @@ Runtime-объекты не рисуются на `layer_base_map.png`, чтоб
 На текущем этапе генератор уже умеет создавать не только карту-подложку, но и насыщенное игровое пространство. Базовые тайлы задают форму местности. Runtime-объекты добавляют детали, укрытия, следы людей, техногенные остатки, ориентиры и углубления. Places группируют эти объекты в маленькие сцены. Manifest, validation report и object catalog делают результат проверяемым и понятным.
 
 Дальнейшее развитие логично вести в сторону более сильных микролокаций, рельефа, heightmap, terrain features и place-aware генерации, где сначала создаётся осмысленное место, а уже потом подбираются объекты, высоты, декор и маршруты.
+
+### Elevation model
+
+Starting with `v0.0.42`, the generated world package includes `map_package/elevation_model.json`. It explains the semantic meaning of height levels `-1..4` and provides high-level rules for movement, line of sight, projectiles and render order. Use it together with `map_package/runtime_grids.json` and its `height_grid`.
+
+Starting with `v0.0.43`, elevation data is split into three consumer-facing files:
+
+- `map_package/elevation_model.json` explains levels `-1..4` and common movement/visibility/projectile rules.
+- `map_package/elevation_features.json` lists concrete elevation features such as pits, trenches, bunker interiors and raised berms.
+- `map_package/elevation_transitions.json` lists adjacent level changes and suggested connectors such as ramps, stairs or ladders.
+
+Starting with `v0.0.45`, elevation is backed by concrete generated features across the full public range `-1..4`: pits/trenches/bunker interiors, raised berms and hills, bridges, ramps, stairs, ruin platforms, watchtowers and special high landmarks.
+
+`runtime_grids.height_grid` remains the per-tile source of truth; the elevation files explain why those values exist and how a game should treat them.
+
+
+### Elevation preview
+
+Для визуальной проверки уровней высоты и переходов используйте:
+
+```bash
+python3 examples/render_world_preview.py output \
+  --elevation-overlay \
+  --transition-overlay \
+  --grid \
+  --cell-size 8 \
+  --output output/elevation_preview.png
+```
+
+`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+
+
+## Elevation v1
+
+See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.
+
+### Gameplay zones
+
+Начиная с `v0.0.48`, world package содержит `map_package/gameplay_zones.json`. Это нейтральный слой назначения областей карты: `safe_area`, `encounter_area`, `loot_area`, `danger_area`, `story_area`, `extraction_area` и другие.
+
+Для игры это слой "что здесь должно происходить", а не слой точной физики. Точную проходимость, видимость и высоты по-прежнему нужно брать из `runtime_grids.json` и elevation-файлов.
+
+
+### Semantic preview overlays
+
+Для визуальной проверки смысловых слоёв используйте:
+
+```bash
+python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+```
+
+Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.

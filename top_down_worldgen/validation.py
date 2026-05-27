@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import json
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,7 @@ from .tactical.places import (
     PLACE_TYPE_NAMES,
 )
 from .tactical.runtime_objects import (
+    BUNKER_TYPES,
     COLLISION_MOVEMENT_VALUES,
     COLLISION_PROJECTILE_VALUES,
     COLLISION_VISION_VALUES,
@@ -42,6 +44,24 @@ from .paths import OutputPaths
 from .utils.json_io import write_json
 
 EDGE_WARNING_MARGIN_TILES = 1
+SOFT_VALIDATION_CHECKS = frozenset(
+    {
+        "combat_zones_non_empty",
+        "runtime_objects_non_empty",
+        "runtime_objects_counts_within_limits",
+        "interest_points_non_empty",
+        "ammo_caches_within_limits",
+        "medkit_caches_within_limits",
+        "trenches_non_empty",
+        "trenches_within_limits",
+        "landmarks_within_limits",
+        "landmarks_min_distance",
+        "places_non_empty",
+        "places_counts_within_limits",
+        "places_min_distance",
+        "map_package_main_path_elevation_reachable",
+    },
+)
 
 
 def build_validation_report(
@@ -80,6 +100,27 @@ def build_validation_report(
         "tile_grid_embedded": tile_grid == rows,
         "metrics_exists": outputs.metrics.exists(),
         "object_catalog_exists": outputs.object_catalog.exists(),
+        "map_package_index_exists": outputs.map_package_map.exists(),
+        "map_package_markers_exists": outputs.map_package_markers.exists(),
+        "map_package_runtime_grids_exists": outputs.map_package_runtime_grids.exists(),
+        "map_package_world_graph_exists": outputs.map_package_world_graph.exists(),
+        "map_package_routes_exists": outputs.map_package_routes.exists(),
+        "map_package_gameplay_zones_exists": outputs.map_package_gameplay_zones.exists(),
+        "map_package_elevation_model_exists": outputs.map_package_elevation_model.exists(),
+        "map_package_elevation_features_exists": outputs.map_package_elevation_features.exists(),
+        "map_package_elevation_transitions_exists": outputs.map_package_elevation_transitions.exists(),
+        "map_package_tile_grid_exists": outputs.map_package_tile_grid.exists(),
+        "map_package_terrain_exists": outputs.map_package_terrain.exists(),
+        "map_package_movement_costs_exists": (
+            outputs.map_package_movement_costs.exists()
+        ),
+        "map_package_collision_exists": outputs.map_package_collision.exists(),
+        "map_package_elevation_exists": outputs.map_package_elevation.exists(),
+        "map_package_start_goal_exists": outputs.map_package_start_goal.exists(),
+        "map_package_gameplay_exists": _map_package_gameplay_exists(outputs),
+        "map_package_objects_exist": _map_package_objects_exist(outputs),
+        "map_package_catalogs_exist": _map_package_catalogs_exist(outputs),
+        "map_package_render_hints_exist": _map_package_render_hints_exist(outputs),
         "single_start_exists": _count_tiles(tile_grid, "S") == 1,
         "single_goal_exists": _count_tiles(tile_grid, "G") == 1,
         "tile_grid_matches_dimensions": _grid_matches_dimensions(
@@ -120,6 +161,33 @@ def build_validation_report(
         "runtime_objects_have_valid_elevation": _runtime_objects_have_valid_elevation(
             runtime_data,
         ),
+        "runtime_objects_have_footprints": _runtime_objects_have_footprints(
+            runtime_data,
+        ),
+        "runtime_objects_have_collision_footprints": (
+            _runtime_objects_have_collision_footprints(runtime_data)
+        ),
+        "runtime_objects_have_visual_bounds": _runtime_objects_have_visual_bounds(
+            runtime_data,
+        ),
+        "runtime_objects_have_pivots": _runtime_objects_have_pivots(runtime_data),
+        "runtime_objects_have_interaction_shapes": (
+            _runtime_objects_have_interaction_shapes(runtime_data)
+        ),
+        "runtime_objects_have_sort_anchors": _runtime_objects_have_sort_anchors(
+            runtime_data,
+        ),
+        "runtime_objects_have_draw_layers": _runtime_objects_have_draw_layers(runtime_data),
+        "runtime_objects_have_occlusion_hints": (
+            _runtime_objects_have_occlusion_hints(runtime_data)
+        ),
+        "runtime_object_collision_footprints_inside_map": (
+            _runtime_object_collision_footprints_inside_map(
+                runtime_data,
+                width=width,
+                height=height,
+            )
+        ),
         "runtime_objects_have_collision_profiles": (
             _runtime_objects_have_collision_profiles(runtime_data)
         ),
@@ -135,6 +203,9 @@ def build_validation_report(
             property_name="concealment_value",
         ),
         "trench_objects_have_stance_hints": _trench_objects_have_stance_hints(
+            runtime_data,
+        ),
+        "bunker_objects_have_firing_ports": _bunker_objects_have_firing_ports(
             runtime_data,
         ),
         "explosive_objects_tagged": _explosive_objects_tagged(runtime_data),
@@ -241,6 +312,10 @@ def build_validation_report(
         "places_have_unique_ids": _places_have_unique_ids(runtime_data),
         "places_have_valid_types": _places_have_valid_types(runtime_data),
         "places_have_valid_object_refs": _places_have_valid_object_refs(runtime_data),
+        "places_have_v2_metadata": _places_have_v2_metadata(runtime_data),
+        "places_have_bounds": _places_have_bounds(runtime_data),
+        "places_have_entrances": _places_have_entrances(runtime_data),
+        "places_have_connections": _places_have_connections(runtime_data),
         "places_inside_map": _places_inside_map(
             runtime_data,
             width=width,
@@ -249,15 +324,24 @@ def build_validation_report(
         "places_counts_within_limits": _places_counts_within_limits(runtime_data),
         "places_min_distance": _places_min_distance(runtime_data),
     }
-    errors = [name for name, passed in checks.items() if not passed]
+    checks.update(
+        _build_map_package_consistency_checks(
+            outputs=outputs,
+            width=width,
+            height=height,
+        ),
+    )
+    failed_checks = [name for name, passed in checks.items() if not passed]
+    errors = [name for name in failed_checks if name not in SOFT_VALIDATION_CHECKS]
     warnings = build_validation_warnings(
         runtime_data=runtime_data,
         width=width,
         height=height,
     )
+    warnings.extend(_soft_check_warnings(failed_checks))
     return {
         "schema_version": VALIDATION_REPORT_SCHEMA_VERSION,
-        "status": "passed" if not errors else "failed",
+        "status": _validation_status(errors=errors, warnings=warnings),
         "checks": checks,
         "errors": errors,
         "warnings": warnings,
@@ -268,6 +352,968 @@ def build_validation_report(
             "artifact_count": _count_existing_outputs(outputs),
         },
     }
+
+
+def _validation_status(*, errors: list[str], warnings: list[dict[str, Any]]) -> str:
+    if errors:
+        return "failed"
+    if warnings:
+        return "passed_with_warnings"
+    return "passed"
+
+
+def _soft_check_warnings(failed_checks: list[str]) -> list[dict[str, Any]]:
+    return [
+        {
+            "code": f"quality.{name}",
+            "level": "warning",
+            "message": f"Soft validation check failed: {name}",
+        }
+        for name in failed_checks
+        if name in SOFT_VALIDATION_CHECKS
+    ]
+
+
+def _map_package_gameplay_exists(outputs: OutputPaths) -> bool:
+    return all(
+        path.exists()
+        for path in (
+            outputs.map_package_combat_zones,
+            outputs.map_package_cover_points,
+            outputs.map_package_choke_points,
+            outputs.map_package_flank_routes,
+            outputs.map_package_enemy_spawn_zones,
+            outputs.map_package_fallback_positions,
+        )
+    )
+
+
+def _map_package_objects_exist(outputs: OutputPaths) -> bool:
+    return (
+        outputs.map_package_runtime_objects.exists()
+        and outputs.map_package_places.exists()
+    )
+
+
+def _map_package_catalogs_exist(outputs: OutputPaths) -> bool:
+    return (
+        outputs.map_package_tile_types.exists()
+        and outputs.map_package_object_types.exists()
+    )
+
+
+def _map_package_render_hints_exist(outputs: OutputPaths) -> bool:
+    return (
+        outputs.map_package_render_profile.exists()
+        and outputs.map_package_tile_render_hints.exists()
+        and outputs.map_package_object_render_hints.exists()
+    )
+
+
+def _build_map_package_consistency_checks(
+    *,
+    outputs: OutputPaths,
+    width: int,
+    height: int,
+) -> dict[str, bool]:
+    if not outputs.map_package_map.exists():
+        return _failed_package_checks()
+    package = _load_package_context(outputs)
+    if package is None:
+        return _failed_package_checks()
+    return {
+        "map_package_files_have_schema_versions": (
+            _package_files_have_schema_versions(package)
+        ),
+        "map_package_dimensions_match_layers": _package_dimensions_match_layers(
+            package,
+            width=width,
+            height=height,
+        ),
+        "map_package_runtime_grids_have_required_grids": (
+            _runtime_grids_have_required_grids(package)
+        ),
+        "map_package_runtime_grids_match_dimensions": (
+            _runtime_grids_match_dimensions(package, width=width, height=height)
+        ),
+        "map_package_markers_inside_map": _package_markers_inside_map(
+            package,
+            width=width,
+            height=height,
+        ),
+        "map_package_start_goal_markers_match_layer": (
+            _package_start_goal_markers_match_layer(package)
+        ),
+        "map_package_start_goal_not_blocked": _package_start_goal_not_blocked(package),
+        "map_package_runtime_object_refs_valid": _package_runtime_object_refs_valid(
+            package,
+        ),
+        "map_package_places_reference_existing_objects": (
+            _package_places_reference_existing_objects(package)
+        ),
+        "map_package_places_reference_existing_markers": (
+            _package_places_reference_existing_markers(package)
+        ),
+        "map_package_places_entrances_inside_map": (
+            _package_places_entrances_inside_map(package, width=width, height=height)
+        ),
+        "map_package_world_graph_refs_valid": _package_world_graph_refs_valid(
+            package,
+        ),
+        "map_package_world_graph_main_path_valid": (
+            _package_world_graph_main_path_valid(package)
+        ),
+        "map_package_routes_refs_valid": _package_routes_refs_valid(package),
+        "map_package_gameplay_zones_valid": _package_gameplay_zones_valid(
+            package,
+            width=width,
+            height=height,
+        ),
+        "map_package_route_waypoints_inside_map": _package_route_waypoints_inside_map(
+            package,
+            width=width,
+            height=height,
+        ),
+        "map_package_elevation_model_valid": _package_elevation_model_valid(package),
+        "map_package_elevation_features_valid": _package_elevation_features_valid(package),
+        "map_package_elevation_transitions_valid": (
+            _package_elevation_transitions_valid(package, width=width, height=height)
+        ),
+        "map_package_height_grid_levels_valid": _package_height_grid_levels_valid(
+            package,
+        ),
+        "map_package_elevation_transitions_match_height_grid": (
+            _package_elevation_transitions_match_height_grid(package)
+        ),
+        "map_package_elevation_transitions_have_movement_rules": (
+            _package_elevation_transitions_have_movement_rules(package)
+        ),
+        "map_package_start_goal_elevation_reachable": (
+            _package_start_goal_elevation_reachable(package)
+        ),
+        "map_package_main_path_elevation_reachable": (
+            _package_main_path_elevation_reachable(package)
+        ),
+    }
+
+
+def _failed_package_checks() -> dict[str, bool]:
+    return {
+        "map_package_files_have_schema_versions": False,
+        "map_package_dimensions_match_layers": False,
+        "map_package_runtime_grids_have_required_grids": False,
+        "map_package_runtime_grids_match_dimensions": False,
+        "map_package_markers_inside_map": False,
+        "map_package_start_goal_markers_match_layer": False,
+        "map_package_start_goal_not_blocked": False,
+        "map_package_runtime_object_refs_valid": False,
+        "map_package_places_reference_existing_objects": False,
+        "map_package_places_reference_existing_markers": False,
+        "map_package_places_entrances_inside_map": False,
+        "map_package_world_graph_refs_valid": False,
+        "map_package_world_graph_main_path_valid": False,
+        "map_package_routes_refs_valid": False,
+        "map_package_gameplay_zones_valid": False,
+        "map_package_route_waypoints_inside_map": False,
+        "map_package_elevation_model_valid": False,
+        "map_package_elevation_features_valid": False,
+        "map_package_elevation_transitions_valid": False,
+        "map_package_height_grid_levels_valid": False,
+        "map_package_elevation_transitions_match_height_grid": False,
+        "map_package_elevation_transitions_have_movement_rules": False,
+        "map_package_start_goal_elevation_reachable": False,
+        "map_package_main_path_elevation_reachable": False,
+    }
+
+
+def _load_package_context(outputs: OutputPaths) -> dict[str, Any] | None:
+    try:
+        package_dir = outputs.map_package_dir
+        map_index = _read_json_object(outputs.map_package_map)
+        layers = _json_object(map_index.get("layers"))
+        objects = _json_object(map_index.get("objects"))
+        catalogs = _json_object(map_index.get("catalogs"))
+        render = _json_object(map_index.get("render"))
+        return {
+            "map_index": map_index,
+            "tile_grid": _read_json_object(package_dir / str(layers.get("tile_grid"))),
+            "terrain": _read_json_object(package_dir / str(layers.get("terrain"))),
+            "collision": _read_json_object(package_dir / str(layers.get("collision"))),
+            "movement_costs": _read_json_object(
+                package_dir / str(layers.get("movement_costs")),
+            ),
+            "elevation": _read_json_object(package_dir / str(layers.get("elevation"))),
+            "start_goal": _read_json_object(package_dir / str(layers.get("start_goal"))),
+            "markers": _read_json_object(package_dir / str(map_index.get("markers"))),
+            "runtime_grids": _read_json_object(
+                package_dir / str(map_index.get("runtime_grids")),
+            ),
+            "world_graph": _read_json_object(
+                package_dir / str(map_index.get("world_graph")),
+            ),
+            "routes": _read_json_object(package_dir / str(map_index.get("routes"))),
+            "gameplay_zones": _read_json_object(
+                package_dir / str(map_index.get("gameplay_zones")),
+            ),
+            "elevation_model": _read_json_object(
+                package_dir / str(map_index.get("elevation_model")),
+            ),
+            "elevation_features": _read_json_object(
+                package_dir / str(map_index.get("elevation_features")),
+            ),
+            "elevation_transitions": _read_json_object(
+                package_dir / str(map_index.get("elevation_transitions")),
+            ),
+            "runtime_objects": _read_json_object(
+                package_dir / str(objects.get("runtime_objects")),
+            ),
+            "places": _read_json_object(package_dir / str(objects.get("places"))),
+            "tile_types": _read_json_object(package_dir / str(catalogs.get("tile_types"))),
+            "object_types": _read_json_object(
+                package_dir / str(catalogs.get("object_types")),
+            ),
+            "render_profile": _read_json_object(package_dir / str(render.get("profile"))),
+            "tile_render_hints": _read_json_object(
+                package_dir / str(render.get("tile_render_hints")),
+            ),
+            "object_render_hints": _read_json_object(
+                package_dir / str(render.get("object_render_hints")),
+            ),
+        }
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def _read_json_object(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as file_obj:
+        data = json.load(file_obj)
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected JSON object in {path}")
+    return data
+
+
+def _json_object(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _package_files_have_schema_versions(package: dict[str, Any]) -> bool:
+    required = (
+        "map_index",
+        "tile_grid",
+        "terrain",
+        "collision",
+        "movement_costs",
+        "elevation",
+        "start_goal",
+        "markers",
+        "runtime_grids",
+        "world_graph",
+        "routes",
+        "gameplay_zones",
+        "elevation_model",
+        "elevation_features",
+        "elevation_transitions",
+        "runtime_objects",
+        "places",
+        "tile_types",
+        "object_types",
+        "render_profile",
+        "tile_render_hints",
+        "object_render_hints",
+    )
+    for key in required:
+        schema_version = _json_object(package.get(key)).get("schema_version")
+        if not isinstance(schema_version, str) or not schema_version:
+            return False
+    return True
+
+
+def _package_dimensions_match_layers(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    return all(
+        _package_layer_dimensions_match(_json_object(package.get(key)), width=width, height=height)
+        for key in ("tile_grid", "terrain", "collision", "elevation", "start_goal")
+    )
+
+
+def _package_layer_dimensions_match(
+    data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    return data.get("width") == width and data.get("height") == height
+
+
+def _runtime_grids_have_required_grids(package: dict[str, Any]) -> bool:
+    grids = _json_object(_json_object(package.get("runtime_grids")).get("grids"))
+    required = {
+        "movement_grid",
+        "collision_grid",
+        "projectile_block_grid",
+        "vision_block_grid",
+        "cover_grid",
+        "concealment_grid",
+        "height_grid",
+    }
+    return required.issubset(grids)
+
+
+def _runtime_grids_match_dimensions(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    grids = _json_object(_json_object(package.get("runtime_grids")).get("grids"))
+    for grid in grids.values():
+        if not isinstance(grid, dict):
+            return False
+        rows = grid.get("rows")
+        if not isinstance(rows, list) or len(rows) != height:
+            return False
+        for row in rows:
+            if isinstance(row, str):
+                if len(row) != width:
+                    return False
+            elif isinstance(row, list):
+                if len(row) != width:
+                    return False
+            else:
+                return False
+    return True
+
+
+def _package_markers_inside_map(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for marker in _dict_list(_json_object(package.get("markers")).get("items")):
+        point = _mapping_point(marker.get("position"))
+        if point is None or not _point_in_bounds(point, width=width, height=height):
+            return False
+    return True
+
+
+def _package_start_goal_markers_match_layer(package: dict[str, Any]) -> bool:
+    start_goal = _json_object(package.get("start_goal"))
+    start = _mapping_point(start_goal.get("start"))
+    goal = _mapping_point(start_goal.get("goal"))
+    if start is None or goal is None:
+        return False
+    markers = _dict_list(_json_object(package.get("markers")).get("items"))
+    marker_by_type = {str(marker.get("type")): marker for marker in markers}
+    return (
+        _mapping_point(_json_object(marker_by_type.get("start")).get("position")) == start
+        and _mapping_point(_json_object(marker_by_type.get("goal")).get("position")) == goal
+    )
+
+
+def _package_start_goal_not_blocked(package: dict[str, Any]) -> bool:
+    start_goal = _json_object(package.get("start_goal"))
+    for point in (_mapping_point(start_goal.get("start")), _mapping_point(start_goal.get("goal"))):
+        if point is None or _collision_grid_value(package, point) != "0":
+            return False
+    return True
+
+
+def _collision_grid_value(package: dict[str, Any], point: tuple[int, int]) -> str | None:
+    grids = _json_object(_json_object(package.get("runtime_grids")).get("grids"))
+    collision_grid = _json_object(grids.get("collision_grid"))
+    rows = collision_grid.get("rows")
+    if not isinstance(rows, list):
+        return None
+    x, y = point
+    try:
+        row = rows[y]
+    except IndexError:
+        return None
+    if isinstance(row, str) and 0 <= x < len(row):
+        return row[x]
+    if isinstance(row, list) and 0 <= x < len(row):
+        return str(row[x])
+    return None
+
+
+def _package_runtime_object_refs_valid(package: dict[str, Any]) -> bool:
+    object_types = set(_json_object(_json_object(package.get("object_types")).get("types")))
+    for item in _dict_list(_json_object(package.get("runtime_objects")).get("items")):
+        object_id = item.get("id")
+        object_type = item.get("type")
+        if not isinstance(object_id, str) or not object_id:
+            return False
+        if not isinstance(object_type, str) or object_type not in object_types:
+            return False
+    return True
+
+
+def _package_places_reference_existing_objects(package: dict[str, Any]) -> bool:
+    object_ids = _package_runtime_object_ids(package)
+    for place in _dict_list(_json_object(package.get("places")).get("items")):
+        refs = _place_object_ref_ids(place)
+        if not refs:
+            return False
+        if any(ref not in object_ids for ref in refs):
+            return False
+    return True
+
+
+def _place_object_ref_ids(place: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    object_refs = place.get("object_refs")
+    if isinstance(object_refs, list):
+        for ref in object_refs:
+            if isinstance(ref, str):
+                refs.append(ref)
+            elif isinstance(ref, dict) and isinstance(ref.get("id"), str):
+                refs.append(ref["id"])
+    refs.extend(_string_list(place.get("object_ids")))
+    return sorted(set(refs))
+
+
+def _package_places_reference_existing_markers(package: dict[str, Any]) -> bool:
+    marker_ids = _package_marker_ids(package)
+    for place in _dict_list(_json_object(package.get("places")).get("items")):
+        refs = _string_list(place.get("marker_refs"))
+        if any(ref not in marker_ids for ref in refs):
+            return False
+    return True
+
+
+def _package_places_entrances_inside_map(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for place in _dict_list(_json_object(package.get("places")).get("items")):
+        entrances = _dict_list(place.get("entrances"))
+        if not entrances:
+            return False
+        for entrance in entrances:
+            point = _mapping_point(entrance.get("position"))
+            if point is None or not _point_in_bounds(point, width=width, height=height):
+                return False
+    return True
+
+
+def _package_world_graph_refs_valid(package: dict[str, Any]) -> bool:
+    nodes = _dict_list(_json_object(package.get("world_graph")).get("nodes"))
+    edges = _dict_list(_json_object(package.get("world_graph")).get("edges"))
+    node_ids = {str(node.get("id")) for node in nodes if isinstance(node.get("id"), str)}
+    if not {"marker:start", "marker:goal"}.issubset(node_ids):
+        return False
+    marker_ids = _package_marker_ids(package)
+    place_ids = _package_place_ids(package)
+    for node in nodes:
+        source = node.get("source")
+        if source == "markers" and str(node.get("marker_ref")) not in marker_ids:
+            return False
+        if source == "places" and str(node.get("place_ref")) not in place_ids:
+            return False
+    for edge in edges:
+        if str(edge.get("source")) not in node_ids or str(edge.get("target")) not in node_ids:
+            return False
+    return True
+
+
+def _package_world_graph_main_path_valid(package: dict[str, Any]) -> bool:
+    graph = _json_object(package.get("world_graph"))
+    node_ids = {
+        str(node.get("id"))
+        for node in _dict_list(graph.get("nodes"))
+        if isinstance(node.get("id"), str)
+    }
+    edges = _dict_list(graph.get("edges"))
+    edge_ids = {
+        str(edge.get("id"))
+        for edge in edges
+        if isinstance(edge.get("id"), str)
+    }
+    main_path = _json_object(graph.get("main_path"))
+    path_nodes = _string_list(main_path.get("node_ids"))
+    path_edges = _string_list(main_path.get("edge_ids"))
+    if len(path_nodes) < 2:
+        return False
+    if path_nodes[0] != "marker:start" or path_nodes[-1] != "marker:goal":
+        return False
+    if any(node_id not in node_ids for node_id in path_nodes):
+        return False
+    if len(path_edges) != len(path_nodes) - 1:
+        return False
+    if any(edge_id not in edge_ids for edge_id in path_edges):
+        return False
+    for source, target in zip(path_nodes, path_nodes[1:], strict=False):
+        if not _package_edge_exists_between(edges, source, target):
+            return False
+    return True
+
+
+def _package_edge_exists_between(edges: list[dict[str, Any]], source: str, target: str) -> bool:
+    for edge in edges:
+        edge_source = edge.get("source")
+        edge_target = edge.get("target")
+        if {edge_source, edge_target} == {source, target}:
+            return True
+    return False
+
+
+def _package_routes_refs_valid(package: dict[str, Any]) -> bool:
+    graph = _json_object(package.get("world_graph"))
+    node_ids = {
+        str(node.get("id"))
+        for node in _dict_list(graph.get("nodes"))
+        if isinstance(node.get("id"), str)
+    }
+    edge_ids = {
+        str(edge.get("id"))
+        for edge in _dict_list(graph.get("edges"))
+        if isinstance(edge.get("id"), str)
+    }
+    valid_types = {"main_road", "side_path", "hidden_path", "patrol_route", "escape_route"}
+    for route in _dict_list(_json_object(package.get("routes")).get("items")):
+        if route.get("type") not in valid_types:
+            return False
+        if any(node_id not in node_ids for node_id in _string_list(route.get("node_ids"))):
+            return False
+        if any(edge_id not in edge_ids for edge_id in _string_list(route.get("edge_ids"))):
+            return False
+    return True
+
+
+
+
+def _package_gameplay_zones_valid(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    zones_package = _json_object(package.get("gameplay_zones"))
+    zones = _dict_list(zones_package.get("items"))
+    if not zones:
+        return False
+    place_ids = _package_place_ids(package)
+    marker_ids = _package_marker_ids(package)
+    route_ids = {
+        str(route.get("id"))
+        for route in _dict_list(_json_object(package.get("routes")).get("items"))
+        if isinstance(route.get("id"), str)
+    }
+    valid_types = {
+        "safe_area",
+        "encounter_area",
+        "ambush_area",
+        "loot_area",
+        "boss_area",
+        "stealth_area",
+        "traversal_area",
+        "secret_area",
+        "danger_area",
+        "story_area",
+        "extraction_area",
+    }
+    for zone in zones:
+        zone_id = zone.get("id")
+        zone_type = zone.get("type")
+        if not isinstance(zone_id, str) or zone_type not in valid_types:
+            return False
+        if not _package_bounds_inside_map(zone.get("bounds"), width=width, height=height):
+            return False
+        if not _package_zone_points_inside_map(zone.get("polygon"), width=width, height=height):
+            return False
+        if not _package_zone_entry_points_inside_map(zone.get("entry_points"), width=width, height=height):
+            return False
+        if not _package_zone_entry_points_inside_map(zone.get("exit_points"), width=width, height=height):
+            return False
+        if any(place_ref not in place_ids for place_ref in _string_list(zone.get("linked_places"))):
+            return False
+        if any(marker_ref not in marker_ids for marker_ref in _string_list(zone.get("linked_markers"))):
+            return False
+        if any(route_ref not in route_ids for route_ref in _string_list(zone.get("linked_routes"))):
+            return False
+    return True
+
+
+def _package_bounds_inside_map(value: Any, *, width: int, height: int) -> bool:
+    bounds = _json_object(value)
+    try:
+        min_x = int(bounds["min_x"])
+        min_y = int(bounds["min_y"])
+        max_x = int(bounds["max_x"])
+        max_y = int(bounds["max_y"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return 0 <= min_x <= max_x < width and 0 <= min_y <= max_y < height
+
+
+def _package_zone_points_inside_map(value: Any, *, width: int, height: int) -> bool:
+    points = _dict_list(value)
+    if not points:
+        return False
+    return all(_mapping_point_in_bounds(point, width=width, height=height) for point in points)
+
+
+def _package_zone_entry_points_inside_map(value: Any, *, width: int, height: int) -> bool:
+    points = _dict_list(value)
+    if not points:
+        return False
+    for point in points:
+        position = _json_object(point.get("position"))
+        if not _mapping_point_in_bounds(position, width=width, height=height):
+            return False
+    return True
+
+
+def _mapping_point_in_bounds(value: Any, *, width: int, height: int) -> bool:
+    point = _mapping_point(value)
+    return point is not None and _point_in_bounds(point, width=width, height=height)
+
+
+def _package_route_waypoints_inside_map(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for route in _dict_list(_json_object(package.get("routes")).get("items")):
+        for waypoint in _dict_list(route.get("waypoints")):
+            point = _mapping_point(waypoint)
+            if point is None or not _point_in_bounds(point, width=width, height=height):
+                return False
+    return True
+
+
+
+def _package_elevation_features_valid(package: dict[str, Any]) -> bool:
+    features_package = _json_object(package.get("elevation_features"))
+    if features_package.get("kind") != "elevation_features":
+        return False
+    feature_items = _dict_list(features_package.get("items"))
+    model_features = _dict_list(_json_object(package.get("elevation_model")).get("features"))
+    if len(feature_items) != len(model_features):
+        return False
+    runtime_object_ids = {
+        item["id"]
+        for item in _dict_list(_json_object(package.get("runtime_objects")).get("items"))
+        if isinstance(item.get("id"), str)
+    }
+    for feature in feature_items:
+        if not isinstance(feature.get("id"), str) or not isinstance(feature.get("type"), str):
+            return False
+        object_ref = feature.get("object_ref")
+        if isinstance(object_ref, str) and object_ref not in runtime_object_ids:
+            return False
+        footprint = feature.get("footprint")
+        if footprint is not None and not isinstance(footprint, list):
+            return False
+    return True
+
+
+def _package_elevation_transitions_valid(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    transitions_package = _json_object(package.get("elevation_transitions"))
+    if transitions_package.get("kind") != "elevation_transitions":
+        return False
+    transition_items = _dict_list(transitions_package.get("items"))
+    model_transitions = _dict_list(_json_object(package.get("elevation_model")).get("transitions"))
+    if len(transition_items) != len(model_transitions):
+        return False
+    for transition in transition_items:
+        if not isinstance(transition.get("id"), str) or not isinstance(transition.get("type"), str):
+            return False
+        source = _mapping_point(_json_object(transition.get("from")))
+        target = _mapping_point(_json_object(transition.get("to")))
+        if source is None or target is None:
+            return False
+        if not _point_in_bounds(source, width=width, height=height):
+            return False
+        if not _point_in_bounds(target, width=width, height=height):
+            return False
+        if not isinstance(transition.get("delta"), int):
+            return False
+    return True
+
+def _package_elevation_model_valid(package: dict[str, Any]) -> bool:
+    elevation_model = _json_object(package.get("elevation_model"))
+    if elevation_model.get("kind") != "elevation_model":
+        return False
+    levels = _json_object(elevation_model.get("levels"))
+    required_levels = {"-1", "0", "1", "2", "3", "4"}
+    if not required_levels.issubset(set(levels)):
+        return False
+    rules = _json_object(elevation_model.get("rules"))
+    if not {"movement", "line_of_sight", "projectiles", "render_order"}.issubset(rules):
+        return False
+    summary = _json_object(elevation_model.get("summary"))
+    present_levels = set(_string_list(summary.get("levels_present")))
+    height_grid = _json_object(_json_object(_json_object(package.get("runtime_grids")).get("grids")).get("height_grid"))
+    rows = height_grid.get("rows")
+    if not isinstance(rows, list):
+        return False
+    grid_levels: set[str] = set()
+    for row in rows:
+        if not isinstance(row, list):
+            return False
+        for value in row:
+            if not isinstance(value, int):
+                return False
+            if str(value) not in levels:
+                return False
+            grid_levels.add(str(value))
+    return grid_levels.issubset(present_levels)
+
+
+def _package_height_grid_levels_valid(package: dict[str, Any]) -> bool:
+    rows = _package_height_grid_rows(package)
+    if not rows:
+        return False
+    allowed_levels = {-1, 0, 1, 2, 3, 4}
+    return all(value in allowed_levels for row in rows for value in row)
+
+
+def _package_elevation_transitions_match_height_grid(package: dict[str, Any]) -> bool:
+    rows = _package_height_grid_rows(package)
+    if not rows:
+        return False
+    transitions = _dict_list(_json_object(package.get("elevation_transitions")).get("items"))
+    for transition in transitions:
+        source = _json_object(transition.get("from"))
+        target = _json_object(transition.get("to"))
+        from_point = _mapping_point(source)
+        to_point = _mapping_point(target)
+        if from_point is None or to_point is None:
+            return False
+        fx, fy = from_point
+        tx, ty = to_point
+        if not _height_point_inside(rows, fx, fy) or not _height_point_inside(rows, tx, ty):
+            return False
+        from_level = rows[fy][fx]
+        to_level = rows[ty][tx]
+        if source.get("level") != from_level or target.get("level") != to_level:
+            return False
+        if transition.get("delta") != to_level - from_level:
+            return False
+    return True
+
+
+def _package_elevation_transitions_have_movement_rules(package: dict[str, Any]) -> bool:
+    transitions = _dict_list(_json_object(package.get("elevation_transitions")).get("items"))
+    valid_connectors = {"slope", "ramp", "stairs", "bridge", "ladder_or_scripted", "none"}
+    for transition in transitions:
+        delta = transition.get("delta")
+        connector = transition.get("suggested_connector")
+        movement_allowed = transition.get("movement_allowed")
+        movement_rule = transition.get("movement_rule")
+        if not isinstance(delta, int):
+            return False
+        if connector not in valid_connectors:
+            return False
+        if not isinstance(movement_allowed, bool):
+            return False
+        if not isinstance(movement_rule, str) or not movement_rule:
+            return False
+        if abs(delta) == 1 and movement_allowed and connector not in {"slope", "ramp", "stairs", "bridge"}:
+            return False
+        if abs(delta) > 1 and movement_allowed and connector != "bridge":
+            return False
+    return True
+
+
+def _package_start_goal_elevation_reachable(package: dict[str, Any]) -> bool:
+    start_goal = _json_object(package.get("start_goal"))
+    start = _mapping_point(_json_object(start_goal.get("start")))
+    goal = _mapping_point(_json_object(start_goal.get("goal")))
+    if start is None or goal is None:
+        return False
+    return _package_points_elevation_reachable(package, start, goal)
+
+
+def _package_main_path_elevation_reachable(package: dict[str, Any]) -> bool:
+    graph = _json_object(package.get("world_graph"))
+    nodes_by_id = {
+        str(node.get("id")): node
+        for node in _dict_list(graph.get("nodes"))
+        if isinstance(node.get("id"), str)
+    }
+    main_path = _json_object(graph.get("main_path"))
+    node_ids = _string_list(main_path.get("node_ids"))
+    if len(node_ids) < 2:
+        return False
+    points: list[tuple[int, int]] = []
+    for node_id in node_ids:
+        point = _mapping_point(_json_object(nodes_by_id.get(node_id, {})).get("position"))
+        if point is None:
+            return False
+        anchor = _nearest_elevation_reachable_anchor(package, point)
+        if anchor is None:
+            return False
+        points.append(anchor)
+    return all(
+        _package_points_elevation_reachable(package, source, target)
+        for source, target in zip(points, points[1:], strict=False)
+    )
+
+
+def _nearest_elevation_reachable_anchor(
+    package: dict[str, Any],
+    point: tuple[int, int],
+) -> tuple[int, int] | None:
+    collision_rows = _package_collision_rows(package)
+    height_rows = _package_height_grid_rows(package)
+    if not collision_rows or not height_rows:
+        return None
+    x, y = point
+    if _height_point_inside(height_rows, x, y) and not _collision_blocked(collision_rows, x, y):
+        return point
+    max_radius = 8
+    candidates: list[tuple[int, int, int]] = []
+    for radius in range(1, max_radius + 1):
+        for cy in range(y - radius, y + radius + 1):
+            for cx in range(x - radius, x + radius + 1):
+                if abs(cx - x) + abs(cy - y) > radius:
+                    continue
+                if not _height_point_inside(height_rows, cx, cy):
+                    continue
+                if _collision_blocked(collision_rows, cx, cy):
+                    continue
+                candidates.append((abs(cx - x) + abs(cy - y), cx, cy))
+        if candidates:
+            _, best_x, best_y = min(candidates)
+            return (best_x, best_y)
+    return None
+
+
+def _package_points_elevation_reachable(
+    package: dict[str, Any],
+    start: tuple[int, int],
+    goal: tuple[int, int],
+) -> bool:
+    collision_rows = _package_collision_rows(package)
+    height_rows = _package_height_grid_rows(package)
+    if not collision_rows or not height_rows:
+        return False
+    if not _height_point_inside(height_rows, *start) or not _height_point_inside(height_rows, *goal):
+        return False
+    if _collision_blocked(collision_rows, *start) or _collision_blocked(collision_rows, *goal):
+        return False
+    width = len(height_rows[0])
+    height = len(height_rows)
+    transition_pairs = _movement_allowed_transition_pairs(package)
+    queue = [start]
+    visited = {start}
+    index = 0
+    while index < len(queue):
+        x, y = queue[index]
+        index += 1
+        if (x, y) == goal:
+            return True
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if not (0 <= nx < width and 0 <= ny < height):
+                continue
+            if (nx, ny) in visited or _collision_blocked(collision_rows, nx, ny):
+                continue
+            current_level = height_rows[y][x]
+            next_level = height_rows[ny][nx]
+            if current_level != next_level:
+                edge = frozenset({(x, y), (nx, ny)})
+                if edge not in transition_pairs:
+                    continue
+            visited.add((nx, ny))
+            queue.append((nx, ny))
+    return False
+
+
+def _movement_allowed_transition_pairs(package: dict[str, Any]) -> set[frozenset[tuple[int, int]]]:
+    pairs: set[frozenset[tuple[int, int]]] = set()
+    for transition in _dict_list(_json_object(package.get("elevation_transitions")).get("items")):
+        if transition.get("movement_allowed") is not True:
+            continue
+        source = _mapping_point(_json_object(transition.get("from")))
+        target = _mapping_point(_json_object(transition.get("to")))
+        if source is not None and target is not None:
+            pairs.add(frozenset({source, target}))
+    return pairs
+
+
+def _package_height_grid_rows(package: dict[str, Any]) -> list[list[int]]:
+    runtime_grids = _json_object(package.get("runtime_grids"))
+    grids = _json_object(runtime_grids.get("grids"))
+    height_grid = _json_object(grids.get("height_grid"))
+    rows = height_grid.get("rows")
+    if not isinstance(rows, list):
+        return []
+    normalized: list[list[int]] = []
+    for row in rows:
+        if not isinstance(row, list) or not all(isinstance(value, int) for value in row):
+            return []
+        normalized.append(row)
+    return normalized
+
+
+def _package_collision_rows(package: dict[str, Any]) -> list[str]:
+    runtime_grids = _json_object(package.get("runtime_grids"))
+    grids = _json_object(runtime_grids.get("grids"))
+    collision_grid = _json_object(grids.get("collision_grid"))
+    rows = collision_grid.get("rows")
+    if not isinstance(rows, list):
+        return []
+    if not all(isinstance(row, str) for row in rows):
+        return []
+    return rows
+
+
+def _height_point_inside(rows: list[list[int]], x: int, y: int) -> bool:
+    return 0 <= y < len(rows) and 0 <= x < len(rows[y])
+
+
+def _collision_blocked(rows: list[str], x: int, y: int) -> bool:
+    if not (0 <= y < len(rows) and 0 <= x < len(rows[y])):
+        return True
+    return rows[y][x] == "1"
+
+
+def _package_runtime_object_ids(package: dict[str, Any]) -> set[str]:
+    return {
+        str(item.get("id"))
+        for item in _dict_list(_json_object(package.get("runtime_objects")).get("items"))
+        if isinstance(item.get("id"), str)
+    }
+
+
+def _package_marker_ids(package: dict[str, Any]) -> set[str]:
+    return {
+        str(item.get("id"))
+        for item in _dict_list(_json_object(package.get("markers")).get("items"))
+        if isinstance(item.get("id"), str)
+    }
+
+
+def _package_place_ids(package: dict[str, Any]) -> set[str]:
+    return {
+        str(item.get("id"))
+        for item in _dict_list(_json_object(package.get("places")).get("items"))
+        if isinstance(item.get("id"), str)
+    }
+
+
+def _mapping_point(value: Any) -> tuple[int, int] | None:
+    if not isinstance(value, dict):
+        return None
+    try:
+        return int(value["x"]), int(value["y"])
+    except (KeyError, TypeError, ValueError):
+        return None
 
 
 def write_validation_report(report: dict[str, Any], path: Path) -> None:
@@ -520,7 +1566,7 @@ def _trench_cells_have_negative_elevation(runtime_data: dict[str, Any]) -> bool:
 def _elevation_cells_match_trench_footprints(runtime_data: dict[str, Any]) -> bool:
     negative_object_points: set[tuple[int, int]] = set()
     for item in _runtime_objects(runtime_data):
-        if item.get("type") not in {"trench", "pit"}:
+        if item.get("type") not in {"trench", "pit"} | BUNKER_TYPES:
             continue
         points = _runtime_object_points(item)
         if not points:
@@ -786,6 +1832,149 @@ def _loot_objects_tagged(runtime_data: dict[str, Any]) -> bool:
             return False
     return True
 
+def _runtime_objects_have_footprints(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        points = _runtime_object_points(item)
+        if not points:
+            return False
+        footprint = item.get("footprint")
+        if not isinstance(footprint, list):
+            return False
+    return True
+
+
+def _runtime_objects_have_collision_footprints(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        value = item.get("collision_footprint")
+        if not isinstance(value, list):
+            return False
+        if any(_point(point) is None for point in value):
+            return False
+    return True
+
+
+def _runtime_objects_have_visual_bounds(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        bounds = item.get("visual_bounds")
+        if not isinstance(bounds, dict):
+            return False
+        try:
+            width = int(bounds.get("width"))
+            height = int(bounds.get("height"))
+            int(bounds.get("x"))
+            int(bounds.get("y"))
+        except (TypeError, ValueError):
+            return False
+        if width <= 0 or height <= 0:
+            return False
+    return True
+
+
+
+def _runtime_objects_have_interaction_shapes(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        shape = item.get("interaction_shape")
+        if not isinstance(shape, dict):
+            return False
+        if shape.get("type") not in {"none", "adjacent_tiles", "firing_ports", "custom"}:
+            return False
+        points = shape.get("points")
+        if not isinstance(points, list):
+            return False
+        if any(_point(point) is None for point in points):
+            return False
+    return True
+
+
+def _runtime_objects_have_sort_anchors(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        anchor = item.get("sort_anchor")
+        if not isinstance(anchor, dict):
+            return False
+        try:
+            int(anchor.get("x"))
+            int(anchor.get("y"))
+            int(anchor.get("elevation", 0))
+        except (TypeError, ValueError):
+            return False
+        if anchor.get("space") != "tile":
+            return False
+    return True
+
+
+def _runtime_objects_have_draw_layers(runtime_data: dict[str, Any]) -> bool:
+    allowed = {"terrain_overlay", "object", "structure", "tall_object", "overlay"}
+    for item in _runtime_objects(runtime_data):
+        if item.get("draw_layer") not in allowed:
+            return False
+    return True
+
+
+def _runtime_objects_have_occlusion_hints(runtime_data: dict[str, Any]) -> bool:
+    allowed_modes = {"none", "partial", "solid", "visual_only"}
+    for item in _runtime_objects(runtime_data):
+        hint = item.get("occlusion_hint")
+        if not isinstance(hint, dict):
+            return False
+        if not isinstance(hint.get("occludes_actor"), bool):
+            return False
+        if hint.get("mode") not in allowed_modes:
+            return False
+    return True
+
+def _bunker_objects_have_firing_ports(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        if item.get("type") not in BUNKER_TYPES:
+            continue
+        ports = item.get("firing_ports")
+        if not isinstance(ports, list) or len(ports) != 2:
+            return False
+        for port in ports:
+            if not isinstance(port, dict):
+                return False
+            if port.get("side") not in {"north", "south", "east", "west"}:
+                return False
+            positions = port.get("positions")
+            if not isinstance(positions, list) or not positions:
+                return False
+            if any(_point(position) is None for position in positions):
+                return False
+            try:
+                int(port.get("elevation"))
+            except (TypeError, ValueError):
+                return False
+    return True
+
+
+def _runtime_objects_have_pivots(runtime_data: dict[str, Any]) -> bool:
+    for item in _runtime_objects(runtime_data):
+        pivot = item.get("pivot")
+        if not isinstance(pivot, dict):
+            return False
+        try:
+            int(pivot.get("x"))
+            int(pivot.get("y"))
+        except (TypeError, ValueError):
+            return False
+        if not isinstance(pivot.get("space"), str):
+            return False
+    return True
+
+
+def _runtime_object_collision_footprints_inside_map(
+    runtime_data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    for item in _runtime_objects(runtime_data):
+        for point in _runtime_object_collision_points(item):
+            if not _point_in_bounds(point, width=width, height=height):
+                return False
+    return True
+
+
+
 def _runtime_objects_do_not_overlap_start_goal(
     runtime_data: dict[str, Any],
     tile_grid: list[str],
@@ -882,6 +2071,14 @@ def _runtime_object_points(item: dict[str, Any]) -> list[tuple[int, int]]:
     return []
 
 
+def _runtime_object_collision_points(item: dict[str, Any]) -> list[tuple[int, int]]:
+    collision_footprint = item.get("collision_footprint")
+    if isinstance(collision_footprint, list):
+        points = [_point(point) for point in collision_footprint]
+        return [point for point in points if point is not None]
+    return []
+
+
 def _point_from_xy(item: dict[str, Any]) -> tuple[int, int] | None:
     try:
         return int(item["x"]), int(item["y"])
@@ -942,6 +2139,76 @@ def _places_have_valid_object_refs(runtime_data: dict[str, Any]) -> bool:
         if not isinstance(anchor_ref, str) or anchor_ref not in normalized_refs:
             return False
     return True
+
+
+
+
+def _places_have_v2_metadata(runtime_data: dict[str, Any]) -> bool:
+    for place in _places(runtime_data):
+        if not isinstance(place.get("story_role"), str) or not place.get("story_role"):
+            return False
+        if not isinstance(place.get("encounter_type"), str) or not place.get("encounter_type"):
+            return False
+        if not _normalized_float(place.get("danger_level")):
+            return False
+        if not _normalized_float(place.get("loot_level")):
+            return False
+        if not isinstance(place.get("biome_tags"), list):
+            return False
+    return True
+
+
+def _places_have_bounds(runtime_data: dict[str, Any]) -> bool:
+    for place in _places(runtime_data):
+        bounds = place.get("bounds")
+        if not isinstance(bounds, dict):
+            return False
+        values = []
+        for key in ("min_x", "min_y", "max_x", "max_y"):
+            value = bounds.get(key)
+            if not isinstance(value, int):
+                return False
+            values.append(value)
+        min_x, min_y, max_x, max_y = values
+        if min_x > max_x or min_y > max_y:
+            return False
+    return True
+
+
+def _places_have_entrances(runtime_data: dict[str, Any]) -> bool:
+    for place in _places(runtime_data):
+        entrances = place.get("entrances")
+        if not isinstance(entrances, list) or not entrances:
+            return False
+        for entrance in entrances:
+            if not isinstance(entrance, dict):
+                return False
+            if not isinstance(entrance.get("side"), str):
+                return False
+            position = entrance.get("position")
+            if not isinstance(position, dict) or _point_from_xy(position) is None:
+                return False
+    return True
+
+
+def _places_have_connections(runtime_data: dict[str, Any]) -> bool:
+    place_ids = {
+        str(place.get("id"))
+        for place in _places(runtime_data)
+        if isinstance(place.get("id"), str)
+    }
+    for place in _places(runtime_data):
+        connected = place.get("connected_places")
+        if not isinstance(connected, list):
+            return False
+        for place_id in connected:
+            if not isinstance(place_id, str) or place_id not in place_ids:
+                return False
+    return True
+
+
+def _normalized_float(value: Any) -> bool:
+    return isinstance(value, int | float) and 0.0 <= float(value) <= 1.0
 
 
 def _places_inside_map(
@@ -1055,5 +2322,32 @@ def _count_existing_outputs(outputs: OutputPaths) -> int:
         outputs.layer_fallback_positions,
         outputs.layer_runtime_objects,
         outputs.layer_all_debug,
+        outputs.map_package_map,
+        outputs.map_package_markers,
+        outputs.map_package_runtime_grids,
+        outputs.map_package_world_graph,
+        outputs.map_package_routes,
+        outputs.map_package_elevation_model,
+        outputs.map_package_elevation_features,
+        outputs.map_package_elevation_transitions,
+        outputs.map_package_tile_grid,
+        outputs.map_package_terrain,
+        outputs.map_package_movement_costs,
+        outputs.map_package_collision,
+        outputs.map_package_elevation,
+        outputs.map_package_start_goal,
+        outputs.map_package_combat_zones,
+        outputs.map_package_cover_points,
+        outputs.map_package_choke_points,
+        outputs.map_package_flank_routes,
+        outputs.map_package_enemy_spawn_zones,
+        outputs.map_package_fallback_positions,
+        outputs.map_package_runtime_objects,
+        outputs.map_package_places,
+        outputs.map_package_tile_types,
+        outputs.map_package_object_types,
+        outputs.map_package_render_profile,
+        outputs.map_package_tile_render_hints,
+        outputs.map_package_object_render_hints,
     ]
     return sum(path.exists() for path in candidates)

@@ -7,6 +7,7 @@ set -u
 EXTENSIONS_RAW="tmp,pyc,bak,html,js"
 
 rm -Rf ./out/*
+rm -Rf ./output/*
 
 # Set to true to only print matching files without deleting them.
 DRY_RUN=false

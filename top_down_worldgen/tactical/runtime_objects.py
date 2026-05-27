@@ -5,13 +5,13 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v9"
+RUNTIME_OBJECT_SCHEMA_VERSION = "runtime-objects-v13"
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -1
 MAX_ELEVATION_LEVEL = 10
 MIN_OBJECT_HEIGHT = 0
 MAX_OBJECT_HEIGHT = 10
-MAX_RUNTIME_OBJECTS = 128
+MAX_RUNTIME_OBJECTS = 160
 MIN_TRENCHES = 1
 MAX_TRENCHES = 8
 TRENCH_MIN_LENGTH_TILES = 3
@@ -25,6 +25,9 @@ MAX_MEDKIT_CACHES = 6
 INTEREST_POINT_TYPES: frozenset[str] = frozenset({"ammo_cache", "medkit_cache"})
 LANDMARK_TYPES: frozenset[str] = frozenset(
     {"big_dead_tree", "broken_radio_mast", "old_checkpoint"},
+)
+BUNKER_TYPES: frozenset[str] = frozenset(
+    {"buried_bunker_2x2", "buried_bunker_2x3"},
 )
 MIN_LANDMARKS = 1
 MAX_LANDMARKS = 6
@@ -47,6 +50,8 @@ GENERATED_RUNTIME_OBJECT_TYPES: tuple[str, ...] = (
     "big_dead_tree",
     "broken_radio_mast",
     "old_checkpoint",
+    "buried_bunker_2x2",
+    "buried_bunker_2x3",
     "car_wreck",
     "abandoned_backpack",
     "field_tent",
@@ -57,6 +62,13 @@ GENERATED_RUNTIME_OBJECT_TYPES: tuple[str, ...] = (
     "old_grave_marker",
     "pit",
     "earth_berm",
+    "hill",
+    "wooden_bridge",
+    "stone_ramp",
+    "stone_stairs",
+    "ruin_platform",
+    "watchtower",
+    "ancient_beacon",
     "old_well",
     "abandoned_cart",
 )
@@ -195,6 +207,49 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
     },
 
     {
+        "type": "buried_bunker_2x2",
+        "name_ru": "Заглублённый бункер 2x2",
+        "role": "defensive_position",
+        "default_height": 2,
+        "default_elevation": 0,
+        "surface_elevation": 0,
+        "interior_elevation": -1,
+        "cover_type": "full",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": True,
+        "interactive": False,
+        "tags": [
+            "bunker",
+            "cover",
+            "defensive",
+            "below_floor",
+            "firing_ports",
+        ],
+    },
+    {
+        "type": "buried_bunker_2x3",
+        "name_ru": "Заглублённый бункер 2x3",
+        "role": "defensive_position",
+        "default_height": 2,
+        "default_elevation": 0,
+        "surface_elevation": 0,
+        "interior_elevation": -1,
+        "cover_type": "full",
+        "blocks_movement": True,
+        "blocks_projectiles": True,
+        "blocks_vision": True,
+        "interactive": False,
+        "tags": [
+            "bunker",
+            "cover",
+            "defensive",
+            "below_floor",
+            "firing_ports",
+        ],
+    },
+
+    {
         "type": "car_wreck",
         "name_ru": "Остов автомобиля",
         "role": "roadside_debris",
@@ -316,13 +371,110 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
         "name_ru": "Земляная насыпь",
         "role": "terrain_cover",
         "default_height": 1,
-        "default_elevation": 0,
+        "default_elevation": 1,
         "cover_type": "low",
         "blocks_movement": False,
         "blocks_projectiles": True,
         "blocks_vision": False,
         "interactive": False,
-        "tags": ["terrain_feature", "cover", "earthwork"],
+        "tags": ["elevation", "raised_ground", "terrain_feature", "cover", "earthwork"],
+    },
+    {
+        "type": "hill",
+        "name_ru": "Небольшой холм",
+        "role": "raised_ground",
+        "default_height": 1,
+        "default_elevation": 1,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "hill", "raised_ground", "terrain_feature"],
+    },
+    {
+        "type": "wooden_bridge",
+        "name_ru": "Деревянный мост",
+        "role": "traversal_structure",
+        "default_height": 1,
+        "default_elevation": 2,
+        "surface_elevation": 2,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "bridge", "platform", "traversal"],
+    },
+    {
+        "type": "stone_ramp",
+        "name_ru": "Каменный пандус",
+        "role": "elevation_transition",
+        "default_height": 0,
+        "default_elevation": 1,
+        "surface_elevation": 1,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "ramp", "transition", "traversal"],
+    },
+    {
+        "type": "stone_stairs",
+        "name_ru": "Каменные ступени",
+        "role": "elevation_transition",
+        "default_height": 0,
+        "default_elevation": 1,
+        "surface_elevation": 1,
+        "cover_type": "none",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "stairs", "transition", "traversal"],
+    },
+    {
+        "type": "ruin_platform",
+        "name_ru": "Приподнятая руинная платформа",
+        "role": "high_ground",
+        "default_height": 1,
+        "default_elevation": 2,
+        "surface_elevation": 2,
+        "cover_type": "partial",
+        "blocks_movement": False,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "platform", "ruins", "high_ground"],
+    },
+    {
+        "type": "watchtower",
+        "name_ru": "Наблюдательная вышка",
+        "role": "high_landmark",
+        "default_height": 4,
+        "default_elevation": 3,
+        "surface_elevation": 3,
+        "cover_type": "partial",
+        "blocks_movement": True,
+        "blocks_projectiles": False,
+        "blocks_vision": False,
+        "interactive": False,
+        "tags": ["elevation", "tower", "high_platform", "landmark", "high_ground"],
+    },
+    {
+        "type": "ancient_beacon",
+        "name_ru": "Древний верхний маяк",
+        "role": "special_high_landmark",
+        "default_height": 5,
+        "default_elevation": 4,
+        "surface_elevation": 4,
+        "cover_type": "none",
+        "blocks_movement": True,
+        "blocks_projectiles": False,
+        "blocks_vision": True,
+        "interactive": True,
+        "tags": ["elevation", "special_high_landmark", "landmark", "high_ground", "story_marker"],
     },
     {
         "type": "old_well",
@@ -367,8 +519,80 @@ RUNTIME_OBJECT_TYPES: tuple[dict[str, Any], ...] = (
 
 
 
+def _rect_offsets(width: int, height: int) -> tuple[tuple[int, int], ...]:
+    return tuple((x, y) for y in range(height) for x in range(width))
+
+
+def _footprint_defaults_for_type(object_type: str) -> dict[str, Any]:
+    defaults: dict[str, dict[str, Any]] = {
+        "fallen_log": _footprint_default(width=2, height=1, rotatable=True),
+        "stone_chunk": _footprint_default(width=1, height=1),
+        "bush_thicket": _footprint_default(width=1, height=1),
+        "rusted_barrel": _footprint_default(width=1, height=1),
+        "scrap_pile": _footprint_default(width=2, height=1, rotatable=True),
+        "ammo_cache": _footprint_default(width=1, height=1, blocks_movement=False),
+        "medkit_cache": _footprint_default(width=1, height=1, blocks_movement=False),
+        "big_dead_tree": _footprint_default(width=2, height=2, visual_width=2, visual_height=3),
+        "broken_radio_mast": _footprint_default(width=1, height=1, visual_width=1, visual_height=3),
+        "old_checkpoint": _footprint_default(width=3, height=2, rotatable=True),
+        "buried_bunker_2x2": _footprint_default(width=2, height=2),
+        "buried_bunker_2x3": _footprint_default(width=2, height=3, rotatable=True),
+        "car_wreck": _footprint_default(width=2, height=1, rotatable=True),
+        "abandoned_backpack": _footprint_default(width=1, height=1, blocks_movement=False),
+        "field_tent": _footprint_default(width=2, height=2),
+        "dead_campfire": _footprint_default(width=1, height=1, blocks_movement=False),
+        "broken_generator": _footprint_default(width=2, height=1, rotatable=True),
+        "cable_spool": _footprint_default(width=1, height=1),
+        "warning_sign": _footprint_default(width=1, height=1, blocks_movement=False),
+        "old_grave_marker": _footprint_default(width=1, height=1, blocks_movement=False),
+        "pit": _footprint_default(width=2, height=2, blocks_movement=False),
+        "earth_berm": _footprint_default(width=2, height=1, rotatable=True, blocks_movement=False),
+        "hill": _footprint_default(width=3, height=3, blocks_movement=False),
+        "wooden_bridge": _footprint_default(width=4, height=1, rotatable=True, blocks_movement=False),
+        "stone_ramp": _footprint_default(width=2, height=1, rotatable=True, blocks_movement=False),
+        "stone_stairs": _footprint_default(width=2, height=1, rotatable=True, blocks_movement=False),
+        "ruin_platform": _footprint_default(width=3, height=2, rotatable=True, blocks_movement=False),
+        "watchtower": _footprint_default(width=2, height=2, visual_width=2, visual_height=4),
+        "ancient_beacon": _footprint_default(width=1, height=1, visual_width=1, visual_height=5),
+        "old_well": _footprint_default(width=2, height=2),
+        "abandoned_cart": _footprint_default(width=2, height=1, rotatable=True),
+        "trench": _footprint_default(width=1, height=1, blocks_movement=False),
+    }
+    return dict(defaults.get(object_type, _footprint_default(width=1, height=1)))
+
+
+def _footprint_default(
+    *,
+    width: int,
+    height: int,
+    rotatable: bool = False,
+    blocks_movement: bool = True,
+    visual_width: int | None = None,
+    visual_height: int | None = None,
+) -> dict[str, Any]:
+    footprint = _rect_offsets(width, height)
+    collision_footprint = footprint if blocks_movement else ()
+    return {
+        "default_footprint": [[x, y] for x, y in footprint],
+        "default_collision_footprint": [[x, y] for x, y in collision_footprint],
+        "default_visual_bounds": {
+            "offset_x": 0,
+            "offset_y": 0,
+            "width": visual_width or width,
+            "height": visual_height or height,
+        },
+        "default_pivot": {
+            "x": max(0, width // 2),
+            "y": height - 1,
+            "space": "tile_offset",
+        },
+        "rotatable_footprint": rotatable,
+    }
+
+
 def _runtime_type_with_gameplay(spec: dict[str, Any]) -> dict[str, Any]:
     enriched = dict(spec)
+    enriched.update(_footprint_defaults_for_type(str(spec["type"])))
     enriched["collision_profile"] = _collision_profile_for_spec(spec)
     enriched["combat_properties"] = _combat_properties_for_type(str(spec["type"]))
     if spec["type"] == "trench":
@@ -415,6 +639,16 @@ def _combat_properties_for_type(object_type: str) -> dict[str, Any]:
         "big_dead_tree": {"cover_value": 0.8, "concealment_value": 0.25},
         "broken_radio_mast": {"cover_value": 0.2, "concealment_value": 0.0},
         "old_checkpoint": {"cover_value": 0.85, "concealment_value": 0.0},
+        "buried_bunker_2x2": {
+            "cover_value": 0.95,
+            "concealment_value": 0.35,
+            "firing_ports": True,
+        },
+        "buried_bunker_2x3": {
+            "cover_value": 0.95,
+            "concealment_value": 0.35,
+            "firing_ports": True,
+        },
         "car_wreck": {"cover_value": 0.6, "concealment_value": 0.0},
         "abandoned_backpack": {"cover_value": 0.0, "concealment_value": 0.0, "loot": True},
         "field_tent": {"cover_value": 0.1, "concealment_value": 0.45},
@@ -425,6 +659,13 @@ def _combat_properties_for_type(object_type: str) -> dict[str, Any]:
         "old_grave_marker": {"cover_value": 0.0, "concealment_value": 0.0},
         "pit": {"cover_value": 0.25, "concealment_value": 0.15},
         "earth_berm": {"cover_value": 0.45, "concealment_value": 0.0},
+        "hill": {"cover_value": 0.1, "concealment_value": 0.0},
+        "wooden_bridge": {"cover_value": 0.0, "concealment_value": 0.0},
+        "stone_ramp": {"cover_value": 0.0, "concealment_value": 0.0},
+        "stone_stairs": {"cover_value": 0.0, "concealment_value": 0.0},
+        "ruin_platform": {"cover_value": 0.35, "concealment_value": 0.0},
+        "watchtower": {"cover_value": 0.65, "concealment_value": 0.0},
+        "ancient_beacon": {"cover_value": 0.1, "concealment_value": 0.0},
         "old_well": {"cover_value": 0.5, "concealment_value": 0.0},
         "abandoned_cart": {"cover_value": 0.4, "concealment_value": 0.0},
     }
@@ -472,12 +713,14 @@ def attach_runtime_layers(
     tactical_data: dict[str, Any],
     *,
     seed: int | None = None,
+    generation_tuning: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Attach runtime object and elevation layers to tactical data.
 
     Args:
         tactical_data: Runtime tactical JSON object.
         seed: Optional deterministic seed for runtime object placement.
+        generation_tuning: Optional user-facing world density tuning scales.
 
     Returns:
         Copy of tactical data with map-level sections.
@@ -515,7 +758,7 @@ def attach_runtime_layers(
         )
         return enriched
 
-    objects = RuntimeObjectPlacer(seed).place(enriched)
+    objects = RuntimeObjectPlacer(seed, generation_tuning=generation_tuning).place(enriched)
     enriched["runtime_objects"] = objects
     _attach_trench_elevation(enriched, objects)
     enriched["runtime_objects_summary"] = summarize_runtime_objects(objects)
@@ -565,13 +808,15 @@ def summarize_runtime_objects(objects: Any) -> dict[str, Any]:
 class RuntimeObjectPlacer:
     """Places deterministic gameplay objects on an existing tactical map."""
 
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int, *, generation_tuning: dict[str, Any] | None = None) -> None:
         """Initialize placer.
 
         Args:
             seed: Resolved uint64 map seed.
+            generation_tuning: Optional user-facing world density tuning scales.
         """
         self._rng = random.Random(seed ^ 0x5EED_0B1E_C7)
+        self._generation_tuning = generation_tuning or {}
 
     def place(self, tactical_data: dict[str, Any]) -> list[dict[str, Any]]:
         """Place runtime objects on passable map cells.
@@ -600,10 +845,7 @@ class RuntimeObjectPlacer:
         anchors = _anchors(tactical_data)
 
         for quota in quotas:
-            if quota.object_type in LANDMARK_TYPES:
-                target_count = quota.base_count
-            else:
-                target_count = max(1, round(quota.base_count * scale))
+            target_count = self._target_count(quota, area_scale=scale)
             placed = 0
             for _ in range(target_count):
                 desired_shape = self._desired_shape(
@@ -638,6 +880,14 @@ class RuntimeObjectPlacer:
                 if len(objects) >= MAX_RUNTIME_OBJECTS:
                     return objects
         return objects
+
+    def _target_count(self, quota: RuntimeObjectQuota, *, area_scale: float) -> int:
+        """Return tuned target count for a runtime object quota."""
+        if quota.object_type in BUNKER_TYPES:
+            return max(0, round(quota.base_count * _tuning_scale(self._generation_tuning, "bunker_scale")))
+        if quota.object_type in LANDMARK_TYPES:
+            return quota.base_count
+        return max(1, round(quota.base_count * area_scale))
 
     def _desired_shape(
         self,
@@ -691,12 +941,22 @@ class RuntimeObjectPlacer:
         return None
 
 
+def _tuning_scale(tuning: dict[str, Any], key: str) -> float:
+    """Return a sanitized tuning scale from a runtime tuning dictionary."""
+    try:
+        return max(0.0, min(4.0, float(tuning.get(key, 1.0))))
+    except (TypeError, ValueError):
+        return 1.0
+
+
 def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
     return (
         RuntimeObjectQuota("trench", 4, frozenset({"+", ".", "c"})),
         RuntimeObjectQuota("big_dead_tree", 2, frozenset({"+"})),
         RuntimeObjectQuota("broken_radio_mast", 1, frozenset({"R", "c", "."})),
         RuntimeObjectQuota("old_checkpoint", 1, frozenset({"R", "c", "."})),
+        RuntimeObjectQuota("buried_bunker_2x2", 2, frozenset({"R", "c", ".", "+"})),
+        RuntimeObjectQuota("buried_bunker_2x3", 2, frozenset({"R", "c", ".", "+"})),
         RuntimeObjectQuota("old_well", 1, frozenset({"+", "R", "c"})),
         RuntimeObjectQuota("car_wreck", 2, frozenset({".", "c", "R"})),
         RuntimeObjectQuota("field_tent", 2, frozenset({"+", ".", "R"})),
@@ -706,6 +966,13 @@ def _placement_quotas() -> tuple[RuntimeObjectQuota, ...]:
         RuntimeObjectQuota("old_grave_marker", 1, frozenset({"+", "c"})),
         RuntimeObjectQuota("pit", 2, frozenset({"+", "c"})),
         RuntimeObjectQuota("earth_berm", 3, frozenset({"+", ".", "c"})),
+        RuntimeObjectQuota("hill", 3, frozenset({"+", "c"})),
+        RuntimeObjectQuota("wooden_bridge", 1, frozenset({".", "R", "c", "+"})),
+        RuntimeObjectQuota("stone_ramp", 2, frozenset({"R", "c", ".", "+"})),
+        RuntimeObjectQuota("stone_stairs", 2, frozenset({"R", "c", ".", "+"})),
+        RuntimeObjectQuota("ruin_platform", 1, frozenset({"R", "c"})),
+        RuntimeObjectQuota("watchtower", 1, frozenset({"R", "c", "+"})),
+        RuntimeObjectQuota("ancient_beacon", 1, frozenset({"R", "c", "+"})),
         RuntimeObjectQuota("abandoned_cart", 2, frozenset({".", "c", "+"})),
         RuntimeObjectQuota("abandoned_backpack", 3, frozenset({"+", ".", "R", "c"})),
         RuntimeObjectQuota("dead_campfire", 2, frozenset({"+", ".", "R"})),
@@ -800,12 +1067,70 @@ def _footprints_for_point(
 ) -> list[tuple[list[tuple[int, int]], str, str]]:
     if object_type == "trench":
         return _trench_footprints_for_point(rows, point, rng, desired_shape)
-    # Fallen-log-shaped footprints are deliberately avoided here because this
-    # patch keeps non-trench runtime objects as one-cell descriptors.
     _ = rows
-    _ = rng
     _ = desired_shape
-    return [([point], "point", "point")]
+    spec = RUNTIME_OBJECT_TYPE_BY_NAME[object_type]
+    offsets = _offset_points(spec.get("default_footprint"))
+    if not offsets:
+        offsets = [(0, 0)]
+    variants = _oriented_offset_variants(
+        offsets,
+        rotatable=spec.get("rotatable_footprint") is True,
+    )
+    rng.shuffle(variants)
+    return [
+        (
+            [(point[0] + offset_x, point[1] + offset_y) for offset_x, offset_y in variant],
+            orientation,
+            _shape_name(variant),
+        )
+        for variant, orientation in variants
+    ]
+
+
+def _offset_points(value: Any) -> list[tuple[int, int]]:
+    if not isinstance(value, list):
+        return []
+    points: list[tuple[int, int]] = []
+    for point in value:
+        parsed = _point(point)
+        if parsed is not None:
+            points.append(parsed)
+    return points
+
+
+def _oriented_offset_variants(
+    offsets: list[tuple[int, int]],
+    *,
+    rotatable: bool,
+) -> list[tuple[list[tuple[int, int]], str]]:
+    normalized = _normalize_offsets(offsets)
+    variants: list[tuple[list[tuple[int, int]], str]] = [(normalized, "east_west")]
+    if rotatable:
+        rotated = _normalize_offsets([(y, x) for x, y in normalized])
+        if rotated != normalized:
+            variants.append((rotated, "north_south"))
+    return variants
+
+
+def _normalize_offsets(offsets: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    if not offsets:
+        return []
+    min_x = min(x for x, _ in offsets)
+    min_y = min(y for _, y in offsets)
+    return sorted({(x - min_x, y - min_y) for x, y in offsets})
+
+
+def _shape_name(offsets: list[tuple[int, int]]) -> str:
+    if not offsets:
+        return "empty"
+    width = max(x for x, _ in offsets) + 1
+    height = max(y for _, y in offsets) + 1
+    if len(offsets) == 1:
+        return "single"
+    if len(offsets) == width * height:
+        return f"rect_{width}x{height}"
+    return "multi_cell"
 
 
 def _trench_footprints_for_point(
@@ -900,6 +1225,13 @@ def _build_runtime_object(
 ) -> dict[str, Any]:
     spec = RUNTIME_OBJECT_TYPE_BY_NAME[object_type]
     x, y = footprint[0]
+    collision_footprint = _world_collision_footprint(
+        anchor=(x, y),
+        footprint=footprint,
+        spec=spec,
+        orientation=orientation,
+    )
+    visual_bounds = _world_visual_bounds(anchor=(x, y), spec=spec, orientation=orientation)
     item: dict[str, Any] = {
         "id": object_id,
         "type": object_type,
@@ -907,6 +1239,7 @@ def _build_runtime_object(
         "x": x,
         "y": y,
         "position": [x, y],
+        "anchor": [x, y],
         "elevation": spec["default_elevation"],
         "height": spec["default_height"],
         "cover_type": spec["cover_type"],
@@ -916,16 +1249,252 @@ def _build_runtime_object(
         "interactive": spec["interactive"],
         "orientation": orientation,
         "shape": shape,
+        "footprint": [[point_x, point_y] for point_x, point_y in footprint],
+        "collision_footprint": [
+            [point_x, point_y] for point_x, point_y in collision_footprint
+        ],
+        "visual_bounds": visual_bounds,
+        "pivot": dict(spec["default_pivot"]),
+        "interaction_shape": _world_interaction_shape(
+            footprint=footprint,
+            spec=spec,
+        ),
+        "sort_anchor": _world_sort_anchor(
+            visual_bounds=visual_bounds,
+            elevation=int(spec.get("default_elevation", DEFAULT_ELEVATION_LEVEL)),
+        ),
+        "draw_layer": _world_draw_layer(spec),
+        "occlusion_hint": _world_occlusion_hint(spec),
         "tags": list(spec["tags"]),
         "collision_profile": dict(spec["collision_profile"]),
         "combat_properties": dict(spec["combat_properties"]),
     }
+    if "surface_elevation" in spec:
+        item["surface_elevation"] = spec["surface_elevation"]
+    if "interior_elevation" in spec:
+        item["interior_elevation"] = spec["interior_elevation"]
+    firing_ports = _world_firing_ports(
+        anchor=(x, y),
+        spec=spec,
+        orientation=orientation,
+        visual_bounds=visual_bounds,
+    )
+    if firing_ports:
+        item["firing_ports"] = firing_ports
     if "stance_hints" in spec:
         item["stance_hints"] = dict(spec["stance_hints"])
-    if len(footprint) > 1:
-        item["footprint"] = [[point_x, point_y] for point_x, point_y in footprint]
     return item
 
+
+def _world_firing_ports(
+    *,
+    anchor: tuple[int, int],
+    spec: dict[str, Any],
+    orientation: str,
+    visual_bounds: dict[str, int],
+) -> list[dict[str, Any]]:
+    if spec.get("type") not in BUNKER_TYPES:
+        _ = anchor
+        return []
+    try:
+        x = int(visual_bounds["x"])
+        y = int(visual_bounds["y"])
+        width = int(visual_bounds["width"])
+        height = int(visual_bounds["height"])
+    except (KeyError, TypeError, ValueError):
+        return []
+    sides = _bunker_firing_port_sides(
+        object_type=str(spec.get("type")),
+        orientation=orientation,
+        width=width,
+        height=height,
+    )
+    elevation = int(spec.get("interior_elevation", TRENCH_ELEVATION_LEVEL))
+    ports: list[dict[str, Any]] = []
+    for side in sides:
+        positions = _edge_positions(x=x, y=y, width=width, height=height, side=side)
+        ports.append(
+            {
+                "side": side,
+                "positions": [[point_x, point_y] for point_x, point_y in positions],
+                "elevation": elevation,
+                "arc": "outward",
+            },
+        )
+    return ports
+
+
+def _bunker_firing_port_sides(
+    *,
+    object_type: str,
+    orientation: str,
+    width: int,
+    height: int,
+) -> list[str]:
+    if object_type == "buried_bunker_2x2":
+        return ["north", "south"] if orientation != "north_south" else ["east", "west"]
+    if width > height:
+        return ["north", "south"]
+    return ["west", "east"]
+
+
+def _edge_positions(
+    *,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    side: str,
+) -> list[tuple[int, int]]:
+    if side == "north":
+        return [(x + offset, y) for offset in range(width)]
+    if side == "south":
+        return [(x + offset, y + height - 1) for offset in range(width)]
+    if side == "west":
+        return [(x, y + offset) for offset in range(height)]
+    if side == "east":
+        return [(x + width - 1, y + offset) for offset in range(height)]
+    return []
+
+
+def _world_collision_footprint(
+    *,
+    anchor: tuple[int, int],
+    footprint: list[tuple[int, int]],
+    spec: dict[str, Any],
+    orientation: str,
+) -> list[tuple[int, int]]:
+    if spec.get("type") == "trench":
+        return list(footprint)
+    offsets = _offset_points(spec.get("default_collision_footprint"))
+    if not offsets:
+        return []
+    variants = {
+        variant_orientation: variant_offsets
+        for variant_offsets, variant_orientation in _oriented_offset_variants(
+            offsets,
+            rotatable=spec.get("rotatable_footprint") is True,
+        )
+    }
+    selected_offsets = variants.get(orientation, offsets)
+    return [(anchor[0] + offset_x, anchor[1] + offset_y) for offset_x, offset_y in selected_offsets]
+
+
+def _world_visual_bounds(
+    *,
+    anchor: tuple[int, int],
+    spec: dict[str, Any],
+    orientation: str,
+) -> dict[str, int]:
+    bounds = spec.get("default_visual_bounds")
+    if not isinstance(bounds, dict):
+        bounds = {"offset_x": 0, "offset_y": 0, "width": 1, "height": 1}
+    try:
+        offset_x = int(bounds.get("offset_x", 0))
+        offset_y = int(bounds.get("offset_y", 0))
+        width = max(1, int(bounds.get("width", 1)))
+        height = max(1, int(bounds.get("height", 1)))
+    except (TypeError, ValueError):
+        offset_x = 0
+        offset_y = 0
+        width = 1
+        height = 1
+    if orientation == "north_south" and spec.get("rotatable_footprint") is True:
+        width, height = height, width
+    return {
+        "x": anchor[0] + offset_x,
+        "y": anchor[1] + offset_y,
+        "width": width,
+        "height": height,
+    }
+
+
+
+def _interaction_points_around(
+    footprint: list[tuple[int, int]],
+) -> list[list[int]]:
+    occupied = set(footprint)
+    points: set[tuple[int, int]] = set()
+    for x, y in occupied:
+        for candidate in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if candidate not in occupied:
+                points.add(candidate)
+    return [[x, y] for x, y in sorted(points, key=lambda point: (point[1], point[0]))]
+
+
+def _world_interaction_shape(
+    *,
+    footprint: list[tuple[int, int]],
+    spec: dict[str, Any],
+) -> dict[str, Any]:
+    if spec.get("interactive") is True or "loot" in set(spec.get("tags", [])):
+        return {
+            "type": "adjacent_tiles",
+            "points": _interaction_points_around(footprint),
+            "source": "footprint_perimeter",
+        }
+    if spec.get("type") in BUNKER_TYPES:
+        return {
+            "type": "firing_ports",
+            "points": [],
+            "source": "firing_ports",
+        }
+    return {"type": "none", "points": [], "source": "none"}
+
+
+def _world_sort_anchor(
+    *,
+    visual_bounds: dict[str, int],
+    elevation: int,
+) -> dict[str, Any]:
+    try:
+        x = int(visual_bounds["x"])
+        y = int(visual_bounds["y"])
+        width = int(visual_bounds["width"])
+        height = int(visual_bounds["height"])
+    except (KeyError, TypeError, ValueError):
+        x = 0
+        y = 0
+        width = 1
+        height = 1
+    return {
+        "x": x + max(0, width // 2),
+        "y": y + max(0, height - 1),
+        "elevation": elevation,
+        "space": "tile",
+        "rule": "y_then_elevation_then_x",
+    }
+
+
+def _world_draw_layer(spec: dict[str, Any]) -> str:
+    tags = set(spec.get("tags", []))
+    object_type = str(spec.get("type", ""))
+    height = int(spec.get("default_height", 0))
+    if object_type in {"pit", "trench", "earth_berm", "hill", "wooden_bridge", "stone_ramp", "stone_stairs"}:
+        return "terrain_overlay"
+    if "below_floor" in tags:
+        return "structure"
+    if "landmark" in tags or height >= 4:
+        return "tall_object"
+    return "object"
+
+
+def _world_occlusion_hint(spec: dict[str, Any]) -> dict[str, Any]:
+    blocks_vision = spec.get("blocks_vision") is True
+    height = int(spec.get("default_height", 0))
+    if blocks_vision and height >= 3:
+        mode = "solid"
+    elif blocks_vision:
+        mode = "partial"
+    elif height >= 3:
+        mode = "visual_only"
+    else:
+        mode = "none"
+    return {
+        "occludes_actor": mode in {"solid", "partial", "visual_only"},
+        "mode": mode,
+        "source": "object_height_and_vision_profile",
+    }
 
 def _attach_trench_elevation(
     tactical_data: dict[str, Any],
@@ -951,13 +1520,25 @@ def _attach_trench_elevation(
         except (TypeError, ValueError):
             continue
     for item in objects:
-        if item.get("type") not in {"trench", "pit"}:
+        level = _object_elevation_level(item)
+        if level is None or level == DEFAULT_ELEVATION_LEVEL:
             continue
         for x, y in _object_footprint_points(item):
             if (x, y) in existing:
                 continue
-            cells.append({"x": x, "y": y, "level": TRENCH_ELEVATION_LEVEL})
+            cells.append({"x": x, "y": y, "level": level})
             existing.add((x, y))
+
+
+def _object_elevation_level(item: dict[str, Any]) -> int | None:
+    object_type = item.get("type")
+    if object_type in {"trench", "pit"} | BUNKER_TYPES:
+        return TRENCH_ELEVATION_LEVEL
+    for key in ("surface_elevation", "elevation"):
+        value = item.get(key)
+        if isinstance(value, int):
+            return value
+    return None
 
 
 def _object_footprint_points(item: dict[str, Any]) -> list[tuple[int, int]]:

@@ -297,6 +297,8 @@ class LayerRenderer:
             "big_dead_tree": ((70, 45, 30, 240), "D"),
             "broken_radio_mast": ((100, 180, 235, 235), "N"),
             "old_checkpoint": ((115, 115, 125, 240), "O"),
+            "buried_bunker_2x2": ((95, 75, 55, 245), "B"),
+            "buried_bunker_2x3": ((95, 75, 55, 245), "B"),
             "car_wreck": ((80, 95, 105, 240), "V"),
             "abandoned_backpack": ((80, 120, 215, 235), "P"),
             "field_tent": ((185, 170, 110, 235), "T"),
@@ -319,7 +321,9 @@ class LayerRenderer:
             object_type = str(item.get("type", ""))
             color, label = colors.get(object_type, ((255, 255, 255, 230), "?"))
             radius = max(4, self._tile_size_px // 3)
-            if object_type == "trench":
+            if object_type in {"buried_bunker_2x2", "buried_bunker_2x3"}:
+                self._draw_bunker_object(draw, item, points, font, color)
+            elif object_type == "trench":
                 self._draw_runtime_object_footprint(draw, points, color)
             else:
                 position = points[0]
@@ -355,17 +359,56 @@ class LayerRenderer:
                         outline=(255, 255, 255, 230),
                         width=1,
                     )
-            first = points[0]
-            label_x = first[0] * self._tile_size_px + self._tile_size_px // 2
-            label_y = first[1] * self._tile_size_px + self._tile_size_px // 2
+            if object_type not in {"buried_bunker_2x2", "buried_bunker_2x3"}:
+                first = points[0]
+                label_x = first[0] * self._tile_size_px + self._tile_size_px // 2
+                label_y = first[1] * self._tile_size_px + self._tile_size_px // 2
+                draw.text(
+                    (label_x - radius // 2, label_y - radius // 2),
+                    label,
+                    font=font,
+                    fill=(0, 0, 0, 235),
+                    stroke_width=1,
+                    stroke_fill=(255, 255, 255, 180),
+                )
+
+    def _draw_bunker_object(
+        self,
+        draw: ImageDraw.ImageDraw,
+        item: dict[str, Any],
+        points: list[tuple[int, int]],
+        font: ImageFont.ImageFont,
+        color: tuple[int, int, int, int],
+    ) -> None:
+        """Draw bunker footprints as explicit B-marked cells."""
+        self._draw_runtime_object_footprint(draw, points, color)
+        for x, y in points:
+            left = x * self._tile_size_px
+            top = y * self._tile_size_px
             draw.text(
-                (label_x - radius // 2, label_y - radius // 2),
-                label,
+                (left + max(1, self._tile_size_px // 4), top),
+                "B",
                 font=font,
-                fill=(0, 0, 0, 235),
+                fill=(255, 245, 190, 255),
                 stroke_width=1,
-                stroke_fill=(255, 255, 255, 180),
+                stroke_fill=(0, 0, 0, 230),
             )
+        for port in item.get("firing_ports", []):
+            if not isinstance(port, dict):
+                continue
+            for point in port.get("positions", []):
+                parsed = self._point(point)
+                if parsed is None:
+                    continue
+                cx = parsed[0] * self._tile_size_px + self._tile_size_px // 2
+                cy = parsed[1] * self._tile_size_px + self._tile_size_px // 2
+                radius = max(2, self._tile_size_px // 5)
+                draw.ellipse(
+                    (cx - radius, cy - radius, cx + radius, cy + radius),
+                    fill=(255, 235, 70, 255),
+                    outline=(0, 0, 0, 230),
+                    width=1,
+                )
 
     def _draw_runtime_object_footprint(
         self,

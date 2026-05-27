@@ -1,0 +1,318 @@
+# World building algorithm
+
+Этот документ описывает, как внешний проект должен строить runtime-мир из `output/`, не зная внутренних классов генератора.
+
+## Главный принцип
+
+Один запуск генератора создаёт один output root. Внешний consumer получает путь к этой папке и начинает работу с `_manifest.json`.
+
+```text
+output/
+  _manifest.json
+  map_package/
+    map.json
+    layers/
+    gameplay/
+    objects/
+    catalogs/
+    render/
+```
+
+Consumer не должен читать внутренние Python-модули генератора и не должен зависеть от `tactical_map.json`, если ему нужен новый runtime-контракт.
+
+## 1. Найти пакет мира
+
+1. Открыть `output/_manifest.json`.
+2. Найти artifact с `kind = "map_package:index"`.
+3. Открыть указанный файл, обычно `output/map_package/map.json`.
+4. Все относительные пути из `map.json` считать относительно папки `map_package/`.
+
+Fallback допустим только для инструментов: если manifest отсутствует, можно открыть `output/map_package/map.json` напрямую.
+
+## 2. Прочитать размеры и координаты
+
+Из `map.json` consumer берёт:
+
+- `dimensions.width_tiles`;
+- `dimensions.height_tiles`;
+- `dimensions.tile_size_px`;
+- координатную модель карты;
+- ссылки на слои, объекты, каталоги и render hints.
+
+Координаты тайловые: `x` растёт вправо, `y` растёт вниз, `(0, 0)` — верхний левый угол.
+
+## 3. Построить базовую terrain-сцену
+
+Для визуального и логического основания загрузить:
+
+```text
+layers/terrain.json
+layers/tile_grid.json
+catalogs/tile_types.json
+```
+
+`terrain.json` — предпочтительный слой для смыслового типа клетки. `tile_grid.json` остаётся компактным и удобным debug/legacy-представлением. `tile_types.json` объясняет свойства типов: проходимость, теги, стоимость движения и collision-семантику.
+
+## 4. Построить collision grid
+
+Загрузить `layers/collision.json` и построить boolean-сетку размера `width × height`.
+
+```text
+0 / false = passable
+1 / true  = blocked
+```
+
+После этого применить collision runtime-объектов из `objects/runtime_objects.json` и `catalogs/object_types.json`. Итоговая collision scene игры должна учитывать и terrain/blocking tiles, и footprint объектов.
+
+## 5. Построить movement grid
+
+Загрузить `layers/movement_costs.json`.
+
+Movement cost применяется к проходимым клеткам. Заблокированные клетки из collision grid должны считаться недоступными независимо от movement cost.
+
+Рекомендуемый порядок:
+
+1. взять базовую стоимость клетки из `movement_costs`;
+2. если collision blocked — пометить клетку как недоступную;
+3. применить object modifiers, если игра их поддерживает;
+4. передать результат pathfinding-системе.
+
+## 6. Применить elevation
+
+Загрузить `layers/elevation.json`.
+
+Текущий базовый контракт:
+
+```text
+-1 = углубление: окоп, яма, низина
+ 0 = обычная поверхность
+```
+
+Consumer должен хранить elevation отдельно от collision. Высота не равна блокировке. Например, траншея может быть проходимой, но должна влиять на укрытие, line of sight, stance rules или render order.
+
+Будущие уровни `1..4` должны добавляться только вместе с правилами movement, shooting, visibility и rendering. Иначе это будет декоративный мусор.
+
+## 7. Поставить start и goal
+
+Загрузить `layers/start_goal.json` или соответствующую секцию `map.json`.
+
+Игра должна проверить:
+
+- старт и цель находятся внутри карты;
+- старт и цель не заблокированы итоговой collision scene;
+- между ними существует путь, если режим игры этого требует.
+
+## 8. Расставить runtime objects
+
+Загрузить:
+
+```text
+objects/runtime_objects.json
+catalogs/object_types.json
+```
+
+Каждый instance задаёт конкретный объект на карте. Catalog описывает смысл типа: роль, укрытие, высоту, collision profile, projectile/vision blocking, интерактивность и теги.
+
+Рекомендуемый порядок:
+
+1. загрузить все object definitions из `object_types.json`;
+2. пройти по instances из `runtime_objects.json`;
+3. проверить координаты/footprint;
+4. создать runtime entity;
+5. применить collision/combat/interaction свойства из catalog;
+6. связать entity с place/combat zone, если есть refs.
+
+## 9. Загрузить places и gameplay
+
+`objects/places.json` описывает микролокации: блокпосты, бункеры, руины, лагеря, завалы и другие смысловые места. Для `places-v3` consumer должен читать `bounds`, `entrances`, `danger_level`, `loot_level`, `story_role`, `encounter_type`, `object_refs`, `marker_refs`, `route_refs`, `connected_places` и `biome_tags`. Эти поля нужны не для рендера тайлов, а для построения runtime-мира, квестовых зон, encounter logic и будущего `world_graph.json`.
+
+`gameplay/*.json` содержит боевую семантику:
+
+- `combat_zones.json`;
+- `cover_points.json`;
+- `enemy_spawn_zones.json`;
+- `choke_points.json`;
+- `flank_routes.json`;
+- `fallback_positions.json`.
+
+Игра может игнорировать часть gameplay-слоёв на первом этапе. Обязательны только те данные, которые реально используются её режимом.
+
+## 10. Использовать render hints
+
+`render/*.json` не является игровым runtime-источником. Это подсказки для renderer-а: как визуально трактовать terrain и object types.
+
+Правильная модель:
+
+```text
+catalogs/ = что это значит для игры
+render/   = как это можно нарисовать
+```
+
+Renderer может использовать hints для выбора тайлов, debug colors, object markers, будущих autotile-групп и render order.
+
+## Минимальный consumer pipeline
+
+```text
+open output/_manifest.json
+open map_package/map.json
+load dimensions
+load terrain/tile_grid
+load collision
+load movement_costs
+load elevation
+load start_goal
+load object catalogs
+spawn runtime objects
+load gameplay layers needed by game mode
+optionally load render hints
+build runtime scene
+```
+
+## Что считается ошибкой
+
+Consumer должен считать пакет непригодным, если:
+
+- нет `_manifest.json` и нет fallback `map_package/map.json`;
+- `map.json` ссылается на отсутствующие обязательные файлы;
+- размеры любого grid-слоя не совпадают с `width × height`;
+- start/goal отсутствуют или находятся вне карты;
+- объект имеет неизвестный type;
+- object footprint выходит за границы карты;
+- catalog отсутствует для типа, который игра обязана интерпретировать.
+
+## Быстрая проверка
+
+Перед передачей пакета игре рекомендуется запускать:
+
+```bash
+python3 examples/inspect_world_package.py output
+python3 examples/render_world_preview.py output --collision-overlay
+```
+
+Inspector проверяет загрузку и базовую целостность. Preview renderer показывает, получается ли из публичного пакета видимый мир.
+
+## Object footprint model v1
+
+Runtime objects must be treated as tile-space entities, not as single points. Each object instance exposes an `anchor`/`position` and three footprint-related fields:
+
+- `footprint`: all map cells occupied by the logical object instance.
+- `collision_footprint`: cells where the object's collision profile applies. This may be empty for small passable loot/markers.
+- `visual_bounds`: a rectangular tile-space box used by preview/render consumers to estimate sprite coverage.
+
+Consumers should use `footprint` for placement/overlap checks, `collision_footprint` for movement/projectile/vision rules, `interaction_shape` for actor interaction queries, `sort_anchor` for top-down draw ordering, and `visual_bounds` only for coarse sprite placement. `draw_layer` and `occlusion_hint` provide renderer-friendly defaults without forcing a specific engine. Large objects such as tents, carts, wrecks, wells, checkpoints, trenches, pits, logs, berms, big trees, and buried bunkers may occupy multiple tiles. Bunkers additionally expose `firing_ports` on two opposite sides and mark their interior footprint as elevation `-1`.
+
+
+## Generation tuning
+
+`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+
+
+## Package consistency validation
+
+Начиная с `v0.0.41`, validation проверяет не только наличие файлов, но и согласованность публичного пакета: `markers` должны совпадать со `start_goal`, `runtime_grids` должны иметь ожидаемые размеры, `world_graph` должен ссылаться на реальные places/markers, а `routes` — на реальные nodes/edges. Start и goal также проверяются против `collision_grid`, чтобы внешний consumer не получал заблокированную стартовую или целевую клетку.
+
+Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
+
+## Runtime-ready loading shortcut
+
+For a quick runtime integration, load `map_package/runtime_grids.json` after `map_package/map.json`. The file contains movement, collision, projectile, vision, cover, concealment, and height grids with the same dimensions as the map.
+
+Use `map_package/markers.json` for start, goal, loot, story, point-of-interest, and defensive markers. Do not parse markers from `terrain.json`; terrain describes the ground, markers describe gameplay points.
+
+## Semantic world graph
+
+After loading markers, runtime grids, and places, a consumer may load `map_package/world_graph.json`.
+This file is not a replacement for pathfinding. It describes the intended semantic structure of the world:
+main route, side branches, meaningful dead ends, graph quality, and secret/high-reward areas.
+
+Recommended usage:
+
+1. Load `world_graph.json` from the path listed in `map_package/map.json`.
+2. Use `nodes` to show or reason about important semantic locations.
+3. Use `main_path.node_ids` as the high-level route from start to goal.
+4. Use `side_paths` and `dead_ends` for optional exploration, loot, story hooks, or encounter placement.
+5. Use runtime grids to verify exact tile-level movement before committing gameplay decisions.
+
+## `routes.json`
+
+`routes.json` contains semantic route records derived from `world_graph.json`. It does not replace tile pathfinding and it is not an exact step-by-step movement path. It tells a consumer what a route means in gameplay terms.
+
+Current route types:
+
+- `main_road` — primary intended route from start toward goal.
+- `side_path` — optional branch route to a secondary place.
+- `hidden_path` — secret or hard-to-notice optional route.
+- `patrol_route` — AI/NPC route derived from risky place connections.
+- `escape_route` — retreat or exit route derived from start/goal connections.
+
+Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
+
+
+## Elevation model v1
+
+After loading `runtime_grids.json`, load `map_package/elevation_model.json`. Use `runtime_grids.grids.height_grid.rows` as the per-tile source of truth and use `elevation_model.json` to interpret those integer levels.
+
+The generator currently defines levels `-1..4`. A consumer should treat level `0` as normal ground, level `-1` as below-ground/interior-low-space, levels `1..4` as increasingly higher positions. Transitions between levels are not automatically walkable: movement between different levels should require a connector such as stairs, ramp, ladder, bridge or a game-specific scripted transition.
+
+For line of sight and projectile checks, combine `height_grid`, `vision_block_grid`, `projectile_block_grid` and the semantic rules in `elevation_model.json`. This keeps the package useful for fantasy, shooter, adventure and exploration games without hardcoding one combat model into the generator.
+
+## Elevation features and transitions
+
+After loading `runtime_grids.height_grid` and `elevation_model.json`, load `elevation_features.json` and `elevation_transitions.json` when the game needs height-aware movement or rendering.
+
+Recommended order:
+
+1. Use `height_grid` as the exact per-tile level map.
+2. Use `elevation_model.json` to interpret levels and generic rules.
+3. Use `elevation_features.json` to attach meaning to local features: pit, trench, bunker interior, raised berm, hill, bridge, ramp, stairs, platform, tower and special high landmark.
+4. Use `elevation_transitions.json` to decide where movement needs ramps, stairs, ladders or scripted transitions.
+
+The game may ignore unknown feature or transition types, but it should not invent movement between levels without checking the transition records.
+
+
+### Elevation preview
+
+Для визуальной проверки уровней высоты и переходов используйте:
+
+```bash
+python3 examples/render_world_preview.py output \
+  --elevation-overlay \
+  --transition-overlay \
+  --grid \
+  --cell-size 8 \
+  --output output/elevation_preview.png
+```
+
+`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+
+
+## Elevation v1
+
+See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.
+
+## Gameplay zones
+
+После загрузки `places`, `routes` и `world_graph` consumer может загрузить `map_package/gameplay_zones.json`.
+
+Этот файл отвечает на вопрос: "для чего нужен этот участок карты?". Зона может быть стартовой безопасной областью, encounter-зоной, местом лута, секретом, опасной низиной, story-локацией или extraction-точкой.
+
+Рекомендуемый порядок использования:
+
+1. Прочитать `gameplay_zones.json` из пути `gameplay_zones` в `map_package/map.json`.
+2. Для каждой зоны проверить `bounds` и `polygon`.
+3. Связать `linked_places`, `linked_routes` и `linked_markers` с уже загруженными объектами мира.
+4. Использовать `danger_level`, `loot_level`, `recommended_encounter` и `elevation_usage` для runtime-логики.
+5. Не использовать зоны как точный pathfinding: точная проходимость берётся из `runtime_grids.json`.
+
+Validation начиная с `v0.0.48` проверяет, что зоны ссылаются на существующие places/routes/markers и лежат внутри карты.
+
+
+### Semantic preview overlays
+
+Для визуальной проверки смысловых слоёв используйте:
+
+```bash
+python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+```
+
+Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.

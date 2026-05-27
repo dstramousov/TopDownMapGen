@@ -8,20 +8,43 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v15"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v39"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v12"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v35"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
-ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v1"
+ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v2"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
 DEBUG_LAYERS_VERSION = "debug-layers-v2"
-RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v9"
-PLACES_SCHEMA_VERSION = "places-v1"
+RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v13"
+PLACES_SCHEMA_VERSION = "places-v3"
 OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
+MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
+MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v11"
+TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
+TERRAIN_LAYER_SCHEMA_VERSION = "terrain-layer-v1"
+MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"
+COLLISION_LAYER_SCHEMA_VERSION = "collision-layer-v2"
+ELEVATION_LAYER_SCHEMA_VERSION = "elevation-layer-v1"
+ELEVATION_MODEL_SCHEMA_VERSION = "elevation-model-v5"
+START_GOAL_LAYER_SCHEMA_VERSION = "start-goal-layer-v1"
+GAMEPLAY_LAYER_SCHEMA_VERSION = "gameplay-layer-v1"
+OBJECT_INSTANCES_SCHEMA_VERSION = "object-instances-v4"
+TILE_TYPES_CATALOG_SCHEMA_VERSION = "tile-types-catalog-v1"
+OBJECT_TYPES_CATALOG_SCHEMA_VERSION = "object-types-catalog-v5"
+RENDER_PROFILE_SCHEMA_VERSION = "render-profile-v1"
+TILE_RENDER_HINTS_SCHEMA_VERSION = "tile-render-hints-v1"
+OBJECT_RENDER_HINTS_SCHEMA_VERSION = "object-render-hints-v5"
+MARKERS_SCHEMA_VERSION = "markers-v1"
+RUNTIME_GRIDS_SCHEMA_VERSION = "runtime-grids-v1"
+WORLD_GRAPH_SCHEMA_VERSION = "world-graph-v2"
+ROUTES_SCHEMA_VERSION = "routes-v1"
+GAMEPLAY_ZONES_SCHEMA_VERSION = "gameplay-zones-v1"
+ELEVATION_FEATURES_SCHEMA_VERSION = "elevation-features-v3"
+ELEVATION_TRANSITIONS_SCHEMA_VERSION = "elevation-transitions-v4"
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +80,7 @@ def build_manifest(
     validation_summary: dict[str, Any],
     metrics: dict[str, Any],
     validation_report_path: Path | None = None,
+    generation_tuning: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a machine-readable generation manifest.
 
@@ -81,6 +105,7 @@ def build_manifest(
         validation_summary: Compact output validation summary.
         metrics: Final pipeline metrics.
         validation_report_path: Optional detailed validation report path.
+        generation_tuning: Optional user-facing world density tuning scales.
 
     Returns:
         JSON-serializable manifest dictionary.
@@ -103,6 +128,29 @@ def build_manifest(
         "metrics": METRICS_SCHEMA_VERSION,
         "engine_config": ENGINE_CONFIG_SCHEMA_VERSION,
         "png_layer": PNG_LAYER_SCHEMA_VERSION,
+        "map_package": MAP_PACKAGE_SCHEMA_VERSION,
+        "map_package_map": MAP_PACKAGE_MAP_SCHEMA_VERSION,
+        "tile_grid_layer": TILE_GRID_LAYER_SCHEMA_VERSION,
+        "terrain_layer": TERRAIN_LAYER_SCHEMA_VERSION,
+        "movement_layer": MOVEMENT_LAYER_SCHEMA_VERSION,
+        "collision_layer": COLLISION_LAYER_SCHEMA_VERSION,
+        "elevation_layer": ELEVATION_LAYER_SCHEMA_VERSION,
+        "elevation_model": ELEVATION_MODEL_SCHEMA_VERSION,
+        "elevation_features": ELEVATION_FEATURES_SCHEMA_VERSION,
+        "elevation_transitions": ELEVATION_TRANSITIONS_SCHEMA_VERSION,
+        "start_goal_layer": START_GOAL_LAYER_SCHEMA_VERSION,
+        "gameplay_layer": GAMEPLAY_LAYER_SCHEMA_VERSION,
+        "object_instances": OBJECT_INSTANCES_SCHEMA_VERSION,
+        "tile_types_catalog": TILE_TYPES_CATALOG_SCHEMA_VERSION,
+        "object_types_catalog": OBJECT_TYPES_CATALOG_SCHEMA_VERSION,
+        "render_profile": RENDER_PROFILE_SCHEMA_VERSION,
+        "tile_render_hints": TILE_RENDER_HINTS_SCHEMA_VERSION,
+        "object_render_hints": OBJECT_RENDER_HINTS_SCHEMA_VERSION,
+        "markers": MARKERS_SCHEMA_VERSION,
+        "runtime_grids": RUNTIME_GRIDS_SCHEMA_VERSION,
+        "world_graph": WORLD_GRAPH_SCHEMA_VERSION,
+        "routes": ROUTES_SCHEMA_VERSION,
+        "gameplay_zones": GAMEPLAY_ZONES_SCHEMA_VERSION,
     }
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,
@@ -115,6 +163,7 @@ def build_manifest(
         "seed": seed,
         "resolved_seed": resolved_seed,
         "profile": profile,
+        "generation_tuning": generation_tuning or {},
         "dimensions": {
             "width_tiles": width,
             "height_tiles": height,

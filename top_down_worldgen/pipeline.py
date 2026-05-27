@@ -7,17 +7,41 @@ from time import perf_counter
 from typing import Any
 
 from .config import PublicConfig
+from .export.map_package import write_map_package
 from .legacy_runner import LegacyEngineRunner
 from .logging_utils import timed_stage
 from .manifest import (
     ASCII_MAP_SCHEMA_VERSION,
+    COLLISION_LAYER_SCHEMA_VERSION,
+    ELEVATION_LAYER_SCHEMA_VERSION,
+    ELEVATION_MODEL_SCHEMA_VERSION,
+    ELEVATION_FEATURES_SCHEMA_VERSION,
+    ELEVATION_TRANSITIONS_SCHEMA_VERSION,
     ENGINE_CONFIG_SCHEMA_VERSION,
+    GAMEPLAY_LAYER_SCHEMA_VERSION,
+    GAMEPLAY_ZONES_SCHEMA_VERSION,
+    MAP_PACKAGE_MAP_SCHEMA_VERSION,
+    MARKERS_SCHEMA_VERSION,
     METRICS_SCHEMA_VERSION,
+    MOVEMENT_LAYER_SCHEMA_VERSION,
+    OBJECT_INSTANCES_SCHEMA_VERSION,
     OBJECT_CATALOG_SCHEMA_VERSION,
+    OBJECT_TYPES_CATALOG_SCHEMA_VERSION,
+    OBJECT_RENDER_HINTS_SCHEMA_VERSION,
+    RENDER_PROFILE_SCHEMA_VERSION,
+    RUNTIME_GRIDS_SCHEMA_VERSION,
+    WORLD_GRAPH_SCHEMA_VERSION,
+    ROUTES_SCHEMA_VERSION,
+    PLACES_SCHEMA_VERSION,
     PNG_LAYER_SCHEMA_VERSION,
     RAW_TACTICAL_MAP_SCHEMA_VERSION,
+    TILE_RENDER_HINTS_SCHEMA_VERSION,
     TACTICAL_DEBUG_SCHEMA_VERSION,
     TACTICAL_MAP_SCHEMA_VERSION,
+    START_GOAL_LAYER_SCHEMA_VERSION,
+    TERRAIN_LAYER_SCHEMA_VERSION,
+    TILE_GRID_LAYER_SCHEMA_VERSION,
+    TILE_TYPES_CATALOG_SCHEMA_VERSION,
     VALIDATION_REPORT_SCHEMA_VERSION,
     OutputArtifact,
     build_manifest,
@@ -110,20 +134,22 @@ class WorldgenPipeline:
                     "chunk_height_tiles": config.chunk_height_tiles,
                     "biome_profile": config.biome_profile,
                     "objective_profile": config.objective_profile,
+                    "generation_tuning": config.generation_tuning.to_dict(),
                 },
             )
 
         with timed_stage(
             LOGGER,
             "pipeline.prepare_outputs",
-            output_map=output_map,
+            output_target=output_map,
         ) as metrics:
-            outputs = OutputPaths.from_output_map(output_map)
+            outputs = OutputPaths.from_cli_output(output_map)
             outputs.output_dir.mkdir(parents=True, exist_ok=True)
             config.write_engine_config(outputs.engine_config)
             metrics.update(
                 {
                     "output_dir": outputs.output_dir,
+                    "generated_map": outputs.generated_map,
                     "engine_config": outputs.engine_config,
                 },
             )
@@ -135,7 +161,7 @@ class WorldgenPipeline:
                 config_path=outputs.engine_config,
                 map_out=outputs.generated_map,
                 tactical_out=outputs.raw_tactical_map,
-                log_file=log_file,
+                log_file=log_file or outputs.log_file,
             )
             rows = outputs.generated_map.read_text(encoding="utf-8").splitlines()
             metrics.update(
@@ -175,13 +201,29 @@ class WorldgenPipeline:
                 debug_data,
             )
             runtime_data = attach_tile_grid(runtime_data, rows)
-            runtime_data = attach_runtime_layers(runtime_data, seed=config.resolved_seed)
+            runtime_data = attach_runtime_layers(
+                runtime_data,
+                seed=config.resolved_seed,
+                generation_tuning=config.generation_tuning.to_dict(),
+            )
             runtime_data = attach_places(runtime_data)
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"
 
             write_json(runtime_data, outputs.tactical_map)
             write_json(debug_data, outputs.tactical_map_debug)
+            write_map_package(
+                outputs=outputs,
+                runtime_data=runtime_data,
+                rows=rows,
+                width=config.map_width_tiles,
+                height=config.map_height_tiles,
+                tile_size_px=tile_size_px,
+                seed=config.seed,
+                resolved_seed=config.resolved_seed,
+                profile=config.objective_profile,
+                generation_tuning=config.generation_tuning.to_dict(),
+            )
             metrics.update(
                 {
                     "runtime_combat_zones": len(runtime_data.get("combat_zones", [])),
@@ -265,6 +307,7 @@ class WorldgenPipeline:
             "debug_images_enabled": debug_images and render,
             "rendered_layers": rendered_layers,
             "objective_profile": config.objective_profile,
+            "generation_tuning": config.generation_tuning.to_dict(),
             "spawn_selection_policy": objective.get("spawn_selection_policy"),
             "candidate_spawn_count": objective.get("candidate_spawn_count"),
             "selected_spawn_count": objective.get("selected_spawn_count"),
@@ -366,6 +409,7 @@ class WorldgenPipeline:
             artifacts=artifacts,
             validation_summary=validation_summary_from_report(validation_report),
             metrics=metrics,
+            generation_tuning=config.generation_tuning.to_dict(),
             validation_report_path=outputs.validation_report,
         )
         with timed_stage(
@@ -448,6 +492,209 @@ class WorldgenPipeline:
                 False,
                 True,
                 ENGINE_CONFIG_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.log_file,
+                "generation_log",
+                False,
+                True,
+                METRICS_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_map,
+                "map_package:index",
+                True,
+                False,
+                MAP_PACKAGE_MAP_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_markers,
+                "map_package:markers",
+                True,
+                False,
+                MARKERS_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_runtime_grids,
+                "map_package:runtime_grids",
+                True,
+                False,
+                RUNTIME_GRIDS_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_world_graph,
+                "map_package:world_graph",
+                True,
+                False,
+                WORLD_GRAPH_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_routes,
+                "map_package:routes",
+                True,
+                False,
+                ROUTES_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_gameplay_zones,
+                "map_package:gameplay_zones",
+                True,
+                False,
+                GAMEPLAY_ZONES_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_elevation_model,
+                "map_package:elevation_model",
+                True,
+                False,
+                ELEVATION_MODEL_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_elevation_features,
+                "map_package:elevation_features",
+                True,
+                False,
+                ELEVATION_FEATURES_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_elevation_transitions,
+                "map_package:elevation_transitions",
+                True,
+                False,
+                ELEVATION_TRANSITIONS_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_tile_grid,
+                "map_package:tile_grid",
+                True,
+                False,
+                TILE_GRID_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_terrain,
+                "map_package:terrain",
+                True,
+                False,
+                TERRAIN_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_movement_costs,
+                "map_package:movement_costs",
+                True,
+                False,
+                MOVEMENT_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_collision,
+                "map_package:collision",
+                True,
+                False,
+                COLLISION_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_elevation,
+                "map_package:elevation",
+                True,
+                False,
+                ELEVATION_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_start_goal,
+                "map_package:start_goal",
+                True,
+                False,
+                START_GOAL_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_combat_zones,
+                "map_package:combat_zones",
+                True,
+                False,
+                GAMEPLAY_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_cover_points,
+                "map_package:cover_points",
+                True,
+                False,
+                GAMEPLAY_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_choke_points,
+                "map_package:choke_points",
+                True,
+                False,
+                GAMEPLAY_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_flank_routes,
+                "map_package:flank_routes",
+                True,
+                False,
+                GAMEPLAY_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_enemy_spawn_zones,
+                "map_package:enemy_spawn_zones",
+                True,
+                False,
+                GAMEPLAY_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_fallback_positions,
+                "map_package:fallback_positions",
+                True,
+                False,
+                GAMEPLAY_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_runtime_objects,
+                "map_package:runtime_objects",
+                True,
+                False,
+                OBJECT_INSTANCES_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_places,
+                "map_package:places",
+                True,
+                False,
+                PLACES_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_tile_types,
+                "map_package:tile_types",
+                True,
+                False,
+                TILE_TYPES_CATALOG_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_object_types,
+                "map_package:object_types",
+                True,
+                False,
+                OBJECT_TYPES_CATALOG_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_render_profile,
+                "map_package:render_profile",
+                True,
+                False,
+                RENDER_PROFILE_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_tile_render_hints,
+                "map_package:tile_render_hints",
+                True,
+                False,
+                TILE_RENDER_HINTS_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_object_render_hints,
+                "map_package:object_render_hints",
+                True,
+                False,
+                OBJECT_RENDER_HINTS_SCHEMA_VERSION,
             ),
         ]
         if render:

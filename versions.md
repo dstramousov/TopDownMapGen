@@ -184,3 +184,254 @@
 - `layer_runtime_objects.png` и `layer_all_debug.png` отображают новые runtime-объекты.
 - Schema versions подняты до `generation-manifest-v15`, `validation-report-v12`, `object-catalog-v3`, `runtime-objects-v9`, `tactical-map-v0.32`.
 - Версия проекта поднята до `0.0.23`.
+
+## v0.0.23 -> v0.0.24
+
+- Добавлен структурированный экспорт `map_package/` рядом с существующими output-файлами.
+- Новый пакет содержит `map.json`, слои `tile_grid`, `movement_costs`, `collision`, `elevation`, gameplay-слои и object-слои.
+- `_manifest.json` теперь включает файлы `map_package` как primary outputs и описывает новые schema versions.
+- `validation_report.json` проверяет наличие базовых файлов нового `map_package`.
+- Schema versions подняты до `generation-manifest-v16`, `validation-report-v13`, `map-package-v1`.
+- Версия проекта поднята до `0.0.24`.
+
+## v0.0.24 -> v0.0.25
+
+- Добавлена документация `docs/map_package_v1.md` с описанием структуры `map_package/`, обязательных файлов, координат и назначения слоёв.
+- Добавлена инструкция `docs/game_consumer_guide.md` для первой интеграции пакета карты в игру.
+- Добавлен пример `examples/read_map_package.py`, который находит `map_package/map.json` через `_manifest.json` и строит краткую сводку карты.
+- Добавлены тесты, проверяющие наличие документации и работоспособность примера загрузчика на минимальном пакете.
+- Версия проекта поднята до `0.0.25`.
+
+## v0.0.25 -> v0.0.26
+
+- Добавлены явные игровые слои `terrain.json` и `start_goal.json` в `map_package/`.
+- `collision.json` переведён на runtime-ready формат с boolean rows и типами terrain, а не только ASCII-символами.
+- `movement_costs.json` дополнен `costs_by_type`, чтобы игра могла работать с типами тайлов.
+- `_manifest.json` и validation расширены новыми слоями пакета карты.
+- Документация и пример загрузчика обновлены под новые слои.
+- Версия проекта поднята до `0.0.26`.
+
+## v0.0.26 -> v0.0.27
+
+- Добавлены machine-readable catalogs для `map_package`: `catalogs/tile_types.json` и `catalogs/object_types.json`.
+- `map_package/map.json`, `_manifest.json`, validation и пример загрузчика обновлены под новые catalogs.
+- Документация формата и game consumer guide дополнены разделами про type catalogs.
+- Версия проекта поднята до `0.0.27`.
+
+## v0.0.27 -> v0.0.28
+
+- Добавлен renderer-ready каталог `map_package/render/` с `render_profile.json`, `tile_render_hints.json` и `object_render_hints.json`.
+- `map_package/map.json` теперь содержит секцию `render` со ссылками на render hint-файлы.
+- `_manifest.json` и validation расширены новыми schema version и проверками render hint outputs.
+- Документация и пример загрузчика обновлены для render hints.
+- Версия проекта поднята до `0.0.28`.
+
+## v0.0.28 -> v0.0.29
+
+- Унифицирован CLI output contract: `-o output` теперь создаёт `output/generated_map.txt` и все остальные артефакты в этой же папке.
+- `-o output/generated_map.txt` сохраняет прежнее поведение, но явно подтверждает единый output root для legacy-файлов и `map_package/`.
+- Pipeline теперь нормализует output target через `OutputPaths.from_cli_output`, чтобы manifest, legacy outputs и structured package всегда относились к одному root.
+- Документация формата и game consumer guide дополнены правилом “один запуск = одна output-папка = один manifest”.
+- Добавлены тесты для directory/file CLI output targets.
+- Версия проекта поднята до `0.0.29`.
+
+
+## v0.0.29 -> v0.0.30
+
+- Добавлен внешний инспектор `examples/inspect_world_package.py`, который проверяет `output/` как независимый consumer через `_manifest.json` и `map_package/map.json`.
+- Инспектор выводит краткую консольную сводку по размерам карты, слоям, collision, movement, elevation, объектам, gameplay, catalogs и render hints.
+- Ошибки загрузки пакета теперь дают понятный `World package: FAILED` и ненулевой exit code для smoke-check сценариев.
+- Документация формата и game consumer guide дополнены использованием инспектора перед передачей пакета в игру или renderer.
+- Добавлены тесты для успешной проверки минимального пакета и ошибки на отсутствующем пакете.
+- Версия проекта поднята до `0.0.30`.
+
+## v0.0.30 -> v0.0.31
+
+- Добавлен внешний preview renderer `examples/render_world_preview.py`, который строит простую PNG-картинку только из публичного `output/_manifest.json` и `map_package/`.
+- Preview renderer выводит краткую консольную сводку по карте, terrain, collision, runtime objects, start/goal и пути к PNG.
+- Renderer поддерживает разные входные пути: output root, `_manifest.json`, `map_package/` или `map_package/map.json`.
+- Документация формата и game consumer guide дополнены визуальным smoke-test сценарием после инспектора.
+- Добавлены тесты для успешного PNG preview и понятной ошибки на отсутствующем пакете.
+- Версия проекта поднята до `0.0.31`.
+
+## v0.0.31 -> v0.0.32
+
+- Добавлен `docs/world_building_algorithm.md` с пошаговым алгоритмом построения runtime-мира из `output/_manifest.json` и `map_package/`.
+- Добавлен `docs/world_package_file_map.md` с картой файлов output root, назначением слоёв, catalogs, render hints и проверочных tools.
+- `README.md` дополнен быстрым запуском, проверкой world package и ссылками на основные документы интеграции.
+- `docs/game_consumer_guide.md` теперь ссылается на новые документы для внешних consumers.
+- Тест документации расширен проверкой новых файлов.
+- Версия проекта поднята до `0.0.32`.
+
+
+## v0.0.32 -> v0.0.33
+
+- Добавлена footprint model v1 для runtime objects: `footprint`, `collision_footprint`, `visual_bounds`, `pivot` и `anchor` теперь доступны на объектных instances.
+- Крупные объекты вроде палаток, машин, колодцев, блокпостов, ям, брёвен, насыпей и траншей теперь могут занимать несколько тайлов.
+- `object_types.json`, inspector и preview renderer дополнены footprint/collision/visual metadata.
+- Validation расширена проверками footprint, collision footprint, visual bounds и pivot у runtime objects.
+- Документация world package и алгоритма построения мира дополнена правилами чтения multi-tile объектов.
+- Версия проекта поднята до `0.0.33`.
+
+## v0.0.33 -> v0.0.34
+
+- Добавлены два тестовых типа заглублённых бункеров: `buried_bunker_2x2` и `buried_bunker_2x3`.
+- Бункеры размещаются как multi-tile runtime objects с footprint, collision footprint, visual bounds и firing ports.
+- Бункерные footprint-клетки помечаются как внутренний уровень `-1` для будущей модели уровней.
+- Обновлены object catalogs, render hints, validation checks и документация по package-файлам.
+- Версия проекта поднята до `0.0.34`.
+
+
+## v0.0.34 -> v0.0.35
+
+- Добавлен пользовательский блок `generation_tuning` для управления водой, лесами, открытыми местами, руинами, строениями, дорогами, декором и бункерами.
+- Legacy engine теперь применяет tuning-масштабы и пишет quality-проблемы как warnings вместо падения на пользовательских настройках.
+- `output/generation.log` теперь создаётся по умолчанию и попадает в manifest как debug artifact.
+- Preview/debug renderers выделяют бункеры крупными `B`-клетками и показывают бойницы, чтобы их было видно на PNG.
+- Документация и configs обновлены под новый tuning-контракт.
+- Версия проекта поднята до `0.0.35`.
+
+## v0.0.35 -> v0.0.36
+
+- Вода получила отдельные настройки `water_patch_count_scale`, `water_patch_size_scale` и `water_patch_density`.
+- `water_scale` теперь работает как общий множитель количества water patches вместе с `water_patch_count_scale`.
+- Максимальный безопасный scale-диапазон поднят до `0.0..10.0`, а `water_patch_density` зажимается отдельно в `0.0..1.0`.
+- Формула размещения water patches теперь влияет не только на количество, но и на радиус/плотность луж.
+- README, docs, configs и тесты обновлены под новый tuning-контракт воды.
+- Версия проекта поднята до `0.0.36`.
+
+## v0.0.36 -> v0.0.37
+
+- Добавлен `map_package/markers.json` для стартовой точки, цели и игровых маркеров без смешивания с terrain.
+- Добавлен `map_package/runtime_grids.json` с готовыми runtime-сетками для движения, коллизии, снарядов, видимости, укрытий, маскировки и высоты.
+- `_manifest.json` и `map_package/map.json` обновлены до новых схем и теперь явно ссылаются на markers/runtime_grids.
+- Inspector выводит количество markers и runtime grids.
+- Validation проверяет наличие новых package-файлов.
+- Версия проекта поднята до `0.0.37`.
+
+## v0.0.37 -> v0.0.38
+
+- `places.json` обновлён до `places-v2`: места теперь имеют `bounds`, `entrances`, `danger_level`, `loot_level`, `story_role`, `encounter_type`, `connected_places`, `object_refs`, `marker_refs`, `route_refs` и `biome_tags`.
+- Добавлен новый тип `bunker_site`, который группирует заглублённые бункеры и ближайшие defensive/runtime objects в осмысленную локацию.
+- Генератор теперь связывает места между собой через ближайшие `connected_places`, чтобы подготовить основу для будущего `world_graph.json`.
+- Validation расширена проверками v2-полей places: bounds, entrances, metadata и связей между местами.
+- Документация world package и алгоритма построения мира обновлена под places v2.
+- Версия проекта поднята до `0.0.38`.
+
+## v0.0.38 -> v0.0.39
+
+- Добавлен `map_package/world_graph.json` как семантический граф мира.
+- `map.json`, manifest, inspector и validation знают про world graph.
+- Документация world package обновлена под новый файл графа.
+- Версия проекта поднята до `0.0.39`.
+
+## v0.0.39 -> v0.0.40
+
+- Добавлен `map_package/routes.json` с семантическими типами маршрутов: `main_road`, `side_path`, `hidden_path`, `patrol_route` и `escape_route`.
+- `map_package/map.json`, `_manifest.json`, validation и inspector теперь знают про routes.
+- Route records строятся из `world_graph.json` и содержат `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional` и `tags`.
+- Документация world package обновлена: routes описывают смысл маршрутов, а не заменяют tile pathfinding.
+- Версия проекта поднята до `0.0.40`.
+
+## v0.0.40 -> v0.0.41
+
+- Усилена package validation для `markers`, `runtime_grids`, `places`, `world_graph` и `routes`.
+- Validation теперь проверяет ссылки между package-файлами, совпадение размеров runtime-сеток и валидность start/goal относительно collision grid.
+- Schema versions обновлены до `generation-manifest-v28` и `validation-report-v24`.
+- Версия проекта поднята до `0.0.41`.
+
+## v0.0.41 -> v0.0.42
+
+- Добавлен `map_package/elevation_model.json` как публичный контракт уровней высоты `-1..4`.
+- `elevation_model.json` описывает значения уровней, типы переходов, правила movement, line-of-sight, projectiles и render order.
+- `map_package/map.json`, `_manifest.json`, validation и inspector теперь знают про elevation model.
+- Validation проверяет, что `height_grid` использует уровни, описанные в elevation model.
+- Документация world package обновлена под elevation model v1.
+- Версия проекта поднята до `0.0.42`.
+
+## v0.0.42 -> v0.0.43
+
+- Добавлены отдельные `map_package/elevation_features.json` и `map_package/elevation_transitions.json`.
+- `elevation_model.json` поднят до v2 и теперь связан с явными feature/transition пакетами.
+- `earth_berm` стал реальной raised-ground feature уровня `+1`.
+- Усилены inspector, validation, manifest и документация для elevation features/transitions.
+- Версия проекта поднята до `0.0.43`.
+
+## v0.0.43 -> v0.0.44
+
+- Добавлены реальные elevation features для полного диапазона уровней `-1..4`: `hill`, `wooden_bridge`, `stone_ramp`, `stone_stairs`, `ruin_platform`, `watchtower` и `ancient_beacon`.
+- Runtime height grid теперь получает положительные уровни от generated runtime objects, а не только `-1` от ям/траншей/бункеров.
+- `elevation_model.json`, `elevation_features.json` и `elevation_transitions.json` подняты до новых схем и описывают новые feature/transition типы.
+- Inspector и validation продолжают проверять package после расширения elevation-слоя.
+- Документация обновлена под elevation movement features v1.
+- Версия проекта поднята до `0.0.44`.
+
+## v0.0.44 -> v0.0.45
+
+- Усилена elevation-aware validation: проверяются уровни `height_grid`, соответствие transition records фактической сетке высот и наличие movement rules.
+- Validation теперь проверяет достижимость start/goal и main_path с учётом `elevation_transitions`.
+- `elevation_transitions.json` поднят до `elevation-transitions-v3` и содержит `movement_allowed`, `movement_rule`, `abs_delta` и `feature_refs`.
+- `elevation_model.json` поднят до `elevation-model-v4`.
+- Версия проекта поднята до `0.0.45`.
+
+
+## v0.0.45 -> v0.0.46
+
+- Preview renderer получил elevation overlay для уровней `-1..4`.
+- Preview renderer получил transition overlay для `ramp`, `stairs`, `bridge`, `slope` и steep elevation edges.
+- Консольная сводка preview показывает найденные elevation levels и число elevation transitions.
+- Документация обновлена командами проверки elevation/debug preview.
+- Версия проекта поднята до `0.0.46`.
+
+## v0.0.46 -> v0.0.47
+
+- Зафиксирован финальный публичный контракт `elevation v1` в `docs/elevation_v1.md`.
+- `elevation_model.json` поднят до `elevation-model-v5` и теперь содержит `v1_completion` с уровнями `-1..4`, required feature families и consumer-ready файлами.
+- `elevation_features.json` и `elevation_transitions.json` получили v1 completion metadata для внешних consumer-ов.
+- Inspector показывает статус elevation v1 и предупреждает о недостающих уровнях/features.
+- Добавлен smoke-test, который проверяет полный elevation v1 contract: уровни `-1..4` и основные feature families.
+- Версия проекта поднята до `0.0.47`.
+
+## v0.0.47 -> v0.0.48
+
+- Добавлен `map_package/gameplay_zones.json` с нейтральными gameplay-зонами: `safe_area`, `encounter_area`, `loot_area`, `danger_area`, `story_area`, `extraction_area` и другими типами.
+- `map_package/map.json`, `_manifest.json`, inspector и validation теперь знают про gameplay zones.
+- `world_graph.main_path` теперь обязан иметь edge для каждой соседней пары `node_ids`; validation ловит логически разорванный main path.
+- Генератор добавляет недостающие main-path edges, чтобы `node_ids` и `edge_ids` согласованно описывали маршрут.
+- Версия проекта поднята до `0.0.48`.
+
+
+## v0.0.48 -> v0.0.49
+
+- `places.json` поднят до `places-v3` и теперь генерирует более плотный набор смысловых мест.
+- Добавлены новые типы places: `blocked_road`, `swamp_crossing`, `ruined_camp`, `small_loot_pocket`, `ambush_clearing`, `watchtower_area`, `bunker_outer_area`, `bunker_inner_area`, `secret_cache`, `dangerous_lowland` и `raised_platform_site`.
+- Целевое количество meaningful places для больших карт поднято до диапазона 8–15, без жёсткого падения на маленьких/бедных тестовых картах.
+- World graph, routes и gameplay zones теперь получают более богатую базу places и строят больше side paths/route links.
+- Версия проекта поднята до `0.0.49`.
+
+## v0.0.49 -> v0.0.50
+
+- `world_graph.json` поднят до `world-graph-v2` и теперь строит более плотный смысловой граф на основе meaningful places.
+- Добавлены proximity edges между близкими places, чтобы граф меньше походил на формальный список точек.
+- `side_paths` теперь имеют anchor node, edge ids и cost, а не просто одиночный target place.
+- `dead_ends` теперь считаются только для meaningful places, а не для всех markers, поэтому статистика больше не заваливается мусорными marker leafs.
+- `secret_areas` теперь строятся из secret/cache/high-loot places и релевантных marker nodes.
+- `world_graph.summary` получил показатели meaningful place coverage и quality status для внешних consumer-ов.
+- Версия проекта поднята до `0.0.50`.
+
+## v0.0.50 -> v0.0.51
+
+- Preview renderer получил semantic overlays для `places`, `gameplay_zones`, `routes` и `world_graph`.
+- Добавлен общий флаг `--semantic-overlays`, который включает все смысловые overlay-слои сразу.
+- Консольная сводка preview теперь показывает количество places, gameplay zones, routes и world graph edges.
+- Документация обновлена командами визуальной проверки graph/zones/routes/places.
+- Версия проекта поднята до `0.0.51`.
+
+## v0.0.51 -> v0.0.52
+
+- Runtime objects получили `interaction_shape`, `sort_anchor`, `draw_layer` и `occlusion_hint`.
+- Runtime object schema поднята до `runtime-objects-v13`, object instances — до `object-instances-v4`, object types catalog — до `object-types-catalog-v5`, object render hints — до `object-render-hints-v5`.
+- Validation теперь проверяет interaction shapes, sort anchors, draw layers и occlusion hints у всех runtime objects.
+- Object catalogs и render hints экспортируют новые поля для внешнего движка и top-down renderer-а.
+- Документация обновлена object interaction/sort model.
+- Версия проекта поднята до `0.0.52`.

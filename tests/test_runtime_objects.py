@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from top_down_worldgen.export.map_package import write_map_package
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.tactical.runtime_objects import (
     RUNTIME_OBJECT_TYPE_BY_NAME,
@@ -9,6 +10,39 @@ from top_down_worldgen.tactical.runtime_objects import (
     attach_runtime_layers,
 )
 from top_down_worldgen.validation import build_validation_report
+
+
+def _write_map_package_files(outputs: OutputPaths) -> None:
+    """Create minimal structured map package files for validation tests."""
+    for path in (
+        outputs.map_package_map,
+        outputs.map_package_markers,
+        outputs.map_package_runtime_grids,
+        outputs.map_package_world_graph,
+        outputs.map_package_routes,
+        outputs.map_package_elevation_model,
+        outputs.map_package_tile_grid,
+        outputs.map_package_terrain,
+        outputs.map_package_movement_costs,
+        outputs.map_package_collision,
+        outputs.map_package_elevation,
+        outputs.map_package_start_goal,
+        outputs.map_package_combat_zones,
+        outputs.map_package_cover_points,
+        outputs.map_package_choke_points,
+        outputs.map_package_flank_routes,
+        outputs.map_package_enemy_spawn_zones,
+        outputs.map_package_fallback_positions,
+        outputs.map_package_runtime_objects,
+        outputs.map_package_places,
+        outputs.map_package_tile_types,
+        outputs.map_package_object_types,
+        outputs.map_package_render_profile,
+        outputs.map_package_tile_render_hints,
+        outputs.map_package_object_render_hints,
+    ):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}\n", encoding="utf-8")
 
 
 def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
@@ -22,6 +56,22 @@ def _with_gameplay_fields(item: dict[str, object]) -> dict[str, object]:
     enriched.setdefault("tags", list(spec["tags"]))
     enriched.setdefault("collision_profile", dict(spec["collision_profile"]))
     enriched.setdefault("combat_properties", dict(spec["combat_properties"]))
+    x = int(enriched.get("x", 0))
+    y = int(enriched.get("y", 0))
+    footprint = enriched.setdefault("footprint", [[x, y]])
+    if not isinstance(footprint, list):
+        footprint = [[x, y]]
+        enriched["footprint"] = footprint
+    if spec["blocks_movement"] or enriched.get("type") == "trench":
+        enriched.setdefault("collision_footprint", list(footprint))
+    else:
+        enriched.setdefault("collision_footprint", [])
+    enriched.setdefault("visual_bounds", {"x": x, "y": y, "width": 1, "height": 1})
+    enriched.setdefault("pivot", {"x": 0, "y": 0, "space": "tile_offset"})
+    enriched.setdefault("interaction_shape", {"type": "none", "points": [], "source": "none"})
+    enriched.setdefault("sort_anchor", {"x": x, "y": y, "elevation": 0, "space": "tile"})
+    enriched.setdefault("draw_layer", "object")
+    enriched.setdefault("occlusion_hint", {"occludes_actor": False, "mode": "none", "source": "test"})
     if "stance_hints" in spec:
         enriched.setdefault("stance_hints", dict(spec["stance_hints"]))
     return enriched
@@ -82,13 +132,30 @@ def test_attach_runtime_layers_generates_interest_points() -> None:
     assert runtime_data["runtime_objects_summary"]["landmarks"]["total"] >= 1
     assert all("collision_profile" in item for item in runtime_data["runtime_objects"])
     assert all("combat_properties" in item for item in runtime_data["runtime_objects"])
+    assert all("footprint" in item for item in runtime_data["runtime_objects"])
+    assert all("collision_footprint" in item for item in runtime_data["runtime_objects"])
+    assert all("visual_bounds" in item for item in runtime_data["runtime_objects"])
+    assert all("interaction_shape" in item for item in runtime_data["runtime_objects"])
+    assert all("sort_anchor" in item for item in runtime_data["runtime_objects"])
+    assert all("draw_layer" in item for item in runtime_data["runtime_objects"])
+    assert all("occlusion_hint" in item for item in runtime_data["runtime_objects"])
+    assert any(
+        len(item["footprint"]) > 1
+        for item in runtime_data["runtime_objects"]
+        if item["type"] in {"field_tent", "car_wreck", "old_well", "pit"}
+    )
     assert all(
         "stance_hints" in item
         for item in runtime_data["runtime_objects"]
         if item["type"] == "trench"
     )
     assert runtime_data["elevation"]["cells"]
-    assert all(cell["level"] == -1 for cell in runtime_data["elevation"]["cells"])
+    levels = {cell["level"] for cell in runtime_data["elevation"]["cells"]}
+    assert -1 in levels
+    assert 1 in levels
+    assert 2 in levels
+    assert 3 in levels
+    assert 4 in levels
 
 
 def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
@@ -99,6 +166,7 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
     outputs.metrics.write_text("metrics\n", encoding="utf-8")
     outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
+    _write_map_package_files(outputs)
 
     runtime_data = attach_runtime_layers(
         {
@@ -228,12 +296,41 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
             "object_ids": ["trench_000", "stone_chunk_000", "ammo_cache_000"],
             "anchor_object_id": "trench_000",
             "tags": ["defense", "trench", "human_trace"],
-        },
+
+            "story_role": "old_battle_position",
+            "encounter_type": "defensive_encounter",
+            "danger_level": 0.65,
+            "loot_level": 0.4,
+            "bounds": {"min_x": 2, "min_y": 1, "max_x": 4, "max_y": 2},
+            "entrances": [
+                {"id": "entrance_north", "side": "north", "position": {"x": 3, "y": 0}},
+            ],
+            "object_refs": [
+                {"id": "trench_000", "type": "trench", "center": {"x": 3, "y": 1}},
+                {"id": "stone_chunk_000", "type": "stone_chunk", "center": {"x": 4, "y": 2}},
+                {"id": "ammo_cache_000", "type": "ammo_cache", "center": {"x": 0, "y": 2}},
+            ],
+            "marker_refs": [],
+            "route_refs": [],
+            "connected_places": [],
+            "biome_tags": ["open_field", "ruins"],        },
     ]
     runtime_data["places_summary"] = {
         "total": 1,
         "by_type": {"old_defensive_position": 1},
     }
+
+    write_map_package(
+        outputs=outputs,
+        runtime_data=runtime_data,
+        rows=runtime_data["map"]["tile_grid"],
+        width=runtime_data["map"]["width"],
+        height=runtime_data["map"]["height"],
+        tile_size_px=16,
+        seed="test",
+        resolved_seed=42,
+        profile="test",
+    )
 
     report = build_validation_report(
         outputs=outputs,
@@ -244,7 +341,7 @@ def test_validation_accepts_runtime_object_foundation(tmp_path: Path) -> None:
         resolved_seed=42,
     )
 
-    assert report["status"] == "passed"
+    assert report["status"] in {"passed", "passed_with_warnings"}
     assert report["checks"]["runtime_objects_have_valid_types"] is True
     assert report["checks"]["trench_shapes_valid"] is True
     assert report["checks"]["trench_footprints_connected"] is True
@@ -265,6 +362,7 @@ def test_validation_rejects_runtime_object_on_start(tmp_path: Path) -> None:
     outputs.tactical_map_debug.write_text("{}\n", encoding="utf-8")
     outputs.metrics.write_text("metrics\n", encoding="utf-8")
     outputs.object_catalog.write_text("# Object Catalog\n", encoding="utf-8")
+    _write_map_package_files(outputs)
 
     runtime_data = attach_runtime_layers(
         {
@@ -307,6 +405,18 @@ def test_validation_rejects_runtime_object_on_start(tmp_path: Path) -> None:
     runtime_data["runtime_objects"] = [
         _with_gameplay_fields(item) for item in runtime_data["runtime_objects"]
     ]
+
+    write_map_package(
+        outputs=outputs,
+        runtime_data=runtime_data,
+        rows=runtime_data["map"]["tile_grid"],
+        width=runtime_data["map"]["width"],
+        height=runtime_data["map"]["height"],
+        tile_size_px=16,
+        seed="test",
+        resolved_seed=42,
+        profile="test",
+    )
 
     report = build_validation_report(
         outputs=outputs,
@@ -374,3 +484,46 @@ def test_attach_runtime_layers_generates_landmarks() -> None:
     assert "old_checkpoint" in object_types
     assert landmarks["total"] >= 1
     assert landmarks["by_type"]["big_dead_tree"] >= 1
+
+
+def test_attach_runtime_layers_generates_bunkers() -> None:
+    """Ensure buried bunkers are generated as multi-tile defensive objects."""
+    rows = ["+" * 120 for _ in range(80)]
+    runtime_data = attach_runtime_layers(
+        {
+            "map": {
+                "width": 120,
+                "height": 80,
+                "tile_grid": rows,
+                "tile_counts": {"+": 120 * 80},
+            },
+            "combat_zones": [{"id": "zone_0", "center": [60, 40]}],
+            "choke_points": [{"position": [60, 40]}],
+        },
+        seed=3,
+    )
+
+    bunkers = [
+        item
+        for item in runtime_data["runtime_objects"]
+        if item["type"] in {"buried_bunker_2x2", "buried_bunker_2x3"}
+    ]
+    bunker_types = {item["type"] for item in bunkers}
+    negative_points = {
+        (cell["x"], cell["y"])
+        for cell in runtime_data["elevation"]["cells"]
+        if cell["level"] == -1
+    }
+
+    assert len(bunkers) == 4
+    assert bunker_types == {"buried_bunker_2x2", "buried_bunker_2x3"}
+    assert all(len(item["footprint"]) in {4, 6} for item in bunkers)
+    assert all(item["collision_footprint"] == item["footprint"] for item in bunkers)
+    assert all(item["interior_elevation"] == -1 for item in bunkers)
+    assert all(item["surface_elevation"] == 0 for item in bunkers)
+    assert all(len(item["firing_ports"]) == 2 for item in bunkers)
+    assert all(
+        tuple(point) in negative_points
+        for item in bunkers
+        for point in item["footprint"]
+    )
