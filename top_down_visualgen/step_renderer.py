@@ -6,6 +6,7 @@ from typing import Any
 
 from PIL import Image, ImageDraw
 
+from .decoration import DecorationMapper, merge_visual_objects
 from .models import VisualProfile, WorldPackage
 from .object_mapper import ObjectVisualMapper
 from .terrain_mapper import TerrainVisualMapper
@@ -19,15 +20,18 @@ class VisualPipelineStepRenderer:
         *,
         terrain_mapper: TerrainVisualMapper | None = None,
         object_mapper: ObjectVisualMapper | None = None,
+        decoration_mapper: DecorationMapper | None = None,
     ) -> None:
         """Initialize the step renderer.
 
         Args:
             terrain_mapper: Optional terrain mapper.
             object_mapper: Optional object mapper.
+            decoration_mapper: Optional decoration mapper.
         """
         self._terrain_mapper = terrain_mapper or TerrainVisualMapper()
         self._object_mapper = object_mapper or ObjectVisualMapper()
+        self._decoration_mapper = decoration_mapper or DecorationMapper()
 
     def render_steps(
         self,
@@ -52,7 +56,17 @@ class VisualPipelineStepRenderer:
         visual_layers = self._terrain_mapper.map_terrain(world, profile)
         debug = visual_layers.get("debug")
         autotile_rows = _autotile_rows(debug)
-        visual_objects = self._object_mapper.map_objects(world, profile)
+        runtime_visual_objects = self._object_mapper.map_objects(world, profile)
+        decoration_result = self._decoration_mapper.map_decorations(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+            visual_debug=debug if isinstance(debug, dict) else {},
+        )
+        visual_objects = merge_visual_objects(
+            runtime_visual_objects=runtime_visual_objects,
+            decoration_result=decoration_result,
+        )
         tile_size = tile_size_px or _tile_size_px(world.index, profile)
         tile_size = max(1, tile_size)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -89,30 +103,45 @@ class VisualPipelineStepRenderer:
             self._render_autotile_step(
                 visual_layers=visual_layers,
                 autotile_rows=autotile_rows,
+                group_id="swamp",
+                profile=profile,
+                output_path=output_dir / "04_swamp_autotile.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_autotile_step(
+                visual_layers=visual_layers,
+                autotile_rows=autotile_rows,
                 group_id="forest",
                 profile=profile,
-                output_path=output_dir / "04_forest_autotile.png",
+                output_path=output_dir / "05_forest_autotile.png",
                 tile_size_px=tile_size,
             ),
             self._render_fallback_step(
                 visual_layers=visual_layers,
                 autotile_rows=autotile_rows,
                 profile=profile,
-                output_path=output_dir / "05_autotile_fallbacks.png",
+                output_path=output_dir / "06_autotile_fallbacks.png",
                 tile_size_px=tile_size,
             ),
             self._render_objects_step(
                 visual_layers=visual_layers,
-                visual_objects=visual_objects,
+                visual_objects=runtime_visual_objects,
                 profile=profile,
-                output_path=output_dir / "06_objects.png",
+                output_path=output_dir / "07_objects.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_decoration_step(
+                visual_layers=visual_layers,
+                decoration_result=decoration_result,
+                profile=profile,
+                output_path=output_dir / "08_decoration.png",
                 tile_size_px=tile_size,
             ),
             self._render_final_step(
                 visual_layers=visual_layers,
                 visual_objects=visual_objects,
                 profile=profile,
-                output_path=output_dir / "07_final_preview.png",
+                output_path=output_dir / "09_final_preview.png",
                 tile_size_px=tile_size,
             ),
         ]
@@ -241,6 +270,40 @@ class VisualPipelineStepRenderer:
             tile_colors=_dimmed_tile_colors(profile),
             tile_size_px=tile_size_px,
         )
+        _draw_object_anchors(
+            draw=draw,
+            visual_objects=visual_objects,
+            sprite_colors=_sprite_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(output_path)
+        return output_path
+
+
+    def _render_decoration_step(
+        self,
+        *,
+        visual_layers: dict[str, Any],
+        decoration_result: dict[str, Any],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        rows = _visual_rows(visual_layers)
+        image, draw = _new_tile_image(
+            width=len(rows[0]),
+            height=len(rows),
+            tile_size_px=tile_size_px,
+            background="#1b1b1b",
+        )
+        _draw_tile_rows(
+            draw=draw,
+            rows=rows,
+            tile_colors=_dimmed_tile_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        visual_objects = {"items": decoration_result.get("items", [])}
         _draw_object_anchors(
             draw=draw,
             visual_objects=visual_objects,

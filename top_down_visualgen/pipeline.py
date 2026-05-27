@@ -5,6 +5,7 @@ from typing import Any
 
 from . import __version__
 from .chunks import build_visual_chunks
+from .decoration import DecorationMapper, merge_visual_objects
 from .io import write_json_object
 from .models import VisualPipelineResult
 from .object_mapper import ObjectVisualMapper
@@ -25,6 +26,7 @@ class VisualPipeline:
         terrain_mapper: TerrainVisualMapper | None = None,
         object_mapper: ObjectVisualMapper | None = None,
         preview_renderer: PreviewRenderer | None = None,
+        decoration_mapper: DecorationMapper | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -34,12 +36,14 @@ class VisualPipeline:
             terrain_mapper: Optional terrain mapper.
             object_mapper: Optional object mapper.
             preview_renderer: Optional preview renderer.
+            decoration_mapper: Optional decoration mapper.
         """
         self._package_loader = package_loader or WorldPackageLoader()
         self._profile_loader = profile_loader or VisualProfileLoader()
         self._terrain_mapper = terrain_mapper or TerrainVisualMapper()
         self._object_mapper = object_mapper or ObjectVisualMapper()
         self._preview_renderer = preview_renderer or PreviewRenderer()
+        self._decoration_mapper = decoration_mapper or DecorationMapper()
 
     def run(
         self,
@@ -68,7 +72,17 @@ class VisualPipeline:
         profile = self._profile_loader.load(profile_dir)
         visual_layers = self._terrain_mapper.map_terrain(world, profile)
         visual_debug = self._extract_visual_debug(visual_layers)
-        visual_objects = self._object_mapper.map_objects(world, profile)
+        runtime_visual_objects = self._object_mapper.map_objects(world, profile)
+        decoration_result = self._decoration_mapper.map_decorations(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+            visual_debug=visual_debug,
+        )
+        visual_objects = merge_visual_objects(
+            runtime_visual_objects=runtime_visual_objects,
+            decoration_result=decoration_result,
+        )
         width = _int_value(visual_layers.get("width"), 0)
         height = _int_value(visual_layers.get("height"), 0)
         visual_chunks = build_visual_chunks(
@@ -88,6 +102,7 @@ class VisualPipeline:
         debug_autotile_masks_path = debug_dir / "autotile_masks.json"
         debug_autotile_report_path = debug_dir / "autotile_report.json"
         debug_unmapped_terrain_report_path = debug_dir / "unmapped_terrain_report.json"
+        debug_decoration_report_path = debug_dir / "decoration_report.json"
 
         write_json_object(visual_layers, visual_layers_path)
         write_json_object(visual_objects, visual_objects_path)
@@ -97,6 +112,10 @@ class VisualPipeline:
         write_json_object(
             _build_unmapped_terrain_report_debug(visual_debug),
             debug_unmapped_terrain_report_path,
+        )
+        write_json_object(
+            _build_decoration_report_debug(decoration_result),
+            debug_decoration_report_path,
         )
         if preview_path is not None:
             self._preview_renderer.render(
@@ -119,6 +138,7 @@ class VisualPipeline:
             debug_autotile_masks_path=debug_autotile_masks_path,
             debug_autotile_report_path=debug_autotile_report_path,
             debug_unmapped_terrain_report_path=debug_unmapped_terrain_report_path,
+            debug_decoration_report_path=debug_decoration_report_path,
             visual_layers=visual_layers,
             visual_objects=visual_objects,
             visual_chunks=visual_chunks,
@@ -135,6 +155,7 @@ class VisualPipeline:
             debug_autotile_masks_path=debug_autotile_masks_path,
             debug_autotile_report_path=debug_autotile_report_path,
             debug_unmapped_terrain_report_path=debug_unmapped_terrain_report_path,
+            debug_decoration_report_path=debug_decoration_report_path,
         )
 
     def _build_visual_map(
@@ -151,6 +172,7 @@ class VisualPipeline:
         debug_autotile_masks_path: Path,
         debug_autotile_report_path: Path,
         debug_unmapped_terrain_report_path: Path,
+        debug_decoration_report_path: Path,
         visual_layers: dict[str, Any],
         visual_objects: dict[str, Any],
         visual_chunks: dict[str, Any],
@@ -205,6 +227,10 @@ class VisualPipeline:
                 "debug_unmapped_terrain_report": _relative(
                     output_dir,
                     debug_unmapped_terrain_report_path,
+                ),
+                "debug_decoration_report": _relative(
+                    output_dir,
+                    debug_decoration_report_path,
                 ),
             },
             "contract": {
@@ -285,4 +311,23 @@ def _build_unmapped_terrain_report_debug(visual_debug: dict[str, Any]) -> dict[s
             "unmapped_total": total_cells,
             "status": "ok" if total_cells == 0 else "has_unmapped_terrain",
         },
+    }
+
+
+def _build_decoration_report_debug(decoration_result: dict[str, Any]) -> dict[str, Any]:
+    report = decoration_result.get("report")
+    if isinstance(report, dict):
+        return report
+    return {
+        "schema_version": "visual-debug-decoration-report-v1",
+        "kind": "visual_debug_decoration_report",
+        "source_layer": "terrain_base",
+        "rules_enabled": False,
+        "summary": {
+            "total": 0,
+            "by_rule": {},
+            "by_sprite_id": {},
+            "skipped": {},
+        },
+        "quality": {"status": "missing_report"},
     }

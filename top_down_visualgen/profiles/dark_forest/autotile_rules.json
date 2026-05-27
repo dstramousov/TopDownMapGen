@@ -49,8 +49,6 @@
         "water",
         "deep_water",
         "shallow_water",
-        "swamp",
-        "water_slow",
         "water_deep",
         "water_shallow"
       ],
@@ -114,6 +112,41 @@
         "cap_w": "forest.cap_w",
         "thin_ns": "forest.thin_ns",
         "thin_ew": "forest.thin_ew"
+      }
+    },
+    "swamp": {
+      "mask_mode": "blob_8",
+      "terrain_types": [
+        "swamp",
+        "water_slow",
+        "mud_water",
+        "bog",
+        "wetland"
+      ],
+      "base_tile": "swamp.fill",
+      "fallback_tile": "swamp.fill",
+      "variant_to_tile": {
+        "isolated": "swamp.isolated",
+        "fill": "swamp.fill",
+        "edge_n": "swamp.edge_n",
+        "edge_e": "swamp.edge_e",
+        "edge_s": "swamp.edge_s",
+        "edge_w": "swamp.edge_w",
+        "outer_corner_ne": "swamp.outer_corner_ne",
+        "outer_corner_es": "swamp.outer_corner_es",
+        "outer_corner_sw": "swamp.outer_corner_sw",
+        "outer_corner_wn": "swamp.outer_corner_wn",
+        "inner_corner_ne": "swamp.inner_corner_ne",
+        "inner_corner_es": "swamp.inner_corner_es",
+        "inner_corner_sw": "swamp.inner_corner_sw",
+        "inner_corner_wn": "swamp.inner_corner_wn",
+        "inner_corner_complex": "swamp.inner_corner_complex",
+        "cap_n": "swamp.cap_n",
+        "cap_e": "swamp.cap_e",
+        "cap_s": "swamp.cap_s",
+        "cap_w": "swamp.cap_w",
+        "thin_ns": "swamp.thin_ns",
+        "thin_ew": "swamp.thin_ew"
       }
     }
   }

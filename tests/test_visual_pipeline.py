@@ -45,13 +45,14 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert (visual_output / "debug/autotile_masks.json").exists()
     assert (visual_output / "debug/autotile_report.json").exists()
     assert (visual_output / "debug/unmapped_terrain_report.json").exists()
+    assert (visual_output / "debug/decoration_report.json").exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
     rows = visual_layers["layers"][0]["rows"]
     assert rows[0][0] == "forest.cap_n"
     assert rows[1][1] == "road.turn_es"
-    assert rows[2][2] == "water.outer_corner_wn"
+    assert rows[2][2] == "swamp.isolated"
     assert rows[3][3] == "grass.base"
 
     autotile_report = _read_json(visual_output / "debug/autotile_report.json")
@@ -63,8 +64,13 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert unmapped_report["summary"]["counts"] == {}
 
     visual_objects = _read_json(result.visual_objects_path)
-    assert visual_objects["items"][0]["sprite_id"] == "object.trench"
-    assert visual_objects["items"][0]["sort_anchor"]["y"] == 1
+    assert visual_objects["summary"]["runtime_total"] == 1
+    assert visual_objects["summary"]["decoration_total"] >= 1
+    assert any(item["sprite_id"] == "object.trench" for item in visual_objects["items"])
+    assert any(
+        str(item["sprite_id"]).startswith("decor.")
+        for item in visual_objects["items"]
+    )
 
     visual_chunks = _read_json(result.visual_chunks_path)
     assert visual_chunks["summary"]["total"] == 4
@@ -94,10 +100,12 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "01_base_visual_tiles.png",
         "02_road_autotile.png",
         "03_water_autotile.png",
-        "04_forest_autotile.png",
-        "05_autotile_fallbacks.png",
-        "06_objects.png",
-        "07_final_preview.png",
+        "04_swamp_autotile.png",
+        "05_forest_autotile.png",
+        "06_autotile_fallbacks.png",
+        "07_objects.png",
+        "08_decoration.png",
+        "09_final_preview.png",
     ]
     assert all(path.exists() for path in paths)
 

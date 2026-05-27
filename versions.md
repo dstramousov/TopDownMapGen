@@ -469,3 +469,11 @@
 - Visual pipeline пишет `debug/unmapped_terrain_report.json`, чтобы сразу видеть terrain-типы, которые ушли в default tile.
 - Visual map contract получил ссылку на unmapped terrain report, а tests покрывают aliases и нулевой unmapped status.
 - Версия проекта поднята до `0.0.56`.
+
+## v0.0.56 -> v0.0.57
+
+- `water_slow` в `dark_forest` profile переосмыслен как `swamp` — болотистая проходимая местность, а не открытая вода.
+- Добавлена autotile-группа `swamp` с собственными `swamp.*` tile ids, чтобы болото визуально отделялось от настоящей воды.
+- Добавлен первый decoration pass для болота: камыш, мокрая трава, грязевые пятна и сухие ветки как небоевые visual decorations.
+- Visual pipeline теперь пишет `debug/decoration_report.json`, а step renderer создаёт `08_decoration.png` и финальный `09_final_preview.png`.
+- Версия проекта поднята до `0.0.57`.

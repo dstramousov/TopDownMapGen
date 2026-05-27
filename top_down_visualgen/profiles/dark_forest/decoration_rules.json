@@ -1,8 +1,76 @@
 {
-  "schema_version": "decoration-rules-v1",
+  "schema_version": "decoration-rules-v2",
   "kind": "decoration_rules",
-  "enabled": false,
+  "enabled": true,
+  "seed_salt": "dark_forest_decoration_v1",
+  "blocked_terrain": [
+    "start",
+    "goal",
+    "road",
+    "old_overgrown_road",
+    "ruin_wall_blocker"
+  ],
+  "rules": [
+    {
+      "id": "swamp_edge_reeds",
+      "priority": 10,
+      "autotile_groups": [
+        "swamp"
+      ],
+      "variant_prefixes": [
+        "edge_",
+        "outer_corner_",
+        "cap_",
+        "thin_"
+      ],
+      "chance_percent": 22,
+      "sprites": [
+        "decor.reeds_01",
+        "decor.reeds_02",
+        "decor.wet_grass_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "swamp_fill_mud",
+      "priority": 20,
+      "autotile_groups": [
+        "swamp"
+      ],
+      "variants": [
+        "fill",
+        "inner_corner_ne",
+        "inner_corner_es",
+        "inner_corner_sw",
+        "inner_corner_wn",
+        "inner_corner_complex"
+      ],
+      "chance_percent": 9,
+      "sprites": [
+        "decor.mud_patch_01",
+        "decor.wet_grass_01",
+        "decor.dead_branch_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "swamp_isolated_reeds",
+      "priority": 30,
+      "autotile_groups": [
+        "swamp"
+      ],
+      "variants": [
+        "isolated"
+      ],
+      "chance_percent": 100,
+      "sprites": [
+        "decor.reeds_01",
+        "decor.mud_patch_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    }
+  ],
   "notes": [
-    "Decoration pass is intentionally disabled in v0.0.55 baseline."
+    "water_slow is treated as passable swamp/wetland visual terrain, not as open water."
   ]
 }
