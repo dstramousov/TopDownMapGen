@@ -477,3 +477,11 @@
 - Добавлен первый decoration pass для болота: камыш, мокрая трава, грязевые пятна и сухие ветки как небоевые visual decorations.
 - Visual pipeline теперь пишет `debug/decoration_report.json`, а step renderer создаёт `08_decoration.png` и финальный `09_final_preview.png`.
 - Версия проекта поднята до `0.0.57`.
+
+## v0.0.57 -> v0.0.58
+
+- Decoration rules for `dark_forest` получили swamp influence pass: мокрая трава, грязевые края, редкий камыш и сухие ветки теперь могут появляться на проходимой земле рядом с болотом.
+- `DecorationMapper` научился матчить правила по соседним autotile-группам через `nearby_autotile_groups` и `nearby_radius`, не меняя terrain, collision или movement grids.
+- Decoration rule selection теперь продолжает проверять следующие правила после deterministic chance miss, чтобы низкоприоритетные контекстные правила могли сработать на той же клетке.
+- В debug tileset добавлены placeholder sprites для новых swamp influence decorations.
+- Версия проекта поднята до `0.0.58`.

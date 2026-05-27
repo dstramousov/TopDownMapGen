@@ -544,6 +544,15 @@
     },
     "decor.dead_branch_01": {
       "debug_color": "#6b4a2e"
+    },
+    "decor.reeds_03": {
+      "debug_color": "#718f3e"
+    },
+    "decor.mud_patch_02": {
+      "debug_color": "#55432c"
+    },
+    "decor.wet_grass_02": {
+      "debug_color": "#466f42"
     }
   }
 }

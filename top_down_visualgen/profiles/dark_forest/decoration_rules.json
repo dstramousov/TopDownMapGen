@@ -1,8 +1,8 @@
 {
-  "schema_version": "decoration-rules-v2",
+  "schema_version": "decoration-rules-v3",
   "kind": "decoration_rules",
   "enabled": true,
-  "seed_salt": "dark_forest_decoration_v1",
+  "seed_salt": "dark_forest_decoration_v2",
   "blocked_terrain": [
     "start",
     "goal",
@@ -68,9 +68,67 @@
         "decor.mud_patch_01"
       ],
       "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "swamp_influence_wet_grass",
+      "priority": 40,
+      "terrain_types": [
+        "grass",
+        "flower_decor",
+        "mushroom_decor"
+      ],
+      "nearby_autotile_groups": [
+        "swamp"
+      ],
+      "nearby_radius": 1,
+      "chance_percent": 12,
+      "sprites": [
+        "decor.wet_grass_01",
+        "decor.wet_grass_02",
+        "decor.mud_patch_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "swamp_influence_mud_edge",
+      "priority": 50,
+      "terrain_types": [
+        "grass",
+        "cracked_ground"
+      ],
+      "nearby_autotile_groups": [
+        "swamp"
+      ],
+      "nearby_radius": 2,
+      "chance_percent": 4,
+      "sprites": [
+        "decor.mud_patch_01",
+        "decor.mud_patch_02",
+        "decor.dead_branch_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "swamp_influence_reeds_sparse",
+      "priority": 60,
+      "terrain_types": [
+        "grass"
+      ],
+      "nearby_autotile_groups": [
+        "swamp"
+      ],
+      "nearby_radius": 1,
+      "chance_percent": 2,
+      "sprites": [
+        "decor.reeds_01",
+        "decor.reeds_02",
+        "decor.reeds_03"
+      ],
+      "draw_layer": "terrain_overlay"
     }
   ],
   "notes": [
-    "water_slow is treated as passable swamp/wetland visual terrain, not as open water."
+    "water_slow is treated as passable swamp/wetland visual terrain, not as open water.",
+    "Swamp influence rules decorate nearby passable grass/dirt without changing movement, collision, or terrain grids."
   ]
 }

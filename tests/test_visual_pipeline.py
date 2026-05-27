@@ -72,6 +72,9 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
         for item in visual_objects["items"]
     )
 
+    decoration_report = _read_json(visual_output / "debug/decoration_report.json")
+    assert "swamp_influence_wet_grass" in decoration_report["summary"]["by_rule"]
+
     visual_chunks = _read_json(result.visual_chunks_path)
     assert visual_chunks["summary"]["total"] == 4
 

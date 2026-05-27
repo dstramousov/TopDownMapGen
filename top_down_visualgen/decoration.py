@@ -62,20 +62,23 @@ class DecorationMapper:
                         terrain_type=terrain_type,
                         visual_tile=visual_tile,
                         autotile_info=autotile_info,
+                        autotile_rows=autotile_rows,
+                        x=x,
+                        y=y,
                     ):
                         continue
                     chance = _int_value(rule.get("chance_percent"), 0)
                     if chance <= 0:
                         skipped_counts["chance_zero"] += 1
-                        break
+                        continue
                     roll = _stable_percent(salt, x, y, _string_value(rule.get("id"), "rule"))
                     if roll >= min(chance, 100):
                         skipped_counts["chance_miss"] += 1
-                        break
+                        continue
                     sprite_id = _choose_sprite(rule, salt, x, y)
                     if sprite_id is None:
                         skipped_counts["missing_sprite"] += 1
-                        break
+                        continue
                     item = _build_decoration_item(
                         x=x,
                         y=y,
@@ -209,6 +212,9 @@ def _rule_matches(
     terrain_type: str,
     visual_tile: str,
     autotile_info: dict[str, Any] | None,
+    autotile_rows: Sequence[Sequence[dict[str, Any] | None]],
+    x: int,
+    y: int,
 ) -> bool:
     terrain_types = _string_set(rule.get("terrain_types"))
     if terrain_types and terrain_type not in terrain_types:
@@ -234,7 +240,44 @@ def _rule_matches(
         if not any(variant.startswith(prefix) for prefix in variant_prefixes):
             return False
 
+    nearby_groups = _string_set(rule.get("nearby_autotile_groups"))
+    if nearby_groups:
+        radius = _positive_int_value(rule.get("nearby_radius"), 1)
+        if not _has_nearby_autotile_group(
+            rows=autotile_rows,
+            x=x,
+            y=y,
+            radius=radius,
+            groups=nearby_groups,
+        ):
+            return False
+
     return True
+
+
+def _has_nearby_autotile_group(
+    *,
+    rows: Sequence[Sequence[dict[str, Any] | None]],
+    x: int,
+    y: int,
+    radius: int,
+    groups: set[str],
+) -> bool:
+    if radius <= 0:
+        return False
+    y_min = max(0, y - radius)
+    y_max = min(len(rows) - 1, y + radius)
+    for ny in range(y_min, y_max + 1):
+        row = rows[ny]
+        x_min = max(0, x - radius)
+        x_max = min(len(row) - 1, x + radius)
+        for nx in range(x_min, x_max + 1):
+            if nx == x and ny == y:
+                continue
+            info = row[nx]
+            if isinstance(info, dict) and info.get("group") in groups:
+                return True
+    return False
 
 
 def _choose_sprite(rule: dict[str, Any], salt: str, x: int, y: int) -> str | None:
@@ -354,6 +397,10 @@ def _string_set(value: Any) -> set[str]:
 
 def _int_value(value: Any, default: int) -> int:
     return value if isinstance(value, int) else default
+
+
+def _positive_int_value(value: Any, default: int) -> int:
+    return value if isinstance(value, int) and value > 0 else default
 
 
 def _string_value(value: Any, default: str) -> str:
