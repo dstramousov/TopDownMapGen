@@ -400,3 +400,11 @@
 - Генератор добавляет недостающие main-path edges, чтобы `node_ids` и `edge_ids` согласованно описывали маршрут.
 - Версия проекта поднята до `0.0.48`.
 
+
+## v0.0.48 -> v0.0.49
+
+- `places.json` поднят до `places-v3` и теперь генерирует более плотный набор смысловых мест.
+- Добавлены новые типы places: `blocked_road`, `swamp_crossing`, `ruined_camp`, `small_loot_pocket`, `ambush_clearing`, `watchtower_area`, `bunker_outer_area`, `bunker_inner_area`, `secret_cache`, `dangerous_lowland` и `raised_platform_site`.
+- Целевое количество meaningful places для больших карт поднято до диапазона 8–15, без жёсткого падения на маленьких/бедных тестовых картах.
+- World graph, routes и gameplay zones теперь получают более богатую базу places и строят больше side paths/route links.
+- Версия проекта поднята до `0.0.49`.

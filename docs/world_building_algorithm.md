@@ -124,7 +124,7 @@ catalogs/object_types.json
 
 ## 9. Загрузить places и gameplay
 
-`objects/places.json` описывает микролокации: блокпосты, бункеры, руины, лагеря, завалы и другие смысловые места. Для `places-v2` consumer должен читать `bounds`, `entrances`, `danger_level`, `loot_level`, `story_role`, `encounter_type`, `object_refs`, `marker_refs`, `route_refs`, `connected_places` и `biome_tags`. Эти поля нужны не для рендера тайлов, а для построения runtime-мира, квестовых зон, encounter logic и будущего `world_graph.json`.
+`objects/places.json` описывает микролокации: блокпосты, бункеры, руины, лагеря, завалы и другие смысловые места. Для `places-v3` consumer должен читать `bounds`, `entrances`, `danger_level`, `loot_level`, `story_role`, `encounter_type`, `object_refs`, `marker_refs`, `route_refs`, `connected_places` и `biome_tags`. Эти поля нужны не для рендера тайлов, а для построения runtime-мира, квестовых зон, encounter logic и будущего `world_graph.json`.
 
 `gameplay/*.json` содержит боевую семантику:
 
