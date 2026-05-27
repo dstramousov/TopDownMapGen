@@ -81,6 +81,14 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     rule_ids = {rule["id"] for rule in decoration_rules["rules"]}
     assert "road_overgrown_patches" in rule_ids
     assert "road_influence_edge_grass" in rule_ids
+    assert "ruin_floor_rubble" in rule_ids
+    assert "ruin_wall_debris" in rule_ids
+
+    sprite_ids = set(_read_json(
+        Path("top_down_visualgen/profiles/dark_forest/visual_tilesets.json")
+    )["sprites"])
+    assert "decor.ruin_rubble_01" in sprite_ids
+    assert "decor.fallen_bricks_01" in sprite_ids
 
     visual_chunks = _read_json(result.visual_chunks_path)
     assert visual_chunks["summary"]["total"] == 4
@@ -151,10 +159,10 @@ def _write_minimal_world_package(output_dir: Path) -> None:
             "height": 4,
             "format": "type_rows",
             "rows": [
-                ["tree_blocker", "grass", "grass", "grass"],
+                ["tree_blocker", "grass", "ruin_wall_blocker", "grass"],
                 ["tree_blocker", "old_overgrown_road", "road", "grass"],
                 ["grass", "road", "water_slow", "water"],
-                ["cracked_ground", "flower_decor", "water", "goal"],
+                ["cracked_ground", "ruin_floor", "water", "goal"],
             ],
         },
     )

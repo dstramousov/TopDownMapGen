@@ -1,8 +1,8 @@
 {
-  "schema_version": "decoration-rules-v4",
+  "schema_version": "decoration-rules-v5",
   "kind": "decoration_rules",
   "enabled": true,
-  "seed_salt": "dark_forest_decoration_v3",
+  "seed_salt": "dark_forest_decoration_v5",
   "blocked_terrain": [
     "start",
     "goal",
@@ -109,6 +109,73 @@
       "draw_layer": "terrain_overlay"
     },
     {
+      "id": "ruin_floor_rubble",
+      "priority": 90,
+      "terrain_types": [
+        "ruin_floor"
+      ],
+      "chance_percent": 18,
+      "sprites": [
+        "decor.ruin_rubble_01",
+        "decor.ruin_rubble_02",
+        "decor.cracked_stone_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "ruin_floor_mossy_stones",
+      "priority": 92,
+      "terrain_types": [
+        "ruin_floor"
+      ],
+      "chance_percent": 10,
+      "sprites": [
+        "decor.mossy_stone_01",
+        "decor.cracked_stone_02"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "ruin_wall_debris",
+      "priority": 94,
+      "terrain_types": [
+        "grass",
+        "cracked_ground",
+        "ruin_floor"
+      ],
+      "nearby_terrain_types": [
+        "ruin_wall_blocker"
+      ],
+      "nearby_radius": 1,
+      "chance_percent": 14,
+      "sprites": [
+        "decor.fallen_bricks_01",
+        "decor.ruin_rubble_01",
+        "decor.broken_block_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "ruin_influence_cracked_ground",
+      "priority": 96,
+      "terrain_types": [
+        "grass",
+        "cracked_ground"
+      ],
+      "nearby_terrain_types": [
+        "ruin_floor",
+        "ruin_wall_blocker"
+      ],
+      "nearby_radius": 2,
+      "chance_percent": 5,
+      "sprites": [
+        "decor.cracked_stone_01",
+        "decor.small_stone_02",
+        "decor.mossy_stone_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
       "id": "road_influence_edge_grass",
       "priority": 70,
       "terrain_types": [
@@ -208,6 +275,7 @@
   "notes": [
     "water_slow is treated as passable swamp/wetland visual terrain, not as open water.",
     "Swamp influence rules decorate nearby passable grass/dirt without changing movement, collision, or terrain grids.",
-    "Old overgrown roads can receive sparse non-blocking visual debris and edge growth without changing traversal."
+    "Old overgrown roads can receive sparse non-blocking visual debris and edge growth without changing traversal.",
+    "Ruin decoration rules add non-blocking rubble, cracked stones, broken blocks and mossy stones on ruin floors and nearby passable terrain."
   ]
 }

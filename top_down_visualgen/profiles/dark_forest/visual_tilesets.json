@@ -571,6 +571,27 @@
     },
     "decor.broken_plank_01": {
       "debug_color": "#7a5935"
+    },
+    "decor.ruin_rubble_01": {
+      "debug_color": "#8f887c"
+    },
+    "decor.ruin_rubble_02": {
+      "debug_color": "#7a746c"
+    },
+    "decor.cracked_stone_01": {
+      "debug_color": "#a7a093"
+    },
+    "decor.cracked_stone_02": {
+      "debug_color": "#8d887f"
+    },
+    "decor.fallen_bricks_01": {
+      "debug_color": "#6f6a62"
+    },
+    "decor.broken_block_01": {
+      "debug_color": "#9b9588"
+    },
+    "decor.mossy_stone_01": {
+      "debug_color": "#6f8063"
     }
   }
 }

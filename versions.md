@@ -492,3 +492,11 @@
 - Декор теперь может появляться как на `road` autotile-группе, так и на соседней проходимой земле рядом с дорогой, не меняя collision, movement или terrain grids.
 - В debug tileset добавлены placeholder sprites для road decorations, чтобы `visual-debug` показывал заросшие дороги на пошаговом preview.
 - Версия проекта поднята до `0.0.59`.
+
+
+## v0.0.59 -> v0.0.60
+
+- `dark_forest` decoration rules получили MVP pass для руин: rubble, cracked stones, fallen bricks, broken blocks и mossy stones.
+- `DecorationMapper` научился матчить контекстные правила по соседним terrain-типам через `nearby_terrain_types` и `nearby_radius`, чтобы декорировать землю рядом со стенами/полами руин без изменения gameplay.
+- В debug tileset добавлены placeholder sprites для ruin decorations, чтобы `visual-debug` показывал руины менее техническими серыми зонами.
+- Версия проекта поднята до `0.0.60`.

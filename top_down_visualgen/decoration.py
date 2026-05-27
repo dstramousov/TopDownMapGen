@@ -63,6 +63,7 @@ class DecorationMapper:
                         visual_tile=visual_tile,
                         autotile_info=autotile_info,
                         autotile_rows=autotile_rows,
+                        terrain_rows=terrain_rows,
                         x=x,
                         y=y,
                     ):
@@ -213,6 +214,7 @@ def _rule_matches(
     visual_tile: str,
     autotile_info: dict[str, Any] | None,
     autotile_rows: Sequence[Sequence[dict[str, Any] | None]],
+    terrain_rows: Sequence[Sequence[str]],
     x: int,
     y: int,
 ) -> bool:
@@ -252,6 +254,18 @@ def _rule_matches(
         ):
             return False
 
+    nearby_terrain_types = _string_set(rule.get("nearby_terrain_types"))
+    if nearby_terrain_types:
+        radius = _positive_int_value(rule.get("nearby_radius"), 1)
+        if not _has_nearby_terrain_type(
+            rows=terrain_rows,
+            x=x,
+            y=y,
+            radius=radius,
+            terrain_types=nearby_terrain_types,
+        ):
+            return False
+
     return True
 
 
@@ -276,6 +290,30 @@ def _has_nearby_autotile_group(
                 continue
             info = row[nx]
             if isinstance(info, dict) and info.get("group") in groups:
+                return True
+    return False
+
+
+def _has_nearby_terrain_type(
+    *,
+    rows: Sequence[Sequence[str]],
+    x: int,
+    y: int,
+    radius: int,
+    terrain_types: set[str],
+) -> bool:
+    if radius <= 0:
+        return False
+    y_min = max(0, y - radius)
+    y_max = min(len(rows) - 1, y + radius)
+    for ny in range(y_min, y_max + 1):
+        row = rows[ny]
+        x_min = max(0, x - radius)
+        x_max = min(len(row) - 1, x + radius)
+        for nx in range(x_min, x_max + 1):
+            if nx == x and ny == y:
+                continue
+            if row[nx] in terrain_types:
                 return True
     return False
 
