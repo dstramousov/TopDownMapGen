@@ -5,8 +5,9 @@ set -euo pipefail
 CMD="${1:-all}"
 OUTPUT_DIR="${OUTPUT_DIR:-output}"
 CONFIG_PATH="${CONFIG_PATH:-configs/default.json}"
-VISUAL_PROFILE="${VISUAL_PROFILE:-visual_profiles/default}"
+VISUAL_PROFILE="${VISUAL_PROFILE:-top_down_visualgen/profiles/dark_forest}"
 VISUAL_OUTPUT="${VISUAL_OUTPUT:-${OUTPUT_DIR}/visual_map}"
+VISUAL_STEPS_OUTPUT="${VISUAL_STEPS_OUTPUT:-${VISUAL_OUTPUT}/debug/steps}"
 
 run_world() {
   ./c
@@ -37,12 +38,18 @@ run_visual() {
     --output "${VISUAL_OUTPUT}"
 }
 
+run_visual_debug() {
+  PYTHONPATH=. python3 bin/render_visual_pipeline_steps.py "${OUTPUT_DIR}" \
+    --profile "${VISUAL_PROFILE}" \
+    --output "${VISUAL_STEPS_OUTPUT}"
+}
+
 run_inspect() {
   python3 examples/inspect_world_package.py "${OUTPUT_DIR}"
 }
 
 run_tests() {
-  python3 -m compileall top_down_worldgen top_down_visualgen examples
+  python3 -m compileall top_down_worldgen top_down_visualgen examples bin
   PYTHONPATH=. pytest -q
 }
 
@@ -51,10 +58,12 @@ usage() {
 Usage: ./r [command]
 
 Commands:
-  all      Clean, generate world, render world preview, build visual map (default)
+  all      Clean, generate world, render previews and build visual map (default)
   world    Clean and generate world package only
   preview  Render debug world preview from existing output
   visual   Build visual_tileset output from existing output/map_package
+  visual-debug
+           Render visual pipeline step PNGs from existing output/map_package
   inspect  Inspect existing world package
   test     Run compileall and pytest
   help     Show this help
@@ -64,6 +73,7 @@ Environment overrides:
   OUTPUT_DIR=...
   VISUAL_PROFILE=...
   VISUAL_OUTPUT=...
+  VISUAL_STEPS_OUTPUT=...
 EOF
 }
 
@@ -72,6 +82,7 @@ case "${CMD}" in
     run_world
     run_preview
     run_visual
+    run_visual_debug
     ;;
   world)
     run_world
@@ -81,6 +92,9 @@ case "${CMD}" in
     ;;
   visual)
     run_visual
+    ;;
+  visual-debug)
+    run_visual_debug
     ;;
   inspect)
     run_inspect

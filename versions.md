@@ -443,3 +443,11 @@
 - Добавлен CLI visual pipeline, который создаёт `output/visual_map/visual_map.json`, `visual_layers.json`, `visual_objects.json`, `visual_chunks.json` и `preview.png`.
 - `./r` переведён на команды `all`, `world`, `preview`, `visual`, `inspect`, `test`; дефолтный запуск теперь делает world package, world preview и visual map.
 - Версия проекта поднята до `0.0.53`.
+
+## v0.0.53 -> v0.0.54
+
+- Visual profile `default` переименован в `dark_forest` и перенесён внутрь пакета `top_down_visualgen/profiles/dark_forest`, чтобы visual rules жили рядом с visual pipeline, но отдельно от кода.
+- CLI visual pipeline и helper `./r` теперь по умолчанию используют `top_down_visualgen/profiles/dark_forest`.
+- Добавлена dev-утилита `bin/render_visual_pipeline_steps.py`, которая рендерит пошаговые PNG visual pipeline в `output/visual_map/debug/steps/`.
+- `./r` получил команду `visual-debug`, а дефолтный `./r all` теперь строит world preview, visual map и step debug previews.
+- Версия проекта поднята до `0.0.54`.

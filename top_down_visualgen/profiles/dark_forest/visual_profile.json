@@ -1,7 +1,7 @@
 {
   "schema_version": "visual-profile-v1",
-  "id": "default",
-  "name": "Default debug visual profile",
+  "id": "dark_forest",
+  "name": "Dark Forest",
   "tile_size_px": 16,
   "draw_layer_order": {
     "terrain": 0,
@@ -14,5 +14,6 @@
   },
   "notes": [
     "MVP profile for visual_tileset_pipeline contract tests and debug preview."
-  ]
+  ],
+  "description": "Dark forest visual profile for dense top-down forest maps."
 }

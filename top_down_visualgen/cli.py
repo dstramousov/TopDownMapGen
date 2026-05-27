@@ -27,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--profile",
         type=Path,
-        default=Path("visual_profiles/default"),
+        default=Path("top_down_visualgen/profiles/dark_forest"),
         help="Visual profile directory.",
     )
     parser.add_argument(

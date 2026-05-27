@@ -1,0 +1,450 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any
+
+from PIL import Image, ImageDraw
+
+from .models import VisualProfile, WorldPackage
+from .object_mapper import ObjectVisualMapper
+from .terrain_mapper import TerrainVisualMapper
+
+
+class VisualPipelineStepRenderer:
+    """Render diagnostic images for visual pipeline stages."""
+
+    def __init__(
+        self,
+        *,
+        terrain_mapper: TerrainVisualMapper | None = None,
+        object_mapper: ObjectVisualMapper | None = None,
+    ) -> None:
+        """Initialize the step renderer.
+
+        Args:
+            terrain_mapper: Optional terrain mapper.
+            object_mapper: Optional object mapper.
+        """
+        self._terrain_mapper = terrain_mapper or TerrainVisualMapper()
+        self._object_mapper = object_mapper or ObjectVisualMapper()
+
+    def render_steps(
+        self,
+        *,
+        world: WorldPackage,
+        profile: VisualProfile,
+        output_dir: Path,
+        tile_size_px: int | None = None,
+    ) -> list[Path]:
+        """Render visual pipeline step images.
+
+        Args:
+            world: Loaded world package.
+            profile: Loaded visual profile.
+            output_dir: Directory for step PNG files.
+            tile_size_px: Optional debug tile size override.
+
+        Returns:
+            List of generated image paths.
+        """
+        terrain_rows = _terrain_rows(world.terrain)
+        visual_layers = self._terrain_mapper.map_terrain(world, profile)
+        debug = visual_layers.get("debug")
+        autotile_rows = _autotile_rows(debug)
+        visual_objects = self._object_mapper.map_objects(world, profile)
+        tile_size = tile_size_px or _tile_size_px(world.index, profile)
+        tile_size = max(1, tile_size)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        generated = [
+            self._render_terrain_step(
+                terrain_rows=terrain_rows,
+                profile=profile,
+                output_path=output_dir / "00_world_terrain.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_base_tile_step(
+                terrain_rows=terrain_rows,
+                profile=profile,
+                output_path=output_dir / "01_base_visual_tiles.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_autotile_step(
+                visual_layers=visual_layers,
+                autotile_rows=autotile_rows,
+                group_id="road",
+                profile=profile,
+                output_path=output_dir / "02_road_autotile.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_autotile_step(
+                visual_layers=visual_layers,
+                autotile_rows=autotile_rows,
+                group_id="water",
+                profile=profile,
+                output_path=output_dir / "03_water_autotile.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_autotile_step(
+                visual_layers=visual_layers,
+                autotile_rows=autotile_rows,
+                group_id="forest",
+                profile=profile,
+                output_path=output_dir / "04_forest_autotile.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_objects_step(
+                visual_layers=visual_layers,
+                visual_objects=visual_objects,
+                profile=profile,
+                output_path=output_dir / "05_objects.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_final_step(
+                visual_layers=visual_layers,
+                visual_objects=visual_objects,
+                profile=profile,
+                output_path=output_dir / "06_final_preview.png",
+                tile_size_px=tile_size,
+            ),
+        ]
+        return generated
+
+    def _render_terrain_step(
+        self,
+        *,
+        terrain_rows: list[list[str]],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        terrain_to_tile = _terrain_to_tile(profile)
+        tile_colors = _tile_colors(profile)
+        rows = [
+            [terrain_to_tile.get(terrain_type, "terrain.unknown") for terrain_type in row]
+            for row in terrain_rows
+        ]
+        _render_tile_rows(
+            rows=rows,
+            tile_colors=tile_colors,
+            output_path=output_path,
+            tile_size_px=tile_size_px,
+        )
+        return output_path
+
+    def _render_base_tile_step(
+        self,
+        *,
+        terrain_rows: list[list[str]],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        terrain_to_tile = _terrain_to_tile(profile)
+        default_tile = _string_value(
+            profile.terrain_rules.get("default_tile"),
+            "terrain.unknown",
+        )
+        rows = [
+            [terrain_to_tile.get(terrain_type, default_tile) for terrain_type in row]
+            for row in terrain_rows
+        ]
+        _render_tile_rows(
+            rows=rows,
+            tile_colors=_tile_colors(profile),
+            output_path=output_path,
+            tile_size_px=tile_size_px,
+        )
+        return output_path
+
+    def _render_autotile_step(
+        self,
+        *,
+        visual_layers: dict[str, Any],
+        autotile_rows: list[list[dict[str, Any] | None]],
+        group_id: str,
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        rows = _visual_rows(visual_layers)
+        muted_rows = [["debug.muted" for _ in row] for row in rows]
+        for y, row in enumerate(autotile_rows):
+            for x, info in enumerate(row):
+                if isinstance(info, dict) and info.get("group") == group_id:
+                    muted_rows[y][x] = _string_value(info.get("tile_id"), "terrain.unknown")
+        colors = {**_tile_colors(profile), "debug.muted": "#1b1b1b"}
+        _render_tile_rows(
+            rows=muted_rows,
+            tile_colors=colors,
+            output_path=output_path,
+            tile_size_px=tile_size_px,
+        )
+        return output_path
+
+    def _render_objects_step(
+        self,
+        *,
+        visual_layers: dict[str, Any],
+        visual_objects: dict[str, Any],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        rows = _visual_rows(visual_layers)
+        image, draw = _new_tile_image(
+            width=len(rows[0]),
+            height=len(rows),
+            tile_size_px=tile_size_px,
+            background="#1b1b1b",
+        )
+        _draw_tile_rows(
+            draw=draw,
+            rows=rows,
+            tile_colors=_dimmed_tile_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        _draw_object_anchors(
+            draw=draw,
+            visual_objects=visual_objects,
+            sprite_colors=_sprite_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(output_path)
+        return output_path
+
+    def _render_final_step(
+        self,
+        *,
+        visual_layers: dict[str, Any],
+        visual_objects: dict[str, Any],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        rows = _visual_rows(visual_layers)
+        image, draw = _new_tile_image(
+            width=len(rows[0]),
+            height=len(rows),
+            tile_size_px=tile_size_px,
+            background="#000000",
+        )
+        _draw_tile_rows(
+            draw=draw,
+            rows=rows,
+            tile_colors=_tile_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        _draw_object_anchors(
+            draw=draw,
+            visual_objects=visual_objects,
+            sprite_colors=_sprite_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(output_path)
+        return output_path
+
+
+def _terrain_rows(terrain: dict[str, Any]) -> list[list[str]]:
+    rows = terrain.get("rows")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("Terrain layer must contain non-empty rows")
+    result: list[list[str]] = []
+    width: int | None = None
+    for row_index, row in enumerate(rows):
+        if not isinstance(row, list) or not all(isinstance(item, str) for item in row):
+            raise ValueError(f"Terrain row {row_index} must be a list of strings")
+        if width is None:
+            width = len(row)
+        elif len(row) != width:
+            raise ValueError("Terrain rows must have equal width")
+        result.append(list(row))
+    return result
+
+
+def _autotile_rows(debug: Any) -> list[list[dict[str, Any] | None]]:
+    if not isinstance(debug, dict):
+        return []
+    rows = debug.get("autotile_masks")
+    if not isinstance(rows, list):
+        return []
+    result: list[list[dict[str, Any] | None]] = []
+    for row in rows:
+        if not isinstance(row, list):
+            continue
+        result.append([item if isinstance(item, dict) else None for item in row])
+    return result
+
+
+def _visual_rows(visual_layers: dict[str, Any]) -> list[list[str]]:
+    layers = visual_layers.get("layers")
+    if not isinstance(layers, list):
+        raise ValueError("visual_layers.layers must be a list")
+    for layer in layers:
+        if isinstance(layer, dict) and layer.get("id") == "terrain_base":
+            rows = layer.get("rows")
+            if isinstance(rows, list) and rows:
+                return [[str(item) for item in row] for row in rows if isinstance(row, list)]
+    raise ValueError("Missing terrain_base visual layer")
+
+
+def _terrain_to_tile(profile: VisualProfile) -> dict[str, str]:
+    raw_mapping = profile.terrain_rules.get("terrain_to_tile", {})
+    if not isinstance(raw_mapping, dict):
+        return {}
+    return {
+        key: value
+        for key, value in raw_mapping.items()
+        if isinstance(key, str) and isinstance(value, str)
+    }
+
+
+def _tile_size_px(index: dict[str, Any], profile: VisualProfile) -> int:
+    profile_tile_size = profile.profile.get("tile_size_px")
+    if isinstance(profile_tile_size, int) and profile_tile_size > 0:
+        return profile_tile_size
+    dimensions = index.get("dimensions")
+    if isinstance(dimensions, dict):
+        tile_size = dimensions.get("tile_size_px")
+        if isinstance(tile_size, int) and tile_size > 0:
+            return tile_size
+    return 16
+
+
+def _tile_colors(profile: VisualProfile) -> dict[str, str]:
+    return _colors_from_section(profile.tilesets, "tiles")
+
+
+
+def _dimmed_tile_colors(profile: VisualProfile) -> dict[str, str]:
+    result = dict(_tile_colors(profile))
+    for key in result:
+        result[key] = _dim_color(result[key], 0.45)
+    return result
+
+
+def _sprite_colors(profile: VisualProfile) -> dict[str, str]:
+    return _colors_from_section(profile.tilesets, "sprites")
+
+
+def _colors_from_section(tilesets: dict[str, Any], section_name: str) -> dict[str, str]:
+    section = tilesets.get(section_name, {})
+    if not isinstance(section, dict):
+        return {}
+    result: dict[str, str] = {}
+    for item_id, item in section.items():
+        if not isinstance(item_id, str) or not isinstance(item, dict):
+            continue
+        color = item.get("debug_color")
+        if isinstance(color, str) and color.startswith("#"):
+            result[item_id] = color
+    return result
+
+
+def _render_tile_rows(
+    *,
+    rows: Sequence[Sequence[str]],
+    tile_colors: dict[str, str],
+    output_path: Path,
+    tile_size_px: int,
+) -> None:
+    image, draw = _new_tile_image(
+        width=len(rows[0]) if rows else 0,
+        height=len(rows),
+        tile_size_px=tile_size_px,
+        background="#000000",
+    )
+    _draw_tile_rows(
+        draw=draw,
+        rows=rows,
+        tile_colors=tile_colors,
+        tile_size_px=tile_size_px,
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output_path)
+
+
+def _new_tile_image(
+    *,
+    width: int,
+    height: int,
+    tile_size_px: int,
+    background: str,
+) -> tuple[Image.Image, ImageDraw.ImageDraw]:
+    if width <= 0 or height <= 0:
+        raise ValueError("Step render dimensions must be positive")
+    image = Image.new("RGB", (width * tile_size_px, height * tile_size_px), background)
+    return image, ImageDraw.Draw(image)
+
+
+def _draw_tile_rows(
+    *,
+    draw: ImageDraw.ImageDraw,
+    rows: Sequence[Sequence[str]],
+    tile_colors: dict[str, str],
+    tile_size_px: int,
+) -> None:
+    for y, row in enumerate(rows):
+        for x, tile_id in enumerate(row):
+            color = tile_colors.get(str(tile_id), tile_colors.get("terrain.unknown", "#ff00ff"))
+            draw.rectangle(_tile_rect(x, y, tile_size_px), fill=color)
+
+
+def _draw_object_anchors(
+    *,
+    draw: ImageDraw.ImageDraw,
+    visual_objects: dict[str, Any],
+    sprite_colors: dict[str, str],
+    tile_size_px: int,
+) -> None:
+    items = visual_objects.get("items", [])
+    if not isinstance(items, list):
+        return
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        position = item.get("position")
+        if not isinstance(position, dict):
+            continue
+        x = position.get("x")
+        y = position.get("y")
+        if not isinstance(x, int) or not isinstance(y, int):
+            continue
+        sprite_id = _string_value(item.get("sprite_id"), "object.generic")
+        color = sprite_colors.get(sprite_id, sprite_colors.get("object.generic", "#ffffff"))
+        margin = max(1, tile_size_px // 4)
+        draw.ellipse(
+            (
+                x * tile_size_px + margin,
+                y * tile_size_px + margin,
+                (x + 1) * tile_size_px - margin,
+                (y + 1) * tile_size_px - margin,
+            ),
+            fill=color,
+            outline="#000000",
+        )
+
+
+def _tile_rect(x: int, y: int, tile_size_px: int) -> tuple[int, int, int, int]:
+    return (
+        x * tile_size_px,
+        y * tile_size_px,
+        (x + 1) * tile_size_px - 1,
+        (y + 1) * tile_size_px - 1,
+    )
+
+
+def _dim_color(color: str, factor: float) -> str:
+    if len(color) != 7 or not color.startswith("#"):
+        return color
+    red = int(color[1:3], 16)
+    green = int(color[3:5], 16)
+    blue = int(color[5:7], 16)
+    return f"#{int(red * factor):02x}{int(green * factor):02x}{int(blue * factor):02x}"
+
+
+def _string_value(value: Any, default: str) -> str:
+    return value if isinstance(value, str) and value else default

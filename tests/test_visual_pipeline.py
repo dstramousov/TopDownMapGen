@@ -15,7 +15,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
 
     result = VisualPipeline().run(
         input_dir=output_dir,
-        profile_dir=Path("visual_profiles/default"),
+        profile_dir=Path("top_down_visualgen/profiles/dark_forest"),
         output_dir=visual_output,
         preview=True,
         preview_tile_size_px=2,
@@ -52,6 +52,37 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
 
     visual_chunks = _read_json(result.visual_chunks_path)
     assert visual_chunks["summary"]["total"] == 4
+
+
+def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
+    """Visual step renderer writes diagnostic PNGs."""
+    output_dir = tmp_path / "output"
+    _write_minimal_world_package(output_dir)
+    steps_output = output_dir / "visual_map" / "debug" / "steps"
+
+    from top_down_visualgen.package_loader import WorldPackageLoader
+    from top_down_visualgen.profile_loader import VisualProfileLoader
+    from top_down_visualgen.step_renderer import VisualPipelineStepRenderer
+
+    world = WorldPackageLoader().load(output_dir)
+    profile = VisualProfileLoader().load(Path("top_down_visualgen/profiles/dark_forest"))
+    paths = VisualPipelineStepRenderer().render_steps(
+        world=world,
+        profile=profile,
+        output_dir=steps_output,
+        tile_size_px=2,
+    )
+
+    assert [path.name for path in paths] == [
+        "00_world_terrain.png",
+        "01_base_visual_tiles.png",
+        "02_road_autotile.png",
+        "03_water_autotile.png",
+        "04_forest_autotile.png",
+        "05_objects.png",
+        "06_final_preview.png",
+    ]
+    assert all(path.exists() for path in paths)
 
 
 def _write_minimal_world_package(output_dir: Path) -> None:
