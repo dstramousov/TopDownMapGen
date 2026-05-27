@@ -418,7 +418,7 @@ Non-critical quality violations caused by aggressive tuning are reported as warn
 ### World graph
 
 `world_graph.json` is the semantic graph of the map package. It links places and markers into a world-level structure.
-It is intended for pacing, routing, encounter planning, and debugging. It is not a tile-level pathfinding grid.
+It is intended for pacing, routing, encounter planning, and debugging. It is not a tile-level pathfinding grid. Starting with `world-graph-v2`, consumers can also use `quality`, anchored `side_paths`, denser place edges, and meaningful-place-only `dead_ends`.
 
 ## `routes.json`
 

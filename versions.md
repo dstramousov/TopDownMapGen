@@ -408,3 +408,13 @@
 - Целевое количество meaningful places для больших карт поднято до диапазона 8–15, без жёсткого падения на маленьких/бедных тестовых картах.
 - World graph, routes и gameplay zones теперь получают более богатую базу places и строят больше side paths/route links.
 - Версия проекта поднята до `0.0.49`.
+
+## v0.0.49 -> v0.0.50
+
+- `world_graph.json` поднят до `world-graph-v2` и теперь строит более плотный смысловой граф на основе meaningful places.
+- Добавлены proximity edges между близкими places, чтобы граф меньше походил на формальный список точек.
+- `side_paths` теперь имеют anchor node, edge ids и cost, а не просто одиночный target place.
+- `dead_ends` теперь считаются только для meaningful places, а не для всех markers, поэтому статистика больше не заваливается мусорными marker leafs.
+- `secret_areas` теперь строятся из secret/cache/high-loot places и релевантных marker nodes.
+- `world_graph.summary` получил показатели meaningful place coverage и quality status для внешних consumer-ов.
+- Версия проекта поднята до `0.0.50`.

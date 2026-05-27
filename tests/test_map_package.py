@@ -89,7 +89,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
     )
 
-    assert package_index["schema_version"] == "map-package-map-v10"
+    assert package_index["schema_version"] == "map-package-map-v11"
     assert package_index["dimensions"]["width_tiles"] == 2
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
@@ -123,7 +123,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert markers["schema_version"] == "markers-v1"
     assert [item["type"] for item in markers["items"]] == ["start", "goal"]
     assert runtime_grids["schema_version"] == "runtime-grids-v1"
-    assert world_graph["schema_version"] == "world-graph-v1"
+    assert world_graph["schema_version"] == "world-graph-v2"
     assert [node["type"] for node in world_graph["nodes"]] == ["start", "goal"]
     assert world_graph["main_path"]["node_ids"] == ["marker:start", "marker:goal"]
     assert routes["schema_version"] == "routes-v1"

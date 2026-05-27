@@ -166,7 +166,7 @@ A game may load these grids directly instead of deriving them from terrain, obje
 ## `map_package/world_graph.json`
 
 `map_package/world_graph.json` contains the semantic graph of the generated world.
-It is a higher-level navigation and pacing contract built from places and markers.
+It is a higher-level navigation and pacing contract built from places and markers. Starting with `world-graph-v2`, it also adds proximity links between meaningful places, explicit side path anchors, graph quality metadata, and dead ends limited to meaningful place nodes.
 It contains:
 
 - `nodes`: semantic places and important markers such as start/goal.
@@ -174,7 +174,8 @@ It contains:
 - `main_path`: approximate start-to-goal semantic route.
 - `side_paths`: optional branches through non-main places.
 - `dead_ends`: low-degree nodes that can become loot/story branches.
-- `secret_areas`: places marked or inferred as high-reward/secret areas.
+- `secret_areas`: places or markers marked or inferred as high-reward/secret areas.
+- `quality`: compact graph health summary for external consumers.
 
 Use `runtime_grids.json` for exact movement/pathfinding and `world_graph.json` for world structure.
 

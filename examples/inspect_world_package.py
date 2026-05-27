@@ -107,6 +107,10 @@ class InspectionReport:
         world_graph_node_count: Number of semantic world graph nodes.
         world_graph_edge_count: Number of semantic world graph edges.
         world_graph_main_path_length: Number of nodes in the main semantic path.
+        world_graph_side_path_count: Number of side paths in the semantic graph.
+        world_graph_dead_end_count: Number of meaningful dead ends in the semantic graph.
+        world_graph_secret_area_count: Number of secret areas in the semantic graph.
+        world_graph_quality_status: World graph quality status.
         route_count: Number of semantic routes.
         route_type_counts: Per-route-type counts.
         gameplay_zone_count: Number of neutral gameplay zones.
@@ -153,6 +157,10 @@ class InspectionReport:
     world_graph_node_count: int
     world_graph_edge_count: int
     world_graph_main_path_length: int
+    world_graph_side_path_count: int
+    world_graph_dead_end_count: int
+    world_graph_secret_area_count: int
+    world_graph_quality_status: str
     route_count: int
     route_type_counts: dict[str, int]
     gameplay_zone_count: int
@@ -330,6 +338,13 @@ def inspect_world_package(path: Path) -> InspectionReport:
         world_graph_main_path_length=len(
             _optional_list(_optional_object(world_graph.get("main_path")).get("node_ids")),
         ),
+        world_graph_side_path_count=len(_optional_list(world_graph.get("side_paths"))),
+        world_graph_dead_end_count=len(_optional_list(world_graph.get("dead_ends"))),
+        world_graph_secret_area_count=len(_optional_list(world_graph.get("secret_areas"))),
+        world_graph_quality_status=_optional_str(
+            _optional_object(world_graph.get("quality")).get("status"),
+            "unknown",
+        ),
         route_count=len(route_items),
         route_type_counts=_count_by_key(route_items, "type"),
         gameplay_zone_count=len(gameplay_zone_items),
@@ -467,10 +482,15 @@ def print_report(report: InspectionReport) -> None:
     LOGGER.info("- markers: OK, count=%s", report.marker_count)
     LOGGER.info("- runtime_grids: OK, grids=%s", report.runtime_grid_count)
     LOGGER.info(
-        "- world_graph: OK, nodes=%s, edges=%s, main_path_nodes=%s",
+        "- world_graph: OK, nodes=%s, edges=%s, main_path_nodes=%s, "
+        "side_paths=%s, dead_ends=%s, secret_areas=%s, quality=%s",
         report.world_graph_node_count,
         report.world_graph_edge_count,
         report.world_graph_main_path_length,
+        report.world_graph_side_path_count,
+        report.world_graph_dead_end_count,
+        report.world_graph_secret_area_count,
+        report.world_graph_quality_status,
     )
     LOGGER.info(
         "- routes: OK, total=%s, types=%s",

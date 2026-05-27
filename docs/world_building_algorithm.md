@@ -223,7 +223,7 @@ Use `map_package/markers.json` for start, goal, loot, story, point-of-interest, 
 
 After loading markers, runtime grids, and places, a consumer may load `map_package/world_graph.json`.
 This file is not a replacement for pathfinding. It describes the intended semantic structure of the world:
-main route, side branches, dead ends, and secret/high-reward areas.
+main route, side branches, meaningful dead ends, graph quality, and secret/high-reward areas.
 
 Recommended usage:
 

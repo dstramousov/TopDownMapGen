@@ -377,7 +377,7 @@ def _build_world_graph(
     width: int,
     height: int,
 ) -> dict[str, Any]:
-    """Build a compact graph of semantic world locations.
+    """Build a semantic world graph from places and markers.
 
     Args:
         points: Primary map points extracted from the tile grid.
@@ -402,8 +402,7 @@ def _build_world_graph(
         nodes.append(node)
         place_nodes[node["id"]] = node
 
-    marker_items = _list(markers.get("items"))
-    for marker in marker_items:
+    for marker in _list(markers.get("items")):
         if not isinstance(marker, dict):
             continue
         node = _world_graph_marker_node(marker)
@@ -414,25 +413,22 @@ def _build_world_graph(
 
     edges: list[dict[str, Any]] = []
     edge_keys: set[tuple[str, str, str]] = set()
-    for place in places:
-        if not isinstance(place, dict):
-            continue
-        source = place.get("id")
-        if not isinstance(source, str) or source not in place_nodes:
-            continue
-        for target in _string_list(place.get("connected_places")):
-            if target not in place_nodes:
-                continue
-            _append_world_graph_edge(
-                edges=edges,
-                edge_keys=edge_keys,
-                source=source,
-                target=target,
-                edge_type="place_connection",
-                nodes_by_id=place_nodes,
-            )
+    nodes_by_id = {**place_nodes, **marker_nodes}
 
-    all_place_nodes = list(place_nodes.values())
+    _append_declared_place_edges(
+        edges=edges,
+        edge_keys=edge_keys,
+        places=places,
+        place_nodes=place_nodes,
+    )
+    _append_proximity_place_edges(
+        edges=edges,
+        edge_keys=edge_keys,
+        place_nodes=place_nodes,
+        width=width,
+        height=height,
+    )
+
     start_id = _nearest_marker_node_id(
         marker_nodes,
         marker_type="start",
@@ -443,45 +439,42 @@ def _build_world_graph(
         marker_type="goal",
         fallback=points.get("goal"),
     )
-    if start_id is not None and all_place_nodes:
-        nearest = _nearest_node(marker_nodes[start_id], all_place_nodes)
-        if nearest is not None:
-            _append_world_graph_edge(
-                edges=edges,
-                edge_keys=edge_keys,
-                source=start_id,
-                target=nearest["id"],
-                edge_type="start_connection",
-                nodes_by_id={**place_nodes, **marker_nodes},
-            )
-    if goal_id is not None and all_place_nodes:
-        nearest = _nearest_node(marker_nodes[goal_id], all_place_nodes)
-        if nearest is not None:
-            _append_world_graph_edge(
-                edges=edges,
-                edge_keys=edge_keys,
-                source=nearest["id"],
-                target=goal_id,
-                edge_type="goal_connection",
-                nodes_by_id={**place_nodes, **marker_nodes},
-            )
+    _append_endpoint_edges(
+        edges=edges,
+        edge_keys=edge_keys,
+        place_nodes=place_nodes,
+        marker_nodes=marker_nodes,
+        start_id=start_id,
+        goal_id=goal_id,
+    )
 
-    node_ids = [node["id"] for node in nodes]
     main_path = _build_main_path(
         start_id=start_id,
         goal_id=goal_id,
         place_nodes=place_nodes,
         marker_nodes=marker_nodes,
         edges=edges,
+        edge_keys=edge_keys,
     )
     main_path_nodes = set(_string_list(main_path.get("node_ids")))
-    side_paths = _build_side_paths(place_nodes=place_nodes, main_path_nodes=main_path_nodes)
-    dead_ends = _build_dead_ends(edges=edges, node_ids=node_ids, main_path_nodes=main_path_nodes)
-    secret_areas = _build_secret_areas(place_nodes=place_nodes)
+    side_paths = _build_side_paths(
+        place_nodes=place_nodes,
+        marker_nodes=marker_nodes,
+        main_path_nodes=main_path_nodes,
+        edges=edges,
+        edge_keys=edge_keys,
+    )
+    dead_ends = _build_dead_ends(
+        edges=edges,
+        place_nodes=place_nodes,
+        main_path_nodes=main_path_nodes,
+    )
+    secret_areas = _build_secret_areas(place_nodes=place_nodes, marker_nodes=marker_nodes)
 
     return {
         "schema_version": WORLD_GRAPH_SCHEMA_VERSION,
         "kind": "world_graph",
+        "graph_version": "v2",
         "coordinate_space": "tile",
         "width": width,
         "height": height,
@@ -496,13 +489,24 @@ def _build_world_graph(
             "edge_count": len(edges),
             "place_node_count": len(place_nodes),
             "marker_node_count": len(marker_nodes),
+            "meaningful_place_count": len(place_nodes),
+            "main_path_node_count": len(_string_list(main_path.get("node_ids"))),
             "side_path_count": len(side_paths),
             "dead_end_count": len(dead_ends),
             "secret_area_count": len(secret_areas),
         },
+        "quality": _world_graph_quality_summary(
+            place_nodes=place_nodes,
+            edges=edges,
+            side_paths=side_paths,
+            dead_ends=dead_ends,
+            secret_areas=secret_areas,
+            main_path=main_path,
+        ),
         "notes": [
             "This graph is a semantic world/navigation contract, not a pathfinding grid.",
             "Edges describe intended location connectivity; use runtime grids for exact movement.",
+            "World graph v2 derives proximity and branch edges from meaningful places.",
         ],
     }
 
@@ -1197,6 +1201,132 @@ def _nearest_node(
     return min(candidates, key=lambda node: _node_distance(source, node))
 
 
+def _append_declared_place_edges(
+    *,
+    edges: list[dict[str, Any]],
+    edge_keys: set[tuple[str, str, str]],
+    places: list[Any],
+    place_nodes: dict[str, dict[str, Any]],
+) -> None:
+    """Append edges explicitly declared by places."""
+    for place in places:
+        if not isinstance(place, dict):
+            continue
+        source = place.get("id")
+        if not isinstance(source, str) or source not in place_nodes:
+            continue
+        for target in _string_list(place.get("connected_places")):
+            if target not in place_nodes:
+                continue
+            _append_world_graph_edge(
+                edges=edges,
+                edge_keys=edge_keys,
+                source=source,
+                target=target,
+                edge_type="place_connection",
+                nodes_by_id=place_nodes,
+            )
+
+
+def _append_proximity_place_edges(
+    *,
+    edges: list[dict[str, Any]],
+    edge_keys: set[tuple[str, str, str]],
+    place_nodes: dict[str, dict[str, Any]],
+    width: int,
+    height: int,
+) -> None:
+    """Append semantic place edges based on nearest-neighbour proximity."""
+    nodes_by_id = dict(place_nodes)
+    nodes = list(place_nodes.values())
+    if len(nodes) < 2:
+        return
+    distance_limit = max(24, (width + height) // 4)
+    target_degree = 2 if len(nodes) >= 6 else 1
+    degree: dict[str, int] = {node["id"]: 0 for node in nodes if isinstance(node.get("id"), str)}
+
+    for node in sorted(nodes, key=lambda item: str(item.get("id"))):
+        node_id = node.get("id")
+        if not isinstance(node_id, str):
+            continue
+        candidates = sorted(
+            (
+                candidate
+                for candidate in nodes
+                if candidate is not node and isinstance(candidate.get("id"), str)
+            ),
+            key=lambda candidate: _node_distance(node, candidate),
+        )
+        for candidate in candidates:
+            target_id = candidate.get("id")
+            if not isinstance(target_id, str):
+                continue
+            if degree.get(node_id, 0) >= target_degree:
+                break
+            if degree.get(target_id, 0) >= target_degree + 1:
+                continue
+            distance = _node_distance(node, candidate)
+            if distance > distance_limit and degree.get(node_id, 0) > 0:
+                continue
+            before = len(edges)
+            _append_world_graph_edge(
+                edges=edges,
+                edge_keys=edge_keys,
+                source=node_id,
+                target=target_id,
+                edge_type="proximity_connection",
+                nodes_by_id=nodes_by_id,
+            )
+            if len(edges) > before:
+                degree[node_id] = degree.get(node_id, 0) + 1
+                degree[target_id] = degree.get(target_id, 0) + 1
+
+
+def _append_endpoint_edges(
+    *,
+    edges: list[dict[str, Any]],
+    edge_keys: set[tuple[str, str, str]],
+    place_nodes: dict[str, dict[str, Any]],
+    marker_nodes: dict[str, dict[str, Any]],
+    start_id: str | None,
+    goal_id: str | None,
+) -> None:
+    """Connect start and goal markers to nearby semantic places."""
+    all_place_nodes = list(place_nodes.values())
+    nodes_by_id = {**place_nodes, **marker_nodes}
+    if start_id is not None and all_place_nodes:
+        nearest = _nearest_node(marker_nodes[start_id], all_place_nodes)
+        if nearest is not None:
+            _append_world_graph_edge(
+                edges=edges,
+                edge_keys=edge_keys,
+                source=start_id,
+                target=nearest["id"],
+                edge_type="start_connection",
+                nodes_by_id=nodes_by_id,
+            )
+    if goal_id is not None and all_place_nodes:
+        nearest = _nearest_node(marker_nodes[goal_id], all_place_nodes)
+        if nearest is not None:
+            _append_world_graph_edge(
+                edges=edges,
+                edge_keys=edge_keys,
+                source=nearest["id"],
+                target=goal_id,
+                edge_type="goal_connection",
+                nodes_by_id=nodes_by_id,
+            )
+    if start_id is not None and goal_id is not None and not all_place_nodes:
+        _append_world_graph_edge(
+            edges=edges,
+            edge_keys=edge_keys,
+            source=start_id,
+            target=goal_id,
+            edge_type="direct_start_goal_connection",
+            nodes_by_id=nodes_by_id,
+        )
+
+
 def _build_main_path(
     *,
     start_id: str | None,
@@ -1204,33 +1334,28 @@ def _build_main_path(
     place_nodes: dict[str, dict[str, Any]],
     marker_nodes: dict[str, dict[str, Any]],
     edges: list[dict[str, Any]],
+    edge_keys: set[tuple[str, str, str]],
 ) -> dict[str, Any]:
+    """Build a complete semantic main path and ensure its edges exist."""
     nodes_by_id = {**place_nodes, **marker_nodes}
     if start_id is None or goal_id is None:
         return {"node_ids": [], "edge_ids": [], "complete": False}
-    ordered_places = sorted(
-        place_nodes.values(),
-        key=lambda node: _node_distance(nodes_by_id[start_id], node),
+
+    start_node = nodes_by_id[start_id]
+    goal_node = nodes_by_id[goal_id]
+    main_places = _main_path_place_nodes(
+        start_node=start_node,
+        goal_node=goal_node,
+        place_nodes=place_nodes,
     )
-    if ordered_places:
-        midpoint_goal = nodes_by_id[goal_id]
-        ordered_places = sorted(
-            ordered_places,
-            key=lambda node: (
-                _node_distance(nodes_by_id[start_id], node)
-                + _node_distance(node, midpoint_goal)
-            ),
-        )
-        # Keep the path compact: start, up to three semantic places, goal.
-        node_ids = [start_id, *[node["id"] for node in ordered_places[:3]], goal_id]
-    else:
-        node_ids = [start_id, goal_id]
+    node_ids = [start_id, *[node["id"] for node in main_places], goal_id]
+
     for source, target in zip(node_ids, node_ids[1:], strict=False):
         if _find_edge_id(edges=edges, source=source, target=target) is not None:
             continue
         _append_world_graph_edge(
             edges=edges,
-            edge_keys=set(),
+            edge_keys=edge_keys,
             source=source,
             target=target,
             edge_type="main_path_connection",
@@ -1248,6 +1373,64 @@ def _build_main_path(
         ),
         "description": "Approximate intended semantic route through key places.",
     }
+
+
+def _main_path_place_nodes(
+    *,
+    start_node: dict[str, Any],
+    goal_node: dict[str, Any],
+    place_nodes: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Select meaningful places ordered along the start-goal corridor."""
+    places = list(place_nodes.values())
+    if not places:
+        return []
+    max_count = min(5, max(3, len(places) // 3))
+    scored = sorted(
+        places,
+        key=lambda node: (
+            _main_path_place_score(start_node=start_node, goal_node=goal_node, node=node),
+            -_safe_float(node.get("danger_level")),
+            -_safe_float(node.get("loot_level")),
+            str(node.get("id")),
+        ),
+    )
+    selected = scored[:max_count]
+    return sorted(
+        selected,
+        key=lambda node: _node_projection(start_node=start_node, goal_node=goal_node, node=node),
+    )
+
+
+def _main_path_place_score(
+    *,
+    start_node: dict[str, Any],
+    goal_node: dict[str, Any],
+    node: dict[str, Any],
+) -> float:
+    direct = max(1, _node_distance(start_node, goal_node))
+    detour = _node_distance(start_node, node) + _node_distance(node, goal_node) - direct
+    projection = _node_projection(start_node=start_node, goal_node=goal_node, node=node)
+    corridor_penalty = 0.0 if 0.0 <= projection <= 1.0 else direct * 0.5
+    interest_bonus = (_safe_float(node.get("danger_level")) + _safe_float(node.get("loot_level"))) * 6.0
+    return float(detour) + corridor_penalty - interest_bonus
+
+
+def _node_projection(
+    *,
+    start_node: dict[str, Any],
+    goal_node: dict[str, Any],
+    node: dict[str, Any],
+) -> float:
+    start_pos = _mapping_point(start_node.get("position")) or (0, 0)
+    goal_pos = _mapping_point(goal_node.get("position")) or start_pos
+    node_pos = _mapping_point(node.get("position")) or start_pos
+    dx = goal_pos[0] - start_pos[0]
+    dy = goal_pos[1] - start_pos[1]
+    denom = dx * dx + dy * dy
+    if denom <= 0:
+        return 0.0
+    return ((node_pos[0] - start_pos[0]) * dx + (node_pos[1] - start_pos[1]) * dy) / denom
 
 
 def _edge_ids_for_node_sequence(*, edges: list[dict[str, Any]], node_ids: list[str]) -> list[str]:
@@ -1271,36 +1454,72 @@ def _find_edge_id(*, edges: list[dict[str, Any]], source: str, target: str) -> s
 def _build_side_paths(
     *,
     place_nodes: dict[str, dict[str, Any]],
+    marker_nodes: dict[str, dict[str, Any]],
     main_path_nodes: set[str],
+    edges: list[dict[str, Any]],
+    edge_keys: set[tuple[str, str, str]],
 ) -> list[dict[str, Any]]:
+    """Build branch paths from main-path nodes to optional places."""
     side_paths: list[dict[str, Any]] = []
+    nodes_by_id = {**place_nodes, **marker_nodes}
+    anchors = [nodes_by_id[node_id] for node_id in main_path_nodes if node_id in nodes_by_id]
+    if not anchors:
+        anchors = list(marker_nodes.values())
     for node_id, node in sorted(place_nodes.items()):
         if node_id in main_path_nodes:
             continue
-        path_type = "side_path"
-        tags = set(_string_list(node.get("tags")))
-        if node.get("loot_level", 0.0) and float(node.get("loot_level", 0.0)) >= 0.6:
-            path_type = "loot_side_path"
-        if "hidden" in tags or "secret" in tags:
-            path_type = "hidden_path"
+        anchor = _nearest_node(node, anchors)
+        if anchor is None or not isinstance(anchor.get("id"), str):
+            continue
+        before = len(edges)
+        _append_world_graph_edge(
+            edges=edges,
+            edge_keys=edge_keys,
+            source=anchor["id"],
+            target=node_id,
+            edge_type="side_path_connection",
+            nodes_by_id=nodes_by_id,
+        )
+        edge_id = _find_edge_id(edges=edges, source=anchor["id"], target=node_id)
+        path_type = _side_path_type(node)
         side_paths.append(
             {
                 "id": f"side_path_{len(side_paths):03d}",
                 "type": path_type,
-                "node_ids": [node_id],
+                "node_ids": [anchor["id"], node_id],
+                "edge_ids": [edge_id] if isinstance(edge_id, str) else [],
+                "anchor_node": anchor["id"],
                 "target_place": node_id,
+                "cost_tiles": _node_distance(anchor, node),
+                "created_edge": len(edges) > before,
             },
         )
     return side_paths
 
 
+def _side_path_type(node: dict[str, Any]) -> str:
+    tags = set(_string_list(node.get("tags")))
+    place_type = node.get("type")
+    story_role = node.get("story_role")
+    loot_level = _safe_float(node.get("loot_level"))
+    danger_level = _safe_float(node.get("danger_level"))
+    if place_type == "secret_cache" or story_role == "secret" or "secret" in tags:
+        return "hidden_path"
+    if loot_level >= 0.65:
+        return "loot_side_path"
+    if danger_level >= 0.7:
+        return "danger_side_path"
+    return "side_path"
+
+
 def _build_dead_ends(
     *,
     edges: list[dict[str, Any]],
-    node_ids: list[str],
+    place_nodes: dict[str, dict[str, Any]],
     main_path_nodes: set[str],
 ) -> list[dict[str, Any]]:
-    degree = {node_id: 0 for node_id in node_ids}
+    """Build dead-end descriptors for meaningful place leaves only."""
+    degree = {node_id: 0 for node_id in place_nodes}
     for edge in edges:
         source = edge.get("source")
         target = edge.get("target")
@@ -1308,35 +1527,105 @@ def _build_dead_ends(
             degree[source] += 1
         if isinstance(target, str) and target in degree:
             degree[target] += 1
-    return [
-        {
-            "id": f"dead_end_{index:03d}",
-            "node_id": node_id,
-            "reason": "single_connection_non_main_path",
-        }
-        for index, node_id in enumerate(sorted(node_ids))
-        if degree.get(node_id, 0) <= 1 and node_id not in main_path_nodes
-    ]
+    dead_ends: list[dict[str, Any]] = []
+    for node_id, node in sorted(place_nodes.items()):
+        if node_id in main_path_nodes or degree.get(node_id, 0) > 1:
+            continue
+        dead_ends.append(
+            {
+                "id": f"dead_end_{len(dead_ends):03d}",
+                "node_id": node_id,
+                "degree": degree.get(node_id, 0),
+                "reason": _dead_end_reason(node),
+            },
+        )
+    return dead_ends
 
 
-def _build_secret_areas(place_nodes: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+def _dead_end_reason(node: dict[str, Any]) -> str:
+    if _safe_float(node.get("loot_level")) >= 0.65:
+        return "reward_leaf_place"
+    if node.get("story_role") in {"secret", "story", "landmark"}:
+        return "story_leaf_place"
+    return "low_connectivity_place"
+
+
+def _build_secret_areas(
+    *,
+    place_nodes: dict[str, dict[str, Any]],
+    marker_nodes: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Build secret/reward area records from places and marker nodes."""
     secret_areas: list[dict[str, Any]] = []
     for node_id, node in sorted(place_nodes.items()):
-        tags = set(_string_list(node.get("tags")))
-        story_role = node.get("story_role")
-        loot_level = node.get("loot_level")
-        if "secret" not in tags and story_role != "secret" and not (
-            isinstance(loot_level, int | float) and loot_level >= 0.75
-        ):
+        reason = _secret_area_reason(node)
+        if reason is None:
             continue
         secret_areas.append(
             {
                 "id": f"secret_area_{len(secret_areas):03d}",
                 "node_id": node_id,
-                "reason": "secret_tag_or_high_loot",
+                "reason": reason,
+            },
+        )
+    for node_id, node in sorted(marker_nodes.items()):
+        tags = set(_string_list(node.get("tags")))
+        if not ({"secret", "loot", "cache"} & tags):
+            continue
+        secret_areas.append(
+            {
+                "id": f"secret_area_{len(secret_areas):03d}",
+                "node_id": node_id,
+                "reason": "secret_or_loot_marker",
             },
         )
     return secret_areas
+
+
+def _secret_area_reason(node: dict[str, Any]) -> str | None:
+    tags = set(_string_list(node.get("tags")))
+    story_role = node.get("story_role")
+    place_type = node.get("type")
+    loot_level = _safe_float(node.get("loot_level"))
+    if place_type == "secret_cache":
+        return "secret_cache_place"
+    if "secret" in tags or story_role == "secret":
+        return "secret_tag_or_story_role"
+    if loot_level >= 0.75:
+        return "high_loot_place"
+    return None
+
+
+def _world_graph_quality_summary(
+    *,
+    place_nodes: dict[str, dict[str, Any]],
+    edges: list[dict[str, Any]],
+    side_paths: list[dict[str, Any]],
+    dead_ends: list[dict[str, Any]],
+    secret_areas: list[dict[str, Any]],
+    main_path: dict[str, Any],
+) -> dict[str, Any]:
+    """Return a compact quality summary for graph consumers."""
+    place_count = len(place_nodes)
+    connected_place_ids: set[str] = set()
+    for edge in edges:
+        for key in ("source", "target"):
+            node_id = edge.get(key)
+            if isinstance(node_id, str) and node_id in place_nodes:
+                connected_place_ids.add(node_id)
+    return {
+        "meaningful_places": place_count,
+        "connected_meaningful_places": len(connected_place_ids),
+        "meaningful_place_coverage": round(
+            len(connected_place_ids) / place_count,
+            3,
+        ) if place_count else 1.0,
+        "side_paths": len(side_paths),
+        "dead_ends": len(dead_ends),
+        "secret_areas": len(secret_areas),
+        "main_path_complete": bool(main_path.get("complete")),
+        "status": "ok" if bool(main_path.get("complete")) and place_count >= 1 else "warning",
+    }
 
 
 def _node_distance(source: dict[str, Any], target: dict[str, Any]) -> int:
