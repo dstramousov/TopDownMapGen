@@ -4,7 +4,7 @@ from collections import Counter
 from collections.abc import Sequence
 from typing import Any
 
-from .autotile import build_cardinal_mask, resolve_autotile_id
+from .autotile import build_neighbor_mask, resolve_autotile_decision
 from .models import VisualProfile, WorldPackage
 
 
@@ -35,6 +35,9 @@ class TerrainVisualMapper:
         autotile_rows: list[list[dict[str, Any] | None]] = []
         tile_counts: Counter[str] = Counter()
         terrain_counts: Counter[str] = Counter()
+        autotile_groups: Counter[str] = Counter()
+        autotile_variants: Counter[str] = Counter()
+        fallback_counts: Counter[str] = Counter()
 
         for y, terrain_row in enumerate(rows):
             visual_row: list[str] = []
@@ -51,6 +54,13 @@ class TerrainVisualMapper:
                 autotile_row.append(autotile_info)
                 tile_counts[tile_id] += 1
                 terrain_counts[terrain_type] += 1
+                if autotile_info is not None:
+                    group_id = str(autotile_info.get("group", "unknown"))
+                    variant = str(autotile_info.get("variant", "unknown"))
+                    autotile_groups[group_id] += 1
+                    autotile_variants[f"{group_id}.{variant}"] += 1
+                    if autotile_info.get("fallback_used") is True:
+                        fallback_counts[group_id] += 1
             tile_rows.append(visual_row)
             autotile_rows.append(autotile_row)
 
@@ -80,6 +90,12 @@ class TerrainVisualMapper:
             ],
             "debug": {
                 "autotile_masks": autotile_rows,
+                "autotile_summary": {
+                    "total_cells": sum(autotile_groups.values()),
+                    "groups": dict(sorted(autotile_groups.items())),
+                    "variants": dict(sorted(autotile_variants.items())),
+                    "fallbacks": dict(sorted(fallback_counts.items())),
+                },
             },
         }
 
@@ -106,19 +122,30 @@ class TerrainVisualMapper:
             return base_tile_id, None
 
         group_id, group_rules, terrain_types = group
-        mask = build_cardinal_mask(rows, x, y, terrain_types)
-        tile_id = resolve_autotile_id(
+        mask_mode = _string_value(group_rules.get("mask_mode"), "cardinal_4")
+        mask = build_neighbor_mask(
+            rows=rows,
+            x=x,
+            y=y,
+            terrain_types=terrain_types,
+            mask_mode=mask_mode,
+        )
+        decision = resolve_autotile_decision(
             group_id=group_id,
             mask=mask,
             group_rules=group_rules,
             base_tile_id=base_tile_id,
         )
-        return tile_id, {
+        return decision.tile_id, {
             "x": x,
             "y": y,
             "group": group_id,
-            "mask": mask,
-            "tile_id": tile_id,
+            "mask_mode": decision.mask_mode,
+            "mask": decision.mask,
+            "cardinal_mask": decision.cardinal_mask,
+            "variant": decision.variant,
+            "tile_id": decision.tile_id,
+            "fallback_used": decision.fallback_used,
         }
 
 
@@ -170,3 +197,7 @@ def _tile_size_px(index: dict[str, Any], profile: VisualProfile) -> int:
         if isinstance(tile_size, int) and tile_size > 0:
             return tile_size
     return 16
+
+
+def _string_value(value: Any, default: str) -> str:
+    return value if isinstance(value, str) and value else default

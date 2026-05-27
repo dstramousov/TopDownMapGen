@@ -86,11 +86,13 @@ class VisualPipeline:
         visual_map_path = output_dir / "visual_map.json"
         debug_dir = output_dir / "debug"
         debug_autotile_masks_path = debug_dir / "autotile_masks.json"
+        debug_autotile_report_path = debug_dir / "autotile_report.json"
 
         write_json_object(visual_layers, visual_layers_path)
         write_json_object(visual_objects, visual_objects_path)
         write_json_object(visual_chunks, visual_chunks_path)
-        write_json_object(visual_debug, debug_autotile_masks_path)
+        write_json_object(_build_autotile_masks_debug(visual_debug), debug_autotile_masks_path)
+        write_json_object(_build_autotile_report_debug(visual_debug), debug_autotile_report_path)
         if preview_path is not None:
             self._preview_renderer.render(
                 visual_layers=visual_layers,
@@ -110,6 +112,7 @@ class VisualPipeline:
             visual_chunks_path=visual_chunks_path,
             preview_path=preview_path,
             debug_autotile_masks_path=debug_autotile_masks_path,
+            debug_autotile_report_path=debug_autotile_report_path,
             visual_layers=visual_layers,
             visual_objects=visual_objects,
             visual_chunks=visual_chunks,
@@ -124,6 +127,7 @@ class VisualPipeline:
             visual_chunks_path=visual_chunks_path,
             preview_path=preview_path,
             debug_autotile_masks_path=debug_autotile_masks_path,
+            debug_autotile_report_path=debug_autotile_report_path,
         )
 
     def _build_visual_map(
@@ -138,6 +142,7 @@ class VisualPipeline:
         visual_chunks_path: Path,
         preview_path: Path | None,
         debug_autotile_masks_path: Path,
+        debug_autotile_report_path: Path,
         visual_layers: dict[str, Any],
         visual_objects: dict[str, Any],
         visual_chunks: dict[str, Any],
@@ -185,6 +190,10 @@ class VisualPipeline:
                     output_dir,
                     debug_autotile_masks_path,
                 ),
+                "debug_autotile_report": _relative(
+                    output_dir,
+                    debug_autotile_report_path,
+                ),
             },
             "contract": {
                 "changes_gameplay": False,
@@ -202,15 +211,7 @@ class VisualPipeline:
     @staticmethod
     def _extract_visual_debug(visual_layers: dict[str, Any]) -> dict[str, Any]:
         debug = visual_layers.pop("debug", {})
-        if not isinstance(debug, dict):
-            debug = {}
-        return {
-            "schema_version": "visual-debug-autotile-masks-v1",
-            "kind": "visual_debug_autotile_masks",
-            "source_layer": "terrain_base",
-            "coordinate_space": "tile",
-            "autotile_masks": debug.get("autotile_masks", []),
-        }
+        return debug if isinstance(debug, dict) else {}
 
 
 def _relative(root: Path, path: Path | None) -> str | None:
@@ -226,3 +227,33 @@ def _int_value(value: Any, default: Any) -> int:
     if isinstance(value, int):
         return value
     return default if isinstance(default, int) else 0
+
+
+def _build_autotile_masks_debug(visual_debug: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_version": "visual-debug-autotile-masks-v2",
+        "kind": "visual_debug_autotile_masks",
+        "source_layer": "terrain_base",
+        "coordinate_space": "tile",
+        "autotile_masks": visual_debug.get("autotile_masks", []),
+    }
+
+
+def _build_autotile_report_debug(visual_debug: dict[str, Any]) -> dict[str, Any]:
+    summary = visual_debug.get("autotile_summary", {})
+    if not isinstance(summary, dict):
+        summary = {}
+    fallback_total = 0
+    fallbacks = summary.get("fallbacks", {})
+    if isinstance(fallbacks, dict):
+        fallback_total = sum(value for value in fallbacks.values() if isinstance(value, int))
+    return {
+        "schema_version": "visual-debug-autotile-report-v1",
+        "kind": "visual_debug_autotile_report",
+        "source_layer": "terrain_base",
+        "summary": summary,
+        "quality": {
+            "fallback_total": fallback_total,
+            "status": "ok" if fallback_total == 0 else "has_fallbacks",
+        },
+    }

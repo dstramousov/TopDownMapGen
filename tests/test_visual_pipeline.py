@@ -37,14 +37,20 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert visual_map["files"]["visual_chunks"] == "visual_chunks.json"
     assert visual_map["files"]["preview"] == "preview.png"
     assert visual_map["files"]["debug_autotile_masks"] == "debug/autotile_masks.json"
+    assert visual_map["files"]["debug_autotile_report"] == "debug/autotile_report.json"
     assert (visual_output / "debug/autotile_masks.json").exists()
+    assert (visual_output / "debug/autotile_report.json").exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
     rows = visual_layers["layers"][0]["rows"]
-    assert rows[0][0] == "forest.s"
-    assert rows[1][1] == "road.es"
-    assert rows[2][2] == "water.es"
+    assert rows[0][0] == "forest.cap_n"
+    assert rows[1][1] == "road.turn_es"
+    assert rows[2][2] == "water.outer_corner_wn"
+
+    autotile_report = _read_json(visual_output / "debug/autotile_report.json")
+    assert autotile_report["quality"]["status"] == "ok"
+    assert autotile_report["summary"]["groups"]["road"] == 3
 
     visual_objects = _read_json(result.visual_objects_path)
     assert visual_objects["items"][0]["sprite_id"] == "object.trench"
@@ -79,8 +85,9 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "02_road_autotile.png",
         "03_water_autotile.png",
         "04_forest_autotile.png",
-        "05_objects.png",
-        "06_final_preview.png",
+        "05_autotile_fallbacks.png",
+        "06_objects.png",
+        "07_final_preview.png",
     ]
     assert all(path.exists() for path in paths)
 

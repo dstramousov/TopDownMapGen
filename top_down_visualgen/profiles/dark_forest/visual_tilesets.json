@@ -3,266 +3,374 @@
   "kind": "visual_tilesets",
   "tile_size_px": 16,
   "tiles": {
-    "grass.base": {
-      "debug_color": "#4f8f3a"
-    },
     "dirt.base": {
       "debug_color": "#8a6e3a"
+    },
+    "forest.cap_e": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "cap_e",
+      "mask_mode": "blob_8"
+    },
+    "forest.cap_n": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "cap_n",
+      "mask_mode": "blob_8"
+    },
+    "forest.cap_s": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "cap_s",
+      "mask_mode": "blob_8"
+    },
+    "forest.cap_w": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "cap_w",
+      "mask_mode": "blob_8"
+    },
+    "forest.edge_e": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "edge_e",
+      "mask_mode": "blob_8"
+    },
+    "forest.edge_n": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "edge_n",
+      "mask_mode": "blob_8"
+    },
+    "forest.edge_s": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "edge_s",
+      "mask_mode": "blob_8"
+    },
+    "forest.edge_w": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "edge_w",
+      "mask_mode": "blob_8"
+    },
+    "forest.fill": {
+      "debug_color": "#12351f",
+      "source": "autotile_variant",
+      "variant": "fill",
+      "mask_mode": "blob_8"
+    },
+    "forest.inner_corner_complex": {
+      "debug_color": "#1f512b",
+      "source": "autotile_variant",
+      "variant": "inner_corner_complex",
+      "mask_mode": "blob_8"
+    },
+    "forest.inner_corner_es": {
+      "debug_color": "#1f512b",
+      "source": "autotile_variant",
+      "variant": "inner_corner_es",
+      "mask_mode": "blob_8"
+    },
+    "forest.inner_corner_ne": {
+      "debug_color": "#1f512b",
+      "source": "autotile_variant",
+      "variant": "inner_corner_ne",
+      "mask_mode": "blob_8"
+    },
+    "forest.inner_corner_sw": {
+      "debug_color": "#1f512b",
+      "source": "autotile_variant",
+      "variant": "inner_corner_sw",
+      "mask_mode": "blob_8"
+    },
+    "forest.inner_corner_wn": {
+      "debug_color": "#1f512b",
+      "source": "autotile_variant",
+      "variant": "inner_corner_wn",
+      "mask_mode": "blob_8"
+    },
+    "forest.isolated": {
+      "debug_color": "#173f24",
+      "source": "autotile_variant",
+      "variant": "isolated",
+      "mask_mode": "blob_8"
+    },
+    "forest.outer_corner_es": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "outer_corner_es",
+      "mask_mode": "blob_8"
+    },
+    "forest.outer_corner_ne": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "outer_corner_ne",
+      "mask_mode": "blob_8"
+    },
+    "forest.outer_corner_sw": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "outer_corner_sw",
+      "mask_mode": "blob_8"
+    },
+    "forest.outer_corner_wn": {
+      "debug_color": "#2f6f37",
+      "source": "autotile_variant",
+      "variant": "outer_corner_wn",
+      "mask_mode": "blob_8"
+    },
+    "forest.thin_ew": {
+      "debug_color": "#3d7a3c",
+      "source": "autotile_variant",
+      "variant": "thin_ew",
+      "mask_mode": "blob_8"
+    },
+    "forest.thin_ns": {
+      "debug_color": "#3d7a3c",
+      "source": "autotile_variant",
+      "variant": "thin_ns",
+      "mask_mode": "blob_8"
+    },
+    "grass.base": {
+      "debug_color": "#4f8f3a"
     },
     "mud.base": {
       "debug_color": "#5f5138"
     },
-    "sand.base": {
-      "debug_color": "#b8a86a"
+    "road.cross": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "cross",
+      "mask_mode": "cardinal_4"
+    },
+    "road.end_e": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "end_e",
+      "mask_mode": "cardinal_4"
+    },
+    "road.end_n": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "end_n",
+      "mask_mode": "cardinal_4"
+    },
+    "road.end_s": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "end_s",
+      "mask_mode": "cardinal_4"
+    },
+    "road.end_w": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "end_w",
+      "mask_mode": "cardinal_4"
+    },
+    "road.isolated": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "isolated",
+      "mask_mode": "cardinal_4"
+    },
+    "road.straight_ew": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "straight_ew",
+      "mask_mode": "cardinal_4"
+    },
+    "road.straight_ns": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "straight_ns",
+      "mask_mode": "cardinal_4"
+    },
+    "road.t_esw": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "t_esw",
+      "mask_mode": "cardinal_4"
+    },
+    "road.t_nes": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "t_nes",
+      "mask_mode": "cardinal_4"
+    },
+    "road.t_new": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "t_new",
+      "mask_mode": "cardinal_4"
+    },
+    "road.t_nsw": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "t_nsw",
+      "mask_mode": "cardinal_4"
+    },
+    "road.turn_es": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "turn_es",
+      "mask_mode": "cardinal_4"
+    },
+    "road.turn_ne": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "turn_ne",
+      "mask_mode": "cardinal_4"
+    },
+    "road.turn_sw": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "turn_sw",
+      "mask_mode": "cardinal_4"
+    },
+    "road.turn_wn": {
+      "debug_color": "#9b8352",
+      "source": "autotile_variant",
+      "variant": "turn_wn",
+      "mask_mode": "cardinal_4"
     },
     "ruins.floor": {
       "debug_color": "#77736b"
     },
-    "wall.blocked": {
-      "debug_color": "#3c3c3c"
+    "sand.base": {
+      "debug_color": "#b8a86a"
     },
     "terrain.unknown": {
       "debug_color": "#ff00ff"
     },
-    "road.isolated": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 0
+    "wall.blocked": {
+      "debug_color": "#3c3c3c"
     },
-    "road.n": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 1
+    "water.cap_e": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "cap_e",
+      "mask_mode": "blob_8"
     },
-    "road.e": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 2
+    "water.cap_n": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "cap_n",
+      "mask_mode": "blob_8"
     },
-    "road.ne": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 3
+    "water.cap_s": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "cap_s",
+      "mask_mode": "blob_8"
     },
-    "road.s": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 4
+    "water.cap_w": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "cap_w",
+      "mask_mode": "blob_8"
     },
-    "road.ns": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 5
+    "water.edge_e": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "edge_e",
+      "mask_mode": "blob_8"
     },
-    "road.es": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 6
+    "water.edge_n": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "edge_n",
+      "mask_mode": "blob_8"
     },
-    "road.nes": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 7
+    "water.edge_s": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "edge_s",
+      "mask_mode": "blob_8"
     },
-    "road.w": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 8
+    "water.edge_w": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "edge_w",
+      "mask_mode": "blob_8"
     },
-    "road.nw": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 9
+    "water.fill": {
+      "debug_color": "#2f6f9f",
+      "source": "autotile_variant",
+      "variant": "fill",
+      "mask_mode": "blob_8"
     },
-    "road.ew": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 10
+    "water.inner_corner_complex": {
+      "debug_color": "#27648f",
+      "source": "autotile_variant",
+      "variant": "inner_corner_complex",
+      "mask_mode": "blob_8"
     },
-    "road.new": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 11
+    "water.inner_corner_es": {
+      "debug_color": "#27648f",
+      "source": "autotile_variant",
+      "variant": "inner_corner_es",
+      "mask_mode": "blob_8"
     },
-    "road.sw": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 12
+    "water.inner_corner_ne": {
+      "debug_color": "#27648f",
+      "source": "autotile_variant",
+      "variant": "inner_corner_ne",
+      "mask_mode": "blob_8"
     },
-    "road.nsw": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 13
+    "water.inner_corner_sw": {
+      "debug_color": "#27648f",
+      "source": "autotile_variant",
+      "variant": "inner_corner_sw",
+      "mask_mode": "blob_8"
     },
-    "road.esw": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 14
-    },
-    "road.nesw": {
-      "debug_color": "#9b8352",
-      "source": "autotile_mask",
-      "mask": 15
+    "water.inner_corner_wn": {
+      "debug_color": "#27648f",
+      "source": "autotile_variant",
+      "variant": "inner_corner_wn",
+      "mask_mode": "blob_8"
     },
     "water.isolated": {
       "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 0
+      "source": "autotile_variant",
+      "variant": "isolated",
+      "mask_mode": "blob_8"
     },
-    "water.n": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 1
+    "water.outer_corner_es": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "outer_corner_es",
+      "mask_mode": "blob_8"
     },
-    "water.e": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 2
+    "water.outer_corner_ne": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "outer_corner_ne",
+      "mask_mode": "blob_8"
     },
-    "water.ne": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 3
+    "water.outer_corner_sw": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "outer_corner_sw",
+      "mask_mode": "blob_8"
     },
-    "water.s": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 4
+    "water.outer_corner_wn": {
+      "debug_color": "#397fae",
+      "source": "autotile_variant",
+      "variant": "outer_corner_wn",
+      "mask_mode": "blob_8"
     },
-    "water.ns": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 5
+    "water.thin_ew": {
+      "debug_color": "#4488b4",
+      "source": "autotile_variant",
+      "variant": "thin_ew",
+      "mask_mode": "blob_8"
     },
-    "water.es": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 6
-    },
-    "water.nes": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 7
-    },
-    "water.w": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 8
-    },
-    "water.nw": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 9
-    },
-    "water.ew": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 10
-    },
-    "water.new": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 11
-    },
-    "water.sw": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 12
-    },
-    "water.nsw": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 13
-    },
-    "water.esw": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 14
-    },
-    "water.nesw": {
-      "debug_color": "#2f6f9f",
-      "source": "autotile_mask",
-      "mask": 15
-    },
-    "forest.isolated": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 0
-    },
-    "forest.n": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 1
-    },
-    "forest.e": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 2
-    },
-    "forest.ne": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 3
-    },
-    "forest.s": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 4
-    },
-    "forest.ns": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 5
-    },
-    "forest.es": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 6
-    },
-    "forest.nes": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 7
-    },
-    "forest.w": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 8
-    },
-    "forest.nw": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 9
-    },
-    "forest.ew": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 10
-    },
-    "forest.new": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 11
-    },
-    "forest.sw": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 12
-    },
-    "forest.nsw": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 13
-    },
-    "forest.esw": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 14
-    },
-    "forest.nesw": {
-      "debug_color": "#245d2c",
-      "source": "autotile_mask",
-      "mask": 15
+    "water.thin_ns": {
+      "debug_color": "#4488b4",
+      "source": "autotile_variant",
+      "variant": "thin_ns",
+      "mask_mode": "blob_8"
     }
   },
   "sprites": {

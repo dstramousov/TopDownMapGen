@@ -48,3 +48,4 @@ class VisualPipelineResult:
     visual_chunks_path: Path
     preview_path: Path | None
     debug_autotile_masks_path: Path
+    debug_autotile_report_path: Path

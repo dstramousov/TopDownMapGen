@@ -451,3 +451,12 @@
 - Добавлена dev-утилита `bin/render_visual_pipeline_steps.py`, которая рендерит пошаговые PNG visual pipeline в `output/visual_map/debug/steps/`.
 - `./r` получил команду `visual-debug`, а дефолтный `./r all` теперь строит world preview, visual map и step debug previews.
 - Версия проекта поднята до `0.0.54`.
+
+
+## v0.0.54 -> v0.0.55
+
+- Autotiling core получил режимы `cardinal_4` и `blob_8`, чтобы дороги оставались сетевыми, а вода/лес получали edge/corner/fill-варианты.
+- `dark_forest` profile поднят до `autotile-rules-v2` и теперь использует семантические variants: `road.turn_*`, `water.edge_*`, `forest.outer_corner_*`, `inner_corner_*` и fallback tiles.
+- Visual pipeline теперь пишет `debug/autotile_report.json` со сводкой по группам, variants и fallback-использованию.
+- Step renderer получил отдельный слой `05_autotile_fallbacks.png`, чтобы сразу видеть дырки в visual rules.
+- Версия проекта поднята до `0.0.55`.

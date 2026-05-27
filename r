@@ -8,6 +8,7 @@ CONFIG_PATH="${CONFIG_PATH:-configs/default.json}"
 VISUAL_PROFILE="${VISUAL_PROFILE:-top_down_visualgen/profiles/dark_forest}"
 VISUAL_OUTPUT="${VISUAL_OUTPUT:-${OUTPUT_DIR}/visual_map}"
 VISUAL_STEPS_OUTPUT="${VISUAL_STEPS_OUTPUT:-${VISUAL_OUTPUT}/debug/steps}"
+VISUAL_DEBUG_TILE_SIZE="${VISUAL_DEBUG_TILE_SIZE:-4}"
 
 run_world() {
   ./c
@@ -41,7 +42,8 @@ run_visual() {
 run_visual_debug() {
   PYTHONPATH=. python3 bin/render_visual_pipeline_steps.py "${OUTPUT_DIR}" \
     --profile "${VISUAL_PROFILE}" \
-    --output "${VISUAL_STEPS_OUTPUT}"
+    --output "${VISUAL_STEPS_OUTPUT}" \
+    --tile-size "${VISUAL_DEBUG_TILE_SIZE}"
 }
 
 run_inspect() {
@@ -74,6 +76,7 @@ Environment overrides:
   VISUAL_PROFILE=...
   VISUAL_OUTPUT=...
   VISUAL_STEPS_OUTPUT=...
+  VISUAL_DEBUG_TILE_SIZE=...
 EOF
 }
 

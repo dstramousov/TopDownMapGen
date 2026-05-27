@@ -94,18 +94,25 @@ class VisualPipelineStepRenderer:
                 output_path=output_dir / "04_forest_autotile.png",
                 tile_size_px=tile_size,
             ),
+            self._render_fallback_step(
+                visual_layers=visual_layers,
+                autotile_rows=autotile_rows,
+                profile=profile,
+                output_path=output_dir / "05_autotile_fallbacks.png",
+                tile_size_px=tile_size,
+            ),
             self._render_objects_step(
                 visual_layers=visual_layers,
                 visual_objects=visual_objects,
                 profile=profile,
-                output_path=output_dir / "05_objects.png",
+                output_path=output_dir / "06_objects.png",
                 tile_size_px=tile_size,
             ),
             self._render_final_step(
                 visual_layers=visual_layers,
                 visual_objects=visual_objects,
                 profile=profile,
-                output_path=output_dir / "06_final_preview.png",
+                output_path=output_dir / "07_final_preview.png",
                 tile_size_px=tile_size,
             ),
         ]
@@ -177,6 +184,35 @@ class VisualPipelineStepRenderer:
         colors = {**_tile_colors(profile), "debug.muted": "#1b1b1b"}
         _render_tile_rows(
             rows=muted_rows,
+            tile_colors=colors,
+            output_path=output_path,
+            tile_size_px=tile_size_px,
+        )
+        return output_path
+
+
+    def _render_fallback_step(
+        self,
+        *,
+        visual_layers: dict[str, Any],
+        autotile_rows: list[list[dict[str, Any] | None]],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        rows = _visual_rows(visual_layers)
+        fallback_rows = [["debug.ok" for _ in row] for row in rows]
+        for y, row in enumerate(autotile_rows):
+            for x, info in enumerate(row):
+                if isinstance(info, dict) and info.get("fallback_used") is True:
+                    fallback_rows[y][x] = "debug.fallback"
+        colors = {
+            **_dimmed_tile_colors(profile),
+            "debug.ok": "#1b1b1b",
+            "debug.fallback": "#ff00ff",
+        }
+        _render_tile_rows(
+            rows=fallback_rows,
             tile_colors=colors,
             output_path=output_path,
             tile_size_px=tile_size_px,

@@ -3,6 +3,6 @@
   "kind": "decoration_rules",
   "enabled": false,
   "notes": [
-    "Decoration pass is intentionally disabled in v0.0.54 MVP."
+    "Decoration pass is intentionally disabled in v0.0.55 baseline."
   ]
 }
