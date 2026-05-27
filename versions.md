@@ -518,3 +518,12 @@
 - В `dark_forest` profile добавлен `visual_density_rules.json`, чтобы нормы плотности visual layer жили в профиле, а не в коде.
 - Helper `./r world` явно удаляет старые `generation.log` и `world_density_report.json` перед новым запуском.
 - Версия проекта поднята до `0.0.62`.
+
+
+## v0.0.62 -> v0.0.63
+
+- Helper `./r all` переведён в quiet-mode: внутренние логи world/preview/visual/debug stage-ов пишутся в `output/logs/`, а в консоль выводится только итоговая приборная панель.
+- Добавлен `bin/print_pipeline_summary.py`, который собирает world/visual density, autotiling, unmapped terrain, visual elevation и debug-файлы в единый читаемый summary.
+- Добавлена команда `./r summary` для повторной печати итоговой сводки по существующему `output/` без повторной генерации.
+- При падении stage helper показывает имя упавшего этапа и путь к соответствующему log-файлу, не печатая ложный `Overall: ok`.
+- Версия проекта поднята до `0.0.63`.

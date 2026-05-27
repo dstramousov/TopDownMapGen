@@ -9,19 +9,73 @@ VISUAL_PROFILE="${VISUAL_PROFILE:-top_down_visualgen/profiles/dark_forest}"
 VISUAL_OUTPUT="${VISUAL_OUTPUT:-${OUTPUT_DIR}/visual_map}"
 VISUAL_STEPS_OUTPUT="${VISUAL_STEPS_OUTPUT:-${VISUAL_OUTPUT}/debug/steps}"
 VISUAL_DEBUG_TILE_SIZE="${VISUAL_DEBUG_TILE_SIZE:-4}"
+VISUAL_PREVIEW_TILE_SIZE="${VISUAL_PREVIEW_TILE_SIZE:-4}"
+WORLD_PREVIEW_CELL_SIZE="${WORLD_PREVIEW_CELL_SIZE:-4}"
+RUN_WORLD_PREVIEW="${RUN_WORLD_PREVIEW:-0}"
+WORLD_RENDER="${WORLD_RENDER:-0}"
+WORLD_DEBUG_LAYERS="${WORLD_DEBUG_LAYERS:-0}"
+LOG_DIR="${LOG_DIR:-${OUTPUT_DIR}/logs}"
+QUIET="${QUIET:-1}"
 
-run_world() {
-  ./c
+ensure_log_dir() {
+  mkdir -p "${LOG_DIR}"
+}
+
+run_logged() {
+  local name="$1"
+  shift
+  ensure_log_dir
+  local log_file="${LOG_DIR}/${name}.log"
+  if "${@}" >"${log_file}" 2>&1; then
+    return 0
+  fi
+  echo "FAILED: ${name}" >&2
+  echo "log: ${log_file}" >&2
+  tail -40 "${log_file}" >&2 || true
+  return 1
+}
+
+run_maybe_logged() {
+  local name="$1"
+  shift
+  if [[ "${QUIET}" == "1" ]]; then
+    run_logged "${name}" "${@}"
+  else
+    "${@}"
+  fi
+}
+
+run_cleanup() {
+  run_maybe_logged cleanup ./c
+  ensure_log_dir
   rm -f -- "${OUTPUT_DIR}/generation.log"
   rm -f -- "${OUTPUT_DIR}/world_density_report.json"
-  PYTHONPATH=. python3 top_down_generator.py \
-    --config "${CONFIG_PATH}" \
-    -o "${OUTPUT_DIR}" \
-    --include-debug-layers
+  rm -f -- "${LOG_DIR}/world_generation.log"
+  rm -f -- "${LOG_DIR}/world_preview.log"
+  rm -f -- "${LOG_DIR}/visual_pipeline.log"
+  rm -f -- "${LOG_DIR}/visual_debug.log"
+  rm -f -- "${LOG_DIR}/pipeline_summary.log"
+}
+
+run_world() {
+  run_cleanup
+  local world_args=(
+    env PYTHONPATH=. python3 top_down_generator.py
+    --config "${CONFIG_PATH}"
+    -o "${OUTPUT_DIR}"
+  )
+  if [[ "${WORLD_RENDER}" == "1" ]]; then
+    if [[ "${WORLD_DEBUG_LAYERS}" == "1" ]]; then
+      world_args+=(--include-debug-layers)
+    fi
+  else
+    world_args+=(--no-render)
+  fi
+  run_maybe_logged world_generation "${world_args[@]}"
 }
 
 run_preview() {
-  python3 examples/render_world_preview.py "${OUTPUT_DIR}" \
+  run_maybe_logged world_preview python3 examples/render_world_preview.py "${OUTPUT_DIR}" \
     --collision-overlay \
     --elevation-overlay \
     --transition-overlay \
@@ -30,22 +84,29 @@ run_preview() {
     --routes-overlay \
     --world-graph-overlay \
     --grid \
-    --cell-size 16 \
+    --cell-size "${WORLD_PREVIEW_CELL_SIZE}" \
     --output "${OUTPUT_DIR}/full_world_preview.png"
 }
 
 run_visual() {
-  PYTHONPATH=. python3 -m top_down_visualgen.cli \
+  run_maybe_logged visual_pipeline env PYTHONPATH=. python3 -m top_down_visualgen.cli \
     --input "${OUTPUT_DIR}" \
     --profile "${VISUAL_PROFILE}" \
-    --output "${VISUAL_OUTPUT}"
+    --output "${VISUAL_OUTPUT}" \
+    --preview-tile-size "${VISUAL_PREVIEW_TILE_SIZE}"
 }
 
 run_visual_debug() {
-  PYTHONPATH=. python3 bin/render_visual_pipeline_steps.py "${OUTPUT_DIR}" \
+  run_maybe_logged visual_debug env PYTHONPATH=. python3 bin/render_visual_pipeline_steps.py "${OUTPUT_DIR}" \
     --profile "${VISUAL_PROFILE}" \
     --output "${VISUAL_STEPS_OUTPUT}" \
     --tile-size "${VISUAL_DEBUG_TILE_SIZE}"
+}
+
+run_summary() {
+  env PYTHONPATH=. python3 bin/print_pipeline_summary.py "${OUTPUT_DIR}" \
+    --project-root . \
+    --profile "${VISUAL_PROFILE}"
 }
 
 run_inspect() {
@@ -62,12 +123,13 @@ usage() {
 Usage: ./r [command]
 
 Commands:
-  all      Clean, generate world, render previews and build visual map (default)
+  all      Clean, generate world, build visual map/debug and print summary (default)
   world    Clean and generate world package only
   preview  Render debug world preview from existing output
   visual   Build visual_tileset output from existing output/map_package
   visual-debug
            Render visual pipeline step PNGs from existing output/map_package
+  summary  Print final world/visual pipeline summary from existing output
   inspect  Inspect existing world package
   test     Run compileall and pytest
   help     Show this help
@@ -79,15 +141,25 @@ Environment overrides:
   VISUAL_OUTPUT=...
   VISUAL_STEPS_OUTPUT=...
   VISUAL_DEBUG_TILE_SIZE=...
+  VISUAL_PREVIEW_TILE_SIZE=...
+  WORLD_PREVIEW_CELL_SIZE=...
+  RUN_WORLD_PREVIEW=1   Also render output/full_world_preview.png during ./r all
+  WORLD_RENDER=1        Render world PNG layers during generation
+  WORLD_DEBUG_LAYERS=1  Include world debug PNG layers when WORLD_RENDER=1
+  LOG_DIR=...
+  QUIET=0   Show raw command output instead of writing stage logs to output/logs/
 EOF
 }
 
 case "${CMD}" in
   all)
     run_world
-    run_preview
+    if [[ "${RUN_WORLD_PREVIEW}" == "1" ]]; then
+      run_preview
+    fi
     run_visual
     run_visual_debug
+    run_summary
     ;;
   world)
     run_world
@@ -97,9 +169,13 @@ case "${CMD}" in
     ;;
   visual)
     run_visual
+    run_summary
     ;;
   visual-debug)
     run_visual_debug
+    ;;
+  summary)
+    run_summary
     ;;
   inspect)
     run_inspect
