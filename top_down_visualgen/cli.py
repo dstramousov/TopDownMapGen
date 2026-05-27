@@ -4,6 +4,8 @@ import argparse
 import logging
 from pathlib import Path
 
+from .density import format_visual_density_summary
+from .io import read_json_object
 from .pipeline import VisualPipeline
 
 LOGGER = logging.getLogger(__name__)
@@ -92,6 +94,9 @@ def main(argv: list[str] | None = None) -> int:
     LOGGER.info("visual_chunks=%s", result.visual_chunks_path)
     if result.preview_path is not None:
         LOGGER.info("preview=%s", result.preview_path)
+    density_report = read_json_object(result.debug_visual_density_report_path)
+    for line in format_visual_density_summary(density_report):
+        LOGGER.info(line)
     return 0
 
 

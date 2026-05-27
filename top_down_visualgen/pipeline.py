@@ -6,6 +6,7 @@ from typing import Any
 from . import __version__
 from .chunks import build_visual_chunks
 from .decoration import DecorationMapper, merge_visual_objects
+from .density import VisualDensityReporter, write_visual_density_report
 from .io import write_json_object
 from .models import VisualPipelineResult
 from .object_mapper import ObjectVisualMapper
@@ -29,6 +30,7 @@ class VisualPipeline:
         preview_renderer: PreviewRenderer | None = None,
         decoration_mapper: DecorationMapper | None = None,
         place_treatment_mapper: PlaceTreatmentMapper | None = None,
+        density_reporter: VisualDensityReporter | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -40,6 +42,7 @@ class VisualPipeline:
             preview_renderer: Optional preview renderer.
             decoration_mapper: Optional decoration mapper.
             place_treatment_mapper: Optional place treatment mapper.
+            density_reporter: Optional visual density reporter.
         """
         self._package_loader = package_loader or WorldPackageLoader()
         self._profile_loader = profile_loader or VisualProfileLoader()
@@ -48,6 +51,7 @@ class VisualPipeline:
         self._preview_renderer = preview_renderer or PreviewRenderer()
         self._decoration_mapper = decoration_mapper or DecorationMapper()
         self._place_treatment_mapper = place_treatment_mapper or PlaceTreatmentMapper()
+        self._density_reporter = density_reporter or VisualDensityReporter()
 
     def run(
         self,
@@ -114,6 +118,7 @@ class VisualPipeline:
         debug_unmapped_terrain_report_path = debug_dir / "unmapped_terrain_report.json"
         debug_decoration_report_path = debug_dir / "decoration_report.json"
         debug_place_treatment_report_path = debug_dir / "place_treatment_report.json"
+        debug_visual_density_report_path = debug_dir / "visual_density_report.json"
 
         write_json_object(visual_layers, visual_layers_path)
         write_json_object(visual_objects, visual_objects_path)
@@ -132,6 +137,16 @@ class VisualPipeline:
             _build_place_treatment_report_debug(place_treatment_result),
             debug_place_treatment_report_path,
         )
+        visual_density_report = self._density_reporter.build_report(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+            visual_objects=visual_objects,
+            visual_debug=visual_debug,
+            decoration_result=decoration_result,
+            place_treatment_result=place_treatment_result,
+        )
+        write_visual_density_report(visual_density_report, debug_visual_density_report_path)
         if preview_path is not None:
             self._preview_renderer.render(
                 visual_layers=visual_layers,
@@ -155,6 +170,7 @@ class VisualPipeline:
             debug_unmapped_terrain_report_path=debug_unmapped_terrain_report_path,
             debug_decoration_report_path=debug_decoration_report_path,
             debug_place_treatment_report_path=debug_place_treatment_report_path,
+            debug_visual_density_report_path=debug_visual_density_report_path,
             visual_layers=visual_layers,
             visual_objects=visual_objects,
             visual_chunks=visual_chunks,
@@ -173,6 +189,7 @@ class VisualPipeline:
             debug_unmapped_terrain_report_path=debug_unmapped_terrain_report_path,
             debug_decoration_report_path=debug_decoration_report_path,
             debug_place_treatment_report_path=debug_place_treatment_report_path,
+            debug_visual_density_report_path=debug_visual_density_report_path,
         )
 
     def _build_visual_map(
@@ -191,6 +208,7 @@ class VisualPipeline:
         debug_unmapped_terrain_report_path: Path,
         debug_decoration_report_path: Path,
         debug_place_treatment_report_path: Path,
+        debug_visual_density_report_path: Path,
         visual_layers: dict[str, Any],
         visual_objects: dict[str, Any],
         visual_chunks: dict[str, Any],
@@ -253,6 +271,10 @@ class VisualPipeline:
                 "debug_place_treatment_report": _relative(
                     output_dir,
                     debug_place_treatment_report_path,
+                ),
+                "debug_visual_density_report": _relative(
+                    output_dir,
+                    debug_visual_density_report_path,
                 ),
             },
             "contract": {

@@ -42,11 +42,17 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
         visual_map["files"]["debug_unmapped_terrain_report"]
         == "debug/unmapped_terrain_report.json"
     )
+    assert (
+        visual_map["files"]["debug_visual_density_report"]
+        == "debug/visual_density_report.json"
+    )
     assert (visual_output / "debug/autotile_masks.json").exists()
     assert (visual_output / "debug/autotile_report.json").exists()
     assert (visual_output / "debug/unmapped_terrain_report.json").exists()
     assert (visual_output / "debug/decoration_report.json").exists()
     assert (visual_output / "debug/place_treatment_report.json").exists()
+    assert (visual_output / "debug/visual_density_report.json").exists()
+    assert result.debug_visual_density_report_path.exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
@@ -80,6 +86,12 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     place_report = _read_json(visual_output / "debug/place_treatment_report.json")
     assert place_report["quality"]["status"] == "ok"
     assert "small_loot_pocket_scene" in place_report["summary"]["by_rule"]
+
+    density_report = _read_json(visual_output / "debug/visual_density_report.json")
+    assert density_report["schema_version"] == "visual-density-report-v1"
+    assert density_report["visual_objects"]["total"] == visual_objects["summary"]["total"]
+    assert "by_category" in density_report
+    assert "top_sprites" in density_report
 
     decoration_rules = _read_json(
         Path("top_down_visualgen/profiles/dark_forest/decoration_rules.json")

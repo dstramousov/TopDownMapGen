@@ -12,6 +12,8 @@ VISUAL_DEBUG_TILE_SIZE="${VISUAL_DEBUG_TILE_SIZE:-4}"
 
 run_world() {
   ./c
+  rm -f -- "${OUTPUT_DIR}/generation.log"
+  rm -f -- "${OUTPUT_DIR}/world_density_report.json"
   PYTHONPATH=. python3 top_down_generator.py \
     --config "${CONFIG_PATH}" \
     -o "${OUTPUT_DIR}" \

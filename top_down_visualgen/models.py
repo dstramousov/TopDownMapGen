@@ -53,3 +53,4 @@ class VisualPipelineResult:
     debug_unmapped_terrain_report_path: Path
     debug_decoration_report_path: Path
     debug_place_treatment_report_path: Path
+    debug_visual_density_report_path: Path

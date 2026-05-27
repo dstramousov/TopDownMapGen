@@ -1,0 +1,20 @@
+{
+  "schema_version": "visual-density-rules-v1",
+  "kind": "visual_density_rules",
+  "profile": "dark_forest",
+  "visual_objects_per_1000_tiles": {
+    "min": 40,
+    "max": 60,
+    "critical_max": 100
+  },
+  "decorations_per_1000_tiles": {
+    "min": 35,
+    "max": 55,
+    "critical_max": 90
+  },
+  "place_treatment_objects_per_place": {
+    "min": 1,
+    "max": 4,
+    "critical_max": 8
+  }
+}

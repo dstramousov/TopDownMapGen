@@ -509,3 +509,12 @@
 - Visual pipeline теперь пишет `debug/place_treatment_report.json`, а `visual-debug` добавляет шаг `09_place_treatment.png` перед финальным preview.
 - В debug tileset добавлены placeholder sprites для лагерей, завалов, переходов через болото, bunker debris, defensive remnants и скрытых cache markers.
 - Версия проекта поднята до `0.0.61`.
+
+## v0.0.61 -> v0.0.62
+
+- Добавлен `world_density_report.json` с плотностной сводкой terrain, collision, movement, elevation, transitions и world structure после генерации карты.
+- Visual pipeline получил `debug/visual_density_report.json` с плотностью visual objects, breakdown по source/category и top sprites.
+- CLI world/visual теперь выводят компактные density summaries с target intervals и статусами `low/ok/high/critical`.
+- В `dark_forest` profile добавлен `visual_density_rules.json`, чтобы нормы плотности visual layer жили в профиле, а не в коде.
+- Helper `./r world` явно удаляет старые `generation.log` и `world_density_report.json` перед новым запуском.
+- Версия проекта поднята до `0.0.62`.

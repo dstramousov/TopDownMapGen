@@ -4,6 +4,11 @@ import argparse
 import logging
 from pathlib import Path
 
+from .density_report import (
+    WorldDensityReporter,
+    format_world_density_summary,
+    write_world_density_report,
+)
 from .logging_utils import timed_stage
 from .pipeline import WorldgenPipeline
 
@@ -96,6 +101,12 @@ def main() -> int:
         LOGGER.info("Runtime tactical map: %s", result.outputs.tactical_map)
         LOGGER.info("Debug tactical map: %s", result.outputs.tactical_map_debug)
         LOGGER.info("Generation manifest: %s", result.outputs.manifest)
+        density_report = WorldDensityReporter().build_report(result.outputs.output_dir)
+        density_report_path = result.outputs.output_dir / "world_density_report.json"
+        write_world_density_report(density_report, density_report_path)
+        LOGGER.info("World density report: %s", density_report_path)
+        for line in format_world_density_summary(density_report):
+            LOGGER.info(line)
         if not args.no_render:
             LOGGER.info("Rendered base PNG layer in: %s", result.outputs.output_dir)
             if debug_layers:
