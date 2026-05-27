@@ -390,3 +390,14 @@ python3 examples/render_world_preview.py output \
 ```
 
 `--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+
+
+### Semantic preview overlays
+
+Для визуальной проверки смысловых слоёв используйте:
+
+```bash
+python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+```
+
+Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.

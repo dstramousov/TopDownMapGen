@@ -418,3 +418,11 @@
 - `secret_areas` теперь строятся из secret/cache/high-loot places и релевантных marker nodes.
 - `world_graph.summary` получил показатели meaningful place coverage и quality status для внешних consumer-ов.
 - Версия проекта поднята до `0.0.50`.
+
+## v0.0.50 -> v0.0.51
+
+- Preview renderer получил semantic overlays для `places`, `gameplay_zones`, `routes` и `world_graph`.
+- Добавлен общий флаг `--semantic-overlays`, который включает все смысловые overlay-слои сразу.
+- Консольная сводка preview теперь показывает количество places, gameplay zones, routes и world graph edges.
+- Документация обновлена командами визуальной проверки graph/zones/routes/places.
+- Версия проекта поднята до `0.0.51`.

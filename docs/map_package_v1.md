@@ -480,3 +480,14 @@ python3 examples/render_world_preview.py output \
 ## Elevation v1
 
 See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.
+
+
+### Semantic preview overlays
+
+Для визуальной проверки смысловых слоёв используйте:
+
+```bash
+python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+```
+
+Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.

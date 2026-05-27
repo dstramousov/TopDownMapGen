@@ -296,3 +296,14 @@ See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels 
 Начиная с `v0.0.48`, world package содержит `map_package/gameplay_zones.json`. Это нейтральный слой назначения областей карты: `safe_area`, `encounter_area`, `loot_area`, `danger_area`, `story_area`, `extraction_area` и другие.
 
 Для игры это слой "что здесь должно происходить", а не слой точной физики. Точную проходимость, видимость и высоты по-прежнему нужно брать из `runtime_grids.json` и elevation-файлов.
+
+
+### Semantic preview overlays
+
+Для визуальной проверки смысловых слоёв используйте:
+
+```bash
+python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+```
+
+Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.

@@ -59,6 +59,33 @@ TRANSITION_COLORS: dict[str, tuple[int, int, int, int]] = {
     "steep_transition": (255, 80, 80, 240),
 }
 TRANSITION_TEXT_COLOR = (255, 255, 255, 255)
+PLACE_OUTLINE_COLOR = (255, 255, 255, 230)
+PLACE_TEXT_COLOR = (255, 255, 255, 255)
+GAMEPLAY_ZONE_FILL_COLORS: dict[str, tuple[int, int, int, int]] = {
+    "safe_area": (70, 220, 110, 70),
+    "encounter_area": (240, 190, 80, 70),
+    "ambush_area": (255, 120, 60, 80),
+    "loot_area": (255, 230, 80, 80),
+    "boss_area": (230, 70, 70, 95),
+    "stealth_area": (80, 170, 120, 75),
+    "traversal_area": (120, 190, 255, 75),
+    "secret_area": (190, 100, 255, 85),
+    "danger_area": (255, 80, 80, 80),
+    "story_area": (180, 150, 255, 75),
+    "extraction_area": (90, 230, 200, 80),
+}
+GAMEPLAY_ZONE_OUTLINE_COLOR = (255, 255, 255, 180)
+WORLD_GRAPH_EDGE_COLOR = (255, 255, 255, 190)
+WORLD_GRAPH_MAIN_PATH_COLOR = (255, 245, 80, 240)
+WORLD_GRAPH_NODE_COLOR = (255, 255, 255, 230)
+ROUTE_COLORS: dict[str, tuple[int, int, int, int]] = {
+    "main_road": (255, 245, 80, 240),
+    "side_path": (120, 230, 255, 220),
+    "hidden_path": (210, 120, 255, 230),
+    "patrol_route": (255, 150, 70, 210),
+    "escape_route": (110, 255, 160, 220),
+}
+ROUTE_FALLBACK_COLOR = (255, 255, 255, 210)
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,6 +105,10 @@ class PreviewSummary:
         multi_tile_objects: Number of runtime objects with multi-cell footprints.
         elevation_levels: Elevation levels observed in height_grid.
         elevation_transitions: Number of elevation transitions read.
+        places: Number of semantic places read.
+        gameplay_zones: Number of gameplay zones read.
+        routes: Number of semantic routes read.
+        world_graph_edges: Number of world graph edges read.
         start: Start point.
         goal: Goal point.
     """
@@ -94,6 +125,10 @@ class PreviewSummary:
     multi_tile_objects: int
     elevation_levels: list[int]
     elevation_transitions: int
+    places: int
+    gameplay_zones: int
+    routes: int
+    world_graph_edges: int
     start: dict[str, int] | None
     goal: dict[str, int] | None
 
@@ -107,6 +142,10 @@ def render_preview(
     draw_collision_overlay: bool = False,
     draw_elevation_overlay: bool = False,
     draw_transition_overlay: bool = False,
+    draw_places_overlay: bool = False,
+    draw_gameplay_zones_overlay: bool = False,
+    draw_routes_overlay: bool = False,
+    draw_world_graph_overlay: bool = False,
     draw_grid: bool = False,
 ) -> PreviewSummary:
     """Render a simple PNG preview from public world package files.
@@ -119,6 +158,10 @@ def render_preview(
         draw_collision_overlay: Whether to overlay blocked cells.
         draw_elevation_overlay: Whether to overlay height_grid levels.
         draw_transition_overlay: Whether to draw elevation transitions.
+        draw_places_overlay: Whether to draw semantic places.
+        draw_gameplay_zones_overlay: Whether to draw neutral gameplay zones.
+        draw_routes_overlay: Whether to draw semantic routes.
+        draw_world_graph_overlay: Whether to draw world graph nodes and edges.
         draw_grid: Whether to draw a light tile grid.
 
     Returns:
@@ -149,6 +192,13 @@ def render_preview(
         package_dir,
         objects.get("runtime_objects"),
     )
+    places = _read_optional_package_object(package_dir, objects.get("places"))
+    world_graph = _read_optional_package_object(package_dir, map_index.get("world_graph"))
+    routes = _read_optional_package_object(package_dir, map_index.get("routes"))
+    gameplay_zones = _read_optional_package_object(
+        package_dir,
+        map_index.get("gameplay_zones"),
+    )
     runtime_grids = _read_optional_package_object(
         package_dir,
         map_index.get("runtime_grids"),
@@ -163,6 +213,10 @@ def render_preview(
     height_rows = _read_height_rows(runtime_grids, width=width, height=height)
     transition_items = _optional_list(elevation_transitions.get("items"))
     object_items = _optional_list(runtime_objects.get("items"))
+    place_items = _optional_list(places.get("items"))
+    gameplay_zone_items = _optional_list(gameplay_zones.get("items"))
+    route_items = _optional_list(routes.get("items"))
+    world_graph_edges = _optional_list(world_graph.get("edges"))
     start = _optional_point(start_goal.get("start"))
     goal = _optional_point(start_goal.get("goal"))
 
@@ -190,6 +244,38 @@ def render_preview(
         _draw_transition_overlay(
             draw,
             transitions=transition_items,
+            cell_size_px=cell_size_px,
+            width=width,
+            height=height,
+        )
+    if draw_gameplay_zones_overlay:
+        _draw_gameplay_zones_overlay(
+            draw,
+            zones=gameplay_zone_items,
+            cell_size_px=cell_size_px,
+            width=width,
+            height=height,
+        )
+    if draw_routes_overlay:
+        _draw_routes_overlay(
+            draw,
+            routes=route_items,
+            cell_size_px=cell_size_px,
+            width=width,
+            height=height,
+        )
+    if draw_world_graph_overlay:
+        _draw_world_graph_overlay(
+            draw,
+            graph=world_graph,
+            cell_size_px=cell_size_px,
+            width=width,
+            height=height,
+        )
+    if draw_places_overlay:
+        _draw_places_overlay(
+            draw,
+            places=place_items,
             cell_size_px=cell_size_px,
             width=width,
             height=height,
@@ -224,6 +310,10 @@ def render_preview(
         multi_tile_objects=sum(_has_multi_tile_footprint(item) for item in object_items),
         elevation_levels=sorted({level for row in height_rows for level in row}),
         elevation_transitions=len(transition_items),
+        places=len(place_items),
+        gameplay_zones=len(gameplay_zone_items),
+        routes=len(route_items),
+        world_graph_edges=len(world_graph_edges),
         start=start,
         goal=goal,
     )
@@ -279,6 +369,10 @@ def print_summary(summary: PreviewSummary) -> None:
     LOGGER.info("- multi-tile objects: %s", summary.multi_tile_objects)
     LOGGER.info("- elevation levels: %s", summary.elevation_levels)
     LOGGER.info("- elevation transitions: %s", summary.elevation_transitions)
+    LOGGER.info("- places: %s", summary.places)
+    LOGGER.info("- gameplay zones: %s", summary.gameplay_zones)
+    LOGGER.info("- routes: %s", summary.routes)
+    LOGGER.info("- world graph edges: %s", summary.world_graph_edges)
     LOGGER.info("- start: %s", _format_point(summary.start))
     LOGGER.info("- goal: %s", _format_point(summary.goal))
     LOGGER.info("Output: %s", summary.output_path)
@@ -492,6 +586,271 @@ def _draw_firing_ports(
                 fill=FIRING_PORT_COLOR,
             )
 
+
+
+def _draw_gameplay_zones_overlay(
+    draw: ImageDraw.ImageDraw,
+    *,
+    zones: list[Any],
+    cell_size_px: int,
+    width: int,
+    height: int,
+) -> None:
+    """Draw gameplay zone bounds and labels."""
+    font = ImageFont.load_default() if cell_size_px >= 6 else None
+    for zone in zones:
+        if not isinstance(zone, dict):
+            continue
+        bounds = _minmax_bounds(zone.get("bounds"), width=width, height=height)
+        if bounds is None:
+            continue
+        zone_type = zone.get("type") if isinstance(zone.get("type"), str) else "unknown"
+        fill = GAMEPLAY_ZONE_FILL_COLORS.get(zone_type, (255, 255, 255, 55))
+        rect = _minmax_bounds_rect(bounds, cell_size_px)
+        draw.rectangle(rect, fill=fill, outline=GAMEPLAY_ZONE_OUTLINE_COLOR)
+        if font is not None:
+            _draw_text(draw, _zone_label(zone_type), bounds["min_x"], bounds["min_y"], cell_size_px, font, PLACE_TEXT_COLOR)
+        for point in _zone_points(zone.get("entry_points")):
+            _draw_cross(draw, point["x"], point["y"], cell_size_px, GAMEPLAY_ZONE_OUTLINE_COLOR)
+
+
+def _draw_places_overlay(
+    draw: ImageDraw.ImageDraw,
+    *,
+    places: list[Any],
+    cell_size_px: int,
+    width: int,
+    height: int,
+) -> None:
+    """Draw semantic place bounds and entrances."""
+    font = ImageFont.load_default() if cell_size_px >= 6 else None
+    for place in places:
+        if not isinstance(place, dict):
+            continue
+        bounds = _minmax_bounds(place.get("bounds"), width=width, height=height)
+        if bounds is None:
+            continue
+        draw.rectangle(
+            _minmax_bounds_rect(bounds, cell_size_px),
+            outline=PLACE_OUTLINE_COLOR,
+            width=max(1, cell_size_px // 5),
+        )
+        if font is not None:
+            label = _short_id(str(place.get("type", "place")))
+            _draw_text(draw, label, bounds["min_x"], bounds["min_y"], cell_size_px, font, PLACE_TEXT_COLOR)
+        for point in _zone_points(place.get("entrances")):
+            _draw_cross(draw, point["x"], point["y"], cell_size_px, PLACE_OUTLINE_COLOR)
+
+
+def _draw_world_graph_overlay(
+    draw: ImageDraw.ImageDraw,
+    *,
+    graph: dict[str, Any],
+    cell_size_px: int,
+    width: int,
+    height: int,
+) -> None:
+    """Draw world graph nodes and edges."""
+    nodes = _world_graph_nodes_by_id(graph, width=width, height=height)
+    main_edge_ids = set(_string_values(_optional_object(graph.get("main_path")).get("edge_ids")))
+    for edge in _optional_list(graph.get("edges")):
+        if not isinstance(edge, dict):
+            continue
+        source = edge.get("source")
+        target = edge.get("target")
+        edge_id = edge.get("id")
+        if not isinstance(source, str) or not isinstance(target, str):
+            continue
+        source_point = nodes.get(source)
+        target_point = nodes.get(target)
+        if source_point is None or target_point is None:
+            continue
+        color = WORLD_GRAPH_MAIN_PATH_COLOR if edge_id in main_edge_ids else WORLD_GRAPH_EDGE_COLOR
+        _draw_line_between_points(draw, source_point, target_point, cell_size_px, color)
+    for point in nodes.values():
+        _draw_small_marker(draw, point["x"], point["y"], cell_size_px, WORLD_GRAPH_NODE_COLOR)
+
+
+def _draw_routes_overlay(
+    draw: ImageDraw.ImageDraw,
+    *,
+    routes: list[Any],
+    cell_size_px: int,
+    width: int,
+    height: int,
+) -> None:
+    """Draw semantic route waypoints."""
+    font = ImageFont.load_default() if cell_size_px >= 8 else None
+    for route in routes:
+        if not isinstance(route, dict):
+            continue
+        waypoints = _route_waypoints(route.get("waypoints"), width=width, height=height)
+        if not waypoints:
+            continue
+        route_type = route.get("type") if isinstance(route.get("type"), str) else "unknown"
+        color = ROUTE_COLORS.get(route_type, ROUTE_FALLBACK_COLOR)
+        _draw_polyline(draw, waypoints, cell_size_px, color)
+        if font is not None:
+            first = waypoints[0]
+            _draw_text(draw, _route_label(route_type), first["x"], first["y"], cell_size_px, font, color)
+
+
+def _zone_points(value: Any) -> list[dict[str, int]]:
+    points: list[dict[str, int]] = []
+    for item in _optional_list(value):
+        if not isinstance(item, dict):
+            continue
+        point = _point_object(item.get("position")) or _point_object(item)
+        if point is not None:
+            points.append(point)
+    return points
+
+
+def _route_waypoints(value: Any, *, width: int, height: int) -> list[dict[str, int]]:
+    points: list[dict[str, int]] = []
+    for item in _optional_list(value):
+        point = _point_object(item)
+        if point is None:
+            continue
+        if 0 <= point["x"] < width and 0 <= point["y"] < height:
+            points.append(point)
+    return points
+
+
+def _world_graph_nodes_by_id(
+    graph: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> dict[str, dict[str, int]]:
+    nodes: dict[str, dict[str, int]] = {}
+    for node in _optional_list(graph.get("nodes")):
+        if not isinstance(node, dict):
+            continue
+        node_id = node.get("id")
+        position = _point_object(node.get("position"))
+        if not isinstance(node_id, str) or position is None:
+            continue
+        if 0 <= position["x"] < width and 0 <= position["y"] < height:
+            nodes[node_id] = position
+    return nodes
+
+
+def _draw_polyline(
+    draw: ImageDraw.ImageDraw,
+    points: list[dict[str, int]],
+    cell_size_px: int,
+    color: tuple[int, int, int, int],
+) -> None:
+    if len(points) < 2:
+        point = points[0] if points else None
+        if point is not None:
+            _draw_cross(draw, point["x"], point["y"], cell_size_px, color)
+        return
+    centers = [_cell_center(point["x"], point["y"], cell_size_px) for point in points]
+    draw.line(centers, fill=color, width=max(1, cell_size_px // 4))
+    for point in points:
+        _draw_cross(draw, point["x"], point["y"], cell_size_px, color)
+
+
+def _draw_line_between_points(
+    draw: ImageDraw.ImageDraw,
+    source: dict[str, int],
+    target: dict[str, int],
+    cell_size_px: int,
+    color: tuple[int, int, int, int],
+) -> None:
+    sx, sy = _cell_center(source["x"], source["y"], cell_size_px)
+    tx, ty = _cell_center(target["x"], target["y"], cell_size_px)
+    draw.line((sx, sy, tx, ty), fill=color, width=max(1, cell_size_px // 5))
+
+
+def _draw_cross(
+    draw: ImageDraw.ImageDraw,
+    x: int,
+    y: int,
+    cell_size_px: int,
+    color: tuple[int, int, int, int],
+) -> None:
+    left, top, right, bottom = _cell_rect(x, y, cell_size_px)
+    draw.line((left, top, right, bottom), fill=color, width=max(1, cell_size_px // 5))
+    draw.line((left, bottom, right, top), fill=color, width=max(1, cell_size_px // 5))
+
+
+def _draw_text(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    x: int,
+    y: int,
+    cell_size_px: int,
+    font: ImageFont.ImageFont,
+    color: tuple[int, int, int, int],
+) -> None:
+    draw.text((x * cell_size_px + 1, y * cell_size_px), text, fill=color, font=font)
+
+
+def _point_object(value: Any) -> dict[str, int] | None:
+    if not isinstance(value, dict):
+        return None
+    x = value.get("x")
+    y = value.get("y")
+    if isinstance(x, int) and isinstance(y, int):
+        return {"x": x, "y": y}
+    return None
+
+
+def _minmax_bounds(value: Any, *, width: int, height: int) -> dict[str, int] | None:
+    if not isinstance(value, dict):
+        return None
+    if all(key in value for key in ("min_x", "min_y", "max_x", "max_y")):
+        min_x = value.get("min_x")
+        min_y = value.get("min_y")
+        max_x = value.get("max_x")
+        max_y = value.get("max_y")
+    elif all(key in value for key in ("x", "y", "width", "height")):
+        min_x = value.get("x")
+        min_y = value.get("y")
+        max_x = value.get("x") + value.get("width") - 1 if isinstance(value.get("x"), int) and isinstance(value.get("width"), int) else None
+        max_y = value.get("y") + value.get("height") - 1 if isinstance(value.get("y"), int) and isinstance(value.get("height"), int) else None
+    else:
+        return None
+    if not all(isinstance(item, int) for item in (min_x, min_y, max_x, max_y)):
+        return None
+    min_x = max(0, min(width - 1, min_x))
+    min_y = max(0, min(height - 1, min_y))
+    max_x = max(0, min(width - 1, max_x))
+    max_y = max(0, min(height - 1, max_y))
+    if max_x < min_x or max_y < min_y:
+        return None
+    return {"min_x": min_x, "min_y": min_y, "max_x": max_x, "max_y": max_y}
+
+
+def _minmax_bounds_rect(
+    bounds: dict[str, int],
+    cell_size_px: int,
+) -> tuple[int, int, int, int]:
+    return (
+        bounds["min_x"] * cell_size_px,
+        bounds["min_y"] * cell_size_px,
+        (bounds["max_x"] + 1) * cell_size_px - 1,
+        (bounds["max_y"] + 1) * cell_size_px - 1,
+    )
+
+
+def _string_values(value: Any) -> list[str]:
+    return [item for item in _optional_list(value) if isinstance(item, str)]
+
+
+def _zone_label(zone_type: str) -> str:
+    return "".join(part[:1].upper() for part in zone_type.split("_") if part)[:3] or "Z"
+
+
+def _route_label(route_type: str) -> str:
+    return "".join(part[:1].upper() for part in route_type.split("_") if part)[:3] or "R"
+
+
+def _short_id(value: str) -> str:
+    return "".join(part[:1].upper() for part in value.split("_") if part)[:3] or "P"
 
 def _draw_point(
     draw: ImageDraw.ImageDraw,
@@ -870,6 +1229,31 @@ def parse_args() -> argparse.Namespace:
         help="Draw elevation transitions such as slopes, ramps, bridges, and steep edges.",
     )
     parser.add_argument(
+        "--places-overlay",
+        action="store_true",
+        help="Draw semantic place bounds and entrances.",
+    )
+    parser.add_argument(
+        "--gameplay-zones-overlay",
+        action="store_true",
+        help="Draw neutral gameplay zone bounds.",
+    )
+    parser.add_argument(
+        "--routes-overlay",
+        action="store_true",
+        help="Draw semantic routes from routes.json.",
+    )
+    parser.add_argument(
+        "--world-graph-overlay",
+        action="store_true",
+        help="Draw world graph nodes and edges.",
+    )
+    parser.add_argument(
+        "--semantic-overlays",
+        action="store_true",
+        help="Draw places, gameplay zones, routes, and world graph overlays.",
+    )
+    parser.add_argument(
         "--grid",
         action="store_true",
         help="Draw a light tile grid. Useful for small maps.",
@@ -890,6 +1274,10 @@ def main() -> int:
             draw_collision_overlay=args.collision_overlay,
             draw_elevation_overlay=args.elevation_overlay,
             draw_transition_overlay=args.transition_overlay,
+            draw_places_overlay=args.places_overlay or args.semantic_overlays,
+            draw_gameplay_zones_overlay=args.gameplay_zones_overlay or args.semantic_overlays,
+            draw_routes_overlay=args.routes_overlay or args.semantic_overlays,
+            draw_world_graph_overlay=args.world_graph_overlay or args.semantic_overlays,
             draw_grid=args.grid,
         )
     except (FileNotFoundError, ValueError, json.JSONDecodeError, OSError) as exc:

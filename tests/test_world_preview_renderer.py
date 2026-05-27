@@ -21,6 +21,10 @@ def test_world_preview_renderer_writes_png(tmp_path: Path) -> None:
         cell_size_px=8,
         draw_elevation_overlay=True,
         draw_transition_overlay=True,
+        draw_places_overlay=True,
+        draw_gameplay_zones_overlay=True,
+        draw_routes_overlay=True,
+        draw_world_graph_overlay=True,
     )
 
     assert summary.width_tiles == 3
@@ -29,6 +33,10 @@ def test_world_preview_renderer_writes_png(tmp_path: Path) -> None:
     assert summary.terrain_type_count == 6
     assert summary.blocked_tiles == 1
     assert summary.runtime_objects == 1
+    assert summary.places == 1
+    assert summary.gameplay_zones == 1
+    assert summary.routes == 1
+    assert summary.world_graph_edges == 1
     assert summary.output_path == output_dir / "world_preview.png"
     assert summary.output_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
@@ -46,6 +54,7 @@ def test_world_preview_renderer_cli_prints_summary(tmp_path: Path) -> None:
             "6",
             "--elevation-overlay",
             "--transition-overlay",
+            "--semantic-overlays",
         ],
         cwd=ROOT,
         text=True,
@@ -57,6 +66,10 @@ def test_world_preview_renderer_cli_prints_summary(tmp_path: Path) -> None:
     assert "Map: 3x2 tiles, preview cell size 6 px" in result.stderr
     assert "elevation levels: [-1, 0, 1, 2]" in result.stderr
     assert "elevation transitions: 2" in result.stderr
+    assert "places: 1" in result.stderr
+    assert "gameplay zones: 1" in result.stderr
+    assert "routes: 1" in result.stderr
+    assert "world graph edges: 1" in result.stderr
     assert "Output:" in result.stderr
     assert (output_dir / "world_preview.png").is_file()
 
@@ -99,6 +112,9 @@ def _write_minimal_package(tmp_path: Path) -> Path:
                 "tile_size_px": 16,
             },
             "runtime_grids": "runtime_grids.json",
+            "world_graph": "world_graph.json",
+            "routes": "routes.json",
+            "gameplay_zones": "gameplay_zones.json",
             "elevation_transitions": "elevation_transitions.json",
             "layers": {
                 "terrain": "layers/terrain.json",
@@ -107,6 +123,7 @@ def _write_minimal_package(tmp_path: Path) -> Path:
             },
             "objects": {
                 "runtime_objects": "objects/runtime_objects.json",
+                "places": "objects/places.json",
             },
         },
     )
@@ -149,6 +166,61 @@ def _write_minimal_package(tmp_path: Path) -> Path:
                     "from": {"x": 1, "y": 0},
                     "to": {"x": 2, "y": 0},
                     "suggested_connector": "bridge",
+                },
+            ],
+        },
+    )
+    _write_json(
+        package_dir / "world_graph.json",
+        {
+            "nodes": [
+                {"id": "place_0", "position": {"x": 1, "y": 0}},
+                {"id": "marker:goal", "position": {"x": 2, "y": 1}},
+            ],
+            "edges": [
+                {
+                    "id": "edge_000",
+                    "source": "place_0",
+                    "target": "marker:goal",
+                },
+            ],
+            "main_path": {"edge_ids": ["edge_000"]},
+        },
+    )
+    _write_json(
+        package_dir / "routes.json",
+        {
+            "items": [
+                {
+                    "id": "main_road_000",
+                    "type": "main_road",
+                    "waypoints": [{"x": 0, "y": 0}, {"x": 2, "y": 1}],
+                },
+            ],
+        },
+    )
+    _write_json(
+        package_dir / "gameplay_zones.json",
+        {
+            "items": [
+                {
+                    "id": "zone_000",
+                    "type": "safe_area",
+                    "bounds": {"min_x": 0, "min_y": 0, "max_x": 1, "max_y": 1},
+                    "entry_points": [{"position": {"x": 0, "y": 0}}],
+                },
+            ],
+        },
+    )
+    _write_json(
+        package_dir / "objects" / "places.json",
+        {
+            "items": [
+                {
+                    "id": "place_0",
+                    "type": "safe_clearing",
+                    "bounds": {"min_x": 0, "min_y": 0, "max_x": 2, "max_y": 1},
+                    "entrances": [{"position": {"x": 1, "y": 0}}],
                 },
             ],
         },
