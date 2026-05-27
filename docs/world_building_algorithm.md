@@ -289,3 +289,19 @@ python3 examples/render_world_preview.py output \
 ## Elevation v1
 
 See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.
+
+## Gameplay zones
+
+После загрузки `places`, `routes` и `world_graph` consumer может загрузить `map_package/gameplay_zones.json`.
+
+Этот файл отвечает на вопрос: "для чего нужен этот участок карты?". Зона может быть стартовой безопасной областью, encounter-зоной, местом лута, секретом, опасной низиной, story-локацией или extraction-точкой.
+
+Рекомендуемый порядок использования:
+
+1. Прочитать `gameplay_zones.json` из пути `gameplay_zones` в `map_package/map.json`.
+2. Для каждой зоны проверить `bounds` и `polygon`.
+3. Связать `linked_places`, `linked_routes` и `linked_markers` с уже загруженными объектами мира.
+4. Использовать `danger_level`, `loot_level`, `recommended_encounter` и `elevation_usage` для runtime-логики.
+5. Не использовать зоны как точный pathfinding: точная проходимость берётся из `runtime_grids.json`.
+
+Validation начиная с `v0.0.48` проверяет, что зоны ссылаются на существующие places/routes/markers и лежат внутри карты.

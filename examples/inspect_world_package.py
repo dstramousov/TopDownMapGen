@@ -109,6 +109,8 @@ class InspectionReport:
         world_graph_main_path_length: Number of nodes in the main semantic path.
         route_count: Number of semantic routes.
         route_type_counts: Per-route-type counts.
+        gameplay_zone_count: Number of neutral gameplay zones.
+        gameplay_zone_type_counts: Per-zone-type counts.
         gameplay_counts: Per-gameplay-layer item counts.
         runtime_object_count: Number of runtime objects.
         runtime_object_type_count: Number of runtime object types used by instances.
@@ -153,6 +155,8 @@ class InspectionReport:
     world_graph_main_path_length: int
     route_count: int
     route_type_counts: dict[str, int]
+    gameplay_zone_count: int
+    gameplay_zone_type_counts: dict[str, int]
     gameplay_counts: dict[str, int]
     runtime_object_count: int
     runtime_object_type_count: int
@@ -212,6 +216,10 @@ def inspect_world_package(path: Path) -> InspectionReport:
         map_index.get("world_graph"),
     )
     routes = _read_optional_package_object(package_dir, map_index.get("routes"))
+    gameplay_zones = _read_optional_package_object(
+        package_dir,
+        map_index.get("gameplay_zones"),
+    )
     elevation_model = _read_optional_package_object(
         package_dir,
         map_index.get("elevation_model"),
@@ -272,6 +280,7 @@ def inspect_world_package(path: Path) -> InspectionReport:
     elevation_model_summary = _optional_object(elevation_model.get("summary"))
     gameplay_counts = _inspect_gameplay(package_dir, gameplay)
     route_items = _optional_list(routes.get("items"))
+    gameplay_zone_items = _optional_list(gameplay_zones.get("items"))
     runtime_items = _optional_list(runtime_objects.get("items"))
     place_items = _optional_list(places.get("items"))
     warnings = _build_warnings(
@@ -323,6 +332,8 @@ def inspect_world_package(path: Path) -> InspectionReport:
         ),
         route_count=len(route_items),
         route_type_counts=_count_by_key(route_items, "type"),
+        gameplay_zone_count=len(gameplay_zone_items),
+        gameplay_zone_type_counts=_count_by_key(gameplay_zone_items, "type"),
         gameplay_counts=gameplay_counts,
         runtime_object_count=len(runtime_items),
         runtime_object_type_count=len(_unique_types(runtime_items)),
@@ -465,6 +476,11 @@ def print_report(report: InspectionReport) -> None:
         "- routes: OK, total=%s, types=%s",
         report.route_count,
         report.route_type_counts,
+    )
+    LOGGER.info(
+        "- gameplay_zones: OK, total=%s, types=%s",
+        report.gameplay_zone_count,
+        report.gameplay_zone_type_counts,
     )
     LOGGER.info("")
     LOGGER.info("Objects:")

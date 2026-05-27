@@ -37,6 +37,7 @@ class OutputPaths:
     map_package_runtime_grids: Path
     map_package_world_graph: Path
     map_package_routes: Path
+    map_package_gameplay_zones: Path
     map_package_elevation_model: Path
     map_package_elevation_features: Path
     map_package_elevation_transitions: Path
@@ -121,6 +122,7 @@ class OutputPaths:
             map_package_runtime_grids=map_package_dir / "runtime_grids.json",
             map_package_world_graph=map_package_dir / "world_graph.json",
             map_package_routes=map_package_dir / "routes.json",
+            map_package_gameplay_zones=map_package_dir / "gameplay_zones.json",
             map_package_elevation_model=map_package_dir / "elevation_model.json",
             map_package_elevation_features=map_package_dir / "elevation_features.json",
             map_package_elevation_transitions=map_package_dir / "elevation_transitions.json",

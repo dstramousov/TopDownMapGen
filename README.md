@@ -290,3 +290,9 @@ python3 examples/render_world_preview.py output \
 ## Elevation v1
 
 See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.
+
+### Gameplay zones
+
+Начиная с `v0.0.48`, world package содержит `map_package/gameplay_zones.json`. Это нейтральный слой назначения областей карты: `safe_area`, `encounter_area`, `loot_area`, `danger_area`, `story_area`, `extraction_area` и другие.
+
+Для игры это слой "что здесь должно происходить", а не слой точной физики. Точную проходимость, видимость и высоты по-прежнему нужно брать из `runtime_grids.json` и elevation-файлов.

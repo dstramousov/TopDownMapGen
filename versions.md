@@ -391,3 +391,12 @@
 - Inspector показывает статус elevation v1 и предупреждает о недостающих уровнях/features.
 - Добавлен smoke-test, который проверяет полный elevation v1 contract: уровни `-1..4` и основные feature families.
 - Версия проекта поднята до `0.0.47`.
+
+## v0.0.47 -> v0.0.48
+
+- Добавлен `map_package/gameplay_zones.json` с нейтральными gameplay-зонами: `safe_area`, `encounter_area`, `loot_area`, `danger_area`, `story_area`, `extraction_area` и другими типами.
+- `map_package/map.json`, `_manifest.json`, inspector и validation теперь знают про gameplay zones.
+- `world_graph.main_path` теперь обязан иметь edge для каждой соседней пары `node_ids`; validation ловит логически разорванный main path.
+- Генератор добавляет недостающие main-path edges, чтобы `node_ids` и `edge_ids` согласованно описывали маршрут.
+- Версия проекта поднята до `0.0.48`.
+

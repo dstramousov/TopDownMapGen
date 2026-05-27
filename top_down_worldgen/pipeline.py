@@ -19,6 +19,7 @@ from .manifest import (
     ELEVATION_TRANSITIONS_SCHEMA_VERSION,
     ENGINE_CONFIG_SCHEMA_VERSION,
     GAMEPLAY_LAYER_SCHEMA_VERSION,
+    GAMEPLAY_ZONES_SCHEMA_VERSION,
     MAP_PACKAGE_MAP_SCHEMA_VERSION,
     MARKERS_SCHEMA_VERSION,
     METRICS_SCHEMA_VERSION,
@@ -533,6 +534,13 @@ class WorldgenPipeline:
                 True,
                 False,
                 ROUTES_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_gameplay_zones,
+                "map_package:gameplay_zones",
+                True,
+                False,
+                GAMEPLAY_ZONES_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.map_package_elevation_model,

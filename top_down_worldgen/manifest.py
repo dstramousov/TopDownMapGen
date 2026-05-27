@@ -8,13 +8,13 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v34"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v35"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v30"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v31"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v2"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
@@ -23,7 +23,7 @@ RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v12"
 PLACES_SCHEMA_VERSION = "places-v2"
 OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
 MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
-MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v8"
+MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v9"
 TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
 TERRAIN_LAYER_SCHEMA_VERSION = "terrain-layer-v1"
 MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"
@@ -42,6 +42,7 @@ MARKERS_SCHEMA_VERSION = "markers-v1"
 RUNTIME_GRIDS_SCHEMA_VERSION = "runtime-grids-v1"
 WORLD_GRAPH_SCHEMA_VERSION = "world-graph-v1"
 ROUTES_SCHEMA_VERSION = "routes-v1"
+GAMEPLAY_ZONES_SCHEMA_VERSION = "gameplay-zones-v1"
 ELEVATION_FEATURES_SCHEMA_VERSION = "elevation-features-v3"
 ELEVATION_TRANSITIONS_SCHEMA_VERSION = "elevation-transitions-v4"
 
@@ -149,6 +150,7 @@ def build_manifest(
         "runtime_grids": RUNTIME_GRIDS_SCHEMA_VERSION,
         "world_graph": WORLD_GRAPH_SCHEMA_VERSION,
         "routes": ROUTES_SCHEMA_VERSION,
+        "gameplay_zones": GAMEPLAY_ZONES_SCHEMA_VERSION,
     }
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,

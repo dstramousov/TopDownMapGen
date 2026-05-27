@@ -105,6 +105,7 @@ def build_validation_report(
         "map_package_runtime_grids_exists": outputs.map_package_runtime_grids.exists(),
         "map_package_world_graph_exists": outputs.map_package_world_graph.exists(),
         "map_package_routes_exists": outputs.map_package_routes.exists(),
+        "map_package_gameplay_zones_exists": outputs.map_package_gameplay_zones.exists(),
         "map_package_elevation_model_exists": outputs.map_package_elevation_model.exists(),
         "map_package_elevation_features_exists": outputs.map_package_elevation_features.exists(),
         "map_package_elevation_transitions_exists": outputs.map_package_elevation_transitions.exists(),
@@ -453,6 +454,11 @@ def _build_map_package_consistency_checks(
             _package_world_graph_main_path_valid(package)
         ),
         "map_package_routes_refs_valid": _package_routes_refs_valid(package),
+        "map_package_gameplay_zones_valid": _package_gameplay_zones_valid(
+            package,
+            width=width,
+            height=height,
+        ),
         "map_package_route_waypoints_inside_map": _package_route_waypoints_inside_map(
             package,
             width=width,
@@ -497,6 +503,7 @@ def _failed_package_checks() -> dict[str, bool]:
         "map_package_world_graph_refs_valid": False,
         "map_package_world_graph_main_path_valid": False,
         "map_package_routes_refs_valid": False,
+        "map_package_gameplay_zones_valid": False,
         "map_package_route_waypoints_inside_map": False,
         "map_package_elevation_model_valid": False,
         "map_package_elevation_features_valid": False,
@@ -535,6 +542,9 @@ def _load_package_context(outputs: OutputPaths) -> dict[str, Any] | None:
                 package_dir / str(map_index.get("world_graph")),
             ),
             "routes": _read_json_object(package_dir / str(map_index.get("routes"))),
+            "gameplay_zones": _read_json_object(
+                package_dir / str(map_index.get("gameplay_zones")),
+            ),
             "elevation_model": _read_json_object(
                 package_dir / str(map_index.get("elevation_model")),
             ),
@@ -589,6 +599,7 @@ def _package_files_have_schema_versions(package: dict[str, Any]) -> bool:
         "runtime_grids",
         "world_graph",
         "routes",
+        "gameplay_zones",
         "elevation_model",
         "elevation_features",
         "elevation_transitions",
@@ -809,13 +820,38 @@ def _package_world_graph_main_path_valid(package: dict[str, Any]) -> bool:
         for node in _dict_list(graph.get("nodes"))
         if isinstance(node.get("id"), str)
     }
+    edges = _dict_list(graph.get("edges"))
+    edge_ids = {
+        str(edge.get("id"))
+        for edge in edges
+        if isinstance(edge.get("id"), str)
+    }
     main_path = _json_object(graph.get("main_path"))
     path_nodes = _string_list(main_path.get("node_ids"))
+    path_edges = _string_list(main_path.get("edge_ids"))
     if len(path_nodes) < 2:
         return False
     if path_nodes[0] != "marker:start" or path_nodes[-1] != "marker:goal":
         return False
-    return all(node_id in node_ids for node_id in path_nodes)
+    if any(node_id not in node_ids for node_id in path_nodes):
+        return False
+    if len(path_edges) != len(path_nodes) - 1:
+        return False
+    if any(edge_id not in edge_ids for edge_id in path_edges):
+        return False
+    for source, target in zip(path_nodes, path_nodes[1:], strict=False):
+        if not _package_edge_exists_between(edges, source, target):
+            return False
+    return True
+
+
+def _package_edge_exists_between(edges: list[dict[str, Any]], source: str, target: str) -> bool:
+    for edge in edges:
+        edge_source = edge.get("source")
+        edge_target = edge.get("target")
+        if {edge_source, edge_target} == {source, target}:
+            return True
+    return False
 
 
 def _package_routes_refs_valid(package: dict[str, Any]) -> bool:
@@ -839,6 +875,95 @@ def _package_routes_refs_valid(package: dict[str, Any]) -> bool:
         if any(edge_id not in edge_ids for edge_id in _string_list(route.get("edge_ids"))):
             return False
     return True
+
+
+
+
+def _package_gameplay_zones_valid(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    zones_package = _json_object(package.get("gameplay_zones"))
+    zones = _dict_list(zones_package.get("items"))
+    if not zones:
+        return False
+    place_ids = _package_place_ids(package)
+    marker_ids = _package_marker_ids(package)
+    route_ids = {
+        str(route.get("id"))
+        for route in _dict_list(_json_object(package.get("routes")).get("items"))
+        if isinstance(route.get("id"), str)
+    }
+    valid_types = {
+        "safe_area",
+        "encounter_area",
+        "ambush_area",
+        "loot_area",
+        "boss_area",
+        "stealth_area",
+        "traversal_area",
+        "secret_area",
+        "danger_area",
+        "story_area",
+        "extraction_area",
+    }
+    for zone in zones:
+        zone_id = zone.get("id")
+        zone_type = zone.get("type")
+        if not isinstance(zone_id, str) or zone_type not in valid_types:
+            return False
+        if not _package_bounds_inside_map(zone.get("bounds"), width=width, height=height):
+            return False
+        if not _package_zone_points_inside_map(zone.get("polygon"), width=width, height=height):
+            return False
+        if not _package_zone_entry_points_inside_map(zone.get("entry_points"), width=width, height=height):
+            return False
+        if not _package_zone_entry_points_inside_map(zone.get("exit_points"), width=width, height=height):
+            return False
+        if any(place_ref not in place_ids for place_ref in _string_list(zone.get("linked_places"))):
+            return False
+        if any(marker_ref not in marker_ids for marker_ref in _string_list(zone.get("linked_markers"))):
+            return False
+        if any(route_ref not in route_ids for route_ref in _string_list(zone.get("linked_routes"))):
+            return False
+    return True
+
+
+def _package_bounds_inside_map(value: Any, *, width: int, height: int) -> bool:
+    bounds = _json_object(value)
+    try:
+        min_x = int(bounds["min_x"])
+        min_y = int(bounds["min_y"])
+        max_x = int(bounds["max_x"])
+        max_y = int(bounds["max_y"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return 0 <= min_x <= max_x < width and 0 <= min_y <= max_y < height
+
+
+def _package_zone_points_inside_map(value: Any, *, width: int, height: int) -> bool:
+    points = _dict_list(value)
+    if not points:
+        return False
+    return all(_mapping_point_in_bounds(point, width=width, height=height) for point in points)
+
+
+def _package_zone_entry_points_inside_map(value: Any, *, width: int, height: int) -> bool:
+    points = _dict_list(value)
+    if not points:
+        return False
+    for point in points:
+        position = _json_object(point.get("position"))
+        if not _mapping_point_in_bounds(position, width=width, height=height):
+            return False
+    return True
+
+
+def _mapping_point_in_bounds(value: Any, *, width: int, height: int) -> bool:
+    point = _mapping_point(value)
+    return point is not None and _point_in_bounds(point, width=width, height=height)
 
 
 def _package_route_waypoints_inside_map(

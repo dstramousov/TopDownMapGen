@@ -225,3 +225,13 @@ python3 examples/render_world_preview.py output \
 ```
 
 `--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+
+## `map_package/gameplay_zones.json`
+
+Начиная с `v0.0.48`, `gameplay_zones.json` описывает нейтральное назначение областей карты. Это не замена `combat_zones.json`, а более общий слой для top-down игр разных жанров.
+
+Типы зон включают `safe_area`, `encounter_area`, `ambush_area`, `loot_area`, `boss_area`, `stealth_area`, `traversal_area`, `secret_area`, `danger_area`, `story_area` и `extraction_area`.
+
+Каждая зона содержит `bounds`, `polygon`, `entry_points`, `exit_points`, ссылки на `linked_places`, `linked_routes`, `linked_markers`, а также `danger_level`, `loot_level`, `recommended_enemy_types`, `recommended_encounter` и `elevation_usage`.
+
+Игра должна использовать `gameplay_zones.json` как слой намерения: что этот кусок карты должен делать для игрока. Для точного движения, видимости и коллизий всё равно используйте `runtime_grids.json`.

@@ -60,6 +60,9 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_world_graph.read_text(encoding="utf-8"),
     )
     routes = json.loads(outputs.map_package_routes.read_text(encoding="utf-8"))
+    gameplay_zones = json.loads(
+        outputs.map_package_gameplay_zones.read_text(encoding="utf-8"),
+    )
     elevation_model = json.loads(
         outputs.map_package_elevation_model.read_text(encoding="utf-8"),
     )
@@ -86,7 +89,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
     )
 
-    assert package_index["schema_version"] == "map-package-map-v8"
+    assert package_index["schema_version"] == "map-package-map-v9"
     assert package_index["dimensions"]["width_tiles"] == 2
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
@@ -94,6 +97,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["runtime_grids"] == "runtime_grids.json"
     assert package_index["world_graph"] == "world_graph.json"
     assert package_index["routes"] == "routes.json"
+    assert package_index["gameplay_zones"] == "gameplay_zones.json"
     assert package_index["elevation_model"] == "elevation_model.json"
     assert package_index["elevation_features"] == "elevation_features.json"
     assert package_index["elevation_transitions"] == "elevation_transitions.json"
@@ -124,6 +128,11 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert world_graph["main_path"]["node_ids"] == ["marker:start", "marker:goal"]
     assert routes["schema_version"] == "routes-v1"
     assert routes["items"][0]["type"] == "main_road"
+    assert gameplay_zones["schema_version"] == "gameplay-zones-v1"
+    assert [item["type"] for item in gameplay_zones["items"]] == [
+        "safe_area",
+        "extraction_area",
+    ]
     assert elevation_model["schema_version"] == "elevation-model-v5"
     assert set(elevation_model["levels"]) >= {"-1", "0", "1", "2", "3", "4"}
     assert elevation_features["schema_version"] == "elevation-features-v3"

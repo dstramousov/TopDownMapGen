@@ -11,6 +11,7 @@ from top_down_worldgen.manifest import (
     ELEVATION_FEATURES_SCHEMA_VERSION,
     ELEVATION_TRANSITIONS_SCHEMA_VERSION,
     GAMEPLAY_LAYER_SCHEMA_VERSION,
+    GAMEPLAY_ZONES_SCHEMA_VERSION,
     MAP_PACKAGE_MAP_SCHEMA_VERSION,
     MAP_PACKAGE_SCHEMA_VERSION,
     MARKERS_SCHEMA_VERSION,
@@ -181,6 +182,15 @@ def write_map_package(
     write_json(world_graph, outputs.map_package_world_graph)
     routes = _build_routes(world_graph)
     write_json(routes, outputs.map_package_routes)
+    gameplay_zones = _build_gameplay_zones(
+        markers=markers,
+        places=places_items,
+        routes=routes,
+        world_graph=world_graph,
+        width=width,
+        height=height,
+    )
+    write_json(gameplay_zones, outputs.map_package_gameplay_zones)
     height_grid = _dict(runtime_grids.get("grids")).get("height_grid")
     elevation_model = _build_elevation_model(
         height_grid=height_grid,
@@ -279,6 +289,7 @@ def write_map_package(
             "runtime_grids": "runtime_grids.json",
             "world_graph": "world_graph.json",
             "routes": "routes.json",
+            "gameplay_zones": "gameplay_zones.json",
             "elevation_model": "elevation_model.json",
             "elevation_features": "elevation_features.json",
             "elevation_transitions": "elevation_transitions.json",
@@ -331,6 +342,7 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_runtime_grids,
         outputs.map_package_world_graph,
         outputs.map_package_routes,
+        outputs.map_package_gameplay_zones,
         outputs.map_package_elevation_model,
         outputs.map_package_elevation_features,
         outputs.map_package_elevation_transitions,
@@ -632,6 +644,413 @@ def _build_routes(world_graph: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _build_gameplay_zones(
+    *,
+    markers: dict[str, Any],
+    places: list[Any],
+    routes: dict[str, Any],
+    world_graph: dict[str, Any],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
+    """Build neutral gameplay zones from public world semantics.
+
+    Args:
+        markers: Marker package object.
+        places: Semantic places.
+        routes: Route package object.
+        world_graph: World graph package object.
+        width: Map width in tiles.
+        height: Map height in tiles.
+
+    Returns:
+        Gameplay zones package object.
+    """
+    route_refs_by_node = _route_refs_by_node(routes)
+    marker_refs_by_position = _marker_refs_by_position(markers)
+    zones: list[dict[str, Any]] = []
+
+    for marker in _list(markers.get("items")):
+        if not isinstance(marker, dict):
+            continue
+        zone = _gameplay_zone_from_marker(
+            marker=marker,
+            serial=len(zones),
+            width=width,
+            height=height,
+        )
+        if zone is not None:
+            zones.append(zone)
+
+    graph_node_ids = {
+        str(node.get("id"))
+        for node in _list(world_graph.get("nodes"))
+        if isinstance(node, dict) and isinstance(node.get("id"), str)
+    }
+    for place in places:
+        if not isinstance(place, dict):
+            continue
+        zone = _gameplay_zone_from_place(
+            place=place,
+            route_refs_by_node=route_refs_by_node,
+            marker_refs_by_position=marker_refs_by_position,
+            graph_node_ids=graph_node_ids,
+            serial=len(zones),
+            width=width,
+            height=height,
+        )
+        if zone is not None:
+            zones.append(zone)
+
+    return {
+        "schema_version": GAMEPLAY_ZONES_SCHEMA_VERSION,
+        "kind": "gameplay_zones",
+        "coordinate_space": "tile",
+        "width": width,
+        "height": height,
+        "items": zones,
+        "zone_types": {
+            "safe_area": "Low-risk player-safe or start area.",
+            "encounter_area": "General encounter location.",
+            "ambush_area": "Likely surprise or flank encounter location.",
+            "loot_area": "Reward-focused area.",
+            "boss_area": "High-danger set-piece encounter area.",
+            "stealth_area": "Area suited for concealment or bypass gameplay.",
+            "traversal_area": "Movement, crossing, obstruction, or route puzzle area.",
+            "secret_area": "Optional hidden or high-reward area.",
+            "danger_area": "High-risk area without necessarily being a boss fight.",
+            "story_area": "Narrative landmark or lore area.",
+            "extraction_area": "Goal, exit, or extraction area.",
+        },
+        "summary": {
+            "total": len(zones),
+            "by_type": _count_by_key(zones, "type"),
+            "linked_place_count": sum(bool(zone.get("linked_places")) for zone in zones),
+            "linked_marker_count": sum(bool(zone.get("linked_markers")) for zone in zones),
+            "linked_route_count": sum(bool(zone.get("linked_routes")) for zone in zones),
+        },
+        "notes": [
+            "Gameplay zones describe intended gameplay usage of map areas.",
+            "Use runtime grids for exact movement, collision, visibility, and cover.",
+        ],
+    }
+
+
+def _gameplay_zone_from_marker(
+    *,
+    marker: dict[str, Any],
+    serial: int,
+    width: int,
+    height: int,
+) -> dict[str, Any] | None:
+    marker_type = marker.get("type")
+    marker_id = marker.get("id")
+    position = _mapping_point(marker.get("position"))
+    if not isinstance(marker_type, str) or not isinstance(marker_id, str) or position is None:
+        return None
+    if marker_type == "start":
+        zone_type = "safe_area"
+        danger_level = 0.0
+        loot_level = 0.0
+        encounter = "none"
+    elif marker_type == "goal":
+        zone_type = "extraction_area"
+        danger_level = 0.35
+        loot_level = 0.0
+        encounter = "extraction"
+    elif marker_type in {"ammo_cache", "medkit_cache", "loot", "interest_point"}:
+        zone_type = "loot_area"
+        danger_level = 0.25
+        loot_level = 0.75
+        encounter = "reward_pickup"
+    else:
+        return None
+    bounds = _bounds_around_point(position, radius=3, width=width, height=height)
+    return _gameplay_zone_record(
+        zone_id=f"zone_{serial:03d}",
+        zone_type=zone_type,
+        bounds=bounds,
+        entry_points=[{"id": "entry_center", "position": {"x": position[0], "y": position[1]}}],
+        exit_points=[{"id": "exit_center", "position": {"x": position[0], "y": position[1]}}],
+        linked_places=[],
+        linked_routes=[],
+        linked_markers=[marker_id],
+        danger_level=danger_level,
+        loot_level=loot_level,
+        recommended_enemy_types=[],
+        recommended_encounter=encounter,
+        elevation_usage="normal_ground",
+        tags=sorted(set(_string_list(marker.get("tags"))) | {marker_type, zone_type}),
+    )
+
+
+def _gameplay_zone_from_place(
+    *,
+    place: dict[str, Any],
+    route_refs_by_node: dict[str, list[str]],
+    marker_refs_by_position: dict[tuple[int, int], list[str]],
+    graph_node_ids: set[str],
+    serial: int,
+    width: int,
+    height: int,
+) -> dict[str, Any] | None:
+    place_id = place.get("id")
+    if not isinstance(place_id, str):
+        return None
+    bounds = _normalize_bounds(place.get("bounds"), width=width, height=height)
+    if bounds is None:
+        center = _mapping_point(place.get("center"))
+        if center is None:
+            return None
+        bounds = _bounds_around_point(center, radius=6, width=width, height=height)
+    entrances = _normalize_place_points(place.get("entrances"), key="position")
+    if not entrances:
+        entrances = _fallback_entry_points(bounds)
+    exit_points = entrances[:]
+    route_refs = list(route_refs_by_node.get(place_id, [])) if place_id in graph_node_ids else []
+    marker_refs = _marker_refs_in_bounds(bounds, marker_refs_by_position)
+    zone_type = _gameplay_zone_type_for_place(place)
+    danger_level = _clamp01(_safe_float(place.get("danger_level")))
+    loot_level = _clamp01(_safe_float(place.get("loot_level")))
+    return _gameplay_zone_record(
+        zone_id=f"zone_{serial:03d}",
+        zone_type=zone_type,
+        bounds=bounds,
+        entry_points=entrances,
+        exit_points=exit_points,
+        linked_places=[place_id],
+        linked_routes=route_refs,
+        linked_markers=marker_refs,
+        danger_level=danger_level,
+        loot_level=loot_level,
+        recommended_enemy_types=_recommended_enemy_types(place, zone_type),
+        recommended_encounter=_recommended_encounter(place, zone_type),
+        elevation_usage=_elevation_usage_for_place(place, zone_type),
+        tags=sorted(
+            set(_string_list(place.get("tags")))
+            | set(_string_list(place.get("biome_tags")))
+            | {zone_type}
+        ),
+    )
+
+
+def _gameplay_zone_record(
+    *,
+    zone_id: str,
+    zone_type: str,
+    bounds: dict[str, int],
+    entry_points: list[dict[str, Any]],
+    exit_points: list[dict[str, Any]],
+    linked_places: list[str],
+    linked_routes: list[str],
+    linked_markers: list[str],
+    danger_level: float,
+    loot_level: float,
+    recommended_enemy_types: list[str],
+    recommended_encounter: str,
+    elevation_usage: str,
+    tags: list[str],
+) -> dict[str, Any]:
+    return {
+        "id": zone_id,
+        "type": zone_type,
+        "bounds": bounds,
+        "polygon": _bounds_polygon(bounds),
+        "entry_points": entry_points,
+        "exit_points": exit_points,
+        "linked_places": linked_places,
+        "linked_routes": linked_routes,
+        "linked_markers": linked_markers,
+        "danger_level": danger_level,
+        "loot_level": loot_level,
+        "recommended_enemy_types": recommended_enemy_types,
+        "recommended_encounter": recommended_encounter,
+        "elevation_usage": elevation_usage,
+        "tags": tags,
+    }
+
+
+def _gameplay_zone_type_for_place(place: dict[str, Any]) -> str:
+    place_type = str(place.get("type", ""))
+    encounter_type = str(place.get("encounter_type", ""))
+    story_role = str(place.get("story_role", ""))
+    tags = set(_string_list(place.get("tags"))) | set(_string_list(place.get("biome_tags")))
+    danger = _safe_float(place.get("danger_level"))
+    loot = _safe_float(place.get("loot_level"))
+    if "secret" in tags or story_role == "secret" or loot >= 0.75:
+        return "secret_area"
+    if loot >= 0.6:
+        return "loot_area"
+    if danger >= 0.85 or "boss" in tags:
+        return "boss_area"
+    if place_type in {"forest_obstruction", "swamp_crossing", "blocked_road"}:
+        return "traversal_area"
+    if place_type in {"bunker_site", "old_defensive_position"}:
+        return "encounter_area"
+    if "ambush" in encounter_type or "clearing" in place_type:
+        return "ambush_area"
+    if danger >= 0.7:
+        return "danger_area"
+    if "story" in tags or story_role not in {"", "None"}:
+        return "story_area"
+    return "encounter_area"
+
+
+def _recommended_enemy_types(place: dict[str, Any], zone_type: str) -> list[str]:
+    tags = set(_string_list(place.get("tags"))) | set(_string_list(place.get("biome_tags")))
+    if zone_type == "safe_area":
+        return []
+    if "bunker" in tags or "defense" in tags:
+        return ["guard", "ranged"]
+    if "forest" in tags:
+        return ["ambusher", "beast"]
+    if "ruins" in tags:
+        return ["scavenger", "ranged"]
+    if zone_type == "loot_area":
+        return ["guard"]
+    return []
+
+
+def _recommended_encounter(place: dict[str, Any], zone_type: str) -> str:
+    encounter = place.get("encounter_type")
+    if isinstance(encounter, str) and encounter:
+        return encounter
+    defaults = {
+        "ambush_area": "flank_attack",
+        "boss_area": "boss_encounter",
+        "danger_area": "hazard_encounter",
+        "loot_area": "guarded_loot",
+        "stealth_area": "avoid_patrol",
+        "traversal_area": "navigation_obstacle",
+        "secret_area": "secret_discovery",
+        "story_area": "story_discovery",
+    }
+    return defaults.get(zone_type, "generic_encounter")
+
+
+def _elevation_usage_for_place(place: dict[str, Any], zone_type: str) -> str:
+    tags = set(_string_list(place.get("tags"))) | set(_string_list(place.get("biome_tags")))
+    place_type = str(place.get("type", ""))
+    if "below_floor" in tags or "bunker" in tags:
+        return "below_ground_interior"
+    if "trench" in tags:
+        return "low_ground_cover"
+    if place_type in {"watchtower_area", "bunker_site"}:
+        return "high_ground_advantage"
+    if zone_type in {"ambush_area", "encounter_area"}:
+        return "mixed_cover"
+    return "normal_ground"
+
+
+def _route_refs_by_node(routes: dict[str, Any]) -> dict[str, list[str]]:
+    refs: dict[str, list[str]] = {}
+    for route in _list(routes.get("items")):
+        if not isinstance(route, dict):
+            continue
+        route_id = route.get("id")
+        if not isinstance(route_id, str):
+            continue
+        for node_id in _string_list(route.get("node_ids")):
+            refs.setdefault(node_id, []).append(route_id)
+    return refs
+
+
+def _marker_refs_by_position(markers: dict[str, Any]) -> dict[tuple[int, int], list[str]]:
+    refs: dict[tuple[int, int], list[str]] = {}
+    for marker in _list(markers.get("items")):
+        if not isinstance(marker, dict):
+            continue
+        marker_id = marker.get("id")
+        position = _mapping_point(marker.get("position"))
+        if isinstance(marker_id, str) and position is not None:
+            refs.setdefault(position, []).append(marker_id)
+    return refs
+
+
+def _marker_refs_in_bounds(
+    bounds: dict[str, int],
+    marker_refs_by_position: dict[tuple[int, int], list[str]],
+) -> list[str]:
+    refs: list[str] = []
+    min_x = bounds["min_x"]
+    min_y = bounds["min_y"]
+    max_x = bounds["max_x"]
+    max_y = bounds["max_y"]
+    for (x, y), marker_refs in marker_refs_by_position.items():
+        if min_x <= x <= max_x and min_y <= y <= max_y:
+            refs.extend(marker_refs)
+    return sorted(set(refs))
+
+
+def _normalize_place_points(value: Any, *, key: str) -> list[dict[str, Any]]:
+    points: list[dict[str, Any]] = []
+    for index, item in enumerate(_list(value)):
+        if not isinstance(item, dict):
+            continue
+        position = _mapping_point(item.get(key)) or _mapping_point(item)
+        if position is None:
+            continue
+        point_id = item.get("id") if isinstance(item.get("id"), str) else f"point_{index:03d}"
+        points.append({"id": point_id, "position": {"x": position[0], "y": position[1]}})
+    return points
+
+
+def _normalize_bounds(value: Any, *, width: int, height: int) -> dict[str, int] | None:
+    bounds = _dict(value)
+    try:
+        min_x = max(0, min(width - 1, int(bounds["min_x"])))
+        min_y = max(0, min(height - 1, int(bounds["min_y"])))
+        max_x = max(0, min(width - 1, int(bounds["max_x"])))
+        max_y = max(0, min(height - 1, int(bounds["max_y"])))
+    except (KeyError, TypeError, ValueError):
+        return None
+    if min_x > max_x:
+        min_x, max_x = max_x, min_x
+    if min_y > max_y:
+        min_y, max_y = max_y, min_y
+    return {"min_x": min_x, "min_y": min_y, "max_x": max_x, "max_y": max_y}
+
+
+def _bounds_around_point(
+    point: tuple[int, int],
+    *,
+    radius: int,
+    width: int,
+    height: int,
+) -> dict[str, int]:
+    x, y = point
+    return {
+        "min_x": max(0, x - radius),
+        "min_y": max(0, y - radius),
+        "max_x": min(width - 1, x + radius),
+        "max_y": min(height - 1, y + radius),
+    }
+
+
+def _fallback_entry_points(bounds: dict[str, int]) -> list[dict[str, Any]]:
+    center_x = round((bounds["min_x"] + bounds["max_x"]) / 2)
+    center_y = round((bounds["min_y"] + bounds["max_y"]) / 2)
+    return [
+        {"id": "entry_north", "position": {"x": center_x, "y": bounds["min_y"]}},
+        {"id": "entry_south", "position": {"x": center_x, "y": bounds["max_y"]}},
+        {"id": "entry_west", "position": {"x": bounds["min_x"], "y": center_y}},
+        {"id": "entry_east", "position": {"x": bounds["max_x"], "y": center_y}},
+    ]
+
+
+def _bounds_polygon(bounds: dict[str, int]) -> list[dict[str, int]]:
+    return [
+        {"x": bounds["min_x"], "y": bounds["min_y"]},
+        {"x": bounds["max_x"], "y": bounds["min_y"]},
+        {"x": bounds["max_x"], "y": bounds["max_y"]},
+        {"x": bounds["min_x"], "y": bounds["max_y"]},
+    ]
+
+
+def _clamp01(value: float) -> float:
+    return max(0.0, min(1.0, round(value, 3)))
+
+
 def _route_from_nodes(
     *,
     route_id: str,
@@ -806,11 +1225,27 @@ def _build_main_path(
         node_ids = [start_id, *[node["id"] for node in ordered_places[:3]], goal_id]
     else:
         node_ids = [start_id, goal_id]
+    for source, target in zip(node_ids, node_ids[1:], strict=False):
+        if _find_edge_id(edges=edges, source=source, target=target) is not None:
+            continue
+        _append_world_graph_edge(
+            edges=edges,
+            edge_keys=set(),
+            source=source,
+            target=target,
+            edge_type="main_path_connection",
+            nodes_by_id=nodes_by_id,
+        )
     edge_ids = _edge_ids_for_node_sequence(edges=edges, node_ids=node_ids)
     return {
         "node_ids": node_ids,
         "edge_ids": edge_ids,
-        "complete": bool(node_ids and node_ids[0] == start_id and node_ids[-1] == goal_id),
+        "complete": bool(
+            node_ids
+            and node_ids[0] == start_id
+            and node_ids[-1] == goal_id
+            and len(edge_ids) == max(0, len(node_ids) - 1)
+        ),
         "description": "Approximate intended semantic route through key places.",
     }
 
