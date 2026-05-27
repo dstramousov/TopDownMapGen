@@ -460,3 +460,12 @@
 - Visual pipeline теперь пишет `debug/autotile_report.json` со сводкой по группам, variants и fallback-использованию.
 - Step renderer получил отдельный слой `05_autotile_fallbacks.png`, чтобы сразу видеть дырки в visual rules.
 - Версия проекта поднята до `0.0.55`.
+
+
+## v0.0.55 -> v0.0.56
+
+- `dark_forest` profile получил aliases для реальных terrain-типов генератора: `old_overgrown_road`, `water_slow`, `cracked_ground`, `bush_slow_concealment`, `ruin_wall_blocker`, `ruin_floor`, marker/decor terrain.
+- Road/water/forest autotiling теперь покрывает реальные terrain-типы из `map_package`, поэтому дороги и вода попадают в debug steps, а не теряются на базовом mapping.
+- Visual pipeline пишет `debug/unmapped_terrain_report.json`, чтобы сразу видеть terrain-типы, которые ушли в default tile.
+- Visual map contract получил ссылку на unmapped terrain report, а tests покрывают aliases и нулевой unmapped status.
+- Версия проекта поднята до `0.0.56`.

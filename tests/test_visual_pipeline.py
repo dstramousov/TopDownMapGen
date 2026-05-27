@@ -38,8 +38,13 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert visual_map["files"]["preview"] == "preview.png"
     assert visual_map["files"]["debug_autotile_masks"] == "debug/autotile_masks.json"
     assert visual_map["files"]["debug_autotile_report"] == "debug/autotile_report.json"
+    assert (
+        visual_map["files"]["debug_unmapped_terrain_report"]
+        == "debug/unmapped_terrain_report.json"
+    )
     assert (visual_output / "debug/autotile_masks.json").exists()
     assert (visual_output / "debug/autotile_report.json").exists()
+    assert (visual_output / "debug/unmapped_terrain_report.json").exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
@@ -47,10 +52,15 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert rows[0][0] == "forest.cap_n"
     assert rows[1][1] == "road.turn_es"
     assert rows[2][2] == "water.outer_corner_wn"
+    assert rows[3][3] == "grass.base"
 
     autotile_report = _read_json(visual_output / "debug/autotile_report.json")
     assert autotile_report["quality"]["status"] == "ok"
     assert autotile_report["summary"]["groups"]["road"] == 3
+
+    unmapped_report = _read_json(visual_output / "debug/unmapped_terrain_report.json")
+    assert unmapped_report["quality"]["status"] == "ok"
+    assert unmapped_report["summary"]["counts"] == {}
 
     visual_objects = _read_json(result.visual_objects_path)
     assert visual_objects["items"][0]["sprite_id"] == "object.trench"
@@ -124,9 +134,9 @@ def _write_minimal_world_package(output_dir: Path) -> None:
             "format": "type_rows",
             "rows": [
                 ["tree_blocker", "grass", "grass", "grass"],
-                ["tree_blocker", "road", "road", "grass"],
-                ["grass", "road", "water", "water"],
-                ["grass", "grass", "water", "grass"],
+                ["tree_blocker", "old_overgrown_road", "road", "grass"],
+                ["grass", "road", "water_slow", "water"],
+                ["cracked_ground", "flower_decor", "water", "goal"],
             ],
         },
     )

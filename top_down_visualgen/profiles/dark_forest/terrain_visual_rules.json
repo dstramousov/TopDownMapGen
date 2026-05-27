@@ -21,6 +21,16 @@
     "ruin": "ruins.floor",
     "ruins": "ruins.floor",
     "wall": "wall.blocked",
-    "rock_blocker": "wall.blocked"
+    "rock_blocker": "wall.blocked",
+    "old_overgrown_road": "road.cross",
+    "water_slow": "water.fill",
+    "cracked_ground": "dirt.base",
+    "ruin_wall_blocker": "wall.blocked",
+    "bush_slow_concealment": "forest.fill",
+    "ruin_floor": "ruins.floor",
+    "flower_decor": "grass.base",
+    "mushroom_decor": "grass.base",
+    "start": "grass.base",
+    "goal": "grass.base"
   }
 }

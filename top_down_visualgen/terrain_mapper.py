@@ -38,12 +38,13 @@ class TerrainVisualMapper:
         autotile_groups: Counter[str] = Counter()
         autotile_variants: Counter[str] = Counter()
         fallback_counts: Counter[str] = Counter()
+        unmapped_terrain_counts: Counter[str] = Counter()
 
         for y, terrain_row in enumerate(rows):
             visual_row: list[str] = []
             autotile_row: list[dict[str, Any] | None] = []
             for x, terrain_type in enumerate(terrain_row):
-                tile_id, autotile_info = self._resolve_tile_id(
+                tile_id, autotile_info, mapping_info = self._resolve_tile_id(
                     rows=rows,
                     x=x,
                     y=y,
@@ -54,6 +55,8 @@ class TerrainVisualMapper:
                 autotile_row.append(autotile_info)
                 tile_counts[tile_id] += 1
                 terrain_counts[terrain_type] += 1
+                if mapping_info.get("default_used") is True:
+                    unmapped_terrain_counts[terrain_type] += 1
                 if autotile_info is not None:
                     group_id = str(autotile_info.get("group", "unknown"))
                     variant = str(autotile_info.get("variant", "unknown"))
@@ -96,6 +99,15 @@ class TerrainVisualMapper:
                     "variants": dict(sorted(autotile_variants.items())),
                     "fallbacks": dict(sorted(fallback_counts.items())),
                 },
+                "unmapped_terrain": {
+                    "default_tile": _string_value(
+                        profile.terrain_rules.get("default_tile"),
+                        "terrain.unknown",
+                    ),
+                    "counts": dict(sorted(unmapped_terrain_counts.items())),
+                    "total_cells": sum(unmapped_terrain_counts.values()),
+                    "unique_terrain_types": len(unmapped_terrain_counts),
+                },
             },
         }
 
@@ -107,19 +119,25 @@ class TerrainVisualMapper:
         y: int,
         terrain_type: str,
         profile: VisualProfile,
-    ) -> tuple[str, dict[str, Any] | None]:
+    ) -> tuple[str, dict[str, Any] | None, dict[str, Any]]:
         terrain_rules = profile.terrain_rules
         terrain_to_tile = terrain_rules.get("terrain_to_tile", {})
         if not isinstance(terrain_to_tile, dict):
             terrain_to_tile = {}
         default_tile = terrain_rules.get("default_tile", "terrain.unknown")
+        default_used = terrain_type not in terrain_to_tile
         base_tile_id = terrain_to_tile.get(terrain_type, default_tile)
         if not isinstance(base_tile_id, str):
             base_tile_id = "terrain.unknown"
 
         group = _find_autotile_group(terrain_type, profile.autotile_rules)
+        mapping_info = {
+            "terrain_type": terrain_type,
+            "tile_id": base_tile_id,
+            "default_used": default_used,
+        }
         if group is None:
-            return base_tile_id, None
+            return base_tile_id, None, mapping_info
 
         group_id, group_rules, terrain_types = group
         mask_mode = _string_value(group_rules.get("mask_mode"), "cardinal_4")
@@ -146,7 +164,7 @@ class TerrainVisualMapper:
             "variant": decision.variant,
             "tile_id": decision.tile_id,
             "fallback_used": decision.fallback_used,
-        }
+        }, mapping_info
 
 
 def _terrain_rows(terrain: dict[str, Any]) -> list[list[str]]:

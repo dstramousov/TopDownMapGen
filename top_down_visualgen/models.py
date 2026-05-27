@@ -49,3 +49,4 @@ class VisualPipelineResult:
     preview_path: Path | None
     debug_autotile_masks_path: Path
     debug_autotile_report_path: Path
+    debug_unmapped_terrain_report_path: Path

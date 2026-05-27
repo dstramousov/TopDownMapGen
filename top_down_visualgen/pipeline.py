@@ -87,12 +87,17 @@ class VisualPipeline:
         debug_dir = output_dir / "debug"
         debug_autotile_masks_path = debug_dir / "autotile_masks.json"
         debug_autotile_report_path = debug_dir / "autotile_report.json"
+        debug_unmapped_terrain_report_path = debug_dir / "unmapped_terrain_report.json"
 
         write_json_object(visual_layers, visual_layers_path)
         write_json_object(visual_objects, visual_objects_path)
         write_json_object(visual_chunks, visual_chunks_path)
         write_json_object(_build_autotile_masks_debug(visual_debug), debug_autotile_masks_path)
         write_json_object(_build_autotile_report_debug(visual_debug), debug_autotile_report_path)
+        write_json_object(
+            _build_unmapped_terrain_report_debug(visual_debug),
+            debug_unmapped_terrain_report_path,
+        )
         if preview_path is not None:
             self._preview_renderer.render(
                 visual_layers=visual_layers,
@@ -113,6 +118,7 @@ class VisualPipeline:
             preview_path=preview_path,
             debug_autotile_masks_path=debug_autotile_masks_path,
             debug_autotile_report_path=debug_autotile_report_path,
+            debug_unmapped_terrain_report_path=debug_unmapped_terrain_report_path,
             visual_layers=visual_layers,
             visual_objects=visual_objects,
             visual_chunks=visual_chunks,
@@ -128,6 +134,7 @@ class VisualPipeline:
             preview_path=preview_path,
             debug_autotile_masks_path=debug_autotile_masks_path,
             debug_autotile_report_path=debug_autotile_report_path,
+            debug_unmapped_terrain_report_path=debug_unmapped_terrain_report_path,
         )
 
     def _build_visual_map(
@@ -143,6 +150,7 @@ class VisualPipeline:
         preview_path: Path | None,
         debug_autotile_masks_path: Path,
         debug_autotile_report_path: Path,
+        debug_unmapped_terrain_report_path: Path,
         visual_layers: dict[str, Any],
         visual_objects: dict[str, Any],
         visual_chunks: dict[str, Any],
@@ -193,6 +201,10 @@ class VisualPipeline:
                 "debug_autotile_report": _relative(
                     output_dir,
                     debug_autotile_report_path,
+                ),
+                "debug_unmapped_terrain_report": _relative(
+                    output_dir,
+                    debug_unmapped_terrain_report_path,
                 ),
             },
             "contract": {
@@ -255,5 +267,22 @@ def _build_autotile_report_debug(visual_debug: dict[str, Any]) -> dict[str, Any]
         "quality": {
             "fallback_total": fallback_total,
             "status": "ok" if fallback_total == 0 else "has_fallbacks",
+        },
+    }
+
+
+def _build_unmapped_terrain_report_debug(visual_debug: dict[str, Any]) -> dict[str, Any]:
+    unmapped = visual_debug.get("unmapped_terrain", {})
+    if not isinstance(unmapped, dict):
+        unmapped = {}
+    total_cells = _int_value(unmapped.get("total_cells"), 0)
+    return {
+        "schema_version": "visual-debug-unmapped-terrain-report-v1",
+        "kind": "visual_debug_unmapped_terrain_report",
+        "source_layer": "terrain_base",
+        "summary": unmapped,
+        "quality": {
+            "unmapped_total": total_cells,
+            "status": "ok" if total_cells == 0 else "has_unmapped_terrain",
         },
     }

@@ -17,7 +17,10 @@
       "terrain_types": [
         "road",
         "path",
-        "bridge"
+        "bridge",
+        "old_overgrown_road",
+        "dirt_road",
+        "overgrown_road"
       ],
       "base_tile": "road.cross",
       "fallback_tile": "road.cross",
@@ -46,7 +49,10 @@
         "water",
         "deep_water",
         "shallow_water",
-        "swamp"
+        "swamp",
+        "water_slow",
+        "water_deep",
+        "water_shallow"
       ],
       "base_tile": "water.fill",
       "fallback_tile": "water.fill",
@@ -79,7 +85,10 @@
       "terrain_types": [
         "tree_blocker",
         "forest",
-        "bush"
+        "bush",
+        "bush_slow_concealment",
+        "dense_forest",
+        "tree"
       ],
       "base_tile": "forest.fill",
       "fallback_tile": "forest.fill",
