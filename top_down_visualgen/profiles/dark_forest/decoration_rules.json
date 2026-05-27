@@ -1,13 +1,11 @@
 {
-  "schema_version": "decoration-rules-v3",
+  "schema_version": "decoration-rules-v4",
   "kind": "decoration_rules",
   "enabled": true,
-  "seed_salt": "dark_forest_decoration_v2",
+  "seed_salt": "dark_forest_decoration_v3",
   "blocked_terrain": [
     "start",
     "goal",
-    "road",
-    "old_overgrown_road",
     "ruin_wall_blocker"
   ],
   "rules": [
@@ -66,6 +64,86 @@
       "sprites": [
         "decor.reeds_01",
         "decor.mud_patch_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "road_overgrown_patches",
+      "priority": 35,
+      "autotile_groups": [
+        "road"
+      ],
+      "variant_prefixes": [
+        "straight_",
+        "turn_",
+        "t_",
+        "cross"
+      ],
+      "chance_percent": 7,
+      "sprites": [
+        "decor.road_grass_tuft_01",
+        "decor.road_dirt_noise_01",
+        "decor.small_stone_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "road_end_debris",
+      "priority": 36,
+      "autotile_groups": [
+        "road"
+      ],
+      "variants": [
+        "isolated",
+        "end_n",
+        "end_e",
+        "end_s",
+        "end_w"
+      ],
+      "chance_percent": 18,
+      "sprites": [
+        "decor.broken_plank_01",
+        "decor.small_stone_01",
+        "decor.road_grass_tuft_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "road_influence_edge_grass",
+      "priority": 70,
+      "terrain_types": [
+        "grass",
+        "flower_decor",
+        "mushroom_decor"
+      ],
+      "nearby_autotile_groups": [
+        "road"
+      ],
+      "nearby_radius": 1,
+      "chance_percent": 7,
+      "sprites": [
+        "decor.road_grass_tuft_01",
+        "decor.road_grass_tuft_02",
+        "decor.small_stone_01"
+      ],
+      "draw_layer": "terrain_overlay"
+    },
+    {
+      "id": "road_influence_stones",
+      "priority": 80,
+      "terrain_types": [
+        "grass",
+        "cracked_ground"
+      ],
+      "nearby_autotile_groups": [
+        "road"
+      ],
+      "nearby_radius": 1,
+      "chance_percent": 4,
+      "sprites": [
+        "decor.small_stone_01",
+        "decor.small_stone_02",
+        "decor.broken_plank_01"
       ],
       "draw_layer": "terrain_overlay"
     },
@@ -129,6 +207,7 @@
   ],
   "notes": [
     "water_slow is treated as passable swamp/wetland visual terrain, not as open water.",
-    "Swamp influence rules decorate nearby passable grass/dirt without changing movement, collision, or terrain grids."
+    "Swamp influence rules decorate nearby passable grass/dirt without changing movement, collision, or terrain grids.",
+    "Old overgrown roads can receive sparse non-blocking visual debris and edge growth without changing traversal."
   ]
 }

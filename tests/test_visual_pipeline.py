@@ -73,7 +73,14 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     )
 
     decoration_report = _read_json(visual_output / "debug/decoration_report.json")
-    assert "swamp_influence_wet_grass" in decoration_report["summary"]["by_rule"]
+    assert "swamp_isolated_reeds" in decoration_report["summary"]["by_rule"]
+
+    decoration_rules = _read_json(
+        Path("top_down_visualgen/profiles/dark_forest/decoration_rules.json")
+    )
+    rule_ids = {rule["id"] for rule in decoration_rules["rules"]}
+    assert "road_overgrown_patches" in rule_ids
+    assert "road_influence_edge_grass" in rule_ids
 
     visual_chunks = _read_json(result.visual_chunks_path)
     assert visual_chunks["summary"]["total"] == 4

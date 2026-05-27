@@ -553,6 +553,24 @@
     },
     "decor.wet_grass_02": {
       "debug_color": "#466f42"
+    },
+    "decor.road_grass_tuft_01": {
+      "debug_color": "#6f8b3d"
+    },
+    "decor.road_grass_tuft_02": {
+      "debug_color": "#7b9348"
+    },
+    "decor.road_dirt_noise_01": {
+      "debug_color": "#8a6a43"
+    },
+    "decor.small_stone_01": {
+      "debug_color": "#9a9787"
+    },
+    "decor.small_stone_02": {
+      "debug_color": "#817d70"
+    },
+    "decor.broken_plank_01": {
+      "debug_color": "#7a5935"
     }
   }
 }

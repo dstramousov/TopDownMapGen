@@ -485,3 +485,10 @@
 - Decoration rule selection теперь продолжает проверять следующие правила после deterministic chance miss, чтобы низкоприоритетные контекстные правила могли сработать на той же клетке.
 - В debug tileset добавлены placeholder sprites для новых swamp influence decorations.
 - Версия проекта поднята до `0.0.58`.
+
+## v0.0.58 -> v0.0.59
+
+- `dark_forest` decoration rules получили pass для старых заросших дорог: редкие травяные пучки, грязевой noise, мелкие камни и сломанные доски.
+- Декор теперь может появляться как на `road` autotile-группе, так и на соседней проходимой земле рядом с дорогой, не меняя collision, movement или terrain grids.
+- В debug tileset добавлены placeholder sprites для road decorations, чтобы `visual-debug` показывал заросшие дороги на пошаговом preview.
+- Версия проекта поднята до `0.0.59`.
