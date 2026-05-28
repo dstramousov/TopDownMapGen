@@ -144,6 +144,27 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
         encoding="utf-8"
     )
 
+    elevation_doc = Path("docs/visual_elevation_dark_forest.md")
+    assert elevation_doc.exists()
+    elevation_doc_text = elevation_doc.read_text(encoding="utf-8")
+    assert "visual_only_landmark" in elevation_doc_text
+    assert "boundary_treatment" in elevation_doc_text
+
+    elevation_rules = _read_json(
+        Path("top_down_visualgen/profiles/dark_forest/elevation_visual_rules.json")
+    )
+    assert elevation_rules["schema_version"] == "elevation-visual-rules-v1"
+    assert elevation_rules["style_decisions"]["level_4_policy"] == "visual_only_landmark"
+    assert elevation_rules["levels"]["4"]["traversable"] is False
+    assert elevation_rules["boundary_treatment"]["status"] == "future_separate_system"
+
+    sprite_ids = set(_read_json(
+        Path("top_down_visualgen/profiles/dark_forest/visual_tilesets.json")
+    )["sprites"])
+    assert "elevation.ancient_beacon_base" in sprite_ids
+    assert "elevation.trench_wall_edge" in sprite_ids
+    assert "boundary.dense_forest_wall" in sprite_ids
+
     visual_chunks = _read_json(result.visual_chunks_path)
     assert visual_chunks["summary"]["total"] == 4
 

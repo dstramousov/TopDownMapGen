@@ -1,0 +1,415 @@
+{
+  "kind": "elevation_visual_rules",
+  "schema_version": "elevation-visual-rules-v1",
+  "profile": "dark_forest",
+  "world_style": "dark_forest_post_soviet_ruins",
+  "style_decisions": {
+    "height_emphasis": "readable",
+    "lowlands_wetness": "contextual",
+    "level_4_policy": "visual_only_landmark",
+    "boundary_treatment": "future_separate_system"
+  },
+  "levels": {
+    "-1": {
+      "label": "lowlands / pits / trenches / bunker interiors",
+      "ru_label": "низины / ямы / окопы / внутренности бункеров",
+      "visual_treatment": [
+        "darker_ground",
+        "wet_mud_when_contextual",
+        "shadowed_edge",
+        "recessed_floor"
+      ],
+      "object_pool": [
+        {
+          "sprite_id": "elevation.mud_pool",
+          "role": "visual",
+          "ru": "грязевая лужа"
+        },
+        {
+          "sprite_id": "elevation.wet_grass_dark",
+          "role": "visual",
+          "ru": "тёмная мокрая трава"
+        },
+        {
+          "sprite_id": "elevation.trench_wall_edge",
+          "role": "height_edge",
+          "ru": "край окопа"
+        },
+        {
+          "sprite_id": "elevation.pit_edge",
+          "role": "height_edge",
+          "ru": "край ямы"
+        },
+        {
+          "sprite_id": "elevation.root_hanging",
+          "role": "visual",
+          "ru": "свисающие корни"
+        },
+        {
+          "sprite_id": "elevation.broken_drain_pipe",
+          "role": "visual",
+          "ru": "сломанная труба"
+        },
+        {
+          "sprite_id": "elevation.bunker_floor_dark",
+          "role": "visual",
+          "ru": "тёмный пол бункера"
+        },
+        {
+          "sprite_id": "elevation.water_seep",
+          "role": "visual",
+          "ru": "просачивающаяся вода"
+        },
+        {
+          "sprite_id": "elevation.dark_leaf_litter",
+          "role": "visual",
+          "ru": "тёмная мокрая листва"
+        },
+        {
+          "sprite_id": "elevation.lowland_stones",
+          "role": "visual",
+          "ru": "камни в низине"
+        }
+      ]
+    },
+    "0": {
+      "label": "normal ground / baseline",
+      "ru_label": "обычная земля / базовый уровень",
+      "visual_treatment": [
+        "base_ground",
+        "neutral_grass",
+        "normal_shadow"
+      ],
+      "object_pool": []
+    },
+    "1": {
+      "label": "raised ground / hills / berms",
+      "ru_label": "приподнятая земля / холмы / насыпи",
+      "visual_treatment": [
+        "slightly_lighter_ground",
+        "dry_grass",
+        "raised_edge",
+        "hill_shoulder"
+      ],
+      "object_pool": [
+        {
+          "sprite_id": "elevation.raised_berm_edge",
+          "role": "height_edge",
+          "ru": "край насыпи"
+        },
+        {
+          "sprite_id": "elevation.hill_grass_edge",
+          "role": "height_edge",
+          "ru": "травяной склон"
+        },
+        {
+          "sprite_id": "elevation.dry_stone_patch",
+          "role": "visual",
+          "ru": "сухой каменный участок"
+        },
+        {
+          "sprite_id": "elevation.exposed_roots",
+          "role": "visual",
+          "ru": "открытые корни"
+        },
+        {
+          "sprite_id": "elevation.slope_grass",
+          "role": "height_edge",
+          "ru": "трава на склоне"
+        },
+        {
+          "sprite_id": "elevation.old_earthwork",
+          "role": "cover_hint",
+          "ru": "старая земляная насыпь"
+        },
+        {
+          "sprite_id": "elevation.ridge_stones",
+          "role": "visual",
+          "ru": "камни на гряде"
+        },
+        {
+          "sprite_id": "elevation.dry_leaf_patch",
+          "role": "visual",
+          "ru": "сухие листья"
+        }
+      ]
+    },
+    "2": {
+      "label": "platforms / bridges / raised ruins",
+      "ru_label": "платформы / мосты / поднятые руины",
+      "visual_treatment": [
+        "platform_edge",
+        "strong_outline",
+        "wooden_deck",
+        "stone_floor"
+      ],
+      "object_pool": [
+        {
+          "sprite_id": "elevation.wooden_bridge_deck",
+          "role": "visual",
+          "ru": "деревянный настил моста"
+        },
+        {
+          "sprite_id": "elevation.stone_platform_edge",
+          "role": "height_edge",
+          "ru": "край каменной платформы"
+        },
+        {
+          "sprite_id": "elevation.broken_stairs_base",
+          "role": "transition_hint",
+          "ru": "основание сломанной лестницы"
+        },
+        {
+          "sprite_id": "elevation.ruin_platform_floor",
+          "role": "visual",
+          "ru": "пол приподнятых руин"
+        },
+        {
+          "sprite_id": "elevation.bridge_support_post",
+          "role": "visual",
+          "ru": "опора моста"
+        },
+        {
+          "sprite_id": "elevation.collapsed_platform_gap",
+          "role": "danger_hint",
+          "ru": "провал в платформе"
+        },
+        {
+          "sprite_id": "elevation.stone_guard_edge",
+          "role": "height_edge",
+          "ru": "каменный бортик"
+        },
+        {
+          "sprite_id": "elevation.old_planks",
+          "role": "visual",
+          "ru": "старые доски"
+        }
+      ]
+    },
+    "3": {
+      "label": "watchtowers / towers / high lookout points",
+      "ru_label": "вышки / башни / высокие наблюдательные точки",
+      "visual_treatment": [
+        "tower_base",
+        "high_shadow",
+        "vertical_marker",
+        "ladder_marker"
+      ],
+      "object_pool": [
+        {
+          "sprite_id": "elevation.watchtower_base",
+          "role": "landmark_hint",
+          "ru": "основание вышки"
+        },
+        {
+          "sprite_id": "elevation.watchtower_ladder",
+          "role": "transition_hint",
+          "ru": "лестница вышки"
+        },
+        {
+          "sprite_id": "elevation.high_platform_edge",
+          "role": "height_edge",
+          "ru": "край высокой площадки"
+        },
+        {
+          "sprite_id": "elevation.lookout_planks",
+          "role": "visual",
+          "ru": "доски наблюдательной площадки"
+        },
+        {
+          "sprite_id": "elevation.old_flag_pole",
+          "role": "landmark_hint",
+          "ru": "старый флагшток"
+        },
+        {
+          "sprite_id": "elevation.signal_tripod",
+          "role": "landmark_hint",
+          "ru": "сигнальная тренога"
+        },
+        {
+          "sprite_id": "elevation.broken_railing",
+          "role": "visual",
+          "ru": "сломанные перила"
+        },
+        {
+          "sprite_id": "elevation.watch_post_debris",
+          "role": "visual",
+          "ru": "мусор сторожевого поста"
+        }
+      ]
+    },
+    "4": {
+      "label": "visual-only landmark / beacon",
+      "ru_label": "непроходимая визуальная доминанта / beacon",
+      "policy": "visual_only_landmark",
+      "traversable": false,
+      "visual_treatment": [
+        "unique_marker",
+        "strong_silhouette",
+        "special_ground",
+        "landmark_ring",
+        "non_walkable_base"
+      ],
+      "object_pool": [
+        {
+          "sprite_id": "elevation.ancient_beacon_base",
+          "role": "landmark_hint",
+          "ru": "основание древнего маяка"
+        },
+        {
+          "sprite_id": "elevation.signal_stone",
+          "role": "landmark_hint",
+          "ru": "сигнальный камень"
+        },
+        {
+          "sprite_id": "elevation.ritual_marker",
+          "role": "story_candidate",
+          "ru": "ритуальный маркер"
+        },
+        {
+          "sprite_id": "elevation.collapsed_monolith",
+          "role": "landmark_hint",
+          "ru": "рухнувший монолит"
+        },
+        {
+          "sprite_id": "elevation.high_landmark_marker",
+          "role": "landmark_hint",
+          "ru": "маркер высокого ориентира"
+        },
+        {
+          "sprite_id": "elevation.old_signal_device",
+          "role": "story_candidate",
+          "ru": "старое сигнальное устройство"
+        },
+        {
+          "sprite_id": "elevation.strange_stone_ring",
+          "role": "landmark_hint",
+          "ru": "странное каменное кольцо"
+        },
+        {
+          "sprite_id": "elevation.beacon_debris",
+          "role": "visual",
+          "ru": "обломки маяка"
+        }
+      ],
+      "allowed_approach_objects": [
+        {
+          "sprite_id": "elevation.stone_approach",
+          "role": "visual",
+          "ru": "каменный подход"
+        },
+        {
+          "sprite_id": "elevation.landmark_ring_edge",
+          "role": "height_edge",
+          "ru": "край основания landmark"
+        }
+      ],
+      "forbidden_traversable_hints": [
+        "landmark_stairs",
+        "spiral_ramp_hint",
+        "ritual_steps"
+      ]
+    }
+  },
+  "transitions": {
+    "slope": [
+      "elevation.slope_grass",
+      "elevation.mud_slope_down"
+    ],
+    "ramp": [
+      "elevation.dirt_ramp",
+      "elevation.wooden_ramp"
+    ],
+    "stairs": [
+      "elevation.stone_stairs",
+      "elevation.broken_stairs"
+    ],
+    "bridge_entry": [
+      "elevation.bridge_entry"
+    ],
+    "bunker_descent": [
+      "elevation.bunker_descent"
+    ],
+    "trench_step": [
+      "elevation.trench_step"
+    ],
+    "platform_step": [
+      "elevation.platform_step"
+    ],
+    "tower_ladder": [
+      "elevation.tower_ladder"
+    ]
+  },
+  "edge_markers": {
+    "lowland": [
+      "elevation.lowland_shadow_edge",
+      "elevation.mud_rim",
+      "elevation.pit_rim",
+      "elevation.trench_wall_edge",
+      "elevation.bunker_floor_edge"
+    ],
+    "raised": [
+      "elevation.raised_berm_edge",
+      "elevation.hill_shoulder",
+      "elevation.dry_ridge_edge",
+      "elevation.rooted_slope_edge"
+    ],
+    "platform": [
+      "elevation.stone_platform_edge",
+      "elevation.wooden_platform_edge",
+      "elevation.ruin_platform_edge",
+      "elevation.bridge_side_edge"
+    ],
+    "high_point": [
+      "elevation.high_platform_edge",
+      "elevation.tower_base_edge",
+      "elevation.landmark_ring_edge"
+    ]
+  },
+  "boundary_treatment": {
+    "status": "future_separate_system",
+    "ru": "будущая отдельная система визуального края карты",
+    "variants": [
+      {
+        "id": "boundary.dense_forest_wall",
+        "ru": "плотная лесная стена"
+      },
+      {
+        "id": "boundary.cliff_wall",
+        "ru": "высокий обрыв"
+      },
+      {
+        "id": "boundary.ruin_barrier",
+        "ru": "руинный барьер"
+      },
+      {
+        "id": "boundary.swamp_barrier",
+        "ru": "непроходимая болотная кромка"
+      },
+      {
+        "id": "boundary.concrete_barrier",
+        "ru": "старый бетонный завал / ограждение"
+      },
+      {
+        "id": "boundary.dark_tree_wall",
+        "ru": "тёмная стена деревьев"
+      }
+    ]
+  },
+  "roles": [
+    "visual",
+    "height_edge",
+    "transition_hint",
+    "danger_hint",
+    "cover_hint",
+    "landmark_hint",
+    "story_candidate",
+    "boundary_hint"
+  ],
+  "notes": [
+    "This file is a catalog and rule contract for the future elevation visual pass.",
+    "No gameplay logic reads this file yet.",
+    "Level 4 is visual-only and non-traversable by design.",
+    "Boundary treatment is documented here, but should be implemented as a separate future pass."
+  ]
+}

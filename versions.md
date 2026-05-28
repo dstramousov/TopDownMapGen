@@ -543,3 +543,11 @@
 - `place_treatment` теперь выбирает компактные anchor-cluster композиции, роли объектов и редкость без добавления gameplay-интерактивности.
 - Расширен `place_treatment_report.json`: варианты сцен, роли, редкость, обработанные места и причины пропуска.
 - Версия проекта поднята до `0.0.65`.
+
+## v0.0.65 -> v0.0.66
+
+- Добавлен документ `docs/visual_elevation_dark_forest.md` с каталогом visual elevation для уровней `-1..4`, переходов, edge markers и будущего boundary treatment.
+- В `dark_forest` profile добавлен `elevation_visual_rules.json` как контракт будущего `elevation visual pass`; `Level 4` зафиксирован как `visual_only_landmark`, не traversable high-ground.
+- В `visual_tilesets.json` добавлены placeholder sprite/tile ids для elevation overlays, lowland/raised/platform/high-point markers, transitions и будущего map boundary treatment.
+- Boundary treatment зафиксирован как отдельная будущая система визуального края карты, не смешанная с внутренними `Level 4` landmark-объектами.
+- Версия проекта поднята до `0.0.66`.
