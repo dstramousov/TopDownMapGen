@@ -551,3 +551,11 @@
 - В `visual_tilesets.json` добавлены placeholder sprite/tile ids для elevation overlays, lowland/raised/platform/high-point markers, transitions и будущего map boundary treatment.
 - Boundary treatment зафиксирован как отдельная будущая система визуального края карты, не смешанная с внутренними `Level 4` landmark-объектами.
 - Версия проекта поднята до `0.0.66`.
+
+## v0.0.66 -> v0.0.67
+
+- Добавлен MVP `elevation visual pass` для визуального отображения высот и низин.
+- Добавлен `elevation_visual_report.json` и debug-шаг `10_elevation_visual.png`.
+- Visual pipeline теперь добавляет non-gameplay elevation markers без изменения collision/movement/height_grid.
+- Summary/visual density используют фактический elevation visual report.
+- Версия проекта поднята до `0.0.67`.

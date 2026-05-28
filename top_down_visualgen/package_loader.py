@@ -47,6 +47,8 @@ class WorldPackageLoader:
             routes=self._read_path(package_dir / "routes.json"),
             gameplay_zones=self._read_path(package_dir / "gameplay_zones.json"),
             elevation_model=self._read_path(package_dir / "elevation_model.json"),
+            elevation_features=self._read_path(package_dir / "elevation_features.json"),
+            elevation_transitions=self._read_path(package_dir / "elevation_transitions.json"),
         )
 
     @staticmethod

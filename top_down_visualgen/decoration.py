@@ -119,6 +119,7 @@ def merge_visual_objects(
     runtime_visual_objects: dict[str, Any],
     decoration_result: dict[str, Any],
     place_treatment_result: dict[str, Any] | None = None,
+    elevation_visual_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Merge runtime visual objects with generated decorations.
 
@@ -126,6 +127,7 @@ def merge_visual_objects(
         runtime_visual_objects: Object records from runtime world objects.
         decoration_result: Decoration mapper output.
         place_treatment_result: Optional place treatment mapper output.
+        elevation_visual_result: Optional elevation visual mapper output.
 
     Returns:
         Combined visual objects JSON object.
@@ -141,9 +143,14 @@ def merge_visual_objects(
         raw_place_items = place_treatment_result.get("items", [])
         if isinstance(raw_place_items, list):
             place_treatment_items = raw_place_items
+    elevation_visual_items = []
+    if elevation_visual_result is not None:
+        raw_elevation_items = elevation_visual_result.get("items", [])
+        if isinstance(raw_elevation_items, list):
+            elevation_visual_items = raw_elevation_items
     items = [
         item
-        for item in [*runtime_items, *decoration_items, *place_treatment_items]
+        for item in [*runtime_items, *decoration_items, *place_treatment_items, *elevation_visual_items]
         if isinstance(item, dict)
     ]
     items.sort(key=lambda item: item.get("sort_key", []))
@@ -157,6 +164,7 @@ def merge_visual_objects(
             "runtime_total": len(runtime_items),
             "decoration_total": len(decoration_items),
             "place_treatment_total": len(place_treatment_items),
+            "elevation_visual_total": len(elevation_visual_items),
             "by_draw_layer": _count_by(items, "draw_layer"),
             "by_sprite_id": _count_by(items, "sprite_id"),
         },

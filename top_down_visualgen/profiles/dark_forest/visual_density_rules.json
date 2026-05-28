@@ -4,7 +4,7 @@
   "profile": "dark_forest",
   "visual_objects_per_1000_tiles": {
     "min": 40,
-    "max": 60,
+    "max": 75,
     "critical_max": 100
   },
   "decorations_per_1000_tiles": {

@@ -46,13 +46,19 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
         visual_map["files"]["debug_visual_density_report"]
         == "debug/visual_density_report.json"
     )
+    assert (
+        visual_map["files"]["debug_elevation_visual_report"]
+        == "debug/elevation_visual_report.json"
+    )
     assert (visual_output / "debug/autotile_masks.json").exists()
     assert (visual_output / "debug/autotile_report.json").exists()
     assert (visual_output / "debug/unmapped_terrain_report.json").exists()
     assert (visual_output / "debug/decoration_report.json").exists()
     assert (visual_output / "debug/place_treatment_report.json").exists()
     assert (visual_output / "debug/visual_density_report.json").exists()
+    assert (visual_output / "debug/elevation_visual_report.json").exists()
     assert result.debug_visual_density_report_path.exists()
+    assert result.debug_elevation_visual_report_path.exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
@@ -74,6 +80,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert visual_objects["summary"]["runtime_total"] == 1
     assert visual_objects["summary"]["decoration_total"] >= 1
     assert visual_objects["summary"]["place_treatment_total"] >= 1
+    assert visual_objects["summary"]["elevation_visual_total"] >= 1
     assert any(item["sprite_id"] == "object.trench" for item in visual_objects["items"])
     assert any(
         str(item["sprite_id"]).startswith("decor.")
@@ -83,6 +90,11 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
         item.get("source_object_type") == "visual_place_treatment"
         and item.get("scene_variant_id") == "minor_supplies"
         and item.get("visual_role")
+        for item in visual_objects["items"]
+    )
+    assert any(
+        item.get("source_object_type") == "visual_elevation"
+        and item.get("elevation_visual_kind") in {"lowland", "raised", "transition"}
         for item in visual_objects["items"]
     )
 
@@ -101,6 +113,13 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert density_report["visual_objects"]["total"] == visual_objects["summary"]["total"]
     assert "by_category" in density_report
     assert "top_sprites" in density_report
+    assert density_report["by_source"]["elevation_visual"] >= 1
+    assert density_report["elevation_visual"]["lowlands"] >= 1
+
+    elevation_visual_report = _read_json(visual_output / "debug/elevation_visual_report.json")
+    assert elevation_visual_report["schema_version"] == "visual-debug-elevation-visual-report-v1"
+    assert elevation_visual_report["quality"]["status"] == "ok"
+    assert elevation_visual_report["summary"]["lowland_markers"] >= 1
 
     decoration_rules = _read_json(
         Path("top_down_visualgen/profiles/dark_forest/decoration_rules.json")
@@ -199,7 +218,8 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "07_objects.png",
         "08_decoration.png",
         "09_place_treatment.png",
-        "10_final_preview.png",
+        "10_elevation_visual.png",
+        "11_final_preview.png",
     ]
     assert all(path.exists() for path in paths)
 
@@ -219,6 +239,9 @@ def _write_minimal_world_package(output_dir: Path) -> None:
             "profile": "test",
             "dimensions": {"width_tiles": 4, "height_tiles": 4, "tile_size_px": 16},
             "layers": {"terrain": "layers/terrain.json"},
+            "elevation_model": "elevation_model.json",
+            "elevation_features": "elevation_features.json",
+            "elevation_transitions": "elevation_transitions.json",
             "objects": {
                 "runtime_objects": "objects/runtime_objects.json",
                 "places": "objects/places.json",
@@ -244,7 +267,20 @@ def _write_minimal_world_package(output_dir: Path) -> None:
     )
     _write_json(
         package_dir / "runtime_grids.json",
-        {"schema_version": "runtime-grids-v1", "kind": "runtime_grids", "grids": {}},
+        {
+            "schema_version": "runtime-grids-v1",
+            "kind": "runtime_grids",
+            "grids": {
+                "height_grid": {
+                    "rows": [
+                        [0, 1, 0, 0],
+                        [0, -1, 0, 0],
+                        [0, 0, 2, 0],
+                        [0, 0, 0, 4],
+                    ]
+                }
+            },
+        },
     )
     _write_json(
         package_dir / "objects/runtime_objects.json",
@@ -287,6 +323,13 @@ def _write_minimal_world_package(output_dir: Path) -> None:
         "routes.json": {"schema_version": "routes-v1", "items": []},
         "gameplay_zones.json": {"schema_version": "gameplay-zones-v1", "items": []},
         "elevation_model.json": {"schema_version": "elevation-model-v5", "features": []},
+        "elevation_features.json": {"schema_version": "elevation-features-v3", "items": []},
+        "elevation_transitions.json": {
+            "schema_version": "elevation-transitions-v4",
+            "items": [
+                {"id": "transition_0", "type": "slope", "position": {"x": 1, "y": 1}}
+            ],
+        },
     }.items():
         _write_json(package_dir / relative_path, payload)
 

@@ -7,6 +7,7 @@ from . import __version__
 from .chunks import build_visual_chunks
 from .decoration import DecorationMapper, merge_visual_objects
 from .density import VisualDensityReporter, write_visual_density_report
+from .elevation_visual import ElevationVisualMapper
 from .io import write_json_object
 from .models import VisualPipelineResult
 from .object_mapper import ObjectVisualMapper
@@ -31,6 +32,7 @@ class VisualPipeline:
         decoration_mapper: DecorationMapper | None = None,
         place_treatment_mapper: PlaceTreatmentMapper | None = None,
         density_reporter: VisualDensityReporter | None = None,
+        elevation_visual_mapper: ElevationVisualMapper | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -43,6 +45,7 @@ class VisualPipeline:
             decoration_mapper: Optional decoration mapper.
             place_treatment_mapper: Optional place treatment mapper.
             density_reporter: Optional visual density reporter.
+            elevation_visual_mapper: Optional elevation visual mapper.
         """
         self._package_loader = package_loader or WorldPackageLoader()
         self._profile_loader = profile_loader or VisualProfileLoader()
@@ -52,6 +55,7 @@ class VisualPipeline:
         self._decoration_mapper = decoration_mapper or DecorationMapper()
         self._place_treatment_mapper = place_treatment_mapper or PlaceTreatmentMapper()
         self._density_reporter = density_reporter or VisualDensityReporter()
+        self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
 
     def run(
         self,
@@ -92,10 +96,16 @@ class VisualPipeline:
             profile=profile,
             visual_layers=visual_layers,
         )
+        elevation_visual_result = self._elevation_visual_mapper.map_elevation_visual(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+        )
         visual_objects = merge_visual_objects(
             runtime_visual_objects=runtime_visual_objects,
             decoration_result=decoration_result,
             place_treatment_result=place_treatment_result,
+            elevation_visual_result=elevation_visual_result,
         )
         width = _int_value(visual_layers.get("width"), 0)
         height = _int_value(visual_layers.get("height"), 0)
@@ -119,6 +129,7 @@ class VisualPipeline:
         debug_decoration_report_path = debug_dir / "decoration_report.json"
         debug_place_treatment_report_path = debug_dir / "place_treatment_report.json"
         debug_visual_density_report_path = debug_dir / "visual_density_report.json"
+        debug_elevation_visual_report_path = debug_dir / "elevation_visual_report.json"
 
         write_json_object(visual_layers, visual_layers_path)
         write_json_object(visual_objects, visual_objects_path)
@@ -137,6 +148,10 @@ class VisualPipeline:
             _build_place_treatment_report_debug(place_treatment_result),
             debug_place_treatment_report_path,
         )
+        write_json_object(
+            _build_elevation_visual_report_debug(elevation_visual_result),
+            debug_elevation_visual_report_path,
+        )
         visual_density_report = self._density_reporter.build_report(
             world=world,
             profile=profile,
@@ -145,6 +160,7 @@ class VisualPipeline:
             visual_debug=visual_debug,
             decoration_result=decoration_result,
             place_treatment_result=place_treatment_result,
+            elevation_visual_result=elevation_visual_result,
         )
         write_visual_density_report(visual_density_report, debug_visual_density_report_path)
         if preview_path is not None:
@@ -171,6 +187,7 @@ class VisualPipeline:
             debug_decoration_report_path=debug_decoration_report_path,
             debug_place_treatment_report_path=debug_place_treatment_report_path,
             debug_visual_density_report_path=debug_visual_density_report_path,
+            debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             visual_layers=visual_layers,
             visual_objects=visual_objects,
             visual_chunks=visual_chunks,
@@ -190,6 +207,7 @@ class VisualPipeline:
             debug_decoration_report_path=debug_decoration_report_path,
             debug_place_treatment_report_path=debug_place_treatment_report_path,
             debug_visual_density_report_path=debug_visual_density_report_path,
+            debug_elevation_visual_report_path=debug_elevation_visual_report_path,
         )
 
     def _build_visual_map(
@@ -209,6 +227,7 @@ class VisualPipeline:
         debug_decoration_report_path: Path,
         debug_place_treatment_report_path: Path,
         debug_visual_density_report_path: Path,
+        debug_elevation_visual_report_path: Path,
         visual_layers: dict[str, Any],
         visual_objects: dict[str, Any],
         visual_chunks: dict[str, Any],
@@ -275,6 +294,10 @@ class VisualPipeline:
                 "debug_visual_density_report": _relative(
                     output_dir,
                     debug_visual_density_report_path,
+                ),
+                "debug_elevation_visual_report": _relative(
+                    output_dir,
+                    debug_elevation_visual_report_path,
                 ),
             },
             "contract": {
@@ -392,6 +415,30 @@ def _build_place_treatment_report_debug(place_treatment_result: dict[str, Any]) 
             "by_place_type": {},
             "by_sprite_id": {},
             "skipped": {},
+        },
+        "quality": {"status": "missing_report"},
+    }
+
+
+def _build_elevation_visual_report_debug(elevation_visual_result: dict[str, Any]) -> dict[str, Any]:
+    report = elevation_visual_result.get("report")
+    if isinstance(report, dict):
+        return report
+    return {
+        "schema_version": "visual-debug-elevation-visual-report-v1",
+        "kind": "visual_debug_elevation_visual_report",
+        "source_layer": "runtime_grids.height_grid",
+        "rules_enabled": False,
+        "summary": {
+            "total": 0,
+            "level_counts": {},
+            "lowland_markers": 0,
+            "raised_markers": 0,
+            "platform_markers": 0,
+            "high_point_markers": 0,
+            "landmark_markers": 0,
+            "transition_markers": 0,
+            "failed_placements": {},
         },
         "quality": {"status": "missing_report"},
     }

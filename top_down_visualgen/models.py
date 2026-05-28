@@ -21,6 +21,8 @@ class WorldPackage:
     routes: dict[str, Any]
     gameplay_zones: dict[str, Any]
     elevation_model: dict[str, Any]
+    elevation_features: dict[str, Any]
+    elevation_transitions: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +38,7 @@ class VisualProfile:
     decoration_rules: dict[str, Any]
     prefab_rules: dict[str, Any]
     place_rules: dict[str, Any]
+    elevation_rules: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,3 +57,4 @@ class VisualPipelineResult:
     debug_decoration_report_path: Path
     debug_place_treatment_report_path: Path
     debug_visual_density_report_path: Path
+    debug_elevation_visual_report_path: Path

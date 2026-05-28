@@ -7,6 +7,7 @@ from typing import Any
 from PIL import Image, ImageDraw
 
 from .decoration import DecorationMapper, merge_visual_objects
+from .elevation_visual import ElevationVisualMapper
 from .models import VisualProfile, WorldPackage
 from .object_mapper import ObjectVisualMapper
 from .place_treatment import PlaceTreatmentMapper
@@ -23,6 +24,7 @@ class VisualPipelineStepRenderer:
         object_mapper: ObjectVisualMapper | None = None,
         decoration_mapper: DecorationMapper | None = None,
         place_treatment_mapper: PlaceTreatmentMapper | None = None,
+        elevation_visual_mapper: ElevationVisualMapper | None = None,
     ) -> None:
         """Initialize the step renderer.
 
@@ -31,11 +33,13 @@ class VisualPipelineStepRenderer:
             object_mapper: Optional object mapper.
             decoration_mapper: Optional decoration mapper.
             place_treatment_mapper: Optional place treatment mapper.
+            elevation_visual_mapper: Optional elevation visual mapper.
         """
         self._terrain_mapper = terrain_mapper or TerrainVisualMapper()
         self._object_mapper = object_mapper or ObjectVisualMapper()
         self._decoration_mapper = decoration_mapper or DecorationMapper()
         self._place_treatment_mapper = place_treatment_mapper or PlaceTreatmentMapper()
+        self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
 
     def render_steps(
         self,
@@ -72,10 +76,16 @@ class VisualPipelineStepRenderer:
             profile=profile,
             visual_layers=visual_layers,
         )
+        elevation_visual_result = self._elevation_visual_mapper.map_elevation_visual(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+        )
         visual_objects = merge_visual_objects(
             runtime_visual_objects=runtime_visual_objects,
             decoration_result=decoration_result,
             place_treatment_result=place_treatment_result,
+            elevation_visual_result=elevation_visual_result,
         )
         tile_size = tile_size_px or _tile_size_px(world.index, profile)
         tile_size = max(1, tile_size)
@@ -154,11 +164,18 @@ class VisualPipelineStepRenderer:
                 output_path=output_dir / "09_place_treatment.png",
                 tile_size_px=tile_size,
             ),
+            self._render_elevation_visual_step(
+                visual_layers=visual_layers,
+                elevation_visual_result=elevation_visual_result,
+                profile=profile,
+                output_path=output_dir / "10_elevation_visual.png",
+                tile_size_px=tile_size,
+            ),
             self._render_final_step(
                 visual_layers=visual_layers,
                 visual_objects=visual_objects,
                 profile=profile,
-                output_path=output_dir / "10_final_preview.png",
+                output_path=output_dir / "11_final_preview.png",
                 tile_size_px=tile_size,
             ),
         ]
@@ -355,6 +372,40 @@ class VisualPipelineStepRenderer:
             tile_size_px=tile_size_px,
         )
         visual_objects = {"items": place_treatment_result.get("items", [])}
+        _draw_object_anchors(
+            draw=draw,
+            visual_objects=visual_objects,
+            sprite_colors=_sprite_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(output_path)
+        return output_path
+
+
+    def _render_elevation_visual_step(
+        self,
+        *,
+        visual_layers: dict[str, Any],
+        elevation_visual_result: dict[str, Any],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        rows = _visual_rows(visual_layers)
+        image, draw = _new_tile_image(
+            width=len(rows[0]),
+            height=len(rows),
+            tile_size_px=tile_size_px,
+            background="#1b1b1b",
+        )
+        _draw_tile_rows(
+            draw=draw,
+            rows=rows,
+            tile_colors=_dimmed_tile_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        visual_objects = {"items": elevation_visual_result.get("items", [])}
         _draw_object_anchors(
             draw=draw,
             visual_objects=visual_objects,

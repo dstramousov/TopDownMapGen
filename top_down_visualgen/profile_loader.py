@@ -19,6 +19,7 @@ class VisualProfileLoader:
         "decoration_rules": "decoration_rules.json",
         "prefab_rules": "prefab_rules.json",
         "place_rules": "place_visual_rules.json",
+        "elevation_rules": "elevation_visual_rules.json",
     }
 
     def load(self, profile_dir: Path) -> VisualProfile:
@@ -51,4 +52,5 @@ class VisualProfileLoader:
             decoration_rules=data["decoration_rules"],
             prefab_rules=data["prefab_rules"],
             place_rules=data["place_rules"],
+            elevation_rules=data["elevation_rules"],
         )

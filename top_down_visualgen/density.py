@@ -27,6 +27,7 @@ class VisualDensityReporter:
         visual_debug: dict[str, Any],
         decoration_result: dict[str, Any],
         place_treatment_result: dict[str, Any],
+        elevation_visual_result: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Build a JSON-serializable visual density report.
 
@@ -38,6 +39,7 @@ class VisualDensityReporter:
             visual_debug: Terrain/autotile debug data.
             decoration_result: Decoration mapper result.
             place_treatment_result: Place treatment mapper result.
+            elevation_visual_result: Optional elevation visual mapper result.
 
         Returns:
             Visual density report.
@@ -51,12 +53,14 @@ class VisualDensityReporter:
         runtime_total = _summary_int(visual_objects, "runtime_total")
         decoration_total = _summary_int(visual_objects, "decoration_total")
         place_total = _summary_int(visual_objects, "place_treatment_total")
+        elevation_visual_total = _summary_int(visual_objects, "elevation_visual_total")
         places_total = len(_items(world.places))
 
         by_source = {
             "runtime": runtime_total,
             "decorations": decoration_total,
             "place_treatment": place_total,
+            "elevation_visual": elevation_visual_total,
         }
         by_category = _count_categories(items)
         top_sprites = _top_counts(_count_by(items, "sprite_id"), limit=10)
@@ -105,7 +109,7 @@ class VisualDensityReporter:
                 "total": unmapped_total,
                 "status": "ok" if unmapped_total == 0 else "has_unmapped_terrain",
             },
-            "elevation_visual": _elevation_visual_summary(world),
+            "elevation_visual": _elevation_visual_summary(world, elevation_visual_result),
             "source_reports": {
                 "decoration_total": _report_total(decoration_result),
                 "place_treatment_total": _report_total(place_treatment_result),
@@ -185,11 +189,33 @@ def format_visual_density_summary(report: dict[str, Any]) -> list[str]:
 
 
 
-def _elevation_visual_summary(world: WorldPackage) -> dict[str, Any]:
+def _elevation_visual_summary(world: WorldPackage, elevation_visual_result: dict[str, Any] | None = None) -> dict[str, Any]:
+    report = elevation_visual_result.get("report") if isinstance(elevation_visual_result, dict) else None
+    summary = report.get("summary") if isinstance(report, dict) else None
+    if isinstance(summary, dict):
+        failed = summary.get("failed_placements")
+        failed_total = sum(value for value in failed.values() if isinstance(value, int)) if isinstance(failed, dict) else 0
+        lowland_markers = _int_value(summary.get("lowland_markers"), 0)
+        raised_markers = (
+            _int_value(summary.get("raised_markers"), 0)
+            + _int_value(summary.get("platform_markers"), 0)
+            + _int_value(summary.get("high_point_markers"), 0)
+        )
+        return {
+            "lowlands": lowland_markers,
+            "raised": raised_markers,
+            "high": _int_value(summary.get("high_point_markers"), 0),
+            "transitions": _int_value(summary.get("transition_markers"), 0),
+            "landmarks": _int_value(summary.get("landmark_markers"), 0),
+            "failed_placements": failed_total,
+            "status": "ok" if failed_total == 0 else "has_failed_placements",
+        }
+
     rows = _runtime_grid_rows(world.runtime_grids, "height_grid")
     lowlands = 0
     raised = 0
     high = 0
+    landmarks = 0
     for row in rows:
         if not isinstance(row, list):
             continue
@@ -201,17 +227,21 @@ def _elevation_visual_summary(world: WorldPackage) -> dict[str, Any]:
                     raised += 1
                 if value >= 2:
                     high += 1
+                if value >= 4:
+                    landmarks += 1
     transitions = world.elevation_model.get("transitions")
     transition_count = len(transitions) if isinstance(transitions, list) else 0
     if transition_count == 0:
-        summary = world.elevation_model.get("summary")
-        if isinstance(summary, dict):
-            transition_count = _int_value(summary.get("total"), 0)
+        model_summary = world.elevation_model.get("summary")
+        if isinstance(model_summary, dict):
+            transition_count = _int_value(model_summary.get("total"), 0)
     return {
         "lowlands": lowlands,
         "raised": raised,
         "high": high,
         "transitions": transition_count,
+        "landmarks": landmarks,
+        "failed_placements": 0,
         "status": "ok",
     }
 
@@ -285,7 +315,9 @@ def _count_categories(items: list[dict[str, Any]]) -> Counter[str]:
         tags = item.get("source_tags", [])
         tag_text = " ".join(str(tag) for tag in tags) if isinstance(tags, list) else ""
         haystack = f"{source_type} {rule_id} {sprite_id} {tag_text}"
-        if source_type == "visual_place_treatment":
+        if source_type == "visual_elevation":
+            counts["elevation"] += 1
+        elif source_type == "visual_place_treatment":
             counts["place"] += 1
         elif source_type != "visual_decoration":
             counts["runtime"] += 1

@@ -51,6 +51,7 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     unmapped_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "unmapped_terrain_report.json")
     decoration_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "decoration_report.json")
     place_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "place_treatment_report.json")
+    elevation_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "elevation_visual_report.json")
     manifest = _read_optional_json_object(output_dir / "_manifest.json")
 
     version = _project_version(project_root)
@@ -85,7 +86,7 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     ])
     lines.extend(_visual_density_lines(visual_report))
     lines.extend(["", *_autotiling_lines(visual_report, autotile_report, unmapped_report)])
-    lines.extend(["", *_visual_elevation_lines(visual_report)])
+    lines.extend(["", *_visual_elevation_lines(visual_report, elevation_report)])
     lines.extend(["", *_debug_file_lines(output_dir, project_root)])
     lines.extend(["", "Overall:", f"  status: {overall_status}", "  notes:"])
     lines.extend(_notes(world_report, visual_report, autotile_report, unmapped_report, decoration_report, place_report))
@@ -157,10 +158,11 @@ def _visual_density_lines(report: dict[str, Any]) -> list[str]:
         f"    runtime:         {_int(by_source.get('runtime'))} = {_per_1000(_int(by_source.get('runtime')), _area(report)):4.1f} / 1000 tiles",
         f"    decorations:    {_int(by_source.get('decorations'))} = {_float(decorations.get('per_1000_tiles')):4.1f} / 1000 tiles [{decorations.get('status', 'unknown')}, target {_target(decorations)}]",
         f"    place treatment: {_int(by_source.get('place_treatment'))} = {_float(place.get('objects_per_place')):4.1f} / place      [{place.get('status', 'unknown')}, target {_target(place)}]",
+        f"    elevation:      {_int(by_source.get('elevation_visual'))} = {_per_1000(_int(by_source.get('elevation_visual')), _area(report)):4.1f} / 1000 tiles",
         "",
         "  by category:",
     ]
-    for key in ("swamp", "road", "ruins", "place", "runtime", "other"):
+    for key in ("swamp", "road", "ruins", "elevation", "place", "runtime", "other"):
         lines.append(f"    {key + ':':<16} {_int(by_category.get(key)):6d}")
     lines.extend(["", "  top sprites:"])
     for item in top_sprites[:5]:
@@ -190,14 +192,18 @@ def _autotiling_lines(visual_report: dict[str, Any], autotile_report: dict[str, 
     ]
 
 
-def _visual_elevation_lines(report: dict[str, Any]) -> list[str]:
+def _visual_elevation_lines(report: dict[str, Any], elevation_report: dict[str, Any]) -> list[str]:
     elevation = _nested(report, "elevation_visual")
+    report_summary = _dict(elevation_report.get("summary"))
+    failed = _int(elevation.get("failed_placements"))
     return [
         "Visual elevation:",
         f"  lowland overlays:    {_int(elevation.get('lowlands')):6d} [{elevation.get('status', 'unknown')}]",
         f"  raised edge markers: {_int(elevation.get('raised')):6d} [{elevation.get('status', 'unknown')}]",
         f"  transition markers:  {_int(elevation.get('transitions')):6d} [{elevation.get('status', 'unknown')}]",
         f"  landmark markers:    {_int(elevation.get('landmarks')):6d} [{elevation.get('status', 'ok')}]",
+        f"  failed placements:   {failed:6d} [{'ok' if failed == 0 else 'warning'}]",
+        f"  report objects:      {_int(report_summary.get('total')):6d}",
     ]
 
 
@@ -210,6 +216,7 @@ def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
         f"  autotile report:   {_display_path(visual_debug / 'autotile_report.json', project_root)}",
         f"  decoration report: {_display_path(visual_debug / 'decoration_report.json', project_root)}",
         f"  place report:      {_display_path(visual_debug / 'place_treatment_report.json', project_root)}",
+        f"  elevation report:  {_display_path(visual_debug / 'elevation_visual_report.json', project_root)}",
         f"  preview:           {_display_path(output_dir / 'visual_map' / 'preview.png', project_root)}",
         f"  steps:             {_display_path(visual_debug / 'steps', project_root)}/",
     ]
