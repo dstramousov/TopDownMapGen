@@ -1,10 +1,10 @@
 {
   "kind": "boundary_visual_rules",
-  "schema_version": "boundary-visual-rules-v1",
+  "schema_version": "boundary-visual-rules-v2",
   "profile": "dark_forest",
   "world_style": "dark_forest_post_soviet_ruins",
   "enabled": true,
-  "seed_salt": "dark-forest-boundary-v1",
+  "seed_salt": "dark-forest-boundary-v2-variation",
   "border_width_tiles": 2,
   "policy": {
     "visual_only": true,
@@ -105,5 +105,146 @@
       "chance_percent": 75,
       "inner_chance_percent": 25
     }
-  }
+  },
+  "variation_policy": {
+    "enabled": true,
+    "purpose": "Keep dense forest as the dominant boundary while avoiding a single-type frame around the map.",
+    "visual_only": true,
+    "fallback_boundary_type": "dense_forest_wall"
+  },
+  "boundary_type_variants": {
+    "dense_forest_wall": [
+      {
+        "type": "dense_forest_wall",
+        "weight": 68
+      },
+      {
+        "type": "dark_tree_wall",
+        "weight": 20
+      },
+      {
+        "type": "cliff_wall",
+        "weight": 5
+      },
+      {
+        "type": "ruin_barrier",
+        "weight": 4
+      },
+      {
+        "type": "swamp_barrier",
+        "weight": 3
+      }
+    ],
+    "dark_tree_wall": [
+      {
+        "type": "dark_tree_wall",
+        "weight": 58
+      },
+      {
+        "type": "dense_forest_wall",
+        "weight": 28
+      },
+      {
+        "type": "cliff_wall",
+        "weight": 6
+      },
+      {
+        "type": "ruin_barrier",
+        "weight": 5
+      },
+      {
+        "type": "swamp_barrier",
+        "weight": 3
+      }
+    ],
+    "swamp_barrier": [
+      {
+        "type": "swamp_barrier",
+        "weight": 58
+      },
+      {
+        "type": "dark_tree_wall",
+        "weight": 20
+      },
+      {
+        "type": "dense_forest_wall",
+        "weight": 14
+      },
+      {
+        "type": "cliff_wall",
+        "weight": 5
+      },
+      {
+        "type": "ruin_barrier",
+        "weight": 3
+      }
+    ],
+    "ruin_barrier": [
+      {
+        "type": "ruin_barrier",
+        "weight": 60
+      },
+      {
+        "type": "concrete_barrier",
+        "weight": 18
+      },
+      {
+        "type": "dense_forest_wall",
+        "weight": 12
+      },
+      {
+        "type": "dark_tree_wall",
+        "weight": 7
+      },
+      {
+        "type": "cliff_wall",
+        "weight": 3
+      }
+    ],
+    "concrete_barrier": [
+      {
+        "type": "concrete_barrier",
+        "weight": 55
+      },
+      {
+        "type": "ruin_barrier",
+        "weight": 25
+      },
+      {
+        "type": "dark_tree_wall",
+        "weight": 10
+      },
+      {
+        "type": "dense_forest_wall",
+        "weight": 7
+      },
+      {
+        "type": "cliff_wall",
+        "weight": 3
+      }
+    ],
+    "cliff_wall": [
+      {
+        "type": "cliff_wall",
+        "weight": 65
+      },
+      {
+        "type": "dense_forest_wall",
+        "weight": 20
+      },
+      {
+        "type": "dark_tree_wall",
+        "weight": 10
+      },
+      {
+        "type": "ruin_barrier",
+        "weight": 5
+      }
+    ]
+  },
+  "notes": [
+    "Boundary visual is visual-only and must not change gameplay, collision, movement, routes, start, or goal.",
+    "v2 adds weighted boundary type variants so map edges do not become a single dense_forest_wall frame.",
+    "Dense forest remains the dominant boundary type for dark_forest_post_soviet_ruins."
+  ]
 }

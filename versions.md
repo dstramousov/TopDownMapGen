@@ -582,3 +582,11 @@
 - `VisualProfileLoader` теперь загружает `assets_manifest.json` как обязательную часть visual profile.
 - `./r assets` и `./r test` теперь проверяют assets manifest contract.
 - Версия проекта поднята до `0.0.70`.
+
+## v0.0.70 -> v0.0.71
+
+- Немного снижена плотность мелкого decoration layer, чтобы visual density возвращался в целевой диапазон без расширения лимитов.
+- `decoration_rules.json` поднят до `decoration-rules-v6`: уменьшены шансы для swamp/road/ruins мелкого декора.
+- `boundary_visual_rules.json` поднят до `boundary-visual-rules-v2`: добавлены weighted boundary type variants для более разнообразного края карты.
+- `BoundaryVisualMapper` теперь выбирает вариативный boundary type детерминированно, сохраняя dense forest как основной тип края.
+- Версия проекта поднята до `0.0.71`.

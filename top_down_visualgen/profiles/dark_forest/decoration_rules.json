@@ -1,8 +1,8 @@
 {
-  "schema_version": "decoration-rules-v5",
+  "schema_version": "decoration-rules-v6",
   "kind": "decoration_rules",
   "enabled": true,
-  "seed_salt": "dark_forest_decoration_v5",
+  "seed_salt": "dark_forest_decoration_v6_density_tuned",
   "blocked_terrain": [
     "start",
     "goal",
@@ -21,7 +21,7 @@
         "cap_",
         "thin_"
       ],
-      "chance_percent": 22,
+      "chance_percent": 20,
       "sprites": [
         "decor.reeds_01",
         "decor.reeds_02",
@@ -43,7 +43,7 @@
         "inner_corner_wn",
         "inner_corner_complex"
       ],
-      "chance_percent": 9,
+      "chance_percent": 8,
       "sprites": [
         "decor.mud_patch_01",
         "decor.wet_grass_01",
@@ -60,7 +60,7 @@
       "variants": [
         "isolated"
       ],
-      "chance_percent": 100,
+      "chance_percent": 88,
       "sprites": [
         "decor.reeds_01",
         "decor.mud_patch_01"
@@ -79,7 +79,7 @@
         "t_",
         "cross"
       ],
-      "chance_percent": 7,
+      "chance_percent": 6,
       "sprites": [
         "decor.road_grass_tuft_01",
         "decor.road_dirt_noise_01",
@@ -100,7 +100,7 @@
         "end_s",
         "end_w"
       ],
-      "chance_percent": 18,
+      "chance_percent": 15,
       "sprites": [
         "decor.broken_plank_01",
         "decor.small_stone_01",
@@ -114,7 +114,7 @@
       "terrain_types": [
         "ruin_floor"
       ],
-      "chance_percent": 18,
+      "chance_percent": 16,
       "sprites": [
         "decor.ruin_rubble_01",
         "decor.ruin_rubble_02",
@@ -128,7 +128,7 @@
       "terrain_types": [
         "ruin_floor"
       ],
-      "chance_percent": 10,
+      "chance_percent": 9,
       "sprites": [
         "decor.mossy_stone_01",
         "decor.cracked_stone_02"
@@ -147,7 +147,7 @@
         "ruin_wall_blocker"
       ],
       "nearby_radius": 1,
-      "chance_percent": 14,
+      "chance_percent": 12,
       "sprites": [
         "decor.fallen_bricks_01",
         "decor.ruin_rubble_01",
@@ -167,7 +167,7 @@
         "ruin_wall_blocker"
       ],
       "nearby_radius": 2,
-      "chance_percent": 5,
+      "chance_percent": 4,
       "sprites": [
         "decor.cracked_stone_01",
         "decor.small_stone_02",
@@ -187,7 +187,7 @@
         "road"
       ],
       "nearby_radius": 1,
-      "chance_percent": 7,
+      "chance_percent": 6,
       "sprites": [
         "decor.road_grass_tuft_01",
         "decor.road_grass_tuft_02",
@@ -206,7 +206,7 @@
         "road"
       ],
       "nearby_radius": 1,
-      "chance_percent": 4,
+      "chance_percent": 3,
       "sprites": [
         "decor.small_stone_01",
         "decor.small_stone_02",
@@ -226,7 +226,7 @@
         "swamp"
       ],
       "nearby_radius": 1,
-      "chance_percent": 12,
+      "chance_percent": 10,
       "sprites": [
         "decor.wet_grass_01",
         "decor.wet_grass_02",
@@ -245,7 +245,7 @@
         "swamp"
       ],
       "nearby_radius": 2,
-      "chance_percent": 4,
+      "chance_percent": 3,
       "sprites": [
         "decor.mud_patch_01",
         "decor.mud_patch_02",
@@ -263,7 +263,7 @@
         "swamp"
       ],
       "nearby_radius": 1,
-      "chance_percent": 2,
+      "chance_percent": 1,
       "sprites": [
         "decor.reeds_01",
         "decor.reeds_02",
@@ -276,6 +276,7 @@
     "water_slow is treated as passable swamp/wetland visual terrain, not as open water.",
     "Swamp influence rules decorate nearby passable grass/dirt without changing movement, collision, or terrain grids.",
     "Old overgrown roads can receive sparse non-blocking visual debris and edge growth without changing traversal.",
-    "Ruin decoration rules add non-blocking rubble, cracked stones, broken blocks and mossy stones on ruin floors and nearby passable terrain."
+    "Ruin decoration rules add non-blocking rubble, cracked stones, broken blocks and mossy stones on ruin floors and nearby passable terrain.",
+    "v0.0.71 tunes small decoration density down slightly so dark_forest stays inside target density after elevation and boundary layers."
   ]
 }

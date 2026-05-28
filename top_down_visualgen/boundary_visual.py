@@ -56,7 +56,7 @@ class BoundaryVisualMapper:
                 if distance >= border_width:
                     continue
                 edge = _edge_name(width=width, height=height, x=x, y=y)
-                boundary_type = _boundary_type_for_terrain(terrain_type, x, y, rules)
+                boundary_type = _boundary_type_for_terrain(terrain_type, x, y, rules, salt)
                 boundary_rule = _boundary_type_rule(rules, boundary_type)
                 if not boundary_rule:
                     skipped_counts["missing_boundary_type_rule"] += 1
@@ -208,7 +208,23 @@ def _select_sprite(rule: dict[str, Any], x: int, y: int, salt: str) -> str | Non
     return sprites[_stable_int(salt, "sprite", x, y, len(sprites)) % len(sprites)]
 
 
-def _boundary_type_for_terrain(terrain_type: str, x: int, y: int, rules: dict[str, Any]) -> str:
+def _boundary_type_for_terrain(
+    terrain_type: str,
+    x: int,
+    y: int,
+    rules: dict[str, Any],
+    salt: str,
+) -> str:
+    base_type = _base_boundary_type_for_terrain(terrain_type, x, y, rules)
+    return _varied_boundary_type(base_type, x, y, rules, salt)
+
+
+def _base_boundary_type_for_terrain(
+    terrain_type: str,
+    x: int,
+    y: int,
+    rules: dict[str, Any],
+) -> str:
     terrain_map = rules.get("terrain_type_to_boundary")
     if isinstance(terrain_map, dict):
         mapped = terrain_map.get(terrain_type)
@@ -226,6 +242,47 @@ def _boundary_type_for_terrain(terrain_type: str, x: int, y: int, rules: dict[st
     if "road" in lower:
         return "dark_tree_wall"
     return "dense_forest_wall"
+
+
+def _varied_boundary_type(
+    base_type: str,
+    x: int,
+    y: int,
+    rules: dict[str, Any],
+    salt: str,
+) -> str:
+    variation_policy = rules.get("variation_policy")
+    if isinstance(variation_policy, dict) and variation_policy.get("enabled") is False:
+        return base_type
+    variants_by_type = rules.get("boundary_type_variants")
+    if not isinstance(variants_by_type, dict):
+        return base_type
+    raw_variants = variants_by_type.get(base_type)
+    if not isinstance(raw_variants, list):
+        return base_type
+    weighted: list[tuple[str, int]] = []
+    for item in raw_variants:
+        if not isinstance(item, dict):
+            continue
+        variant_type = item.get("type")
+        weight = item.get("weight")
+        if (
+            isinstance(variant_type, str)
+            and variant_type
+            and isinstance(weight, int)
+            and weight > 0
+        ):
+            weighted.append((variant_type, weight))
+    if not weighted:
+        return base_type
+    total_weight = sum(weight for _, weight in weighted)
+    roll = _stable_int(salt, "boundary_type_variant", base_type, x, y) % total_weight
+    cursor = 0
+    for variant_type, weight in weighted:
+        cursor += weight
+        if roll < cursor:
+            return variant_type
+    return base_type
 
 
 def _boundary_type_rule(rules: dict[str, Any], boundary_type: str) -> dict[str, Any]:

@@ -199,7 +199,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     boundary_rules = _read_json(
         Path("top_down_visualgen/profiles/dark_forest/boundary_visual_rules.json")
     )
-    assert boundary_rules["schema_version"] == "boundary-visual-rules-v1"
+    assert boundary_rules["schema_version"] == "boundary-visual-rules-v2"
     assert boundary_rules["policy"]["changes_gameplay"] is False
     assert "dense_forest_wall" in boundary_rules["boundary_types"]
 
