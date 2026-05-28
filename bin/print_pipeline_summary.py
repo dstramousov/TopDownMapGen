@@ -196,11 +196,13 @@ def _visual_elevation_lines(report: dict[str, Any], elevation_report: dict[str, 
     elevation = _nested(report, "elevation_visual")
     report_summary = _dict(elevation_report.get("summary"))
     failed = _int(elevation.get("failed_placements"))
+    sampled = _int(elevation.get("sampled_markers"))
     return [
         "Visual elevation:",
         f"  lowland overlays:    {_int(elevation.get('lowlands')):6d} [{elevation.get('status', 'unknown')}]",
         f"  raised edge markers: {_int(elevation.get('raised')):6d} [{elevation.get('status', 'unknown')}]",
         f"  transition markers:  {_int(elevation.get('transitions')):6d} [{elevation.get('status', 'unknown')}]",
+        f"  sampled markers:     {sampled:6d} [ok]",
         f"  landmark markers:    {_int(elevation.get('landmarks')):6d} [{elevation.get('status', 'ok')}]",
         f"  failed placements:   {failed:6d} [{'ok' if failed == 0 else 'warning'}]",
         f"  report objects:      {_int(report_summary.get('total')):6d}",

@@ -1,658 +1,181 @@
 {
   "kind": "visual_tilesets",
   "schema_version": "visual-tilesets-v1",
-  "sprites": {
-    "decor.abandoned_crate_01": {
-      "debug_color": "#8a6238"
-    },
-    "decor.ammo_crate_empty_01": {
-      "debug_color": "#4f5b32",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.animal_bones_01": {
-      "debug_color": "#d1c4a3",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.barricade_stake_01": {
-      "debug_color": "#6b4227",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.black_mud_01": {
-      "debug_color": "#24231c",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.bog_bubbles_01": {
-      "debug_color": "#6a8b73",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.branch_pile_01": {
-      "debug_color": "#59402a",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.broken_block_01": {
-      "debug_color": "#9b9588"
-    },
-    "decor.broken_cart_piece_01": {
-      "debug_color": "#6a4729",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.broken_column_01": {
-      "debug_color": "#8d8878",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.broken_lantern_01": {
-      "debug_color": "#b08a42",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.broken_plank_01": {
-      "debug_color": "#7a5935"
-    },
-    "decor.broken_shield_panel_01": {
-      "debug_color": "#5b5f5e",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.burned_log_01": {
-      "debug_color": "#3d2a21",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.campfire_ash_01": {
-      "debug_color": "#3f3325"
-    },
-    "decor.collapsed_arch_piece_01": {
-      "debug_color": "#77736a",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.collapsed_tent_piece_01": {
-      "debug_color": "#7d6b58",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.concrete_debris_01": {
-      "debug_color": "#8e8b82"
-    },
-    "decor.cracked_floor_piece_01": {
-      "debug_color": "#777166",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.cracked_stone_01": {
-      "debug_color": "#a7a093"
-    },
-    "decor.cracked_stone_02": {
-      "debug_color": "#8d887f"
-    },
-    "decor.dead_branch_01": {
-      "debug_color": "#6b4a2e"
-    },
-    "decor.dead_tree_root_01": {
-      "debug_color": "#3b2e22",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.dry_leaves_patch_01": {
-      "debug_color": "#8a5a2c",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.empty_bottle_01": {
-      "debug_color": "#6f8f7a",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.fallen_bricks_01": {
-      "debug_color": "#6f6a62"
-    },
-    "decor.fallen_log_01": {
-      "debug_color": "#604329"
-    },
-    "decor.fallen_tree_01": {
-      "debug_color": "#4e3624",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.firewood_stack_01": {
-      "debug_color": "#6d4b2f"
-    },
-    "decor.forest_litter_01": {
-      "debug_color": "#4a3d2e",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.foxhole_debris_01": {
-      "debug_color": "#4d3d2f",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.half_wall_debris_01": {
-      "debug_color": "#6d695f",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.hidden_cache_marker_01": {
-      "debug_color": "#c9a227"
-    },
-    "decor.moss_patch_01": {
-      "debug_color": "#4d6b3a",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.mossy_stone_01": {
-      "debug_color": "#6f8063"
-    },
-    "decor.mud_patch_01": {
-      "debug_color": "#5f4a2e"
-    },
-    "decor.mud_patch_02": {
-      "debug_color": "#55432c"
-    },
-    "decor.mushroom_cluster_01": {
-      "debug_color": "#b7a0a0",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.old_backpack_01": {
-      "debug_color": "#5f4b34",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.old_bedroll_01": {
-      "debug_color": "#6b6154",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.old_tile_fragment_01": {
-      "debug_color": "#8b826f",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.old_tripod_01": {
-      "debug_color": "#555047",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.plank_stack_01": {
-      "debug_color": "#7d5430",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.reeds_01": {
-      "debug_color": "#789a42"
-    },
-    "decor.reeds_02": {
-      "debug_color": "#8aa24d"
-    },
-    "decor.reeds_03": {
-      "debug_color": "#718f3e"
-    },
-    "decor.reeds_cluster_01": {
-      "debug_color": "#55733a",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.road_dirt_noise_01": {
-      "debug_color": "#8a6a43"
-    },
-    "decor.road_grass_tuft_01": {
-      "debug_color": "#6f8b3d"
-    },
-    "decor.road_grass_tuft_02": {
-      "debug_color": "#7b9348"
-    },
-    "decor.roadblock_debris_01": {
-      "debug_color": "#7d6d59"
-    },
-    "decor.roadside_marker_stone_01": {
-      "debug_color": "#77725f",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.root_cluster_01": {
-      "debug_color": "#493522",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.root_over_stone_01": {
-      "debug_color": "#59452e",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.rope_piece_01": {
-      "debug_color": "#b89b62",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.rotten_log_01": {
-      "debug_color": "#3f3325",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.ruin_rubble_01": {
-      "debug_color": "#8f887c"
-    },
-    "decor.ruin_rubble_02": {
-      "debug_color": "#7a746c"
-    },
-    "decor.rusty_barbed_wire_01": {
-      "debug_color": "#6d4b3b",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.rusty_pot_01": {
-      "debug_color": "#7a4d32",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.sack_01": {
-      "debug_color": "#9a7a46",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.sandbag_broken_01": {
-      "debug_color": "#8b7a4a",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.sandbag_remnant_01": {
-      "debug_color": "#9b8655"
-    },
-    "decor.signpost_broken_01": {
-      "debug_color": "#7a5630",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.small_stone_01": {
-      "debug_color": "#9a9787"
-    },
-    "decor.small_stone_02": {
-      "debug_color": "#817d70"
-    },
-    "decor.spent_shells_01": {
-      "debug_color": "#b8a15a",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.stone_dust_patch_01": {
-      "debug_color": "#aaa28f",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.stone_slab_01": {
-      "debug_color": "#817b6d",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.story_candidate_marker_01": {
-      "debug_color": "#9b7fc0",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.stump_large_01": {
-      "debug_color": "#5a3b25",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.swamp_log_01": {
-      "debug_color": "#5d442c"
-    },
-    "decor.swamp_stones_01": {
-      "debug_color": "#626a58",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.thorn_bush_01": {
-      "debug_color": "#2f4d2f",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.tire_rut_mud_01": {
-      "debug_color": "#4a3424",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.torn_canvas_01": {
-      "debug_color": "#a18b67"
-    },
-    "decor.torn_cloth_01": {
-      "debug_color": "#a07966",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.wagon_wheel_broken_01": {
-      "debug_color": "#5b3a1f",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.warning_bones_01": {
-      "debug_color": "#d6d1bd"
-    },
-    "decor.water_puddle_01": {
-      "debug_color": "#2d5d63",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "decor.wet_grass_01": {
-      "debug_color": "#4f7b45"
-    },
-    "decor.wet_grass_02": {
-      "debug_color": "#466f42"
-    },
-    "decor.wooden_cover_piece_01": {
-      "debug_color": "#6c482c",
-      "source": "micro_scene_catalog_placeholder"
-    },
-    "object.beacon": {
-      "debug_color": "#ffd166"
-    },
-    "object.bridge": {
-      "debug_color": "#b2874f"
-    },
-    "object.bunker": {
-      "debug_color": "#202020"
-    },
-    "object.bush": {
-      "debug_color": "#2d7a35"
-    },
-    "object.generic": {
-      "debug_color": "#ffffff"
-    },
-    "object.loot": {
-      "debug_color": "#f0d000"
-    },
-    "object.radio": {
-      "debug_color": "#d8d8d8"
-    },
-    "object.ruin": {
-      "debug_color": "#b9b0a2"
-    },
-    "object.tree": {
-      "debug_color": "#0f4a1f"
-    },
-    "object.trench": {
-      "debug_color": "#4d3825"
-    },
-    "elevation.mud_pool": {
-      "debug_color": "#3a3020",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.wet_grass_dark": {
-      "debug_color": "#2f4a32",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.trench_wall_edge": {
-      "debug_color": "#5a4631",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.pit_edge": {
-      "debug_color": "#3b2c22",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.root_hanging": {
-      "debug_color": "#4c3525",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.broken_drain_pipe": {
-      "debug_color": "#4f5550",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.bunker_floor_dark": {
-      "debug_color": "#303436",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.water_seep": {
-      "debug_color": "#355d64",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.dark_leaf_litter": {
-      "debug_color": "#2b241b",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.lowland_stones": {
-      "debug_color": "#5c5b52",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.raised_berm_edge": {
-      "debug_color": "#78603a",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.hill_grass_edge": {
-      "debug_color": "#596b33",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.dry_stone_patch": {
-      "debug_color": "#807766",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.exposed_roots": {
-      "debug_color": "#5d3c25",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.slope_grass": {
-      "debug_color": "#6c7a3e",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.old_earthwork": {
-      "debug_color": "#6e5534",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.ridge_stones": {
-      "debug_color": "#77705f",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.dry_leaf_patch": {
-      "debug_color": "#6b5632",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.wooden_bridge_deck": {
-      "debug_color": "#765635",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.stone_platform_edge": {
-      "debug_color": "#8b8678",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.broken_stairs_base": {
-      "debug_color": "#77736a",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.ruin_platform_floor": {
-      "debug_color": "#858073",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.bridge_support_post": {
-      "debug_color": "#5f442c",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.collapsed_platform_gap": {
-      "debug_color": "#2b2924",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.stone_guard_edge": {
-      "debug_color": "#8d8879",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.old_planks": {
-      "debug_color": "#6f4f30",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.watchtower_base": {
-      "debug_color": "#60452c",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.watchtower_ladder": {
-      "debug_color": "#7a5935",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.high_platform_edge": {
-      "debug_color": "#9a8e74",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.lookout_planks": {
-      "debug_color": "#7c5a35",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.old_flag_pole": {
-      "debug_color": "#4f3826",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.signal_tripod": {
-      "debug_color": "#6b5e48",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.broken_railing": {
-      "debug_color": "#6d5b43",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.watch_post_debris": {
-      "debug_color": "#5a4d3b",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.ancient_beacon_base": {
-      "debug_color": "#9b9171",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.signal_stone": {
-      "debug_color": "#a49a7c",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.ritual_marker": {
-      "debug_color": "#8f7f69",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.collapsed_monolith": {
-      "debug_color": "#77706a",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.high_landmark_marker": {
-      "debug_color": "#c0a76a",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.old_signal_device": {
-      "debug_color": "#6c6a5d",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.strange_stone_ring": {
-      "debug_color": "#9a937d",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.beacon_debris": {
-      "debug_color": "#7f7969",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.stone_approach": {
-      "debug_color": "#8a8170",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.landmark_ring_edge": {
-      "debug_color": "#a19880",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.trench_step": {
-      "debug_color": "#5e4932",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.mud_slope_down": {
-      "debug_color": "#4b3b28",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.bunker_descent": {
-      "debug_color": "#43484a",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.pit_ramp": {
-      "debug_color": "#4a3829",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.root_step": {
-      "debug_color": "#5a3a24",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.dirt_slope_up": {
-      "debug_color": "#735839",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.grass_slope_up": {
-      "debug_color": "#64753c",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.low_berm_cut": {
-      "debug_color": "#74603f",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.root_slope": {
-      "debug_color": "#5c3e28",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.stone_stairs": {
-      "debug_color": "#8c887c",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.wooden_ramp": {
-      "debug_color": "#765331",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.dirt_ramp": {
-      "debug_color": "#715538",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.broken_stairs": {
-      "debug_color": "#716d62",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.bridge_entry": {
-      "debug_color": "#775838",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.platform_step": {
-      "debug_color": "#888274",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.tower_ladder": {
-      "debug_color": "#765532",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.wooden_stairs_high": {
-      "debug_color": "#765535",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.stone_steps_high": {
-      "debug_color": "#918b7a",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.platform_ladder_entry": {
-      "debug_color": "#7b5b38",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.lowland_shadow_edge": {
-      "debug_color": "#2e2a24",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.mud_rim": {
-      "debug_color": "#4c3b28",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.pit_rim": {
-      "debug_color": "#3c3025",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.bunker_floor_edge": {
-      "debug_color": "#3b4143",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.hill_shoulder": {
-      "debug_color": "#6d7541",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.dry_ridge_edge": {
-      "debug_color": "#7c6a45",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.rooted_slope_edge": {
-      "debug_color": "#5d432c",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.wooden_platform_edge": {
-      "debug_color": "#6f4f30",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.ruin_platform_edge": {
-      "debug_color": "#837c70",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.bridge_side_edge": {
-      "debug_color": "#64472d",
-      "source": "elevation_catalog_placeholder"
-    },
-    "elevation.tower_base_edge": {
-      "debug_color": "#5b432d",
-      "source": "elevation_catalog_placeholder"
-    },
-    "boundary.dense_forest_wall": {
-      "debug_color": "#071f13",
-      "source": "elevation_catalog_placeholder"
-    },
-    "boundary.cliff_wall": {
-      "debug_color": "#5d5142",
-      "source": "elevation_catalog_placeholder"
-    },
-    "boundary.ruin_barrier": {
-      "debug_color": "#615d55",
-      "source": "elevation_catalog_placeholder"
-    },
-    "boundary.swamp_barrier": {
-      "debug_color": "#21392f",
-      "source": "elevation_catalog_placeholder"
-    },
-    "boundary.concrete_barrier": {
-      "debug_color": "#686b65",
-      "source": "elevation_catalog_placeholder"
-    },
-    "boundary.dark_tree_wall": {
-      "debug_color": "#04140c",
-      "source": "elevation_catalog_placeholder"
-    }
-  },
+  "sprites": [
+    "boundary.cliff_wall",
+    "boundary.concrete_barrier",
+    "boundary.dark_tree_wall",
+    "boundary.dense_forest_wall",
+    "boundary.ruin_barrier",
+    "boundary.swamp_barrier",
+    "decor.abandoned_crate_01",
+    "decor.ammo_crate_empty_01",
+    "decor.animal_bones_01",
+    "decor.barricade_stake_01",
+    "decor.black_mud_01",
+    "decor.bog_bubbles_01",
+    "decor.branch_pile_01",
+    "decor.broken_block_01",
+    "decor.broken_cart_piece_01",
+    "decor.broken_column_01",
+    "decor.broken_lantern_01",
+    "decor.broken_plank_01",
+    "decor.broken_shield_panel_01",
+    "decor.burned_log_01",
+    "decor.campfire_ash_01",
+    "decor.collapsed_arch_piece_01",
+    "decor.collapsed_tent_piece_01",
+    "decor.concrete_debris_01",
+    "decor.cracked_floor_piece_01",
+    "decor.cracked_stone_01",
+    "decor.cracked_stone_02",
+    "decor.dead_branch_01",
+    "decor.dead_tree_root_01",
+    "decor.dry_leaves_patch_01",
+    "decor.empty_bottle_01",
+    "decor.fallen_bricks_01",
+    "decor.fallen_log_01",
+    "decor.fallen_tree_01",
+    "decor.firewood_stack_01",
+    "decor.forest_litter_01",
+    "decor.foxhole_debris_01",
+    "decor.half_wall_debris_01",
+    "decor.hidden_cache_marker_01",
+    "decor.moss_patch_01",
+    "decor.mossy_stone_01",
+    "decor.mud_patch_01",
+    "decor.mud_patch_02",
+    "decor.mushroom_cluster_01",
+    "decor.old_backpack_01",
+    "decor.old_bedroll_01",
+    "decor.old_tile_fragment_01",
+    "decor.old_tripod_01",
+    "decor.plank_stack_01",
+    "decor.reeds_01",
+    "decor.reeds_02",
+    "decor.reeds_03",
+    "decor.reeds_cluster_01",
+    "decor.road_dirt_noise_01",
+    "decor.road_grass_tuft_01",
+    "decor.road_grass_tuft_02",
+    "decor.roadblock_debris_01",
+    "decor.roadside_marker_stone_01",
+    "decor.root_cluster_01",
+    "decor.root_over_stone_01",
+    "decor.rope_piece_01",
+    "decor.rotten_log_01",
+    "decor.ruin_rubble_01",
+    "decor.ruin_rubble_02",
+    "decor.rusty_barbed_wire_01",
+    "decor.rusty_pot_01",
+    "decor.sack_01",
+    "decor.sandbag_broken_01",
+    "decor.sandbag_remnant_01",
+    "decor.signpost_broken_01",
+    "decor.small_stone_01",
+    "decor.small_stone_02",
+    "decor.spent_shells_01",
+    "decor.stone_dust_patch_01",
+    "decor.stone_slab_01",
+    "decor.story_candidate_marker_01",
+    "decor.stump_large_01",
+    "decor.swamp_log_01",
+    "decor.swamp_stones_01",
+    "decor.thorn_bush_01",
+    "decor.tire_rut_mud_01",
+    "decor.torn_canvas_01",
+    "decor.torn_cloth_01",
+    "decor.wagon_wheel_broken_01",
+    "decor.warning_bones_01",
+    "decor.water_puddle_01",
+    "decor.wet_grass_01",
+    "decor.wet_grass_02",
+    "decor.wooden_cover_piece_01",
+    "elevation.ancient_beacon_base",
+    "elevation.beacon_debris",
+    "elevation.bridge_entry",
+    "elevation.bridge_side_edge",
+    "elevation.bridge_support_post",
+    "elevation.broken_drain_pipe",
+    "elevation.broken_railing",
+    "elevation.broken_stairs",
+    "elevation.broken_stairs_base",
+    "elevation.bunker_descent",
+    "elevation.bunker_floor_dark",
+    "elevation.bunker_floor_edge",
+    "elevation.collapsed_monolith",
+    "elevation.collapsed_platform_gap",
+    "elevation.dark_leaf_litter",
+    "elevation.dirt_ramp",
+    "elevation.dirt_slope_up",
+    "elevation.dry_leaf_patch",
+    "elevation.dry_ridge_edge",
+    "elevation.dry_stone_patch",
+    "elevation.exposed_roots",
+    "elevation.grass_slope_up",
+    "elevation.high_landmark_marker",
+    "elevation.high_platform_edge",
+    "elevation.hill_grass_edge",
+    "elevation.hill_shoulder",
+    "elevation.landmark_ring_edge",
+    "elevation.lookout_planks",
+    "elevation.low_berm_cut",
+    "elevation.lowland_shadow_edge",
+    "elevation.lowland_stones",
+    "elevation.mud_pool",
+    "elevation.mud_rim",
+    "elevation.mud_slope_down",
+    "elevation.old_earthwork",
+    "elevation.old_flag_pole",
+    "elevation.old_planks",
+    "elevation.old_signal_device",
+    "elevation.pit_edge",
+    "elevation.pit_ramp",
+    "elevation.pit_rim",
+    "elevation.platform_ladder_entry",
+    "elevation.platform_step",
+    "elevation.raised_berm_edge",
+    "elevation.ridge_stones",
+    "elevation.ritual_marker",
+    "elevation.root_hanging",
+    "elevation.root_slope",
+    "elevation.root_step",
+    "elevation.rooted_slope_edge",
+    "elevation.ruin_platform_edge",
+    "elevation.ruin_platform_floor",
+    "elevation.signal_stone",
+    "elevation.signal_tripod",
+    "elevation.slope_grass",
+    "elevation.stone_approach",
+    "elevation.stone_guard_edge",
+    "elevation.stone_platform_edge",
+    "elevation.stone_stairs",
+    "elevation.stone_steps_high",
+    "elevation.strange_stone_ring",
+    "elevation.tower_base_edge",
+    "elevation.tower_ladder",
+    "elevation.trench_step",
+    "elevation.trench_wall_edge",
+    "elevation.watch_post_debris",
+    "elevation.watchtower_base",
+    "elevation.watchtower_ladder",
+    "elevation.water_seep",
+    "elevation.wet_grass_dark",
+    "elevation.wooden_bridge_deck",
+    "elevation.wooden_platform_edge",
+    "elevation.wooden_ramp",
+    "elevation.wooden_stairs_high",
+    "object.beacon",
+    "object.bridge",
+    "object.bunker",
+    "object.bush",
+    "object.generic",
+    "object.loot",
+    "object.radio",
+    "object.ruin",
+    "object.tree",
+    "object.trench"
+  ],
   "tile_size_px": 16,
   "tiles": {
     "dirt.base": {

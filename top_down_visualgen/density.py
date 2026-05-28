@@ -208,6 +208,7 @@ def _elevation_visual_summary(world: WorldPackage, elevation_visual_result: dict
             "transitions": _int_value(summary.get("transition_markers"), 0),
             "landmarks": _int_value(summary.get("landmark_markers"), 0),
             "failed_placements": failed_total,
+            "sampled_markers": _sum_int_mapping(summary.get("sampled_markers")),
             "status": "ok" if failed_total == 0 else "has_failed_placements",
         }
 
@@ -399,6 +400,12 @@ def _per_1000(total: int, area_tiles: int) -> float:
 
 def _safe_ratio(numerator: int, denominator: int) -> float:
     return round(numerator / denominator, 2) if denominator > 0 else 0.0
+
+
+def _sum_int_mapping(value: Any) -> int:
+    if not isinstance(value, dict):
+        return 0
+    return sum(item for item in value.values() if isinstance(item, int))
 
 
 def _int_value(value: Any, default: int) -> int:

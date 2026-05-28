@@ -45,6 +45,8 @@ class ElevationVisualMapper:
         role_counts: Counter[str] = Counter()
         sprite_counts: Counter[str] = Counter()
         skipped_counts: Counter[str] = Counter()
+        transition_type_counts: Counter[str] = Counter()
+        transition_sprite_counts: Counter[str] = Counter()
         occupied: set[tuple[int, int, str]] = set()
 
         for y, row in enumerate(height_rows):
@@ -81,7 +83,7 @@ class ElevationVisualMapper:
                 role_counts[_string_value(item.get("visual_role"), "visual")] += 1
                 sprite_counts[_string_value(item.get("sprite_id"), "unknown")] += 1
 
-        transition_items, transition_skipped = _build_transition_markers(
+        transition_items, transition_skipped, transition_summary = _build_transition_markers(
             world=world,
             rules=rules,
             height_rows=height_rows,
@@ -91,12 +93,16 @@ class ElevationVisualMapper:
         )
         items.extend(transition_items)
         skipped_counts.update(transition_skipped)
+        transition_type_counts.update(transition_summary["by_transition_type"])
+        transition_sprite_counts.update(transition_summary["by_sprite_id"])
         for item in transition_items:
             marker_counts[_string_value(item.get("elevation_visual_kind"), "transition")] += 1
             role_counts[_string_value(item.get("visual_role"), "transition_hint")] += 1
             sprite_counts[_string_value(item.get("sprite_id"), "unknown")] += 1
 
         items.sort(key=lambda item: item["sort_key"])
+        blocking_skipped = _blocking_skipped_counts(skipped_counts)
+        sampled_skipped = _sampled_skipped_counts(skipped_counts)
         return {
             "items": items,
             "report": {
@@ -118,10 +124,13 @@ class ElevationVisualMapper:
                     "by_kind": dict(sorted(marker_counts.items())),
                     "by_role": dict(sorted(role_counts.items())),
                     "by_sprite_id": dict(sorted(sprite_counts.items())),
-                    "failed_placements": dict(sorted(skipped_counts.items())),
+                    "transition_by_type": dict(sorted(transition_type_counts.items())),
+                    "transition_by_sprite_id": dict(sorted(transition_sprite_counts.items())),
+                    "failed_placements": dict(sorted(blocking_skipped.items())),
+                    "sampled_markers": dict(sorted(sampled_skipped.items())),
                 },
                 "quality": {
-                    "status": "ok" if not skipped_counts else "has_skipped_markers",
+                    "status": "ok" if not blocking_skipped else "has_skipped_markers",
                 },
             },
         }
@@ -216,12 +225,15 @@ def _build_transition_markers(
     layer_order: dict[str, int],
     stable_index_start: int,
     occupied: set[tuple[int, int, str]],
-) -> tuple[list[dict[str, Any]], Counter[str]]:
+) -> tuple[list[dict[str, Any]], Counter[str], dict[str, Counter[str]]]:
     transition_rules = rules.get("transitions")
     if not isinstance(transition_rules, dict):
         transition_rules = {}
+    tuning = _transition_tuning(rules)
     items: list[dict[str, Any]] = []
     skipped: Counter[str] = Counter()
+    type_counts: Counter[str] = Counter()
+    sprite_counts: Counter[str] = Counter()
     for raw_index, raw_item in enumerate(_transition_items(world)):
         if not isinstance(raw_item, dict):
             skipped["malformed_transition"] += 1
@@ -231,30 +243,43 @@ def _build_transition_markers(
             skipped["transition_out_of_bounds"] += 1
             continue
         transition_type = _transition_type(raw_item)
+        if _should_skip_transition_marker(raw_item, transition_type, tuning):
+            skipped[f"sampled_{transition_type}"] += 1
+            continue
         sprite_id = _transition_sprite(transition_rules, transition_type, raw_index)
         if sprite_id is None:
             skipped["missing_transition_rule"] += 1
             continue
         key = (x, y, "transition")
         if key in occupied:
+            skipped["suppressed_occupied_transition"] += 1
             continue
         occupied.add(key)
         level = height_rows[y][x]
+        visual_role = _transition_role(raw_item, transition_type)
         items.append(
             _build_visual_item(
                 x=x,
                 y=y,
                 elevation=level,
                 sprite_id=sprite_id,
-                visual_role="transition_hint",
+                visual_role=visual_role,
                 kind="transition",
                 source_id=_string_value(raw_item.get("id"), f"transition_{raw_index}"),
                 layer_order=layer_order,
                 stable_index=stable_index_start + len(items),
-                extra_tags=[f"transition:{transition_type}"],
+                extra_tags=[
+                    f"transition:{transition_type}",
+                    f"movement_allowed:{bool(raw_item.get('movement_allowed', True))}",
+                ],
             )
         )
-    return items, skipped
+        type_counts[transition_type] += 1
+        sprite_counts[sprite_id] += 1
+    return items, skipped, {
+        "by_transition_type": type_counts,
+        "by_sprite_id": sprite_counts,
+    }
 
 
 def _transition_items(world: WorldPackage) -> list[Any]:
@@ -291,6 +316,26 @@ def _position_from_value(value: Any) -> tuple[int, int] | None:
 
 
 def _transition_type(raw_item: dict[str, Any]) -> str:
+    suggested = raw_item.get("suggested_connector")
+    if isinstance(suggested, str) and suggested:
+        normalized_suggested = suggested.lower()
+        if normalized_suggested in {"none", "blocked", "blocked_edge"}:
+            return "blocked_edge"
+        if "ladder" in normalized_suggested or "scripted" in normalized_suggested:
+            return "tower_ladder"
+        if "stair" in normalized_suggested:
+            return "stairs"
+        if "ramp" in normalized_suggested:
+            return "ramp"
+        if "bridge" in normalized_suggested:
+            return "bridge_entry"
+        if "bunker" in normalized_suggested or "descent" in normalized_suggested:
+            return "bunker_descent"
+        if "trench" in normalized_suggested:
+            return "trench_step"
+        if "slope" in normalized_suggested:
+            return "slope"
+
     for key in ("type", "transition_type", "kind", "connector_type"):
         value = raw_item.get(key)
         if isinstance(value, str) and value:
@@ -305,12 +350,51 @@ def _transition_type(raw_item: dict[str, Any]) -> str:
                 return "bunker_descent"
             if "trench" in normalized:
                 return "trench_step"
-            if "platform" in normalized or "step" in normalized:
+            if "platform" in normalized:
                 return "platform_step"
             if "ladder" in normalized or "tower" in normalized:
                 return "tower_ladder"
+            if "step" in normalized:
+                return "slope"
             return "slope"
     return "slope"
+
+
+
+def _transition_tuning(rules: dict[str, Any]) -> dict[str, int]:
+    raw = rules.get("transition_marker_stride")
+    if not isinstance(raw, dict):
+        return {}
+    result: dict[str, int] = {}
+    for key, value in raw.items():
+        if isinstance(key, str) and isinstance(value, int) and value > 1:
+            result[key] = value
+    return result
+
+
+def _should_skip_transition_marker(
+    raw_item: dict[str, Any],
+    transition_type: str,
+    tuning: dict[str, int],
+) -> bool:
+    stride = tuning.get(transition_type, tuning.get("default", 1))
+    if stride <= 1:
+        return False
+    from_pos = _position_from_value(raw_item.get("from")) or _transition_position(raw_item)
+    to_pos = _position_from_value(raw_item.get("to"))
+    salt = _string_value(raw_item.get("id"), transition_type)
+    value = from_pos[0] * 73856093 + from_pos[1] * 19349663 + len(salt) * 83492791
+    if to_pos is not None:
+        value += to_pos[0] * 2654435761 + to_pos[1] * 97531
+    return value % stride != 0
+
+
+def _transition_role(raw_item: dict[str, Any], transition_type: str) -> str:
+    if transition_type == "blocked_edge" or raw_item.get("movement_allowed") is False:
+        return "danger_hint"
+    if transition_type in {"bridge_entry", "platform_step", "tower_ladder", "stairs", "ramp", "slope"}:
+        return "transition_hint"
+    return "height_edge"
 
 
 def _transition_sprite(rules: dict[str, Any], transition_type: str, index: int) -> str | None:
@@ -419,6 +503,27 @@ def _draw_layer_order(profile: VisualProfile) -> dict[str, int]:
     return {key: value for key, value in raw_order.items() if isinstance(key, str) and isinstance(value, int)}
 
 
+
+def _blocking_skipped_counts(skipped_counts: Counter[str]) -> Counter[str]:
+    return Counter(
+        {
+            key: value
+            for key, value in skipped_counts.items()
+            if not key.startswith("sampled_") and not key.startswith("suppressed_") and value > 0
+        }
+    )
+
+
+def _sampled_skipped_counts(skipped_counts: Counter[str]) -> Counter[str]:
+    return Counter(
+        {
+            key.removeprefix("sampled_").removeprefix("suppressed_"): value
+            for key, value in skipped_counts.items()
+            if (key.startswith("sampled_") or key.startswith("suppressed_")) and value > 0
+        }
+    )
+
+
 def _empty_result(status: str) -> dict[str, Any]:
     return {
         "items": [],
@@ -439,7 +544,10 @@ def _empty_result(status: str) -> dict[str, Any]:
                 "by_kind": {},
                 "by_role": {},
                 "by_sprite_id": {},
+                "transition_by_type": {},
+                "transition_by_sprite_id": {},
                 "failed_placements": {},
+                "sampled_markers": {},
             },
             "quality": {"status": status},
         },

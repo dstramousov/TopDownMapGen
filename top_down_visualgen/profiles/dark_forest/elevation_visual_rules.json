@@ -1,6 +1,6 @@
 {
   "kind": "elevation_visual_rules",
-  "schema_version": "elevation-visual-rules-v1",
+  "schema_version": "elevation-visual-rules-v2",
   "profile": "dark_forest",
   "world_style": "dark_forest_post_soviet_ruins",
   "style_decisions": {
@@ -338,6 +338,11 @@
     ],
     "tower_ladder": [
       "elevation.tower_ladder"
+    ],
+    "blocked_edge": [
+      "elevation.lowland_shadow_edge",
+      "elevation.pit_rim",
+      "elevation.dry_ridge_edge"
     ]
   },
   "edge_markers": {
@@ -407,9 +412,21 @@
     "boundary_hint"
   ],
   "notes": [
-    "This file is a catalog and rule contract for the future elevation visual pass.",
-    "No gameplay logic reads this file yet.",
+    "This file controls visual-only elevation markers.",
     "Level 4 is visual-only and non-traversable by design.",
-    "Boundary treatment is documented here, but should be implemented as a separate future pass."
-  ]
+    "Boundary treatment is documented here, but should be implemented as a separate future pass.",
+    "Transition markers are sampled by transition_marker_stride to avoid clutter on dense edge chains.",
+    "Blocked or non-walkable transitions are rendered as danger/edge hints, not as traversable stairs."
+  ],
+  "transition_marker_stride": {
+    "blocked_edge": 3,
+    "slope": 2,
+    "bridge_entry": 1,
+    "ramp": 1,
+    "stairs": 1,
+    "trench_step": 1,
+    "bunker_descent": 1,
+    "platform_step": 2,
+    "tower_ladder": 1
+  }
 }

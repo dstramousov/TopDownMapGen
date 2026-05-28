@@ -559,3 +559,10 @@
 - Visual pipeline теперь добавляет non-gameplay elevation markers без изменения collision/movement/height_grid.
 - Summary/visual density используют фактический elevation visual report.
 - Версия проекта поднята до `0.0.67`.
+## v0.0.67 -> v0.0.68
+
+- Настроен elevation visual pass, чтобы меньше шуметь transition-маркерами на плотных цепочках краёв.
+- `elevation_visual_rules.json` поднят до `elevation-visual-rules-v2` и получил `transition_marker_stride`.
+- Непроходимые elevation transitions теперь отображаются как danger/edge hints, а не как проходимые лестницы/ступени.
+- `elevation_visual_report.json` теперь показывает разбивку transition markers по типам и sprite id.
+- Версия проекта поднята до `0.0.68`.

@@ -172,7 +172,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     elevation_rules = _read_json(
         Path("top_down_visualgen/profiles/dark_forest/elevation_visual_rules.json")
     )
-    assert elevation_rules["schema_version"] == "elevation-visual-rules-v1"
+    assert elevation_rules["schema_version"] == "elevation-visual-rules-v2"
     assert elevation_rules["style_decisions"]["level_4_policy"] == "visual_only_landmark"
     assert elevation_rules["levels"]["4"]["traversable"] is False
     assert elevation_rules["boundary_treatment"]["status"] == "future_separate_system"
