@@ -250,6 +250,8 @@ def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
         f"  place report:      {_display_path(visual_debug / 'place_treatment_report.json', project_root)}",
         f"  elevation report:  {_display_path(visual_debug / 'elevation_visual_report.json', project_root)}",
         f"  boundary report:   {_display_path(visual_debug / 'boundary_visual_report.json', project_root)}",
+        f"  asset registry:    {_display_path(visual_debug / 'asset_registry_report.json', project_root)}",
+        f"  asset preview:     {_display_path(visual_debug / 'asset_registry_preview.html', project_root)}",
         f"  preview:           {_display_path(output_dir / 'visual_map' / 'preview.png', project_root)}",
         f"  steps:             {_display_path(visual_debug / 'steps', project_root)}/",
     ]

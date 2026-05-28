@@ -590,3 +590,12 @@
 - `boundary_visual_rules.json` поднят до `boundary-visual-rules-v2`: добавлены weighted boundary type variants для более разнообразного края карты.
 - `BoundaryVisualMapper` теперь выбирает вариативный boundary type детерминированно, сохраняя dense forest как основной тип края.
 - Версия проекта поднята до `0.0.71`.
+
+## v0.0.71 -> v0.0.72
+
+- Добавлена dev-утилита `bin/generate_asset_registry_preview.py`, которая строит JSON/HTML предпросмотр asset registry для visual profile.
+- Новый вывод `asset_registry_report.json` показывает все `tile_id`/`sprite_id`, категории, draw layers, asset status, top tags и полный список entries.
+- Новый HTML `asset_registry_preview.html` помогает вручную просмотреть будущий объём ассетов перед подключением реальных PNG.
+- Добавлена команда `./r asset-preview`; полный `./r` теперь генерирует asset registry preview перед итоговым summary.
+- В summary добавлены ссылки на asset registry report и HTML preview.
+- Версия проекта поднята до `0.0.72`.

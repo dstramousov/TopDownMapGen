@@ -55,6 +55,7 @@ run_cleanup() {
   rm -f -- "${LOG_DIR}/visual_pipeline.log"
   rm -f -- "${LOG_DIR}/visual_debug.log"
   rm -f -- "${LOG_DIR}/pipeline_summary.log"
+  rm -f -- "${LOG_DIR}/asset_registry_preview.log"
 }
 
 run_world() {
@@ -103,6 +104,11 @@ run_visual_debug() {
     --tile-size "${VISUAL_DEBUG_TILE_SIZE}"
 }
 
+run_asset_preview() {
+  run_maybe_logged asset_registry_preview env PYTHONPATH=. python3 bin/generate_asset_registry_preview.py "${VISUAL_PROFILE}" \
+    --output "${VISUAL_OUTPUT}/debug"
+}
+
 run_summary() {
   env PYTHONPATH=. python3 bin/print_pipeline_summary.py "${OUTPUT_DIR}" \
     --project-root . \
@@ -136,6 +142,8 @@ Commands:
            Render visual pipeline step PNGs from existing output/map_package
   summary  Print final world/visual pipeline summary from existing output
   assets   Validate visual profile assets manifest
+  asset-preview
+           Generate asset registry JSON/HTML preview from the visual profile
   inspect  Inspect existing world package
   test     Run compileall and pytest
   help     Show this help
@@ -165,6 +173,7 @@ case "${CMD}" in
     fi
     run_visual
     run_visual_debug
+    run_asset_preview
     run_summary
     ;;
   world)
@@ -185,6 +194,9 @@ case "${CMD}" in
     ;;
   assets)
     run_assets
+    ;;
+  asset-preview)
+    run_asset_preview
     ;;
   inspect)
     run_inspect
