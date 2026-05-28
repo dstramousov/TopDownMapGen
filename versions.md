@@ -527,3 +527,19 @@
 - Добавлена команда `./r summary` для повторной печати итоговой сводки по существующему `output/` без повторной генерации.
 - При падении stage helper показывает имя упавшего этапа и путь к соответствующему log-файлу, не печатая ложный `Overall: ok`.
 - Версия проекта поднята до `0.0.63`.
+
+## v0.0.63 -> v0.0.64
+
+- Добавлен документ `docs/visual_micro_scenes_dark_forest.md` с утверждённым стилем `dark_forest_post_soviet_ruins`, списком микросцен и bilingual catalog для предметов.
+- `dark_forest/place_visual_rules.json` поднят до `place-visual-rules-v2` и получил metadata для будущих вариативных микросцен: world style, role distribution, scene catalog и weighted scene variants.
+- В `visual_tilesets.json` добавлены placeholder sprite ids для будущих human traces, roadblocks, ruins, swamp, defensive и forest micro-scene objects.
+- Интерактивность не реализуется: роли `visual`, `inspectable_candidate`, `loot_candidate`, `story_candidate` и `cover_hint` сохранены только как metadata на будущее.
+- Версия проекта поднята до `0.0.64`.
+
+
+## v0.0.64 -> v0.0.65
+
+- Реализована вариативная раскладка микросцен через `scene_variants` и `weighted_pool`.
+- `place_treatment` теперь выбирает компактные anchor-cluster композиции, роли объектов и редкость без добавления gameplay-интерактивности.
+- Расширен `place_treatment_report.json`: варианты сцен, роли, редкость, обработанные места и причины пропуска.
+- Версия проекта поднята до `0.0.65`.

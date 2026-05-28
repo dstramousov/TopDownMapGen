@@ -79,13 +79,22 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
         str(item["sprite_id"]).startswith("decor.")
         for item in visual_objects["items"]
     )
+    assert any(
+        item.get("source_object_type") == "visual_place_treatment"
+        and item.get("scene_variant_id") == "minor_supplies"
+        and item.get("visual_role")
+        for item in visual_objects["items"]
+    )
 
     decoration_report = _read_json(visual_output / "debug/decoration_report.json")
     assert "swamp_isolated_reeds" in decoration_report["summary"]["by_rule"]
 
     place_report = _read_json(visual_output / "debug/place_treatment_report.json")
+    assert place_report["schema_version"] == "visual-debug-place-treatment-report-v2"
     assert place_report["quality"]["status"] == "ok"
     assert "small_loot_pocket_scene" in place_report["summary"]["by_rule"]
+    assert "minor_supplies" in place_report["summary"]["by_scene_variant"]
+    assert place_report["summary"]["by_role"]
 
     density_report = _read_json(visual_output / "debug/visual_density_report.json")
     assert density_report["schema_version"] == "visual-density-report-v1"
@@ -115,6 +124,25 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert "decor.ruin_rubble_01" in sprite_ids
     assert "decor.fallen_bricks_01" in sprite_ids
     assert "decor.hidden_cache_marker_01" in sprite_ids
+    assert "decor.old_backpack_01" in sprite_ids
+    assert "decor.broken_column_01" in sprite_ids
+    assert "decor.rusty_barbed_wire_01" in sprite_ids
+
+    assert place_rules["schema_version"] == "place-visual-rules-v2"
+    assert place_rules["world_style"]["id"] == "dark_forest_post_soviet_ruins"
+    assert "object_role_distribution" in place_rules
+    assert "scene_catalog" in place_rules
+    ruined_camp_rule = next(
+        rule for rule in place_rules["rules"] if rule["id"] == "ruined_camp_scene"
+    )
+    assert "scene_variants" in ruined_camp_rule
+    assert ruined_camp_rule["scene_variants"][0]["weighted_pool"]
+
+    micro_scene_doc = Path("docs/visual_micro_scenes_dark_forest.md")
+    assert micro_scene_doc.exists()
+    assert "dark_forest_post_soviet_ruins" in micro_scene_doc.read_text(
+        encoding="utf-8"
+    )
 
     visual_chunks = _read_json(result.visual_chunks_path)
     assert visual_chunks["summary"]["total"] == 4

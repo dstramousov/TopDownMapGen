@@ -1,6 +1,338 @@
 {
-  "schema_version": "visual-tilesets-v1",
   "kind": "visual_tilesets",
+  "schema_version": "visual-tilesets-v1",
+  "sprites": {
+    "decor.abandoned_crate_01": {
+      "debug_color": "#8a6238"
+    },
+    "decor.ammo_crate_empty_01": {
+      "debug_color": "#4f5b32",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.animal_bones_01": {
+      "debug_color": "#d1c4a3",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.barricade_stake_01": {
+      "debug_color": "#6b4227",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.black_mud_01": {
+      "debug_color": "#24231c",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.bog_bubbles_01": {
+      "debug_color": "#6a8b73",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.branch_pile_01": {
+      "debug_color": "#59402a",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.broken_block_01": {
+      "debug_color": "#9b9588"
+    },
+    "decor.broken_cart_piece_01": {
+      "debug_color": "#6a4729",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.broken_column_01": {
+      "debug_color": "#8d8878",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.broken_lantern_01": {
+      "debug_color": "#b08a42",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.broken_plank_01": {
+      "debug_color": "#7a5935"
+    },
+    "decor.broken_shield_panel_01": {
+      "debug_color": "#5b5f5e",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.burned_log_01": {
+      "debug_color": "#3d2a21",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.campfire_ash_01": {
+      "debug_color": "#3f3325"
+    },
+    "decor.collapsed_arch_piece_01": {
+      "debug_color": "#77736a",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.collapsed_tent_piece_01": {
+      "debug_color": "#7d6b58",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.concrete_debris_01": {
+      "debug_color": "#8e8b82"
+    },
+    "decor.cracked_floor_piece_01": {
+      "debug_color": "#777166",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.cracked_stone_01": {
+      "debug_color": "#a7a093"
+    },
+    "decor.cracked_stone_02": {
+      "debug_color": "#8d887f"
+    },
+    "decor.dead_branch_01": {
+      "debug_color": "#6b4a2e"
+    },
+    "decor.dead_tree_root_01": {
+      "debug_color": "#3b2e22",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.dry_leaves_patch_01": {
+      "debug_color": "#8a5a2c",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.empty_bottle_01": {
+      "debug_color": "#6f8f7a",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.fallen_bricks_01": {
+      "debug_color": "#6f6a62"
+    },
+    "decor.fallen_log_01": {
+      "debug_color": "#604329"
+    },
+    "decor.fallen_tree_01": {
+      "debug_color": "#4e3624",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.firewood_stack_01": {
+      "debug_color": "#6d4b2f"
+    },
+    "decor.forest_litter_01": {
+      "debug_color": "#4a3d2e",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.foxhole_debris_01": {
+      "debug_color": "#4d3d2f",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.half_wall_debris_01": {
+      "debug_color": "#6d695f",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.hidden_cache_marker_01": {
+      "debug_color": "#c9a227"
+    },
+    "decor.moss_patch_01": {
+      "debug_color": "#4d6b3a",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.mossy_stone_01": {
+      "debug_color": "#6f8063"
+    },
+    "decor.mud_patch_01": {
+      "debug_color": "#5f4a2e"
+    },
+    "decor.mud_patch_02": {
+      "debug_color": "#55432c"
+    },
+    "decor.mushroom_cluster_01": {
+      "debug_color": "#b7a0a0",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.old_backpack_01": {
+      "debug_color": "#5f4b34",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.old_bedroll_01": {
+      "debug_color": "#6b6154",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.old_tile_fragment_01": {
+      "debug_color": "#8b826f",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.old_tripod_01": {
+      "debug_color": "#555047",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.plank_stack_01": {
+      "debug_color": "#7d5430",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.reeds_01": {
+      "debug_color": "#789a42"
+    },
+    "decor.reeds_02": {
+      "debug_color": "#8aa24d"
+    },
+    "decor.reeds_03": {
+      "debug_color": "#718f3e"
+    },
+    "decor.reeds_cluster_01": {
+      "debug_color": "#55733a",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.road_dirt_noise_01": {
+      "debug_color": "#8a6a43"
+    },
+    "decor.road_grass_tuft_01": {
+      "debug_color": "#6f8b3d"
+    },
+    "decor.road_grass_tuft_02": {
+      "debug_color": "#7b9348"
+    },
+    "decor.roadblock_debris_01": {
+      "debug_color": "#7d6d59"
+    },
+    "decor.roadside_marker_stone_01": {
+      "debug_color": "#77725f",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.root_cluster_01": {
+      "debug_color": "#493522",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.root_over_stone_01": {
+      "debug_color": "#59452e",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.rope_piece_01": {
+      "debug_color": "#b89b62",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.rotten_log_01": {
+      "debug_color": "#3f3325",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.ruin_rubble_01": {
+      "debug_color": "#8f887c"
+    },
+    "decor.ruin_rubble_02": {
+      "debug_color": "#7a746c"
+    },
+    "decor.rusty_barbed_wire_01": {
+      "debug_color": "#6d4b3b",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.rusty_pot_01": {
+      "debug_color": "#7a4d32",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.sack_01": {
+      "debug_color": "#9a7a46",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.sandbag_broken_01": {
+      "debug_color": "#8b7a4a",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.sandbag_remnant_01": {
+      "debug_color": "#9b8655"
+    },
+    "decor.signpost_broken_01": {
+      "debug_color": "#7a5630",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.small_stone_01": {
+      "debug_color": "#9a9787"
+    },
+    "decor.small_stone_02": {
+      "debug_color": "#817d70"
+    },
+    "decor.spent_shells_01": {
+      "debug_color": "#b8a15a",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.stone_dust_patch_01": {
+      "debug_color": "#aaa28f",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.stone_slab_01": {
+      "debug_color": "#817b6d",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.story_candidate_marker_01": {
+      "debug_color": "#9b7fc0",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.stump_large_01": {
+      "debug_color": "#5a3b25",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.swamp_log_01": {
+      "debug_color": "#5d442c"
+    },
+    "decor.swamp_stones_01": {
+      "debug_color": "#626a58",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.thorn_bush_01": {
+      "debug_color": "#2f4d2f",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.tire_rut_mud_01": {
+      "debug_color": "#4a3424",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.torn_canvas_01": {
+      "debug_color": "#a18b67"
+    },
+    "decor.torn_cloth_01": {
+      "debug_color": "#a07966",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.wagon_wheel_broken_01": {
+      "debug_color": "#5b3a1f",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.warning_bones_01": {
+      "debug_color": "#d6d1bd"
+    },
+    "decor.water_puddle_01": {
+      "debug_color": "#2d5d63",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "decor.wet_grass_01": {
+      "debug_color": "#4f7b45"
+    },
+    "decor.wet_grass_02": {
+      "debug_color": "#466f42"
+    },
+    "decor.wooden_cover_piece_01": {
+      "debug_color": "#6c482c",
+      "source": "micro_scene_catalog_placeholder"
+    },
+    "object.beacon": {
+      "debug_color": "#ffd166"
+    },
+    "object.bridge": {
+      "debug_color": "#b2874f"
+    },
+    "object.bunker": {
+      "debug_color": "#202020"
+    },
+    "object.bush": {
+      "debug_color": "#2d7a35"
+    },
+    "object.generic": {
+      "debug_color": "#ffffff"
+    },
+    "object.loot": {
+      "debug_color": "#f0d000"
+    },
+    "object.radio": {
+      "debug_color": "#d8d8d8"
+    },
+    "object.ruin": {
+      "debug_color": "#b9b0a2"
+    },
+    "object.tree": {
+      "debug_color": "#0f4a1f"
+    },
+    "object.trench": {
+      "debug_color": "#4d3825"
+    }
+  },
   "tile_size_px": 16,
   "tiles": {
     "dirt.base": {
@@ -8,129 +340,129 @@
     },
     "forest.cap_e": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "cap_e",
-      "mask_mode": "blob_8"
+      "variant": "cap_e"
     },
     "forest.cap_n": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "cap_n",
-      "mask_mode": "blob_8"
+      "variant": "cap_n"
     },
     "forest.cap_s": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "cap_s",
-      "mask_mode": "blob_8"
+      "variant": "cap_s"
     },
     "forest.cap_w": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "cap_w",
-      "mask_mode": "blob_8"
+      "variant": "cap_w"
     },
     "forest.edge_e": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "edge_e",
-      "mask_mode": "blob_8"
+      "variant": "edge_e"
     },
     "forest.edge_n": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "edge_n",
-      "mask_mode": "blob_8"
+      "variant": "edge_n"
     },
     "forest.edge_s": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "edge_s",
-      "mask_mode": "blob_8"
+      "variant": "edge_s"
     },
     "forest.edge_w": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "edge_w",
-      "mask_mode": "blob_8"
+      "variant": "edge_w"
     },
     "forest.fill": {
       "debug_color": "#12351f",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "fill",
-      "mask_mode": "blob_8"
+      "variant": "fill"
     },
     "forest.inner_corner_complex": {
       "debug_color": "#1f512b",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_complex",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_complex"
     },
     "forest.inner_corner_es": {
       "debug_color": "#1f512b",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_es",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_es"
     },
     "forest.inner_corner_ne": {
       "debug_color": "#1f512b",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_ne",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_ne"
     },
     "forest.inner_corner_sw": {
       "debug_color": "#1f512b",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_sw",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_sw"
     },
     "forest.inner_corner_wn": {
       "debug_color": "#1f512b",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_wn",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_wn"
     },
     "forest.isolated": {
       "debug_color": "#173f24",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "isolated",
-      "mask_mode": "blob_8"
+      "variant": "isolated"
     },
     "forest.outer_corner_es": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "outer_corner_es",
-      "mask_mode": "blob_8"
+      "variant": "outer_corner_es"
     },
     "forest.outer_corner_ne": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "outer_corner_ne",
-      "mask_mode": "blob_8"
+      "variant": "outer_corner_ne"
     },
     "forest.outer_corner_sw": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "outer_corner_sw",
-      "mask_mode": "blob_8"
+      "variant": "outer_corner_sw"
     },
     "forest.outer_corner_wn": {
       "debug_color": "#2f6f37",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "outer_corner_wn",
-      "mask_mode": "blob_8"
+      "variant": "outer_corner_wn"
     },
     "forest.thin_ew": {
       "debug_color": "#3d7a3c",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "thin_ew",
-      "mask_mode": "blob_8"
+      "variant": "thin_ew"
     },
     "forest.thin_ns": {
       "debug_color": "#3d7a3c",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "thin_ns",
-      "mask_mode": "blob_8"
+      "variant": "thin_ns"
     },
     "grass.base": {
       "debug_color": "#4f8f3a"
@@ -140,105 +472,231 @@
     },
     "road.cross": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "cross",
-      "mask_mode": "cardinal_4"
+      "variant": "cross"
     },
     "road.end_e": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "end_e",
-      "mask_mode": "cardinal_4"
+      "variant": "end_e"
     },
     "road.end_n": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "end_n",
-      "mask_mode": "cardinal_4"
+      "variant": "end_n"
     },
     "road.end_s": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "end_s",
-      "mask_mode": "cardinal_4"
+      "variant": "end_s"
     },
     "road.end_w": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "end_w",
-      "mask_mode": "cardinal_4"
+      "variant": "end_w"
     },
     "road.isolated": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "isolated",
-      "mask_mode": "cardinal_4"
+      "variant": "isolated"
     },
     "road.straight_ew": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "straight_ew",
-      "mask_mode": "cardinal_4"
+      "variant": "straight_ew"
     },
     "road.straight_ns": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "straight_ns",
-      "mask_mode": "cardinal_4"
+      "variant": "straight_ns"
     },
     "road.t_esw": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "t_esw",
-      "mask_mode": "cardinal_4"
+      "variant": "t_esw"
     },
     "road.t_nes": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "t_nes",
-      "mask_mode": "cardinal_4"
+      "variant": "t_nes"
     },
     "road.t_new": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "t_new",
-      "mask_mode": "cardinal_4"
+      "variant": "t_new"
     },
     "road.t_nsw": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "t_nsw",
-      "mask_mode": "cardinal_4"
+      "variant": "t_nsw"
     },
     "road.turn_es": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "turn_es",
-      "mask_mode": "cardinal_4"
+      "variant": "turn_es"
     },
     "road.turn_ne": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "turn_ne",
-      "mask_mode": "cardinal_4"
+      "variant": "turn_ne"
     },
     "road.turn_sw": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "turn_sw",
-      "mask_mode": "cardinal_4"
+      "variant": "turn_sw"
     },
     "road.turn_wn": {
       "debug_color": "#9b8352",
+      "mask_mode": "cardinal_4",
       "source": "autotile_variant",
-      "variant": "turn_wn",
-      "mask_mode": "cardinal_4"
+      "variant": "turn_wn"
     },
     "ruins.floor": {
       "debug_color": "#77736b"
     },
     "sand.base": {
       "debug_color": "#b8a86a"
+    },
+    "swamp.cap_e": {
+      "debug_color": "#587a55",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "cap_e"
+    },
+    "swamp.cap_n": {
+      "debug_color": "#587a55",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "cap_n"
+    },
+    "swamp.cap_s": {
+      "debug_color": "#587a55",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "cap_s"
+    },
+    "swamp.cap_w": {
+      "debug_color": "#587a55",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "cap_w"
+    },
+    "swamp.edge_e": {
+      "debug_color": "#496f4f",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "edge_e"
+    },
+    "swamp.edge_n": {
+      "debug_color": "#496f4f",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "edge_n"
+    },
+    "swamp.edge_s": {
+      "debug_color": "#496f4f",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "edge_s"
+    },
+    "swamp.edge_w": {
+      "debug_color": "#496f4f",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "edge_w"
+    },
+    "swamp.fill": {
+      "debug_color": "#375b47",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "fill"
+    },
+    "swamp.inner_corner_complex": {
+      "debug_color": "#365541",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "inner_corner_complex"
+    },
+    "swamp.inner_corner_es": {
+      "debug_color": "#3f654e",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "inner_corner_es"
+    },
+    "swamp.inner_corner_ne": {
+      "debug_color": "#3f654e",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "inner_corner_ne"
+    },
+    "swamp.inner_corner_sw": {
+      "debug_color": "#3f654e",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "inner_corner_sw"
+    },
+    "swamp.inner_corner_wn": {
+      "debug_color": "#3f654e",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "inner_corner_wn"
+    },
+    "swamp.isolated": {
+      "debug_color": "#456f58",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "isolated"
+    },
+    "swamp.outer_corner_es": {
+      "debug_color": "#527857",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "outer_corner_es"
+    },
+    "swamp.outer_corner_ne": {
+      "debug_color": "#527857",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "outer_corner_ne"
+    },
+    "swamp.outer_corner_sw": {
+      "debug_color": "#527857",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "outer_corner_sw"
+    },
+    "swamp.outer_corner_wn": {
+      "debug_color": "#527857",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "outer_corner_wn"
+    },
+    "swamp.thin_ew": {
+      "debug_color": "#5d8058",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "thin_ew"
+    },
+    "swamp.thin_ns": {
+      "debug_color": "#5d8058",
+      "mask_mode": "blob_8",
+      "source": "autotile_variant",
+      "variant": "thin_ns"
     },
     "terrain.unknown": {
       "debug_color": "#ff00ff"
@@ -248,383 +706,129 @@
     },
     "water.cap_e": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "cap_e",
-      "mask_mode": "blob_8"
+      "variant": "cap_e"
     },
     "water.cap_n": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "cap_n",
-      "mask_mode": "blob_8"
+      "variant": "cap_n"
     },
     "water.cap_s": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "cap_s",
-      "mask_mode": "blob_8"
+      "variant": "cap_s"
     },
     "water.cap_w": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "cap_w",
-      "mask_mode": "blob_8"
+      "variant": "cap_w"
     },
     "water.edge_e": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "edge_e",
-      "mask_mode": "blob_8"
+      "variant": "edge_e"
     },
     "water.edge_n": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "edge_n",
-      "mask_mode": "blob_8"
+      "variant": "edge_n"
     },
     "water.edge_s": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "edge_s",
-      "mask_mode": "blob_8"
+      "variant": "edge_s"
     },
     "water.edge_w": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "edge_w",
-      "mask_mode": "blob_8"
+      "variant": "edge_w"
     },
     "water.fill": {
       "debug_color": "#2f6f9f",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "fill",
-      "mask_mode": "blob_8"
+      "variant": "fill"
     },
     "water.inner_corner_complex": {
       "debug_color": "#27648f",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_complex",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_complex"
     },
     "water.inner_corner_es": {
       "debug_color": "#27648f",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_es",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_es"
     },
     "water.inner_corner_ne": {
       "debug_color": "#27648f",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_ne",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_ne"
     },
     "water.inner_corner_sw": {
       "debug_color": "#27648f",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_sw",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_sw"
     },
     "water.inner_corner_wn": {
       "debug_color": "#27648f",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "inner_corner_wn",
-      "mask_mode": "blob_8"
+      "variant": "inner_corner_wn"
     },
     "water.isolated": {
       "debug_color": "#2f6f9f",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "isolated",
-      "mask_mode": "blob_8"
+      "variant": "isolated"
     },
     "water.outer_corner_es": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "outer_corner_es",
-      "mask_mode": "blob_8"
+      "variant": "outer_corner_es"
     },
     "water.outer_corner_ne": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "outer_corner_ne",
-      "mask_mode": "blob_8"
+      "variant": "outer_corner_ne"
     },
     "water.outer_corner_sw": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "outer_corner_sw",
-      "mask_mode": "blob_8"
+      "variant": "outer_corner_sw"
     },
     "water.outer_corner_wn": {
       "debug_color": "#397fae",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "outer_corner_wn",
-      "mask_mode": "blob_8"
+      "variant": "outer_corner_wn"
     },
     "water.thin_ew": {
       "debug_color": "#4488b4",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "thin_ew",
-      "mask_mode": "blob_8"
+      "variant": "thin_ew"
     },
     "water.thin_ns": {
       "debug_color": "#4488b4",
+      "mask_mode": "blob_8",
       "source": "autotile_variant",
-      "variant": "thin_ns",
-      "mask_mode": "blob_8"
-    },
-    "swamp.isolated": {
-      "debug_color": "#456f58",
-      "source": "autotile_variant",
-      "variant": "isolated",
-      "mask_mode": "blob_8"
-    },
-    "swamp.fill": {
-      "debug_color": "#375b47",
-      "source": "autotile_variant",
-      "variant": "fill",
-      "mask_mode": "blob_8"
-    },
-    "swamp.edge_n": {
-      "debug_color": "#496f4f",
-      "source": "autotile_variant",
-      "variant": "edge_n",
-      "mask_mode": "blob_8"
-    },
-    "swamp.edge_e": {
-      "debug_color": "#496f4f",
-      "source": "autotile_variant",
-      "variant": "edge_e",
-      "mask_mode": "blob_8"
-    },
-    "swamp.edge_s": {
-      "debug_color": "#496f4f",
-      "source": "autotile_variant",
-      "variant": "edge_s",
-      "mask_mode": "blob_8"
-    },
-    "swamp.edge_w": {
-      "debug_color": "#496f4f",
-      "source": "autotile_variant",
-      "variant": "edge_w",
-      "mask_mode": "blob_8"
-    },
-    "swamp.outer_corner_ne": {
-      "debug_color": "#527857",
-      "source": "autotile_variant",
-      "variant": "outer_corner_ne",
-      "mask_mode": "blob_8"
-    },
-    "swamp.outer_corner_es": {
-      "debug_color": "#527857",
-      "source": "autotile_variant",
-      "variant": "outer_corner_es",
-      "mask_mode": "blob_8"
-    },
-    "swamp.outer_corner_sw": {
-      "debug_color": "#527857",
-      "source": "autotile_variant",
-      "variant": "outer_corner_sw",
-      "mask_mode": "blob_8"
-    },
-    "swamp.outer_corner_wn": {
-      "debug_color": "#527857",
-      "source": "autotile_variant",
-      "variant": "outer_corner_wn",
-      "mask_mode": "blob_8"
-    },
-    "swamp.inner_corner_ne": {
-      "debug_color": "#3f654e",
-      "source": "autotile_variant",
-      "variant": "inner_corner_ne",
-      "mask_mode": "blob_8"
-    },
-    "swamp.inner_corner_es": {
-      "debug_color": "#3f654e",
-      "source": "autotile_variant",
-      "variant": "inner_corner_es",
-      "mask_mode": "blob_8"
-    },
-    "swamp.inner_corner_sw": {
-      "debug_color": "#3f654e",
-      "source": "autotile_variant",
-      "variant": "inner_corner_sw",
-      "mask_mode": "blob_8"
-    },
-    "swamp.inner_corner_wn": {
-      "debug_color": "#3f654e",
-      "source": "autotile_variant",
-      "variant": "inner_corner_wn",
-      "mask_mode": "blob_8"
-    },
-    "swamp.inner_corner_complex": {
-      "debug_color": "#365541",
-      "source": "autotile_variant",
-      "variant": "inner_corner_complex",
-      "mask_mode": "blob_8"
-    },
-    "swamp.cap_n": {
-      "debug_color": "#587a55",
-      "source": "autotile_variant",
-      "variant": "cap_n",
-      "mask_mode": "blob_8"
-    },
-    "swamp.cap_e": {
-      "debug_color": "#587a55",
-      "source": "autotile_variant",
-      "variant": "cap_e",
-      "mask_mode": "blob_8"
-    },
-    "swamp.cap_s": {
-      "debug_color": "#587a55",
-      "source": "autotile_variant",
-      "variant": "cap_s",
-      "mask_mode": "blob_8"
-    },
-    "swamp.cap_w": {
-      "debug_color": "#587a55",
-      "source": "autotile_variant",
-      "variant": "cap_w",
-      "mask_mode": "blob_8"
-    },
-    "swamp.thin_ns": {
-      "debug_color": "#5d8058",
-      "source": "autotile_variant",
-      "variant": "thin_ns",
-      "mask_mode": "blob_8"
-    },
-    "swamp.thin_ew": {
-      "debug_color": "#5d8058",
-      "source": "autotile_variant",
-      "variant": "thin_ew",
-      "mask_mode": "blob_8"
-    }
-  },
-  "sprites": {
-    "object.generic": {
-      "debug_color": "#ffffff"
-    },
-    "object.trench": {
-      "debug_color": "#4d3825"
-    },
-    "object.bunker": {
-      "debug_color": "#202020"
-    },
-    "object.bridge": {
-      "debug_color": "#b2874f"
-    },
-    "object.tree": {
-      "debug_color": "#0f4a1f"
-    },
-    "object.bush": {
-      "debug_color": "#2d7a35"
-    },
-    "object.ruin": {
-      "debug_color": "#b9b0a2"
-    },
-    "object.radio": {
-      "debug_color": "#d8d8d8"
-    },
-    "object.beacon": {
-      "debug_color": "#ffd166"
-    },
-    "object.loot": {
-      "debug_color": "#f0d000"
-    },
-    "decor.reeds_01": {
-      "debug_color": "#789a42"
-    },
-    "decor.reeds_02": {
-      "debug_color": "#8aa24d"
-    },
-    "decor.mud_patch_01": {
-      "debug_color": "#5f4a2e"
-    },
-    "decor.wet_grass_01": {
-      "debug_color": "#4f7b45"
-    },
-    "decor.dead_branch_01": {
-      "debug_color": "#6b4a2e"
-    },
-    "decor.reeds_03": {
-      "debug_color": "#718f3e"
-    },
-    "decor.mud_patch_02": {
-      "debug_color": "#55432c"
-    },
-    "decor.wet_grass_02": {
-      "debug_color": "#466f42"
-    },
-    "decor.road_grass_tuft_01": {
-      "debug_color": "#6f8b3d"
-    },
-    "decor.road_grass_tuft_02": {
-      "debug_color": "#7b9348"
-    },
-    "decor.road_dirt_noise_01": {
-      "debug_color": "#8a6a43"
-    },
-    "decor.small_stone_01": {
-      "debug_color": "#9a9787"
-    },
-    "decor.small_stone_02": {
-      "debug_color": "#817d70"
-    },
-    "decor.broken_plank_01": {
-      "debug_color": "#7a5935"
-    },
-    "decor.ruin_rubble_01": {
-      "debug_color": "#8f887c"
-    },
-    "decor.ruin_rubble_02": {
-      "debug_color": "#7a746c"
-    },
-    "decor.cracked_stone_01": {
-      "debug_color": "#a7a093"
-    },
-    "decor.cracked_stone_02": {
-      "debug_color": "#8d887f"
-    },
-    "decor.fallen_bricks_01": {
-      "debug_color": "#6f6a62"
-    },
-    "decor.broken_block_01": {
-      "debug_color": "#9b9588"
-    },
-    "decor.mossy_stone_01": {
-      "debug_color": "#6f8063"
-    },
-    "decor.campfire_ash_01": {
-      "debug_color": "#3f3325"
-    },
-    "decor.abandoned_crate_01": {
-      "debug_color": "#8a6238"
-    },
-    "decor.firewood_stack_01": {
-      "debug_color": "#6d4b2f"
-    },
-    "decor.torn_canvas_01": {
-      "debug_color": "#a18b67"
-    },
-    "decor.swamp_log_01": {
-      "debug_color": "#5d442c"
-    },
-    "decor.roadblock_debris_01": {
-      "debug_color": "#7d6d59"
-    },
-    "decor.hidden_cache_marker_01": {
-      "debug_color": "#c9a227"
-    },
-    "decor.concrete_debris_01": {
-      "debug_color": "#8e8b82"
-    },
-    "decor.warning_bones_01": {
-      "debug_color": "#d6d1bd"
-    },
-    "decor.sandbag_remnant_01": {
-      "debug_color": "#9b8655"
-    },
-    "decor.fallen_log_01": {
-      "debug_color": "#604329"
+      "variant": "thin_ns"
     }
   }
 }

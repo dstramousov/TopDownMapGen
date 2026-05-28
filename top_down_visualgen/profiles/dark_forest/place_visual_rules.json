@@ -1,5 +1,5 @@
 {
-  "schema_version": "place-visual-rules-v1",
+  "schema_version": "place-visual-rules-v2",
   "kind": "place_visual_rules",
   "enabled": true,
   "seed_salt": "dark_forest_place_treatment_v1",
@@ -30,7 +30,125 @@
         "decor.firewood_stack_01",
         "decor.torn_canvas_01"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "burned_out_fire",
+          "ru": "потухший костёр",
+          "min_items": 2,
+          "max_items": 5,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.campfire_ash_01",
+              "ru": "пепелище",
+              "weight": 30,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.firewood_stack_01",
+              "ru": "стопка дров",
+              "weight": 20,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.burned_log_01",
+              "ru": "обгоревшее бревно",
+              "weight": 18,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.empty_bottle_01",
+              "ru": "пустая бутылка",
+              "weight": 12,
+              "role": "inspectable_candidate"
+            },
+            {
+              "sprite_id": "decor.rusty_pot_01",
+              "ru": "ржавый котелок",
+              "weight": 8,
+              "role": "inspectable_candidate"
+            }
+          ]
+        },
+        {
+          "id": "abandoned_supplies",
+          "ru": "брошенные припасы",
+          "min_items": 2,
+          "max_items": 6,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.abandoned_crate_01",
+              "ru": "брошенный ящик",
+              "weight": 24,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.sack_01",
+              "ru": "мешок",
+              "weight": 20,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.old_backpack_01",
+              "ru": "старый рюкзак",
+              "weight": 10,
+              "role": "loot_candidate"
+            },
+            {
+              "sprite_id": "decor.rope_piece_01",
+              "ru": "кусок верёвки",
+              "weight": 12,
+              "role": "inspectable_candidate"
+            },
+            {
+              "sprite_id": "decor.broken_lantern_01",
+              "ru": "сломанный фонарь",
+              "weight": 8,
+              "role": "inspectable_candidate"
+            }
+          ]
+        },
+        {
+          "id": "collapsed_shelter",
+          "ru": "рухнувшее укрытие",
+          "min_items": 3,
+          "max_items": 6,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.collapsed_tent_piece_01",
+              "ru": "кусок рухнувшей палатки",
+              "weight": 24,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.torn_cloth_01",
+              "ru": "рваная ткань",
+              "weight": 22,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.old_bedroll_01",
+              "ru": "старый спальник",
+              "weight": 12,
+              "role": "inspectable_candidate"
+            },
+            {
+              "sprite_id": "decor.broken_plank_01",
+              "ru": "сломанная доска",
+              "weight": 16,
+              "role": "visual"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     },
     {
       "id": "swamp_crossing_scene",
@@ -52,7 +170,81 @@
         "decor.mud_patch_02",
         "decor.wet_grass_02"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "log_crossing",
+          "ru": "бревенчатый переход",
+          "min_items": 2,
+          "max_items": 5,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.swamp_log_01",
+              "ru": "бревно в болоте",
+              "weight": 30,
+              "role": "path_hint"
+            },
+            {
+              "sprite_id": "decor.rotten_log_01",
+              "ru": "гнилое бревно",
+              "weight": 18,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.reeds_03",
+              "ru": "камыш",
+              "weight": 18,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.swamp_stones_01",
+              "ru": "болотные камни",
+              "weight": 10,
+              "role": "path_hint"
+            }
+          ]
+        },
+        {
+          "id": "muddy_crossing",
+          "ru": "грязный переход",
+          "min_items": 2,
+          "max_items": 6,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.mud_patch_02",
+              "ru": "пятно грязи",
+              "weight": 24,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.black_mud_01",
+              "ru": "чёрная грязь",
+              "weight": 16,
+              "role": "danger_hint"
+            },
+            {
+              "sprite_id": "decor.wet_grass_02",
+              "ru": "мокрая трава",
+              "weight": 20,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.water_puddle_01",
+              "ru": "лужа",
+              "weight": 10,
+              "role": "visual"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     },
     {
       "id": "blocked_road_scene",
@@ -75,7 +267,81 @@
         "decor.small_stone_01",
         "decor.fallen_bricks_01"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "wooden_roadblock",
+          "ru": "деревянный завал",
+          "min_items": 3,
+          "max_items": 6,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.roadblock_debris_01",
+              "ru": "мусор от дорожного завала",
+              "weight": 24,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.broken_plank_01",
+              "ru": "сломанная доска",
+              "weight": 22,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.branch_pile_01",
+              "ru": "куча веток",
+              "weight": 16,
+              "role": "cover_hint"
+            },
+            {
+              "sprite_id": "decor.plank_stack_01",
+              "ru": "стопка досок",
+              "weight": 10,
+              "role": "cover_hint"
+            }
+          ]
+        },
+        {
+          "id": "abandoned_cart",
+          "ru": "брошенная телега",
+          "min_items": 2,
+          "max_items": 5,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.wagon_wheel_broken_01",
+              "ru": "сломанное колесо телеги",
+              "weight": 14,
+              "role": "inspectable_candidate"
+            },
+            {
+              "sprite_id": "decor.broken_cart_piece_01",
+              "ru": "кусок сломанной телеги",
+              "weight": 16,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.small_stone_01",
+              "ru": "маленький камень",
+              "weight": 18,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.signpost_broken_01",
+              "ru": "сломанный указатель",
+              "weight": 6,
+              "role": "path_hint"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     },
     {
       "id": "small_loot_pocket_scene",
@@ -96,7 +362,49 @@
         "decor.hidden_cache_marker_01",
         "decor.abandoned_crate_01"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "minor_supplies",
+          "ru": "мелкие припасы",
+          "min_items": 1,
+          "max_items": 3,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.abandoned_crate_01",
+              "ru": "брошенный ящик",
+              "weight": 18,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.sack_01",
+              "ru": "мешок",
+              "weight": 16,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.old_backpack_01",
+              "ru": "старый рюкзак",
+              "weight": 8,
+              "role": "loot_candidate"
+            },
+            {
+              "sprite_id": "decor.rope_piece_01",
+              "ru": "кусок верёвки",
+              "weight": 10,
+              "role": "inspectable_candidate"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     },
     {
       "id": "bunker_approach_scene",
@@ -118,7 +426,49 @@
         "decor.mossy_stone_01",
         "decor.broken_block_01"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "concrete_scatter",
+          "ru": "бетонный мусор",
+          "min_items": 2,
+          "max_items": 5,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.concrete_debris_01",
+              "ru": "бетонные обломки",
+              "weight": 26,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.broken_block_01",
+              "ru": "сломанный блок",
+              "weight": 18,
+              "role": "cover_hint"
+            },
+            {
+              "sprite_id": "decor.rusty_barbed_wire_01",
+              "ru": "ржавая колючая проволока",
+              "weight": 8,
+              "role": "danger_hint"
+            },
+            {
+              "sprite_id": "decor.ammo_crate_empty_01",
+              "ru": "пустой ящик от боеприпасов",
+              "weight": 6,
+              "role": "inspectable_candidate"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     },
     {
       "id": "dangerous_lowland_scene",
@@ -139,7 +489,49 @@
         "decor.mud_patch_02",
         "decor.warning_bones_01"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "bog_warning",
+          "ru": "опасная болотная низина",
+          "min_items": 2,
+          "max_items": 5,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.warning_bones_01",
+              "ru": "предупреждающие кости",
+              "weight": 12,
+              "role": "danger_hint"
+            },
+            {
+              "sprite_id": "decor.dead_branch_01",
+              "ru": "сухая ветка",
+              "weight": 20,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.black_mud_01",
+              "ru": "чёрная грязь",
+              "weight": 18,
+              "role": "danger_hint"
+            },
+            {
+              "sprite_id": "decor.dead_tree_root_01",
+              "ru": "мёртвый корень",
+              "weight": 12,
+              "role": "visual"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     },
     {
       "id": "old_defensive_position_scene",
@@ -161,7 +553,49 @@
         "decor.broken_plank_01",
         "decor.small_stone_02"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "old_cover_line",
+          "ru": "старая линия укрытий",
+          "min_items": 3,
+          "max_items": 6,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.sandbag_remnant_01",
+              "ru": "остатки мешков с песком",
+              "weight": 24,
+              "role": "cover_hint"
+            },
+            {
+              "sprite_id": "decor.sandbag_broken_01",
+              "ru": "разорванный мешок с песком",
+              "weight": 16,
+              "role": "cover_hint"
+            },
+            {
+              "sprite_id": "decor.wooden_cover_piece_01",
+              "ru": "деревянный кусок укрытия",
+              "weight": 18,
+              "role": "cover_hint"
+            },
+            {
+              "sprite_id": "decor.spent_shells_01",
+              "ru": "стреляные гильзы",
+              "weight": 8,
+              "role": "inspectable_candidate"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     },
     {
       "id": "forest_obstruction_scene",
@@ -182,7 +616,49 @@
         "decor.dead_branch_01",
         "decor.road_grass_tuft_02"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "fallen_tree_block",
+          "ru": "завал из дерева",
+          "min_items": 2,
+          "max_items": 6,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.fallen_log_01",
+              "ru": "упавшее бревно",
+              "weight": 24,
+              "role": "cover_hint"
+            },
+            {
+              "sprite_id": "decor.branch_pile_01",
+              "ru": "куча веток",
+              "weight": 20,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.root_cluster_01",
+              "ru": "скопление корней",
+              "weight": 14,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.thorn_bush_01",
+              "ru": "колючий куст",
+              "weight": 10,
+              "role": "danger_hint"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     },
     {
       "id": "small_ruin_site_scene",
@@ -206,12 +682,157 @@
         "decor.broken_block_01",
         "decor.mossy_stone_01"
       ],
-      "draw_layer": "terrain_overlay"
+      "draw_layer": "terrain_overlay",
+      "scene_variants": [
+        {
+          "id": "mossy_ruin_scatter",
+          "ru": "замшелые малые руины",
+          "min_items": 3,
+          "max_items": 7,
+          "weighted_pool": [
+            {
+              "sprite_id": "decor.ruin_rubble_01",
+              "ru": "руинный щебень",
+              "weight": 22,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.mossy_stone_01",
+              "ru": "камень со мхом",
+              "weight": 18,
+              "role": "visual"
+            },
+            {
+              "sprite_id": "decor.broken_column_01",
+              "ru": "сломанная колонна",
+              "weight": 8,
+              "role": "cover_hint"
+            },
+            {
+              "sprite_id": "decor.old_tile_fragment_01",
+              "ru": "фрагмент старой плитки",
+              "weight": 10,
+              "role": "inspectable_candidate"
+            },
+            {
+              "sprite_id": "decor.root_over_stone_01",
+              "ru": "корень поверх камня",
+              "weight": 12,
+              "role": "visual"
+            }
+          ]
+        }
+      ],
+      "future_algorithm": {
+        "placement_style": "anchor_cluster",
+        "avoid_collision": true,
+        "avoid_start_goal": true,
+        "avoid_route_centerline": true,
+        "max_same_sprite_nearby": 1,
+        "gameplay_affecting": false
+      }
     }
   ],
   "notes": [
     "Place visual treatment reads semantic places and adds non-blocking scene accents.",
     "Rules are deterministic and never change terrain, movement, collision, routes or markers.",
-    "This is intentionally smaller than the future prefab system: one-tile accents only."
-  ]
+    "Version 2 adds content catalog metadata for future varied micro scene placement.",
+    "Object roles are metadata only; no gameplay interaction is implemented here."
+  ],
+  "world_style": {
+    "id": "dark_forest_post_soviet_ruins",
+    "ru": "тёмный лес, постсоветские заброшенные объекты, старые дороги, бункеры, бетон, древние/непонятные руины",
+    "includes": [
+      "abandoned_dark_forest",
+      "overgrown_roads",
+      "post_soviet_remains",
+      "ancient_unknown_ruins",
+      "swamp_lowlands",
+      "rare_landmarks"
+    ],
+    "excludes": [
+      "pure_fantasy",
+      "pure_horror",
+      "fairy_forest",
+      "modern_military_range"
+    ]
+  },
+  "object_role_distribution": {
+    "visual": {
+      "target_percent": [
+        75,
+        85
+      ],
+      "ru": "просто визуальный предмет"
+    },
+    "inspectable_candidate": {
+      "target_percent": [
+        10,
+        15
+      ],
+      "ru": "потенциально можно осмотреть"
+    },
+    "loot_candidate": {
+      "target_percent": [
+        3,
+        6
+      ],
+      "ru": "потенциальный лут"
+    },
+    "story_candidate": {
+      "target_percent": [
+        1,
+        2
+      ],
+      "ru": "потенциальный сюжетный объект"
+    },
+    "cover_hint": {
+      "target": "context-based",
+      "ru": "визуальная подсказка укрытия"
+    }
+  },
+  "scene_catalog": {
+    "ruined_camp": {
+      "ru": "разрушенный лагерь"
+    },
+    "swamp_crossing": {
+      "ru": "болотный переход"
+    },
+    "blocked_road": {
+      "ru": "заваленная дорога"
+    },
+    "small_loot_pocket": {
+      "ru": "маленькая зона лута / небольшая находка"
+    },
+    "secret_cache": {
+      "ru": "скрытый тайник"
+    },
+    "bunker_outer_area": {
+      "ru": "внешняя зона бункера"
+    },
+    "bunker_inner_area": {
+      "ru": "внутренняя зона бункера"
+    },
+    "dangerous_lowland": {
+      "ru": "опасная низина"
+    },
+    "old_defensive_position": {
+      "ru": "старая оборонительная позиция"
+    },
+    "ambush_clearing": {
+      "ru": "поляна для засады"
+    },
+    "forest_obstruction": {
+      "ru": "лесной завал / преграда"
+    },
+    "small_ruin_site": {
+      "ru": "маленькие руины"
+    },
+    "ruined_structure": {
+      "ru": "разрушенная структура"
+    },
+    "raised_platform_site": {
+      "ru": "приподнятая руинная площадка"
+    }
+  }
 }
