@@ -599,3 +599,12 @@
 - Добавлена команда `./r asset-preview`; полный `./r` теперь генерирует asset registry preview перед итоговым summary.
 - В summary добавлены ссылки на asset registry report и HTML preview.
 - Версия проекта поднята до `0.0.72`.
+
+## v0.0.72 -> v0.0.73
+
+- Добавлен генератор placeholder asset pack для профиля `dark_forest`.
+- Добавлено поле `asset_root` в `assets_manifest.json`, чтобы физические PNG лежали в `assets/dark_forest/`, а не внутри профиля.
+- Добавлены команды `./r asset-pack` и `./r assets-full`.
+- `asset_registry_preview.html` теперь показывает thumbnails для существующих asset-файлов.
+- Добавлен документ `docs/visual_asset_pack_dark_forest.md`.
+- Версия проекта поднята до `0.0.73`.

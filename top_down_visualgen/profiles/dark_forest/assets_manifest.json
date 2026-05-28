@@ -5104,5 +5104,6 @@
       ],
       "asset_status": "placeholder_contract"
     }
-  }
+  },
+  "asset_root": "../../../assets/dark_forest"
 }

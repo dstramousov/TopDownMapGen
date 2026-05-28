@@ -56,6 +56,7 @@ run_cleanup() {
   rm -f -- "${LOG_DIR}/visual_debug.log"
   rm -f -- "${LOG_DIR}/pipeline_summary.log"
   rm -f -- "${LOG_DIR}/asset_registry_preview.log"
+  rm -f -- "${LOG_DIR}/asset_pack.log"
 }
 
 run_world() {
@@ -109,6 +110,10 @@ run_asset_preview() {
     --output "${VISUAL_OUTPUT}/debug"
 }
 
+run_asset_pack() {
+  run_maybe_logged asset_pack env PYTHONPATH=. python3 bin/generate_asset_pack.py "${VISUAL_PROFILE}"
+}
+
 run_summary() {
   env PYTHONPATH=. python3 bin/print_pipeline_summary.py "${OUTPUT_DIR}" \
     --project-root . \
@@ -117,6 +122,11 @@ run_summary() {
 
 run_assets() {
   run_maybe_logged assets_manifest env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}"
+}
+
+run_assets_full() {
+  run_asset_pack
+  run_maybe_logged assets_manifest_full env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}" --check-files
 }
 
 run_inspect() {
@@ -142,6 +152,10 @@ Commands:
            Render visual pipeline step PNGs from existing output/map_package
   summary  Print final world/visual pipeline summary from existing output
   assets   Validate visual profile assets manifest
+  assets-full
+           Generate placeholder asset pack and validate referenced PNG files
+  asset-pack
+           Generate placeholder PNG files under the configured asset root
   asset-preview
            Generate asset registry JSON/HTML preview from the visual profile
   inspect  Inspect existing world package
@@ -173,6 +187,7 @@ case "${CMD}" in
     fi
     run_visual
     run_visual_debug
+    run_asset_pack
     run_asset_preview
     run_summary
     ;;
@@ -194,6 +209,12 @@ case "${CMD}" in
     ;;
   assets)
     run_assets
+    ;;
+  assets-full)
+    run_assets_full
+    ;;
+  asset-pack)
+    run_asset_pack
     ;;
   asset-preview)
     run_asset_preview

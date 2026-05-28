@@ -35,6 +35,8 @@ def test_asset_registry_report_counts_manifest_entries() -> None:
     assert report["summary"]["total_entries"] == 266
     assert report["by_draw_layer"]["decor"] > 0
     assert report["by_category"]["boundary"] > 0
+    file_status_total = sum(report["by_file_status"].values())
+    assert file_status_total == 266
 
 
 def test_asset_registry_preview_writes_json_and_html(tmp_path: Path) -> None:
@@ -46,5 +48,7 @@ def test_asset_registry_preview_writes_json_and_html(tmp_path: Path) -> None:
 
     assert generated["json"].exists()
     assert generated["html"].exists()
-    assert "Asset Registry Preview" in generated["html"].read_text(encoding="utf-8")
-    assert "decor.reeds_01" in generated["html"].read_text(encoding="utf-8")
+    html = generated["html"].read_text(encoding="utf-8")
+    assert "Asset Registry Preview" in html
+    assert "decor.reeds_01" in html
+    assert "<th>Image</th>" in html

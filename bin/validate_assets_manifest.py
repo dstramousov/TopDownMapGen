@@ -56,6 +56,29 @@ def _require_mapping(data: dict[str, Any], key: str, path: Path) -> dict[str, An
     return value
 
 
+
+
+def _resolve_asset_root(profile_dir: Path, assets_manifest: dict[str, Any], override: Path | None) -> Path:
+    """Resolve the filesystem root used for referenced asset files."""
+    if override is not None:
+        return override
+    raw_root = assets_manifest.get("asset_root")
+    if isinstance(raw_root, str) and raw_root:
+        root = Path(raw_root)
+        if root.is_absolute():
+            return root
+        return (profile_dir / root).resolve()
+    return profile_dir
+
+
+def _resolve_asset_path(asset_root: Path, relative_path: str) -> Path:
+    """Resolve a manifest asset path against the configured asset root."""
+    path = Path(relative_path)
+    if path.is_absolute():
+        return path
+    return asset_root / path
+
+
 def _validate_size(value: Any, field: str, asset_id: str) -> list[ValidationIssue]:
     """Validate an integer pair field."""
     if not isinstance(value, list) or len(value) != 2:
@@ -69,7 +92,7 @@ def _validate_tiles(
     *,
     visual_tile_ids: set[str],
     manifest_tiles: dict[str, Any],
-    profile_dir: Path,
+    asset_root: Path,
     check_files: bool,
 ) -> list[ValidationIssue]:
     """Validate tile entries against visual_tilesets.json."""
@@ -87,7 +110,7 @@ def _validate_tiles(
             issues.append(ValidationIssue(f"{tile_id}: tile 'path' must be a non-empty string"))
         issues.extend(_validate_size(entry.get("size"), "size", tile_id))
         if check_files and isinstance(path, str) and path:
-            asset_path = profile_dir / path
+            asset_path = _resolve_asset_path(asset_root, path)
             if not asset_path.exists():
                 issues.append(ValidationIssue(f"{tile_id}: asset file does not exist: {asset_path}"))
     return issues
@@ -97,7 +120,7 @@ def _validate_sprites(
     *,
     visual_sprite_ids: set[str],
     manifest_sprites: dict[str, Any],
-    profile_dir: Path,
+    asset_root: Path,
     check_files: bool,
 ) -> list[ValidationIssue]:
     """Validate sprite entries against visual_tilesets.json."""
@@ -120,18 +143,24 @@ def _validate_sprites(
         if not isinstance(draw_layer, str) or not draw_layer:
             issues.append(ValidationIssue(f"{sprite_id}: sprite 'draw_layer' must be a non-empty string"))
         if check_files and isinstance(path, str) and path:
-            asset_path = profile_dir / path
+            asset_path = _resolve_asset_path(asset_root, path)
             if not asset_path.exists():
                 issues.append(ValidationIssue(f"{sprite_id}: asset file does not exist: {asset_path}"))
     return issues
 
 
-def validate_assets_manifest(profile_dir: Path, *, check_files: bool = False) -> list[ValidationIssue]:
+def validate_assets_manifest(
+    profile_dir: Path,
+    *,
+    check_files: bool = False,
+    asset_root: Path | None = None,
+) -> list[ValidationIssue]:
     """Validate the assets manifest for a visual profile.
 
     Args:
         profile_dir: Visual profile directory.
         check_files: Whether to require referenced asset files to exist.
+        asset_root: Optional filesystem root for referenced asset files.
 
     Returns:
         List of validation issues. Empty means the contract is valid.
@@ -140,6 +169,7 @@ def validate_assets_manifest(profile_dir: Path, *, check_files: bool = False) ->
     assets_manifest_path = profile_dir / "assets_manifest.json"
     visual_tilesets = _read_json_object(visual_tilesets_path)
     assets_manifest = _read_json_object(assets_manifest_path)
+    resolved_asset_root = _resolve_asset_root(profile_dir, assets_manifest, asset_root)
 
     tiles = _require_mapping(visual_tilesets, "tiles", visual_tilesets_path)
     manifest_tiles = _require_mapping(assets_manifest, "tiles", assets_manifest_path)
@@ -168,7 +198,7 @@ def validate_assets_manifest(profile_dir: Path, *, check_files: bool = False) ->
         _validate_tiles(
             visual_tile_ids=set(tiles),
             manifest_tiles=manifest_tiles,
-            profile_dir=profile_dir,
+            asset_root=resolved_asset_root,
             check_files=check_files,
         )
     )
@@ -176,7 +206,7 @@ def validate_assets_manifest(profile_dir: Path, *, check_files: bool = False) ->
         _validate_sprites(
             visual_sprite_ids=set(raw_sprites),
             manifest_sprites=manifest_sprites,
-            profile_dir=profile_dir,
+            asset_root=resolved_asset_root,
             check_files=check_files,
         )
     )
@@ -197,6 +227,12 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Also require referenced PNG files to exist.",
     )
+    parser.add_argument(
+        "--asset-root",
+        type=Path,
+        default=None,
+        help="Override asset root directory. Defaults to assets_manifest.asset_root.",
+    )
     return parser.parse_args(argv)
 
 
@@ -204,7 +240,7 @@ def main(argv: list[str] | None = None) -> int:
     """Run assets manifest validation."""
     args = _parse_args(sys.argv[1:] if argv is None else argv)
     profile_dir = Path(args.profile_dir)
-    issues = validate_assets_manifest(profile_dir, check_files=args.check_files)
+    issues = validate_assets_manifest(profile_dir, check_files=args.check_files, asset_root=args.asset_root)
     if issues:
         print("Assets manifest: FAILED")
         for issue in issues:
@@ -216,7 +252,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  profile: {assets_manifest.get('profile', 'unknown')}")
     print(f"  tiles:   {len(assets_manifest.get('tiles', {}))}")
     print(f"  sprites: {len(assets_manifest.get('sprites', {}))}")
-    if not args.check_files:
+    if args.check_files:
+        resolved_root = _resolve_asset_root(profile_dir, assets_manifest, args.asset_root)
+        print(f"  files:   checked under {resolved_root}")
+    else:
         print("  files:   not checked")
     return 0
 
