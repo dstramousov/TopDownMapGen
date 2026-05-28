@@ -28,6 +28,7 @@ class VisualDensityReporter:
         decoration_result: dict[str, Any],
         place_treatment_result: dict[str, Any],
         elevation_visual_result: dict[str, Any] | None = None,
+        boundary_visual_result: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Build a JSON-serializable visual density report.
 
@@ -40,6 +41,7 @@ class VisualDensityReporter:
             decoration_result: Decoration mapper result.
             place_treatment_result: Place treatment mapper result.
             elevation_visual_result: Optional elevation visual mapper result.
+            boundary_visual_result: Optional boundary visual mapper result.
 
         Returns:
             Visual density report.
@@ -54,6 +56,7 @@ class VisualDensityReporter:
         decoration_total = _summary_int(visual_objects, "decoration_total")
         place_total = _summary_int(visual_objects, "place_treatment_total")
         elevation_visual_total = _summary_int(visual_objects, "elevation_visual_total")
+        boundary_visual_total = _summary_int(visual_objects, "boundary_visual_total")
         places_total = len(_items(world.places))
 
         by_source = {
@@ -61,6 +64,7 @@ class VisualDensityReporter:
             "decorations": decoration_total,
             "place_treatment": place_total,
             "elevation_visual": elevation_visual_total,
+            "boundary_visual": boundary_visual_total,
         }
         by_category = _count_categories(items)
         top_sprites = _top_counts(_count_by(items, "sprite_id"), limit=10)
@@ -110,9 +114,11 @@ class VisualDensityReporter:
                 "status": "ok" if unmapped_total == 0 else "has_unmapped_terrain",
             },
             "elevation_visual": _elevation_visual_summary(world, elevation_visual_result),
+            "boundary_visual": _boundary_visual_summary(boundary_visual_result),
             "source_reports": {
                 "decoration_total": _report_total(decoration_result),
                 "place_treatment_total": _report_total(place_treatment_result),
+                "boundary_visual_total": _report_total(boundary_visual_result or {}),
             },
             "quality": {
                 "status": _overall_status(
@@ -156,6 +162,7 @@ def format_visual_density_summary(report: dict[str, Any]) -> list[str]:
     autotiling = report.get("autotiling", {})
     unmapped = report.get("unmapped_terrain", {})
     elevation = report.get("elevation_visual", {})
+    boundary = report.get("boundary_visual", {})
 
     lines = [
         "Visual density:",
@@ -183,10 +190,36 @@ def format_visual_density_summary(report: dict[str, Any]) -> list[str]:
             "",
             "Elevation visual:",
             f"  lowlands: {_int_value(elevation.get('lowlands'), 0)}, raised: {_int_value(elevation.get('raised'), 0)}, transitions: {_int_value(elevation.get('transitions'), 0)} [{elevation.get('status', 'unknown')}]",
+            "",
+            "Boundary visual:",
+            f"  markers: {_int_value(boundary.get('total'), 0)} [{boundary.get('status', 'unknown')}]",
         ],
     )
     return lines
 
+
+
+def _boundary_visual_summary(boundary_visual_result: dict[str, Any] | None = None) -> dict[str, Any]:
+    report = boundary_visual_result.get("report") if isinstance(boundary_visual_result, dict) else None
+    summary = report.get("summary") if isinstance(report, dict) else None
+    if not isinstance(summary, dict):
+        return {
+            "total": 0,
+            "by_boundary_type": {},
+            "by_edge": {},
+            "failed_placements": 0,
+            "status": "missing_report",
+        }
+    failed = summary.get("failed_placements")
+    failed_total = sum(value for value in failed.values() if isinstance(value, int)) if isinstance(failed, dict) else 0
+    return {
+        "total": _int_value(summary.get("total"), 0),
+        "by_boundary_type": summary.get("by_boundary_type", {}),
+        "by_edge": summary.get("by_edge", {}),
+        "failed_placements": failed_total,
+        "sampled_markers": _sum_int_mapping(summary.get("sampled_markers")),
+        "status": "ok" if failed_total == 0 else "has_failed_placements",
+    }
 
 
 def _elevation_visual_summary(world: WorldPackage, elevation_visual_result: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -316,7 +349,9 @@ def _count_categories(items: list[dict[str, Any]]) -> Counter[str]:
         tags = item.get("source_tags", [])
         tag_text = " ".join(str(tag) for tag in tags) if isinstance(tags, list) else ""
         haystack = f"{source_type} {rule_id} {sprite_id} {tag_text}"
-        if source_type == "visual_elevation":
+        if source_type == "visual_boundary":
+            counts["boundary"] += 1
+        elif source_type == "visual_elevation":
             counts["elevation"] += 1
         elif source_type == "visual_place_treatment":
             counts["place"] += 1

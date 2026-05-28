@@ -39,6 +39,8 @@ class VisualProfile:
     prefab_rules: dict[str, Any]
     place_rules: dict[str, Any]
     elevation_rules: dict[str, Any]
+    boundary_rules: dict[str, Any]
+    assets_manifest: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,3 +60,4 @@ class VisualPipelineResult:
     debug_place_treatment_report_path: Path
     debug_visual_density_report_path: Path
     debug_elevation_visual_report_path: Path
+    debug_boundary_visual_report_path: Path

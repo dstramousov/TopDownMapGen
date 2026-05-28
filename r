@@ -109,12 +109,17 @@ run_summary() {
     --profile "${VISUAL_PROFILE}"
 }
 
+run_assets() {
+  run_maybe_logged assets_manifest env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}"
+}
+
 run_inspect() {
   python3 examples/inspect_world_package.py "${OUTPUT_DIR}"
 }
 
 run_tests() {
   python3 -m compileall top_down_worldgen top_down_visualgen examples bin
+  env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}"
   PYTHONPATH=. pytest -q
 }
 
@@ -130,6 +135,7 @@ Commands:
   visual-debug
            Render visual pipeline step PNGs from existing output/map_package
   summary  Print final world/visual pipeline summary from existing output
+  assets   Validate visual profile assets manifest
   inspect  Inspect existing world package
   test     Run compileall and pytest
   help     Show this help
@@ -176,6 +182,9 @@ case "${CMD}" in
     ;;
   summary)
     run_summary
+    ;;
+  assets)
+    run_assets
     ;;
   inspect)
     run_inspect

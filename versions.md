@@ -566,3 +566,19 @@
 - Непроходимые elevation transitions теперь отображаются как danger/edge hints, а не как проходимые лестницы/ступени.
 - `elevation_visual_report.json` теперь показывает разбивку transition markers по типам и sprite id.
 - Версия проекта поднята до `0.0.68`.
+
+## v0.0.68 -> v0.0.69
+
+- Добавлен visual-only `map boundary visual treatment` для красивого непроходимого края карты.
+- Добавлены `boundary_visual_rules.json`, `BoundaryVisualMapper`, `boundary_visual_report.json` и debug-step `11_boundary_visual.png`.
+- `visual_density_report` и `./r summary` теперь показывают boundary-слой отдельно от декора/elevation.
+- Версия проекта поднята до `0.0.69`.
+
+## v0.0.69 -> v0.0.70
+
+- Добавлен `assets_manifest.json` для `dark_forest` profile как контракт будущих PNG-ассетов для всех `tile_id` и `sprite_id`.
+- Добавлен документ `docs/visual_assets_manifest_dark_forest.md` с правилами asset manifest contract.
+- Добавлен валидатор `bin/validate_assets_manifest.py`, который сверяет `visual_tilesets.json` с `assets_manifest.json` без требования реальных PNG-файлов.
+- `VisualProfileLoader` теперь загружает `assets_manifest.json` как обязательную часть visual profile.
+- `./r assets` и `./r test` теперь проверяют assets manifest contract.
+- Версия проекта поднята до `0.0.70`.

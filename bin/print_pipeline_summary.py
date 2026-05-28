@@ -52,6 +52,7 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     decoration_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "decoration_report.json")
     place_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "place_treatment_report.json")
     elevation_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "elevation_visual_report.json")
+    boundary_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "boundary_visual_report.json")
     manifest = _read_optional_json_object(output_dir / "_manifest.json")
 
     version = _project_version(project_root)
@@ -87,9 +88,10 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     lines.extend(_visual_density_lines(visual_report))
     lines.extend(["", *_autotiling_lines(visual_report, autotile_report, unmapped_report)])
     lines.extend(["", *_visual_elevation_lines(visual_report, elevation_report)])
+    lines.extend(["", *_boundary_visual_lines(visual_report, boundary_report)])
     lines.extend(["", *_debug_file_lines(output_dir, project_root)])
     lines.extend(["", "Overall:", f"  status: {overall_status}", "  notes:"])
-    lines.extend(_notes(world_report, visual_report, autotile_report, unmapped_report, decoration_report, place_report))
+    lines.extend(_notes(world_report, visual_report, autotile_report, unmapped_report, decoration_report, place_report, boundary_report))
     print("\n".join(lines))
 
 
@@ -159,10 +161,11 @@ def _visual_density_lines(report: dict[str, Any]) -> list[str]:
         f"    decorations:    {_int(by_source.get('decorations'))} = {_float(decorations.get('per_1000_tiles')):4.1f} / 1000 tiles [{decorations.get('status', 'unknown')}, target {_target(decorations)}]",
         f"    place treatment: {_int(by_source.get('place_treatment'))} = {_float(place.get('objects_per_place')):4.1f} / place      [{place.get('status', 'unknown')}, target {_target(place)}]",
         f"    elevation:      {_int(by_source.get('elevation_visual'))} = {_per_1000(_int(by_source.get('elevation_visual')), _area(report)):4.1f} / 1000 tiles",
+        f"    boundary:       {_int(by_source.get('boundary_visual'))} = {_per_1000(_int(by_source.get('boundary_visual')), _area(report)):4.1f} / 1000 tiles",
         "",
         "  by category:",
     ]
-    for key in ("swamp", "road", "ruins", "elevation", "place", "runtime", "other"):
+    for key in ("swamp", "road", "ruins", "elevation", "boundary", "place", "runtime", "other"):
         lines.append(f"    {key + ':':<16} {_int(by_category.get(key)):6d}")
     lines.extend(["", "  top sprites:"])
     for item in top_sprites[:5]:
@@ -209,6 +212,33 @@ def _visual_elevation_lines(report: dict[str, Any], elevation_report: dict[str, 
     ]
 
 
+def _boundary_visual_lines(report: dict[str, Any], boundary_report: dict[str, Any]) -> list[str]:
+    boundary = _nested(report, "boundary_visual")
+    report_summary = _dict(boundary_report.get("summary"))
+    failed = _int(boundary.get("failed_placements"))
+    by_type = _dict(boundary.get("by_boundary_type"))
+    by_edge = _dict(boundary.get("by_edge"))
+    return [
+        "Boundary visual:",
+        f"  markers:            {_int(boundary.get('total')):6d} [{boundary.get('status', 'unknown')}]",
+        f"  failed placements:  {failed:6d} [{'ok' if failed == 0 else 'warning'}]",
+        f"  sampled markers:    {_int(boundary.get('sampled_markers')):6d} [ok]",
+        "  by type:",
+        f"    dense forest:     {_int(by_type.get('dense_forest_wall')):6d}",
+        f"    dark trees:       {_int(by_type.get('dark_tree_wall')):6d}",
+        f"    ruins:            {_int(by_type.get('ruin_barrier')):6d}",
+        f"    swamp:            {_int(by_type.get('swamp_barrier')):6d}",
+        f"    concrete:         {_int(by_type.get('concrete_barrier')):6d}",
+        f"    cliff:            {_int(by_type.get('cliff_wall')):6d}",
+        "  by edge:",
+        f"    north:            {_int(by_edge.get('north')):6d}",
+        f"    east:             {_int(by_edge.get('east')):6d}",
+        f"    south:            {_int(by_edge.get('south')):6d}",
+        f"    west:             {_int(by_edge.get('west')):6d}",
+        f"  report objects:     {_int(report_summary.get('total')):6d}",
+    ]
+
+
 def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
     visual_debug = output_dir / "visual_map" / "debug"
     return [
@@ -219,6 +249,7 @@ def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
         f"  decoration report: {_display_path(visual_debug / 'decoration_report.json', project_root)}",
         f"  place report:      {_display_path(visual_debug / 'place_treatment_report.json', project_root)}",
         f"  elevation report:  {_display_path(visual_debug / 'elevation_visual_report.json', project_root)}",
+        f"  boundary report:   {_display_path(visual_debug / 'boundary_visual_report.json', project_root)}",
         f"  preview:           {_display_path(output_dir / 'visual_map' / 'preview.png', project_root)}",
         f"  steps:             {_display_path(visual_debug / 'steps', project_root)}/",
     ]
@@ -231,6 +262,7 @@ def _notes(
     unmapped_report: dict[str, Any],
     decoration_report: dict[str, Any],
     place_report: dict[str, Any],
+    boundary_report: dict[str, Any],
 ) -> list[str]:
     notes: list[str] = []
     quality = str(_nested(visual_report, "quality").get("status", "unknown"))
@@ -250,6 +282,10 @@ def _notes(
         notes.append("    - place treatment report is missing")
     if not autotile_report:
         notes.append("    - autotile report is missing")
+    boundary_status = str(_nested(visual_report, "boundary_visual").get("status", "unknown"))
+    notes.append("    - boundary visual is healthy" if boundary_status == "ok" else f"    - boundary visual needs attention: {boundary_status}")
+    if not boundary_report:
+        notes.append("    - boundary visual report is missing")
     return notes
 
 

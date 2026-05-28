@@ -66,7 +66,7 @@ Visual pipeline может:
 height_emphasis: readable — заметно, но не комиксово
 lowlands_wetness: contextual — зависит от terrain/place/elevation feature
 level_4_policy: visual_only_landmark — непроходимая визуальная доминанта
-boundary_treatment: future_separate_system — отдельная будущая система края карты
+boundary_treatment: separate_boundary_visual_system — отдельная система края карты
 ```
 
 ---
@@ -622,7 +622,7 @@ top_down_visualgen/profiles/dark_forest/elevation_visual_rules.json
     "height_emphasis": "readable",
     "lowlands_wetness": "contextual",
     "level_4_policy": "visual_only_landmark",
-    "boundary_treatment": "future_separate_system"
+    "boundary_treatment": "separate_boundary_visual_system"
   }
 }
 ```

@@ -50,6 +50,10 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
         visual_map["files"]["debug_elevation_visual_report"]
         == "debug/elevation_visual_report.json"
     )
+    assert (
+        visual_map["files"]["debug_boundary_visual_report"]
+        == "debug/boundary_visual_report.json"
+    )
     assert (visual_output / "debug/autotile_masks.json").exists()
     assert (visual_output / "debug/autotile_report.json").exists()
     assert (visual_output / "debug/unmapped_terrain_report.json").exists()
@@ -57,8 +61,10 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert (visual_output / "debug/place_treatment_report.json").exists()
     assert (visual_output / "debug/visual_density_report.json").exists()
     assert (visual_output / "debug/elevation_visual_report.json").exists()
+    assert (visual_output / "debug/boundary_visual_report.json").exists()
     assert result.debug_visual_density_report_path.exists()
     assert result.debug_elevation_visual_report_path.exists()
+    assert result.debug_boundary_visual_report_path.exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
@@ -81,6 +87,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert visual_objects["summary"]["decoration_total"] >= 1
     assert visual_objects["summary"]["place_treatment_total"] >= 1
     assert visual_objects["summary"]["elevation_visual_total"] >= 1
+    assert visual_objects["summary"]["boundary_visual_total"] >= 1
     assert any(item["sprite_id"] == "object.trench" for item in visual_objects["items"])
     assert any(
         str(item["sprite_id"]).startswith("decor.")
@@ -95,6 +102,11 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert any(
         item.get("source_object_type") == "visual_elevation"
         and item.get("elevation_visual_kind") in {"lowland", "raised", "transition"}
+        for item in visual_objects["items"]
+    )
+    assert any(
+        item.get("source_object_type") == "visual_boundary"
+        and item.get("boundary_visual_type")
         for item in visual_objects["items"]
     )
 
@@ -114,12 +126,19 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert "by_category" in density_report
     assert "top_sprites" in density_report
     assert density_report["by_source"]["elevation_visual"] >= 1
+    assert density_report["by_source"]["boundary_visual"] >= 1
     assert density_report["elevation_visual"]["lowlands"] >= 1
+    assert density_report["boundary_visual"]["total"] >= 1
 
     elevation_visual_report = _read_json(visual_output / "debug/elevation_visual_report.json")
     assert elevation_visual_report["schema_version"] == "visual-debug-elevation-visual-report-v1"
     assert elevation_visual_report["quality"]["status"] == "ok"
     assert elevation_visual_report["summary"]["lowland_markers"] >= 1
+
+    boundary_visual_report = _read_json(visual_output / "debug/boundary_visual_report.json")
+    assert boundary_visual_report["schema_version"] == "visual-debug-boundary-visual-report-v1"
+    assert boundary_visual_report["quality"]["status"] == "ok"
+    assert boundary_visual_report["summary"]["total"] >= 1
 
     decoration_rules = _read_json(
         Path("top_down_visualgen/profiles/dark_forest/decoration_rules.json")
@@ -175,7 +194,14 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert elevation_rules["schema_version"] == "elevation-visual-rules-v2"
     assert elevation_rules["style_decisions"]["level_4_policy"] == "visual_only_landmark"
     assert elevation_rules["levels"]["4"]["traversable"] is False
-    assert elevation_rules["boundary_treatment"]["status"] == "future_separate_system"
+    assert elevation_rules["boundary_treatment"]["status"] == "separate_boundary_visual_system"
+
+    boundary_rules = _read_json(
+        Path("top_down_visualgen/profiles/dark_forest/boundary_visual_rules.json")
+    )
+    assert boundary_rules["schema_version"] == "boundary-visual-rules-v1"
+    assert boundary_rules["policy"]["changes_gameplay"] is False
+    assert "dense_forest_wall" in boundary_rules["boundary_types"]
 
     sprite_ids = set(_read_json(
         Path("top_down_visualgen/profiles/dark_forest/visual_tilesets.json")
@@ -219,7 +245,8 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "08_decoration.png",
         "09_place_treatment.png",
         "10_elevation_visual.png",
-        "11_final_preview.png",
+        "11_boundary_visual.png",
+        "12_final_preview.png",
     ]
     assert all(path.exists() for path in paths)
 

@@ -6,6 +6,7 @@ from typing import Any
 
 from PIL import Image, ImageDraw
 
+from .boundary_visual import BoundaryVisualMapper
 from .decoration import DecorationMapper, merge_visual_objects
 from .elevation_visual import ElevationVisualMapper
 from .models import VisualProfile, WorldPackage
@@ -25,6 +26,7 @@ class VisualPipelineStepRenderer:
         decoration_mapper: DecorationMapper | None = None,
         place_treatment_mapper: PlaceTreatmentMapper | None = None,
         elevation_visual_mapper: ElevationVisualMapper | None = None,
+        boundary_visual_mapper: BoundaryVisualMapper | None = None,
     ) -> None:
         """Initialize the step renderer.
 
@@ -34,12 +36,14 @@ class VisualPipelineStepRenderer:
             decoration_mapper: Optional decoration mapper.
             place_treatment_mapper: Optional place treatment mapper.
             elevation_visual_mapper: Optional elevation visual mapper.
+            boundary_visual_mapper: Optional boundary visual mapper.
         """
         self._terrain_mapper = terrain_mapper or TerrainVisualMapper()
         self._object_mapper = object_mapper or ObjectVisualMapper()
         self._decoration_mapper = decoration_mapper or DecorationMapper()
         self._place_treatment_mapper = place_treatment_mapper or PlaceTreatmentMapper()
         self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
+        self._boundary_visual_mapper = boundary_visual_mapper or BoundaryVisualMapper()
 
     def render_steps(
         self,
@@ -81,11 +85,17 @@ class VisualPipelineStepRenderer:
             profile=profile,
             visual_layers=visual_layers,
         )
+        boundary_visual_result = self._boundary_visual_mapper.map_boundary_visual(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+        )
         visual_objects = merge_visual_objects(
             runtime_visual_objects=runtime_visual_objects,
             decoration_result=decoration_result,
             place_treatment_result=place_treatment_result,
             elevation_visual_result=elevation_visual_result,
+            boundary_visual_result=boundary_visual_result,
         )
         tile_size = tile_size_px or _tile_size_px(world.index, profile)
         tile_size = max(1, tile_size)
@@ -171,11 +181,18 @@ class VisualPipelineStepRenderer:
                 output_path=output_dir / "10_elevation_visual.png",
                 tile_size_px=tile_size,
             ),
+            self._render_boundary_visual_step(
+                visual_layers=visual_layers,
+                boundary_visual_result=boundary_visual_result,
+                profile=profile,
+                output_path=output_dir / "11_boundary_visual.png",
+                tile_size_px=tile_size,
+            ),
             self._render_final_step(
                 visual_layers=visual_layers,
                 visual_objects=visual_objects,
                 profile=profile,
-                output_path=output_dir / "11_final_preview.png",
+                output_path=output_dir / "12_final_preview.png",
                 tile_size_px=tile_size,
             ),
         ]
@@ -406,6 +423,40 @@ class VisualPipelineStepRenderer:
             tile_size_px=tile_size_px,
         )
         visual_objects = {"items": elevation_visual_result.get("items", [])}
+        _draw_object_anchors(
+            draw=draw,
+            visual_objects=visual_objects,
+            sprite_colors=_sprite_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(output_path)
+        return output_path
+
+
+    def _render_boundary_visual_step(
+        self,
+        *,
+        visual_layers: dict[str, Any],
+        boundary_visual_result: dict[str, Any],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        rows = _visual_rows(visual_layers)
+        image, draw = _new_tile_image(
+            width=len(rows[0]),
+            height=len(rows),
+            tile_size_px=tile_size_px,
+            background="#1b1b1b",
+        )
+        _draw_tile_rows(
+            draw=draw,
+            rows=rows,
+            tile_colors=_dimmed_tile_colors(profile),
+            tile_size_px=tile_size_px,
+        )
+        visual_objects = {"items": boundary_visual_result.get("items", [])}
         _draw_object_anchors(
             draw=draw,
             visual_objects=visual_objects,

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .boundary_visual import BoundaryVisualMapper
 from .chunks import build_visual_chunks
 from .decoration import DecorationMapper, merge_visual_objects
 from .density import VisualDensityReporter, write_visual_density_report
@@ -33,6 +34,7 @@ class VisualPipeline:
         place_treatment_mapper: PlaceTreatmentMapper | None = None,
         density_reporter: VisualDensityReporter | None = None,
         elevation_visual_mapper: ElevationVisualMapper | None = None,
+        boundary_visual_mapper: BoundaryVisualMapper | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -46,6 +48,7 @@ class VisualPipeline:
             place_treatment_mapper: Optional place treatment mapper.
             density_reporter: Optional visual density reporter.
             elevation_visual_mapper: Optional elevation visual mapper.
+            boundary_visual_mapper: Optional boundary visual mapper.
         """
         self._package_loader = package_loader or WorldPackageLoader()
         self._profile_loader = profile_loader or VisualProfileLoader()
@@ -56,6 +59,7 @@ class VisualPipeline:
         self._place_treatment_mapper = place_treatment_mapper or PlaceTreatmentMapper()
         self._density_reporter = density_reporter or VisualDensityReporter()
         self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
+        self._boundary_visual_mapper = boundary_visual_mapper or BoundaryVisualMapper()
 
     def run(
         self,
@@ -101,11 +105,17 @@ class VisualPipeline:
             profile=profile,
             visual_layers=visual_layers,
         )
+        boundary_visual_result = self._boundary_visual_mapper.map_boundary_visual(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+        )
         visual_objects = merge_visual_objects(
             runtime_visual_objects=runtime_visual_objects,
             decoration_result=decoration_result,
             place_treatment_result=place_treatment_result,
             elevation_visual_result=elevation_visual_result,
+            boundary_visual_result=boundary_visual_result,
         )
         width = _int_value(visual_layers.get("width"), 0)
         height = _int_value(visual_layers.get("height"), 0)
@@ -130,6 +140,7 @@ class VisualPipeline:
         debug_place_treatment_report_path = debug_dir / "place_treatment_report.json"
         debug_visual_density_report_path = debug_dir / "visual_density_report.json"
         debug_elevation_visual_report_path = debug_dir / "elevation_visual_report.json"
+        debug_boundary_visual_report_path = debug_dir / "boundary_visual_report.json"
 
         write_json_object(visual_layers, visual_layers_path)
         write_json_object(visual_objects, visual_objects_path)
@@ -152,6 +163,10 @@ class VisualPipeline:
             _build_elevation_visual_report_debug(elevation_visual_result),
             debug_elevation_visual_report_path,
         )
+        write_json_object(
+            _build_boundary_visual_report_debug(boundary_visual_result),
+            debug_boundary_visual_report_path,
+        )
         visual_density_report = self._density_reporter.build_report(
             world=world,
             profile=profile,
@@ -161,6 +176,7 @@ class VisualPipeline:
             decoration_result=decoration_result,
             place_treatment_result=place_treatment_result,
             elevation_visual_result=elevation_visual_result,
+            boundary_visual_result=boundary_visual_result,
         )
         write_visual_density_report(visual_density_report, debug_visual_density_report_path)
         if preview_path is not None:
@@ -188,6 +204,7 @@ class VisualPipeline:
             debug_place_treatment_report_path=debug_place_treatment_report_path,
             debug_visual_density_report_path=debug_visual_density_report_path,
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
+            debug_boundary_visual_report_path=debug_boundary_visual_report_path,
             visual_layers=visual_layers,
             visual_objects=visual_objects,
             visual_chunks=visual_chunks,
@@ -208,6 +225,7 @@ class VisualPipeline:
             debug_place_treatment_report_path=debug_place_treatment_report_path,
             debug_visual_density_report_path=debug_visual_density_report_path,
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
+            debug_boundary_visual_report_path=debug_boundary_visual_report_path,
         )
 
     def _build_visual_map(
@@ -228,6 +246,7 @@ class VisualPipeline:
         debug_place_treatment_report_path: Path,
         debug_visual_density_report_path: Path,
         debug_elevation_visual_report_path: Path,
+        debug_boundary_visual_report_path: Path,
         visual_layers: dict[str, Any],
         visual_objects: dict[str, Any],
         visual_chunks: dict[str, Any],
@@ -298,6 +317,10 @@ class VisualPipeline:
                 "debug_elevation_visual_report": _relative(
                     output_dir,
                     debug_elevation_visual_report_path,
+                ),
+                "debug_boundary_visual_report": _relative(
+                    output_dir,
+                    debug_boundary_visual_report_path,
                 ),
             },
             "contract": {
@@ -439,6 +462,28 @@ def _build_elevation_visual_report_debug(elevation_visual_result: dict[str, Any]
             "landmark_markers": 0,
             "transition_markers": 0,
             "failed_placements": {},
+        },
+        "quality": {"status": "missing_report"},
+    }
+
+
+def _build_boundary_visual_report_debug(boundary_visual_result: dict[str, Any]) -> dict[str, Any]:
+    report = boundary_visual_result.get("report")
+    if isinstance(report, dict):
+        return report
+    return {
+        "schema_version": "visual-debug-boundary-visual-report-v1",
+        "kind": "visual_debug_boundary_visual_report",
+        "source_layer": "map_border",
+        "rules_enabled": False,
+        "summary": {
+            "total": 0,
+            "by_boundary_type": {},
+            "by_sprite_id": {},
+            "by_edge": {},
+            "by_role": {},
+            "failed_placements": {},
+            "sampled_markers": {},
         },
         "quality": {"status": "missing_report"},
     }

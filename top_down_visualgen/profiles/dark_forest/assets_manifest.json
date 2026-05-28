@@ -1,0 +1,5108 @@
+{
+  "schema_version": "assets-manifest-v1",
+  "profile": "dark_forest",
+  "world_style": "dark_forest_post_soviet_ruins",
+  "tile_size": [
+    16,
+    16
+  ],
+  "policy": {
+    "real_files_required": false,
+    "validate_file_existence_with": "bin/validate_assets_manifest.py --check-files",
+    "purpose": "Contract mapping logical tile_id/sprite_id values to future PNG asset paths."
+  },
+  "fallbacks": {
+    "missing_tile": "debug.missing_tile",
+    "missing_sprite": "debug.missing_sprite"
+  },
+  "tiles": {
+    "dirt.base": {
+      "path": "tiles/dirt/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "dirt",
+        "base"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.high_point_overlay": {
+      "path": "tiles/elevation/high_point_overlay.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "elevation",
+        "high",
+        "point",
+        "overlay"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.landmark_overlay": {
+      "path": "tiles/elevation/landmark_overlay.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "elevation",
+        "landmark",
+        "overlay"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.lowland_overlay": {
+      "path": "tiles/elevation/lowland_overlay.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "elevation",
+        "lowland",
+        "overlay"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.platform_overlay": {
+      "path": "tiles/elevation/platform_overlay.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "elevation",
+        "platform",
+        "overlay"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.raised_overlay": {
+      "path": "tiles/elevation/raised_overlay.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "elevation",
+        "raised",
+        "overlay"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.cap_e": {
+      "path": "tiles/forest/cap_e.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "cap",
+        "e"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.cap_n": {
+      "path": "tiles/forest/cap_n.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "cap",
+        "n"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.cap_s": {
+      "path": "tiles/forest/cap_s.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "cap",
+        "s"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.cap_w": {
+      "path": "tiles/forest/cap_w.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "cap",
+        "w"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.edge_e": {
+      "path": "tiles/forest/edge_e.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "edge",
+        "e"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.edge_n": {
+      "path": "tiles/forest/edge_n.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "edge",
+        "n"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.edge_s": {
+      "path": "tiles/forest/edge_s.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "edge",
+        "s"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.edge_w": {
+      "path": "tiles/forest/edge_w.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "edge",
+        "w"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.fill": {
+      "path": "tiles/forest/fill.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "fill"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.inner_corner_complex": {
+      "path": "tiles/forest/inner_corner_complex.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "inner",
+        "corner",
+        "complex"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.inner_corner_es": {
+      "path": "tiles/forest/inner_corner_es.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "inner",
+        "corner",
+        "es"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.inner_corner_ne": {
+      "path": "tiles/forest/inner_corner_ne.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "inner",
+        "corner",
+        "ne"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.inner_corner_sw": {
+      "path": "tiles/forest/inner_corner_sw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "inner",
+        "corner",
+        "sw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.inner_corner_wn": {
+      "path": "tiles/forest/inner_corner_wn.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "inner",
+        "corner",
+        "wn"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.isolated": {
+      "path": "tiles/forest/isolated.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "isolated"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.outer_corner_es": {
+      "path": "tiles/forest/outer_corner_es.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "outer",
+        "corner",
+        "es"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.outer_corner_ne": {
+      "path": "tiles/forest/outer_corner_ne.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "outer",
+        "corner",
+        "ne"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.outer_corner_sw": {
+      "path": "tiles/forest/outer_corner_sw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "outer",
+        "corner",
+        "sw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.outer_corner_wn": {
+      "path": "tiles/forest/outer_corner_wn.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "outer",
+        "corner",
+        "wn"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.thin_ew": {
+      "path": "tiles/forest/thin_ew.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "thin",
+        "ew"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "forest.thin_ns": {
+      "path": "tiles/forest/thin_ns.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "forest",
+        "thin",
+        "ns"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "grass.base": {
+      "path": "tiles/grass/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "grass",
+        "base"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "mud.base": {
+      "path": "tiles/mud/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "mud",
+        "base"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.cross": {
+      "path": "tiles/road/cross.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "cross"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.end_e": {
+      "path": "tiles/road/end_e.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "end",
+        "e"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.end_n": {
+      "path": "tiles/road/end_n.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "end",
+        "n"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.end_s": {
+      "path": "tiles/road/end_s.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "end",
+        "s"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.end_w": {
+      "path": "tiles/road/end_w.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "end",
+        "w"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.isolated": {
+      "path": "tiles/road/isolated.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "isolated"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.straight_ew": {
+      "path": "tiles/road/straight_ew.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "straight",
+        "ew"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.straight_ns": {
+      "path": "tiles/road/straight_ns.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "straight",
+        "ns"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.t_esw": {
+      "path": "tiles/road/t_esw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "t",
+        "esw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.t_nes": {
+      "path": "tiles/road/t_nes.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "t",
+        "nes"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.t_new": {
+      "path": "tiles/road/t_new.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "t",
+        "new"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.t_nsw": {
+      "path": "tiles/road/t_nsw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "t",
+        "nsw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.turn_es": {
+      "path": "tiles/road/turn_es.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "turn",
+        "es"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.turn_ne": {
+      "path": "tiles/road/turn_ne.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "turn",
+        "ne"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.turn_sw": {
+      "path": "tiles/road/turn_sw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "turn",
+        "sw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "road.turn_wn": {
+      "path": "tiles/road/turn_wn.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "road",
+        "turn",
+        "wn"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "ruins.floor": {
+      "path": "tiles/ruins/floor.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "ruins",
+        "floor"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "sand.base": {
+      "path": "tiles/sand/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "sand",
+        "base"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.cap_e": {
+      "path": "tiles/swamp/cap_e.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "cap",
+        "e"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.cap_n": {
+      "path": "tiles/swamp/cap_n.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "cap",
+        "n"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.cap_s": {
+      "path": "tiles/swamp/cap_s.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "cap",
+        "s"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.cap_w": {
+      "path": "tiles/swamp/cap_w.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "cap",
+        "w"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.edge_e": {
+      "path": "tiles/swamp/edge_e.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "edge",
+        "e"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.edge_n": {
+      "path": "tiles/swamp/edge_n.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "edge",
+        "n"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.edge_s": {
+      "path": "tiles/swamp/edge_s.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "edge",
+        "s"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.edge_w": {
+      "path": "tiles/swamp/edge_w.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "edge",
+        "w"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.fill": {
+      "path": "tiles/swamp/fill.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "fill"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.inner_corner_complex": {
+      "path": "tiles/swamp/inner_corner_complex.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "inner",
+        "corner",
+        "complex"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.inner_corner_es": {
+      "path": "tiles/swamp/inner_corner_es.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "inner",
+        "corner",
+        "es"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.inner_corner_ne": {
+      "path": "tiles/swamp/inner_corner_ne.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "inner",
+        "corner",
+        "ne"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.inner_corner_sw": {
+      "path": "tiles/swamp/inner_corner_sw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "inner",
+        "corner",
+        "sw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.inner_corner_wn": {
+      "path": "tiles/swamp/inner_corner_wn.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "inner",
+        "corner",
+        "wn"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.isolated": {
+      "path": "tiles/swamp/isolated.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "isolated"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.outer_corner_es": {
+      "path": "tiles/swamp/outer_corner_es.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "outer",
+        "corner",
+        "es"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.outer_corner_ne": {
+      "path": "tiles/swamp/outer_corner_ne.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "outer",
+        "corner",
+        "ne"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.outer_corner_sw": {
+      "path": "tiles/swamp/outer_corner_sw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "outer",
+        "corner",
+        "sw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.outer_corner_wn": {
+      "path": "tiles/swamp/outer_corner_wn.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "outer",
+        "corner",
+        "wn"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.thin_ew": {
+      "path": "tiles/swamp/thin_ew.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "thin",
+        "ew"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "swamp.thin_ns": {
+      "path": "tiles/swamp/thin_ns.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "swamp",
+        "thin",
+        "ns"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "terrain.unknown": {
+      "path": "tiles/terrain/unknown.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "terrain",
+        "unknown"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "wall.blocked": {
+      "path": "tiles/wall/blocked.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "wall",
+        "blocked"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.cap_e": {
+      "path": "tiles/water/cap_e.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "cap",
+        "e"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.cap_n": {
+      "path": "tiles/water/cap_n.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "cap",
+        "n"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.cap_s": {
+      "path": "tiles/water/cap_s.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "cap",
+        "s"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.cap_w": {
+      "path": "tiles/water/cap_w.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "cap",
+        "w"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.edge_e": {
+      "path": "tiles/water/edge_e.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "edge",
+        "e"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.edge_n": {
+      "path": "tiles/water/edge_n.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "edge",
+        "n"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.edge_s": {
+      "path": "tiles/water/edge_s.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "edge",
+        "s"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.edge_w": {
+      "path": "tiles/water/edge_w.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "edge",
+        "w"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.fill": {
+      "path": "tiles/water/fill.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "fill"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.inner_corner_complex": {
+      "path": "tiles/water/inner_corner_complex.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "inner",
+        "corner",
+        "complex"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.inner_corner_es": {
+      "path": "tiles/water/inner_corner_es.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "inner",
+        "corner",
+        "es"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.inner_corner_ne": {
+      "path": "tiles/water/inner_corner_ne.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "inner",
+        "corner",
+        "ne"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.inner_corner_sw": {
+      "path": "tiles/water/inner_corner_sw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "inner",
+        "corner",
+        "sw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.inner_corner_wn": {
+      "path": "tiles/water/inner_corner_wn.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "inner",
+        "corner",
+        "wn"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.isolated": {
+      "path": "tiles/water/isolated.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "isolated"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.outer_corner_es": {
+      "path": "tiles/water/outer_corner_es.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "outer",
+        "corner",
+        "es"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.outer_corner_ne": {
+      "path": "tiles/water/outer_corner_ne.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "outer",
+        "corner",
+        "ne"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.outer_corner_sw": {
+      "path": "tiles/water/outer_corner_sw.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "outer",
+        "corner",
+        "sw"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.outer_corner_wn": {
+      "path": "tiles/water/outer_corner_wn.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "outer",
+        "corner",
+        "wn"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.thin_ew": {
+      "path": "tiles/water/thin_ew.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "thin",
+        "ew"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "water.thin_ns": {
+      "path": "tiles/water/thin_ns.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "water",
+        "thin",
+        "ns"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "debug.missing_tile": {
+      "path": "debug/missing_tile.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "debug",
+        "missing",
+        "tile"
+      ],
+      "asset_status": "placeholder_contract"
+    }
+  },
+  "sprites": {
+    "boundary.cliff_wall": {
+      "path": "sprites/boundary/cliff_wall.png",
+      "size": [
+        16,
+        24
+      ],
+      "pivot": [
+        8,
+        20
+      ],
+      "sort_anchor": [
+        8,
+        20
+      ],
+      "draw_layer": "boundary",
+      "tags": [
+        "boundary",
+        "cliff",
+        "wall"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "boundary.concrete_barrier": {
+      "path": "sprites/boundary/concrete_barrier.png",
+      "size": [
+        16,
+        24
+      ],
+      "pivot": [
+        8,
+        20
+      ],
+      "sort_anchor": [
+        8,
+        20
+      ],
+      "draw_layer": "boundary",
+      "tags": [
+        "boundary",
+        "concrete",
+        "barrier"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "boundary.dark_tree_wall": {
+      "path": "sprites/boundary/dark_tree_wall.png",
+      "size": [
+        16,
+        24
+      ],
+      "pivot": [
+        8,
+        20
+      ],
+      "sort_anchor": [
+        8,
+        20
+      ],
+      "draw_layer": "boundary",
+      "tags": [
+        "boundary",
+        "dark",
+        "tree",
+        "wall"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "boundary.dense_forest_wall": {
+      "path": "sprites/boundary/dense_forest_wall.png",
+      "size": [
+        16,
+        24
+      ],
+      "pivot": [
+        8,
+        20
+      ],
+      "sort_anchor": [
+        8,
+        20
+      ],
+      "draw_layer": "boundary",
+      "tags": [
+        "boundary",
+        "dense",
+        "forest",
+        "wall"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "boundary.ruin_barrier": {
+      "path": "sprites/boundary/ruin_barrier.png",
+      "size": [
+        16,
+        24
+      ],
+      "pivot": [
+        8,
+        20
+      ],
+      "sort_anchor": [
+        8,
+        20
+      ],
+      "draw_layer": "boundary",
+      "tags": [
+        "boundary",
+        "ruin",
+        "barrier"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "boundary.swamp_barrier": {
+      "path": "sprites/boundary/swamp_barrier.png",
+      "size": [
+        16,
+        24
+      ],
+      "pivot": [
+        8,
+        20
+      ],
+      "sort_anchor": [
+        8,
+        20
+      ],
+      "draw_layer": "boundary",
+      "tags": [
+        "boundary",
+        "swamp",
+        "barrier"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.abandoned_crate_01": {
+      "path": "sprites/decor/abandoned_crate_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "abandoned",
+        "crate"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.ammo_crate_empty_01": {
+      "path": "sprites/decor/ammo_crate_empty_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "ammo",
+        "crate",
+        "empty"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.animal_bones_01": {
+      "path": "sprites/decor/animal_bones_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "animal",
+        "bones"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.barricade_stake_01": {
+      "path": "sprites/decor/barricade_stake_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "barricade",
+        "stake"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.black_mud_01": {
+      "path": "sprites/decor/black_mud_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "black",
+        "mud"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.bog_bubbles_01": {
+      "path": "sprites/decor/bog_bubbles_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "bog",
+        "bubbles"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.branch_pile_01": {
+      "path": "sprites/decor/branch_pile_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "branch",
+        "pile"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.broken_block_01": {
+      "path": "sprites/decor/broken_block_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "broken",
+        "block"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.broken_cart_piece_01": {
+      "path": "sprites/decor/broken_cart_piece_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "broken",
+        "cart",
+        "piece"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.broken_column_01": {
+      "path": "sprites/decor/broken_column_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "broken",
+        "column"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.broken_lantern_01": {
+      "path": "sprites/decor/broken_lantern_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "broken",
+        "lantern"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.broken_plank_01": {
+      "path": "sprites/decor/broken_plank_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "broken",
+        "plank"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.broken_shield_panel_01": {
+      "path": "sprites/decor/broken_shield_panel_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "broken",
+        "shield",
+        "panel"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.burned_log_01": {
+      "path": "sprites/decor/burned_log_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "burned",
+        "log"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.campfire_ash_01": {
+      "path": "sprites/decor/campfire_ash_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "campfire",
+        "ash"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.collapsed_arch_piece_01": {
+      "path": "sprites/decor/collapsed_arch_piece_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "collapsed",
+        "arch",
+        "piece"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.collapsed_tent_piece_01": {
+      "path": "sprites/decor/collapsed_tent_piece_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "collapsed",
+        "tent",
+        "piece"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.concrete_debris_01": {
+      "path": "sprites/decor/concrete_debris_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "concrete",
+        "debris"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.cracked_floor_piece_01": {
+      "path": "sprites/decor/cracked_floor_piece_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "cracked",
+        "floor",
+        "piece"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.cracked_stone_01": {
+      "path": "sprites/decor/cracked_stone_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "cracked",
+        "stone"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.cracked_stone_02": {
+      "path": "sprites/decor/cracked_stone_02.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "cracked",
+        "stone"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.dead_branch_01": {
+      "path": "sprites/decor/dead_branch_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "dead",
+        "branch"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.dead_tree_root_01": {
+      "path": "sprites/decor/dead_tree_root_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "dead",
+        "tree",
+        "root"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.dry_leaves_patch_01": {
+      "path": "sprites/decor/dry_leaves_patch_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "dry",
+        "leaves",
+        "patch"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.empty_bottle_01": {
+      "path": "sprites/decor/empty_bottle_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "empty",
+        "bottle"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.fallen_bricks_01": {
+      "path": "sprites/decor/fallen_bricks_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "fallen",
+        "bricks"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.fallen_log_01": {
+      "path": "sprites/decor/fallen_log_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "fallen",
+        "log"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.fallen_tree_01": {
+      "path": "sprites/decor/fallen_tree_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "fallen",
+        "tree"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.firewood_stack_01": {
+      "path": "sprites/decor/firewood_stack_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "firewood",
+        "stack"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.forest_litter_01": {
+      "path": "sprites/decor/forest_litter_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "forest",
+        "litter"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.foxhole_debris_01": {
+      "path": "sprites/decor/foxhole_debris_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "foxhole",
+        "debris"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.half_wall_debris_01": {
+      "path": "sprites/decor/half_wall_debris_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "half",
+        "wall",
+        "debris"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.hidden_cache_marker_01": {
+      "path": "sprites/decor/hidden_cache_marker_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "hidden",
+        "cache",
+        "marker"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.moss_patch_01": {
+      "path": "sprites/decor/moss_patch_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "moss",
+        "patch"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.mossy_stone_01": {
+      "path": "sprites/decor/mossy_stone_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "mossy",
+        "stone"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.mud_patch_01": {
+      "path": "sprites/decor/mud_patch_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "mud",
+        "patch"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.mud_patch_02": {
+      "path": "sprites/decor/mud_patch_02.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "mud",
+        "patch"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.mushroom_cluster_01": {
+      "path": "sprites/decor/mushroom_cluster_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "mushroom",
+        "cluster"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.old_backpack_01": {
+      "path": "sprites/decor/old_backpack_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "old",
+        "backpack"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.old_bedroll_01": {
+      "path": "sprites/decor/old_bedroll_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "old",
+        "bedroll"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.old_tile_fragment_01": {
+      "path": "sprites/decor/old_tile_fragment_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "old",
+        "tile",
+        "fragment"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.old_tripod_01": {
+      "path": "sprites/decor/old_tripod_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "old",
+        "tripod"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.plank_stack_01": {
+      "path": "sprites/decor/plank_stack_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "plank",
+        "stack"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.reeds_01": {
+      "path": "sprites/decor/reeds_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "reeds"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.reeds_02": {
+      "path": "sprites/decor/reeds_02.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "reeds"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.reeds_03": {
+      "path": "sprites/decor/reeds_03.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "reeds"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.reeds_cluster_01": {
+      "path": "sprites/decor/reeds_cluster_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "reeds",
+        "cluster"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.road_dirt_noise_01": {
+      "path": "sprites/decor/road_dirt_noise_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "road",
+        "dirt",
+        "noise"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.road_grass_tuft_01": {
+      "path": "sprites/decor/road_grass_tuft_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "road",
+        "grass",
+        "tuft"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.road_grass_tuft_02": {
+      "path": "sprites/decor/road_grass_tuft_02.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "road",
+        "grass",
+        "tuft"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.roadblock_debris_01": {
+      "path": "sprites/decor/roadblock_debris_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "roadblock",
+        "debris"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.roadside_marker_stone_01": {
+      "path": "sprites/decor/roadside_marker_stone_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "roadside",
+        "marker",
+        "stone"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.root_cluster_01": {
+      "path": "sprites/decor/root_cluster_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "root",
+        "cluster"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.root_over_stone_01": {
+      "path": "sprites/decor/root_over_stone_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "root",
+        "over",
+        "stone"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.rope_piece_01": {
+      "path": "sprites/decor/rope_piece_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "rope",
+        "piece"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.rotten_log_01": {
+      "path": "sprites/decor/rotten_log_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "rotten",
+        "log"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.ruin_rubble_01": {
+      "path": "sprites/decor/ruin_rubble_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "ruin",
+        "rubble"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.ruin_rubble_02": {
+      "path": "sprites/decor/ruin_rubble_02.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "ruin",
+        "rubble"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.rusty_barbed_wire_01": {
+      "path": "sprites/decor/rusty_barbed_wire_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "rusty",
+        "barbed",
+        "wire"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.rusty_pot_01": {
+      "path": "sprites/decor/rusty_pot_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "rusty",
+        "pot"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.sack_01": {
+      "path": "sprites/decor/sack_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "sack"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.sandbag_broken_01": {
+      "path": "sprites/decor/sandbag_broken_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "sandbag",
+        "broken"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.sandbag_remnant_01": {
+      "path": "sprites/decor/sandbag_remnant_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "sandbag",
+        "remnant"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.signpost_broken_01": {
+      "path": "sprites/decor/signpost_broken_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "signpost",
+        "broken"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.small_stone_01": {
+      "path": "sprites/decor/small_stone_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "small",
+        "stone"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.small_stone_02": {
+      "path": "sprites/decor/small_stone_02.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "small",
+        "stone"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.spent_shells_01": {
+      "path": "sprites/decor/spent_shells_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "spent",
+        "shells"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.stone_dust_patch_01": {
+      "path": "sprites/decor/stone_dust_patch_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "stone",
+        "dust",
+        "patch"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.stone_slab_01": {
+      "path": "sprites/decor/stone_slab_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "stone",
+        "slab"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.story_candidate_marker_01": {
+      "path": "sprites/decor/story_candidate_marker_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "story",
+        "candidate",
+        "marker"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.stump_large_01": {
+      "path": "sprites/decor/stump_large_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "stump",
+        "large"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.swamp_log_01": {
+      "path": "sprites/decor/swamp_log_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "swamp",
+        "log"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.swamp_stones_01": {
+      "path": "sprites/decor/swamp_stones_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "swamp",
+        "stones"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.thorn_bush_01": {
+      "path": "sprites/decor/thorn_bush_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "thorn",
+        "bush"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.tire_rut_mud_01": {
+      "path": "sprites/decor/tire_rut_mud_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "tire",
+        "rut",
+        "mud"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.torn_canvas_01": {
+      "path": "sprites/decor/torn_canvas_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "torn",
+        "canvas"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.torn_cloth_01": {
+      "path": "sprites/decor/torn_cloth_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "torn",
+        "cloth"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.wagon_wheel_broken_01": {
+      "path": "sprites/decor/wagon_wheel_broken_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "wagon",
+        "wheel",
+        "broken"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.warning_bones_01": {
+      "path": "sprites/decor/warning_bones_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "warning",
+        "bones"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.water_puddle_01": {
+      "path": "sprites/decor/water_puddle_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "water",
+        "puddle"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.wet_grass_01": {
+      "path": "sprites/decor/wet_grass_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "wet",
+        "grass"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.wet_grass_02": {
+      "path": "sprites/decor/wet_grass_02.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "wet",
+        "grass"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "decor.wooden_cover_piece_01": {
+      "path": "sprites/decor/wooden_cover_piece_01.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "decor",
+      "tags": [
+        "decor",
+        "wooden",
+        "cover",
+        "piece"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.ancient_beacon_base": {
+      "path": "sprites/elevation/ancient_beacon_base.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "ancient",
+        "beacon",
+        "base"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.beacon_debris": {
+      "path": "sprites/elevation/beacon_debris.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "beacon",
+        "debris"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.bridge_entry": {
+      "path": "sprites/elevation/bridge_entry.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "bridge",
+        "entry"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.bridge_side_edge": {
+      "path": "sprites/elevation/bridge_side_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "bridge",
+        "side",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.bridge_support_post": {
+      "path": "sprites/elevation/bridge_support_post.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "bridge",
+        "support",
+        "post"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.broken_drain_pipe": {
+      "path": "sprites/elevation/broken_drain_pipe.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "broken",
+        "drain",
+        "pipe"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.broken_railing": {
+      "path": "sprites/elevation/broken_railing.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "broken",
+        "railing"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.broken_stairs": {
+      "path": "sprites/elevation/broken_stairs.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "broken",
+        "stairs"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.broken_stairs_base": {
+      "path": "sprites/elevation/broken_stairs_base.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "broken",
+        "stairs",
+        "base"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.bunker_descent": {
+      "path": "sprites/elevation/bunker_descent.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "bunker",
+        "descent"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.bunker_floor_dark": {
+      "path": "sprites/elevation/bunker_floor_dark.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "bunker",
+        "floor",
+        "dark"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.bunker_floor_edge": {
+      "path": "sprites/elevation/bunker_floor_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "bunker",
+        "floor",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.collapsed_monolith": {
+      "path": "sprites/elevation/collapsed_monolith.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "collapsed",
+        "monolith"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.collapsed_platform_gap": {
+      "path": "sprites/elevation/collapsed_platform_gap.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "collapsed",
+        "platform",
+        "gap"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.dark_leaf_litter": {
+      "path": "sprites/elevation/dark_leaf_litter.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "dark",
+        "leaf",
+        "litter"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.dirt_ramp": {
+      "path": "sprites/elevation/dirt_ramp.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "dirt",
+        "ramp"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.dirt_slope_up": {
+      "path": "sprites/elevation/dirt_slope_up.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "dirt",
+        "slope",
+        "up"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.dry_leaf_patch": {
+      "path": "sprites/elevation/dry_leaf_patch.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "dry",
+        "leaf",
+        "patch"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.dry_ridge_edge": {
+      "path": "sprites/elevation/dry_ridge_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "dry",
+        "ridge",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.dry_stone_patch": {
+      "path": "sprites/elevation/dry_stone_patch.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "dry",
+        "stone",
+        "patch"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.exposed_roots": {
+      "path": "sprites/elevation/exposed_roots.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "exposed",
+        "roots"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.grass_slope_up": {
+      "path": "sprites/elevation/grass_slope_up.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "grass",
+        "slope",
+        "up"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.high_landmark_marker": {
+      "path": "sprites/elevation/high_landmark_marker.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "high",
+        "landmark",
+        "marker"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.high_platform_edge": {
+      "path": "sprites/elevation/high_platform_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "high",
+        "platform",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.hill_grass_edge": {
+      "path": "sprites/elevation/hill_grass_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "hill",
+        "grass",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.hill_shoulder": {
+      "path": "sprites/elevation/hill_shoulder.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "hill",
+        "shoulder"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.landmark_ring_edge": {
+      "path": "sprites/elevation/landmark_ring_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "landmark",
+        "ring",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.lookout_planks": {
+      "path": "sprites/elevation/lookout_planks.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "lookout",
+        "planks"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.low_berm_cut": {
+      "path": "sprites/elevation/low_berm_cut.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "low",
+        "berm",
+        "cut"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.lowland_shadow_edge": {
+      "path": "sprites/elevation/lowland_shadow_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "lowland",
+        "shadow",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.lowland_stones": {
+      "path": "sprites/elevation/lowland_stones.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "lowland",
+        "stones"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.mud_pool": {
+      "path": "sprites/elevation/mud_pool.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "mud",
+        "pool"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.mud_rim": {
+      "path": "sprites/elevation/mud_rim.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "mud",
+        "rim"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.mud_slope_down": {
+      "path": "sprites/elevation/mud_slope_down.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "mud",
+        "slope",
+        "down"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.old_earthwork": {
+      "path": "sprites/elevation/old_earthwork.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "old",
+        "earthwork"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.old_flag_pole": {
+      "path": "sprites/elevation/old_flag_pole.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "old",
+        "flag",
+        "pole"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.old_planks": {
+      "path": "sprites/elevation/old_planks.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "old",
+        "planks"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.old_signal_device": {
+      "path": "sprites/elevation/old_signal_device.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "old",
+        "signal",
+        "device"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.pit_edge": {
+      "path": "sprites/elevation/pit_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "pit",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.pit_ramp": {
+      "path": "sprites/elevation/pit_ramp.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "pit",
+        "ramp"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.pit_rim": {
+      "path": "sprites/elevation/pit_rim.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "pit",
+        "rim"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.platform_ladder_entry": {
+      "path": "sprites/elevation/platform_ladder_entry.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "platform",
+        "ladder",
+        "entry"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.platform_step": {
+      "path": "sprites/elevation/platform_step.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "platform",
+        "step"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.raised_berm_edge": {
+      "path": "sprites/elevation/raised_berm_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "raised",
+        "berm",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.ridge_stones": {
+      "path": "sprites/elevation/ridge_stones.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "ridge",
+        "stones"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.ritual_marker": {
+      "path": "sprites/elevation/ritual_marker.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "ritual",
+        "marker"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.root_hanging": {
+      "path": "sprites/elevation/root_hanging.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "root",
+        "hanging"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.root_slope": {
+      "path": "sprites/elevation/root_slope.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "root",
+        "slope"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.root_step": {
+      "path": "sprites/elevation/root_step.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "root",
+        "step"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.rooted_slope_edge": {
+      "path": "sprites/elevation/rooted_slope_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "rooted",
+        "slope",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.ruin_platform_edge": {
+      "path": "sprites/elevation/ruin_platform_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "ruin",
+        "platform",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.ruin_platform_floor": {
+      "path": "sprites/elevation/ruin_platform_floor.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "ruin",
+        "platform",
+        "floor"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.signal_stone": {
+      "path": "sprites/elevation/signal_stone.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "signal",
+        "stone"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.signal_tripod": {
+      "path": "sprites/elevation/signal_tripod.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "signal",
+        "tripod"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.slope_grass": {
+      "path": "sprites/elevation/slope_grass.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "slope",
+        "grass"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.stone_approach": {
+      "path": "sprites/elevation/stone_approach.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "stone",
+        "approach"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.stone_guard_edge": {
+      "path": "sprites/elevation/stone_guard_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "stone",
+        "guard",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.stone_platform_edge": {
+      "path": "sprites/elevation/stone_platform_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "stone",
+        "platform",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.stone_stairs": {
+      "path": "sprites/elevation/stone_stairs.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "stone",
+        "stairs"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.stone_steps_high": {
+      "path": "sprites/elevation/stone_steps_high.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "stone",
+        "steps",
+        "high"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.strange_stone_ring": {
+      "path": "sprites/elevation/strange_stone_ring.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "strange",
+        "stone",
+        "ring"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.tower_base_edge": {
+      "path": "sprites/elevation/tower_base_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "tower",
+        "base",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.tower_ladder": {
+      "path": "sprites/elevation/tower_ladder.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "tower",
+        "ladder"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.trench_step": {
+      "path": "sprites/elevation/trench_step.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "trench",
+        "step"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.trench_wall_edge": {
+      "path": "sprites/elevation/trench_wall_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "trench",
+        "wall",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.watch_post_debris": {
+      "path": "sprites/elevation/watch_post_debris.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "watch",
+        "post",
+        "debris"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.watchtower_base": {
+      "path": "sprites/elevation/watchtower_base.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "watchtower",
+        "base"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.watchtower_ladder": {
+      "path": "sprites/elevation/watchtower_ladder.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "watchtower",
+        "ladder"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.water_seep": {
+      "path": "sprites/elevation/water_seep.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "water",
+        "seep"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.wet_grass_dark": {
+      "path": "sprites/elevation/wet_grass_dark.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "wet",
+        "grass",
+        "dark"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.wooden_bridge_deck": {
+      "path": "sprites/elevation/wooden_bridge_deck.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "wooden",
+        "bridge",
+        "deck"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.wooden_platform_edge": {
+      "path": "sprites/elevation/wooden_platform_edge.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "wooden",
+        "platform",
+        "edge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.wooden_ramp": {
+      "path": "sprites/elevation/wooden_ramp.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "wooden",
+        "ramp"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "elevation.wooden_stairs_high": {
+      "path": "sprites/elevation/wooden_stairs_high.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "elevation",
+      "tags": [
+        "elevation",
+        "wooden",
+        "stairs",
+        "high"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.beacon": {
+      "path": "sprites/object/beacon.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "beacon"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.bridge": {
+      "path": "sprites/object/bridge.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "bridge"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.bunker": {
+      "path": "sprites/object/bunker.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "bunker"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.bush": {
+      "path": "sprites/object/bush.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "bush"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.generic": {
+      "path": "sprites/object/generic.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "generic"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.loot": {
+      "path": "sprites/object/loot.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "loot"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.radio": {
+      "path": "sprites/object/radio.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "radio"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.ruin": {
+      "path": "sprites/object/ruin.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "ruin"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.tree": {
+      "path": "sprites/object/tree.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "tree"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "object.trench": {
+      "path": "sprites/object/trench.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "object",
+      "tags": [
+        "object",
+        "trench"
+      ],
+      "asset_status": "placeholder_contract"
+    },
+    "debug.missing_sprite": {
+      "path": "debug/missing_sprite.png",
+      "size": [
+        16,
+        16
+      ],
+      "pivot": [
+        8,
+        12
+      ],
+      "sort_anchor": [
+        8,
+        12
+      ],
+      "draw_layer": "debug",
+      "tags": [
+        "debug",
+        "missing",
+        "sprite"
+      ],
+      "asset_status": "placeholder_contract"
+    }
+  }
+}

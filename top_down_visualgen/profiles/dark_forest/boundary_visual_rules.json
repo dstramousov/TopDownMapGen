@@ -1,0 +1,109 @@
+{
+  "kind": "boundary_visual_rules",
+  "schema_version": "boundary-visual-rules-v1",
+  "profile": "dark_forest",
+  "world_style": "dark_forest_post_soviet_ruins",
+  "enabled": true,
+  "seed_salt": "dark-forest-boundary-v1",
+  "border_width_tiles": 2,
+  "policy": {
+    "visual_only": true,
+    "changes_gameplay": false,
+    "changes_collision": false,
+    "changes_routes": false,
+    "purpose": "Hide rectangular map edges with non-gameplay visual boundary markers."
+  },
+  "terrain_type_to_boundary": {
+    "tree_blocker": "dense_forest_wall",
+    "bush_slow_concealment": "dark_tree_wall",
+    "water_slow": "swamp_barrier",
+    "water": "swamp_barrier",
+    "ruin_wall_blocker": "ruin_barrier",
+    "ruin_floor": "ruin_barrier",
+    "cracked_ground": "concrete_barrier",
+    "old_overgrown_road": "dark_tree_wall",
+    "road": "dark_tree_wall",
+    "grass": "dense_forest_wall",
+    "goal": "dense_forest_wall",
+    "start": "dense_forest_wall"
+  },
+  "boundary_types": {
+    "dense_forest_wall": {
+      "ru_label": "плотная лесная стена",
+      "sprites": [
+        "boundary.dense_forest_wall",
+        "boundary.dark_tree_wall"
+      ],
+      "role": "boundary_hint",
+      "draw_layer": "above_actor",
+      "stride": 2,
+      "inner_stride": 4,
+      "chance_percent": 100,
+      "inner_chance_percent": 45
+    },
+    "dark_tree_wall": {
+      "ru_label": "тёмная чаща",
+      "sprites": [
+        "boundary.dark_tree_wall",
+        "boundary.dense_forest_wall"
+      ],
+      "role": "boundary_hint",
+      "draw_layer": "above_actor",
+      "stride": 2,
+      "inner_stride": 5,
+      "chance_percent": 100,
+      "inner_chance_percent": 35
+    },
+    "cliff_wall": {
+      "ru_label": "обрыв / высокий край",
+      "sprites": [
+        "boundary.cliff_wall"
+      ],
+      "role": "danger_hint",
+      "draw_layer": "above_actor",
+      "stride": 3,
+      "inner_stride": 6,
+      "chance_percent": 70,
+      "inner_chance_percent": 20
+    },
+    "ruin_barrier": {
+      "ru_label": "руинный завал",
+      "sprites": [
+        "boundary.ruin_barrier",
+        "boundary.concrete_barrier"
+      ],
+      "role": "boundary_hint",
+      "draw_layer": "above_actor",
+      "stride": 2,
+      "inner_stride": 4,
+      "chance_percent": 90,
+      "inner_chance_percent": 35
+    },
+    "swamp_barrier": {
+      "ru_label": "непроходимая болотная кромка",
+      "sprites": [
+        "boundary.swamp_barrier",
+        "boundary.dark_tree_wall"
+      ],
+      "role": "danger_hint",
+      "draw_layer": "above_actor",
+      "stride": 2,
+      "inner_stride": 5,
+      "chance_percent": 85,
+      "inner_chance_percent": 30
+    },
+    "concrete_barrier": {
+      "ru_label": "старые бетонные остатки / стена",
+      "sprites": [
+        "boundary.concrete_barrier",
+        "boundary.ruin_barrier"
+      ],
+      "role": "boundary_hint",
+      "draw_layer": "above_actor",
+      "stride": 3,
+      "inner_stride": 5,
+      "chance_percent": 75,
+      "inner_chance_percent": 25
+    }
+  }
+}

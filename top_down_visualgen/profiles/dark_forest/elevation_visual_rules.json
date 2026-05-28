@@ -7,7 +7,7 @@
     "height_emphasis": "readable",
     "lowlands_wetness": "contextual",
     "level_4_policy": "visual_only_landmark",
-    "boundary_treatment": "future_separate_system"
+    "boundary_treatment": "separate_boundary_visual_system"
   },
   "levels": {
     "-1": {
@@ -372,7 +372,7 @@
     ]
   },
   "boundary_treatment": {
-    "status": "future_separate_system",
+    "status": "separate_boundary_visual_system",
     "ru": "будущая отдельная система визуального края карты",
     "variants": [
       {
