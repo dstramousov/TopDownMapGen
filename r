@@ -9,6 +9,7 @@ VISUAL_PROFILE="${VISUAL_PROFILE:-top_down_visualgen/profiles/dark_forest}"
 VISUAL_OUTPUT="${VISUAL_OUTPUT:-${OUTPUT_DIR}/visual_map}"
 VISUAL_STEPS_OUTPUT="${VISUAL_STEPS_OUTPUT:-${VISUAL_OUTPUT}/debug/steps}"
 VISUAL_DEBUG_TILE_SIZE="${VISUAL_DEBUG_TILE_SIZE:-4}"
+ASSET_DRAFTS_PATH="${2:-asset_drafts/dark_forest/accepted}"
 VISUAL_PREVIEW_TILE_SIZE="${VISUAL_PREVIEW_TILE_SIZE:-4}"
 WORLD_PREVIEW_CELL_SIZE="${WORLD_PREVIEW_CELL_SIZE:-4}"
 RUN_WORLD_PREVIEW="${RUN_WORLD_PREVIEW:-0}"
@@ -59,6 +60,7 @@ run_cleanup() {
   rm -f -- "${LOG_DIR}/asset_pack.log"
   rm -f -- "${LOG_DIR}/final_render.log"
   rm -f -- "${LOG_DIR}/asset_plan.log"
+  rm -f -- "${LOG_DIR}/asset_draft_import.log"
 }
 
 run_world() {
@@ -127,6 +129,11 @@ run_asset_plan() {
     --output "${VISUAL_OUTPUT}/debug"
 }
 
+run_import_asset_packs() {
+  run_maybe_logged asset_draft_import env PYTHONPATH=. python3 bin/import_asset_drafts.py "${VISUAL_PROFILE}" "${ASSET_DRAFTS_PATH}" \
+    --output "${VISUAL_OUTPUT}/debug"
+}
+
 run_summary() {
   env PYTHONPATH=. python3 bin/print_pipeline_summary.py "${OUTPUT_DIR}" \
     --project-root . \
@@ -172,6 +179,8 @@ Commands:
            Generate placeholder PNG files under the configured asset root
   asset-plan
            Print the asset production batch plan and write its JSON report
+  import-asset-packs [path]
+           Import accepted asset draft ZIP archives from a file or directory
   asset-preview
            Generate asset registry JSON/HTML preview from the visual profile
   final-render
@@ -193,6 +202,7 @@ Environment overrides:
   WORLD_RENDER=1        Render world PNG layers during generation
   WORLD_DEBUG_LAYERS=1  Include world debug PNG layers when WORLD_RENDER=1
   LOG_DIR=...
+  ASSET_DRAFTS_PATH=...  Default import source when command argument is omitted
   QUIET=0   Show raw command output instead of writing stage logs to output/logs/
 EOF
 }
@@ -239,6 +249,9 @@ case "${CMD}" in
     ;;
   asset-preview)
     run_asset_preview
+    ;;
+  import-asset-packs)
+    run_import_asset_packs
     ;;
   final-render)
     run_final_render

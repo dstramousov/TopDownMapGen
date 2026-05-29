@@ -624,3 +624,12 @@
 - Добавлена команда `./r asset-plan` и JSON-отчёт `asset_production_plan_report.json`.
 - Зафиксирован первый набор из 20 planned assets для травы, земли и лесной массы.
 - Версия проекта поднята до `0.0.75`.
+
+
+## v0.0.75 -> v0.0.76
+
+- Добавлена утилита `bin/import_asset_drafts.py` для импорта accepted draft ZIP-архивов с ассетами в `assets/dark_forest/` по `assets_manifest.json`.
+- Добавлен профильный файл `asset_import_aliases.json`, который сопоставляет production draft id с логическими asset id проекта.
+- Добавлена команда `./r import-asset-packs [path]`, которая пишет `asset_draft_import_report.json` и не требует ручной раскладки PNG по папкам.
+- Добавлен документ `docs/dark_forest_asset_draft_import.md` и тесты импортера draft-паков.
+- Версия проекта поднята до `0.0.76`.
