@@ -56,6 +56,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip preview.png rendering.",
     )
     parser.add_argument(
+        "--no-final-render",
+        action="store_true",
+        help="Skip asset-backed final_render.png rendering.",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging.",
@@ -85,6 +90,7 @@ def main(argv: list[str] | None = None) -> int:
         profile_dir=args.profile,
         output_dir=args.output,
         preview=not args.no_preview,
+        final_render=not args.no_final_render,
         preview_tile_size_px=args.preview_tile_size,
         chunk_size_tiles=args.chunk_size,
     )
@@ -94,6 +100,8 @@ def main(argv: list[str] | None = None) -> int:
     LOGGER.info("visual_chunks=%s", result.visual_chunks_path)
     if result.preview_path is not None:
         LOGGER.info("preview=%s", result.preview_path)
+    if result.final_render_path is not None:
+        LOGGER.info("final_render=%s", result.final_render_path)
     density_report = read_json_object(result.debug_visual_density_report_path)
     for line in format_visual_density_summary(density_report):
         LOGGER.info(line)

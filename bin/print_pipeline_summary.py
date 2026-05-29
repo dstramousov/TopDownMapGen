@@ -53,6 +53,7 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     place_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "place_treatment_report.json")
     elevation_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "elevation_visual_report.json")
     boundary_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "boundary_visual_report.json")
+    final_render_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "final_render_report.json")
     manifest = _read_optional_json_object(output_dir / "_manifest.json")
 
     version = _project_version(project_root)
@@ -89,9 +90,10 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     lines.extend(["", *_autotiling_lines(visual_report, autotile_report, unmapped_report)])
     lines.extend(["", *_visual_elevation_lines(visual_report, elevation_report)])
     lines.extend(["", *_boundary_visual_lines(visual_report, boundary_report)])
+    lines.extend(["", *_final_render_lines(output_dir, project_root, final_render_report)])
     lines.extend(["", *_debug_file_lines(output_dir, project_root)])
     lines.extend(["", "Overall:", f"  status: {overall_status}", "  notes:"])
-    lines.extend(_notes(world_report, visual_report, autotile_report, unmapped_report, decoration_report, place_report, boundary_report))
+    lines.extend(_notes(world_report, visual_report, autotile_report, unmapped_report, decoration_report, place_report, boundary_report, final_render_report))
     print("\n".join(lines))
 
 
@@ -239,6 +241,25 @@ def _boundary_visual_lines(report: dict[str, Any], boundary_report: dict[str, An
     ]
 
 
+def _final_render_lines(output_dir: Path, project_root: Path, report: dict[str, Any]) -> list[str]:
+    summary = _dict(report.get("summary"))
+    size_px = _dict(report.get("size_px"))
+    quality = _nested(report, "quality")
+    output = report.get("output")
+    output_path = output_dir / "visual_map" / "final_render.png"
+    if isinstance(output, str) and output:
+        output_path = Path(output)
+    return [
+        "Final render:",
+        f"  output:           {_display_path(output_path, project_root)}",
+        f"  size:             {_int(size_px.get('width'))} x {_int(size_px.get('height'))} px",
+        f"  rendered tiles:   {_int(summary.get('rendered_tiles')):6d}",
+        f"  rendered sprites: {_int(summary.get('rendered_sprites')):6d}",
+        f"  missing assets:   {_int(summary.get('missing_tile_uses')) + _int(summary.get('missing_sprite_uses')):6d} [{quality.get('status', 'unknown')}]",
+        f"  skipped sprites:  {_int(summary.get('skipped_sprites')):6d}",
+    ]
+
+
 def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
     visual_debug = output_dir / "visual_map" / "debug"
     return [
@@ -250,6 +271,8 @@ def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
         f"  place report:      {_display_path(visual_debug / 'place_treatment_report.json', project_root)}",
         f"  elevation report:  {_display_path(visual_debug / 'elevation_visual_report.json', project_root)}",
         f"  boundary report:   {_display_path(visual_debug / 'boundary_visual_report.json', project_root)}",
+        f"  final render:      {_display_path(output_dir / 'visual_map' / 'final_render.png', project_root)}",
+        f"  final report:      {_display_path(visual_debug / 'final_render_report.json', project_root)}",
         f"  asset registry:    {_display_path(visual_debug / 'asset_registry_report.json', project_root)}",
         f"  asset preview:     {_display_path(visual_debug / 'asset_registry_preview.html', project_root)}",
         f"  preview:           {_display_path(output_dir / 'visual_map' / 'preview.png', project_root)}",
@@ -265,6 +288,7 @@ def _notes(
     decoration_report: dict[str, Any],
     place_report: dict[str, Any],
     boundary_report: dict[str, Any],
+    final_render_report: dict[str, Any],
 ) -> list[str]:
     notes: list[str] = []
     quality = str(_nested(visual_report, "quality").get("status", "unknown"))
@@ -288,6 +312,8 @@ def _notes(
     notes.append("    - boundary visual is healthy" if boundary_status == "ok" else f"    - boundary visual needs attention: {boundary_status}")
     if not boundary_report:
         notes.append("    - boundary visual report is missing")
+    final_quality = str(_nested(final_render_report, "quality").get("status", "missing"))
+    notes.append("    - final asset render is healthy" if final_quality == "ok" else f"    - final asset render needs attention: {final_quality}")
     return notes
 
 

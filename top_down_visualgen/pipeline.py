@@ -9,6 +9,7 @@ from .chunks import build_visual_chunks
 from .decoration import DecorationMapper, merge_visual_objects
 from .density import VisualDensityReporter, write_visual_density_report
 from .elevation_visual import ElevationVisualMapper
+from .final_renderer import FinalAssetRenderer
 from .io import write_json_object
 from .models import VisualPipelineResult
 from .object_mapper import ObjectVisualMapper
@@ -35,6 +36,7 @@ class VisualPipeline:
         density_reporter: VisualDensityReporter | None = None,
         elevation_visual_mapper: ElevationVisualMapper | None = None,
         boundary_visual_mapper: BoundaryVisualMapper | None = None,
+        final_renderer: FinalAssetRenderer | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -49,6 +51,7 @@ class VisualPipeline:
             density_reporter: Optional visual density reporter.
             elevation_visual_mapper: Optional elevation visual mapper.
             boundary_visual_mapper: Optional boundary visual mapper.
+            final_renderer: Optional final asset-backed renderer.
         """
         self._package_loader = package_loader or WorldPackageLoader()
         self._profile_loader = profile_loader or VisualProfileLoader()
@@ -60,6 +63,7 @@ class VisualPipeline:
         self._density_reporter = density_reporter or VisualDensityReporter()
         self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
         self._boundary_visual_mapper = boundary_visual_mapper or BoundaryVisualMapper()
+        self._final_renderer = final_renderer or FinalAssetRenderer()
 
     def run(
         self,
@@ -68,6 +72,7 @@ class VisualPipeline:
         profile_dir: Path,
         output_dir: Path,
         preview: bool = True,
+        final_render: bool = True,
         preview_tile_size_px: int | None = None,
         chunk_size_tiles: int = 32,
     ) -> VisualPipelineResult:
@@ -78,6 +83,7 @@ class VisualPipeline:
             profile_dir: Visual profile directory.
             output_dir: Directory where visual_map files should be written.
             preview: Whether to render preview.png.
+            final_render: Whether to render final_render.png from asset PNG files.
             preview_tile_size_px: Optional preview tile size override.
             chunk_size_tiles: Visual chunk size in tiles.
 
@@ -131,6 +137,7 @@ class VisualPipeline:
         visual_objects_path = output_dir / "visual_objects.json"
         visual_chunks_path = output_dir / "visual_chunks.json"
         preview_path = output_dir / "preview.png" if preview else None
+        final_render_path = output_dir / "final_render.png" if final_render else None
         visual_map_path = output_dir / "visual_map.json"
         debug_dir = output_dir / "debug"
         debug_autotile_masks_path = debug_dir / "autotile_masks.json"
@@ -141,6 +148,7 @@ class VisualPipeline:
         debug_visual_density_report_path = debug_dir / "visual_density_report.json"
         debug_elevation_visual_report_path = debug_dir / "elevation_visual_report.json"
         debug_boundary_visual_report_path = debug_dir / "boundary_visual_report.json"
+        debug_final_render_report_path = debug_dir / "final_render_report.json" if final_render else None
 
         write_json_object(visual_layers, visual_layers_path)
         write_json_object(visual_objects, visual_objects_path)
@@ -187,6 +195,14 @@ class VisualPipeline:
                 output_path=preview_path,
                 tile_size_px=preview_tile_size_px,
             )
+        if final_render_path is not None and debug_final_render_report_path is not None:
+            final_render_report = self._final_renderer.render(
+                visual_layers=visual_layers,
+                visual_objects=visual_objects,
+                profile=profile,
+                output_path=final_render_path,
+            )
+            write_json_object(final_render_report, debug_final_render_report_path)
 
         visual_map = self._build_visual_map(
             world=world.index,
@@ -205,6 +221,8 @@ class VisualPipeline:
             debug_visual_density_report_path=debug_visual_density_report_path,
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             debug_boundary_visual_report_path=debug_boundary_visual_report_path,
+            final_render_path=final_render_path,
+            debug_final_render_report_path=debug_final_render_report_path,
             visual_layers=visual_layers,
             visual_objects=visual_objects,
             visual_chunks=visual_chunks,
@@ -226,6 +244,8 @@ class VisualPipeline:
             debug_visual_density_report_path=debug_visual_density_report_path,
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             debug_boundary_visual_report_path=debug_boundary_visual_report_path,
+            final_render_path=final_render_path,
+            debug_final_render_report_path=debug_final_render_report_path,
         )
 
     def _build_visual_map(
@@ -247,6 +267,8 @@ class VisualPipeline:
         debug_visual_density_report_path: Path,
         debug_elevation_visual_report_path: Path,
         debug_boundary_visual_report_path: Path,
+        final_render_path: Path | None,
+        debug_final_render_report_path: Path | None,
         visual_layers: dict[str, Any],
         visual_objects: dict[str, Any],
         visual_chunks: dict[str, Any],
@@ -289,6 +311,7 @@ class VisualPipeline:
                 "visual_objects": _relative(output_dir, visual_objects_path),
                 "visual_chunks": _relative(output_dir, visual_chunks_path),
                 "preview": _relative(output_dir, preview_path),
+                "final_render": _relative(output_dir, final_render_path),
                 "debug_dir": "debug",
                 "debug_autotile_masks": _relative(
                     output_dir,
@@ -321,6 +344,10 @@ class VisualPipeline:
                 "debug_boundary_visual_report": _relative(
                     output_dir,
                     debug_boundary_visual_report_path,
+                ),
+                "debug_final_render_report": _relative(
+                    output_dir,
+                    debug_final_render_report_path,
                 ),
             },
             "contract": {

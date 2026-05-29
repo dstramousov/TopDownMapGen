@@ -57,6 +57,7 @@ run_cleanup() {
   rm -f -- "${LOG_DIR}/pipeline_summary.log"
   rm -f -- "${LOG_DIR}/asset_registry_preview.log"
   rm -f -- "${LOG_DIR}/asset_pack.log"
+  rm -f -- "${LOG_DIR}/final_render.log"
 }
 
 run_world() {
@@ -103,6 +104,12 @@ run_visual_debug() {
     --profile "${VISUAL_PROFILE}" \
     --output "${VISUAL_STEPS_OUTPUT}" \
     --tile-size "${VISUAL_DEBUG_TILE_SIZE}"
+}
+
+run_final_render() {
+  run_maybe_logged final_render env PYTHONPATH=. python3 bin/render_final_asset_map.py "${VISUAL_OUTPUT}" \
+    --profile "${VISUAL_PROFILE}" \
+    --output "${VISUAL_OUTPUT}/final_render.png"
 }
 
 run_asset_preview() {
@@ -158,6 +165,8 @@ Commands:
            Generate placeholder PNG files under the configured asset root
   asset-preview
            Generate asset registry JSON/HTML preview from the visual profile
+  final-render
+           Render output/visual_map/final_render.png from asset PNG files
   inspect  Inspect existing world package
   test     Run compileall and pytest
   help     Show this help
@@ -218,6 +227,9 @@ case "${CMD}" in
     ;;
   asset-preview)
     run_asset_preview
+    ;;
+  final-render)
+    run_final_render
     ;;
   inspect)
     run_inspect

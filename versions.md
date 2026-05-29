@@ -608,3 +608,11 @@
 - `asset_registry_preview.html` теперь показывает thumbnails для существующих asset-файлов.
 - Добавлен документ `docs/visual_asset_pack_dark_forest.md`.
 - Версия проекта поднята до `0.0.73`.
+
+
+## v0.0.73 -> v0.0.74
+
+- Добавлен asset-backed final renderer, создающий `output/visual_map/final_render.png` из `visual_layers.json`, `visual_objects.json` и PNG из `assets/dark_forest`.
+- Добавлен `final_render_report.json`, summary-блок `Final render` и команда `./r final-render`.
+- Visual pipeline теперь по умолчанию создаёт финальный PNG в нормальном разрешении через `assets_manifest.json`, не меняя gameplay/collision/routes.
+- Версия проекта поднята до `0.0.74`.
