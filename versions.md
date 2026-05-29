@@ -616,3 +616,11 @@
 - Добавлен `final_render_report.json`, summary-блок `Final render` и команда `./r final-render`.
 - Visual pipeline теперь по умолчанию создаёт финальный PNG в нормальном разрешении через `assets_manifest.json`, не меняя gameplay/collision/routes.
 - Версия проекта поднята до `0.0.74`.
+
+## v0.0.74 -> v0.0.75
+
+- Добавлен production manifest для ассетов профиля `dark_forest`.
+- Добавлен machine-readable план batch-ей `asset_batches.json` с первым batch `B01 — Grass + Forest Base`.
+- Добавлена команда `./r asset-plan` и JSON-отчёт `asset_production_plan_report.json`.
+- Зафиксирован первый набор из 20 planned assets для травы, земли и лесной массы.
+- Версия проекта поднята до `0.0.75`.

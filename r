@@ -58,6 +58,7 @@ run_cleanup() {
   rm -f -- "${LOG_DIR}/asset_registry_preview.log"
   rm -f -- "${LOG_DIR}/asset_pack.log"
   rm -f -- "${LOG_DIR}/final_render.log"
+  rm -f -- "${LOG_DIR}/asset_plan.log"
 }
 
 run_world() {
@@ -121,6 +122,11 @@ run_asset_pack() {
   run_maybe_logged asset_pack env PYTHONPATH=. python3 bin/generate_asset_pack.py "${VISUAL_PROFILE}"
 }
 
+run_asset_plan() {
+  run_maybe_logged asset_plan env PYTHONPATH=. python3 bin/print_asset_plan.py "${VISUAL_PROFILE}" \
+    --output "${VISUAL_OUTPUT}/debug"
+}
+
 run_summary() {
   env PYTHONPATH=. python3 bin/print_pipeline_summary.py "${OUTPUT_DIR}" \
     --project-root . \
@@ -143,6 +149,7 @@ run_inspect() {
 run_tests() {
   python3 -m compileall top_down_worldgen top_down_visualgen examples bin
   env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}"
+  env PYTHONPATH=. python3 bin/print_asset_plan.py "${VISUAL_PROFILE}" --output /tmp/topdown_asset_plan_check --json-only
   PYTHONPATH=. pytest -q
 }
 
@@ -163,6 +170,8 @@ Commands:
            Generate placeholder asset pack and validate referenced PNG files
   asset-pack
            Generate placeholder PNG files under the configured asset root
+  asset-plan
+           Print the asset production batch plan and write its JSON report
   asset-preview
            Generate asset registry JSON/HTML preview from the visual profile
   final-render
@@ -224,6 +233,9 @@ case "${CMD}" in
     ;;
   asset-pack)
     run_asset_pack
+    ;;
+  asset-plan)
+    run_asset_plan
     ;;
   asset-preview)
     run_asset_preview

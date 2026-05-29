@@ -1,0 +1,250 @@
+{
+  "schema_version": "asset-batches-v1",
+  "profile": "dark_forest",
+  "world_style": "dark_forest_post_soviet_ruins",
+  "production_policy": {
+    "reference": "dense top-down dark conifer forest with muted green/brown/gray palette",
+    "tile_size": [16, 16],
+    "acceptance_batch_size": "10-20 assets",
+    "statuses": ["planned", "generated", "accepted", "needs_fix", "rejected", "replaced"],
+    "first_priority": "Cover the 70% visual mass first: ground, grass, dense forest and forest edges."
+  },
+  "batches": [
+    {
+      "batch_id": "B01",
+      "title": "Grass + Forest Base",
+      "title_ru": "Базовая трава и лесная масса",
+      "priority": "P0",
+      "status": "planned",
+      "purpose": "Establish the dominant ground and forest look for the dark forest map.",
+      "purpose_ru": "Задать основной вид земли и плотного леса, которые покрывают большую часть карты.",
+      "acceptance_notes": [
+        "Muted palette: dark green, moss green, brown, gray-green.",
+        "No bright cartoon colors, no fantasy glow, no clean RPG Maker look.",
+        "Forest should read as dense conifer mass, not isolated toy trees."
+      ],
+      "assets": [
+        {
+          "asset_id": "terrain.grass_base_01",
+          "name_ru": "базовая трава 1",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Нейтральная приглушённая трава без ярких пятен."
+        },
+        {
+          "asset_id": "terrain.grass_base_02",
+          "name_ru": "базовая трава 2",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Вариант базовой травы с лёгким шумом, чтобы убрать повторяемость."
+        },
+        {
+          "asset_id": "terrain.grass_base_03",
+          "name_ru": "базовая трава 3",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Ещё один мягкий вариант травы для рандомизации поверхности."
+        },
+        {
+          "asset_id": "terrain.dark_grass_01",
+          "name_ru": "тёмная трава",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Более тёмная трава для лесных краёв и затенённых мест."
+        },
+        {
+          "asset_id": "terrain.wet_grass_01",
+          "name_ru": "мокрая трава",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Трава возле болот и низин, чуть холоднее и темнее обычной."
+        },
+        {
+          "asset_id": "terrain.dry_grass_01",
+          "name_ru": "суховатая трава",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P1",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Сухая приглушённая трава для возвышений и старых дорог."
+        },
+        {
+          "asset_id": "terrain.forest_ground_01",
+          "name_ru": "лесная земля",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Подлесок: земля, хвоя, тёмная зелень, без ярких деталей."
+        },
+        {
+          "asset_id": "terrain.forest_litter_01",
+          "name_ru": "лесная подстилка",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P1",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Опавшая хвоя, листья, мелкий лесной мусор."
+        },
+        {
+          "asset_id": "terrain.grass_noise_01",
+          "name_ru": "шум травы",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P1",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Очень лёгкий шум для разбивки однотонной зелёной поверхности."
+        },
+        {
+          "asset_id": "terrain.small_flowers_01",
+          "name_ru": "лёгкие цветочные вкрапления",
+          "type": "tile",
+          "category": "ground",
+          "size": [16, 16],
+          "priority": "P2",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Очень редкие тусклые цветы, без яркой сказочности."
+        },
+        {
+          "asset_id": "forest.fill_01",
+          "name_ru": "плотный лес 1",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "maps_to_existing:forest.fill",
+          "style_note_ru": "Плотная хвойная масса, должна работать как основной лесной заливочный тайл."
+        },
+        {
+          "asset_id": "forest.fill_02",
+          "name_ru": "плотный лес 2",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "future_variant",
+          "style_note_ru": "Вариант плотного леса для уменьшения повторяемости."
+        },
+        {
+          "asset_id": "forest.edge_n",
+          "name_ru": "край леса север",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "existing",
+          "style_note_ru": "Верхняя кромка лесной массы, не должна выглядеть ровной стеной."
+        },
+        {
+          "asset_id": "forest.edge_s",
+          "name_ru": "край леса юг",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "existing",
+          "style_note_ru": "Нижняя кромка леса с читаемым силуэтом хвои."
+        },
+        {
+          "asset_id": "forest.edge_e",
+          "name_ru": "край леса восток",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "existing",
+          "style_note_ru": "Боковой край лесной массы, с мягкой неровностью."
+        },
+        {
+          "asset_id": "forest.edge_w",
+          "name_ru": "край леса запад",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "existing",
+          "style_note_ru": "Боковой край лесной массы, не зеркально-стерильный."
+        },
+        {
+          "asset_id": "forest.outer_corner_ne",
+          "name_ru": "внешний угол леса север-восток",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "existing",
+          "style_note_ru": "Угол лесной массы, должен скрывать квадратность сетки."
+        },
+        {
+          "asset_id": "forest.outer_corner_wn",
+          "name_ru": "внешний угол леса север-запад",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "existing",
+          "style_note_ru": "Угол лесной массы, северо-западная форма."
+        },
+        {
+          "asset_id": "forest.outer_corner_es",
+          "name_ru": "внешний угол леса юго-восток",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "existing",
+          "style_note_ru": "Угол лесной массы, юго-восточная форма."
+        },
+        {
+          "asset_id": "forest.outer_corner_sw",
+          "name_ru": "внешний угол леса юго-запад",
+          "type": "tile",
+          "category": "forest",
+          "size": [16, 16],
+          "priority": "P0",
+          "status": "planned",
+          "manifest_status": "existing",
+          "style_note_ru": "Угол лесной массы, юго-западная форма."
+        }
+      ]
+    }
+  ]
+}
