@@ -4,20 +4,9 @@
   "asset_root": "/home/dimas/work/TopDownMapGen/assets/dark_forest",
   "manifest": "top_down_visualgen/profiles/dark_forest/assets_manifest.json",
   "entries_total": 276,
-  "written": 10,
-  "skipped_existing": 266,
-  "written_files": [
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/cluster_32x32_01.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/cluster_32x32_02.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/cluster_48x48_01.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/cluster_48x48_02.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/edge_cluster_e_32x32.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/edge_cluster_n_32x32.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/edge_cluster_s_32x32.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/edge_cluster_w_32x32.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/wall_32x48_01.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/sprites/forest/wall_32x48_02.png"
-  ],
+  "written": 0,
+  "skipped_existing": 276,
+  "written_files": [],
   "skipped_files": [
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/debug/missing_tile.png",
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/dirt/base.png",

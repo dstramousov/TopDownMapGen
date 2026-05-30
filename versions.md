@@ -640,3 +640,11 @@
 - Добавлен профиль `forest_overlay_rules.json`, debug/report и summary-блок `Forest overlay`.
 - Добавлены asset manifest entries и import aliases для B08 forest large cluster sprites.
 - Visual debug steps теперь включают `12_forest_overlay.png`, а финальный preview переехал в `13_final_preview.png`.
+
+## v0.0.77 -> v0.0.78
+
+- Added `docs/dark_forest_rendering_model.md` to reset the visual direction after the forest/grass asset experiments.
+- Documented the new target model: grass as a calm base region and forest as a region/canopy renderer, not a noisy `16x16` tile carpet.
+- Marked B01-B07 assets as useful prototype/test assets rather than final art quality.
+- Marked the forest overlay work as experimental and defined the next proposed steps around grass and forest region rendering.
+- Версия проекта поднята до `0.0.78`.
