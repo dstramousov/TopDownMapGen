@@ -665,3 +665,11 @@
 - Добавлен отсутствующий профильный файл `grass_render_rules.json` для `dark_forest`.
 - `visual_pipeline` снова может импортировать и выполнять grass base pass без `ModuleNotFoundError`.
 - Версия проекта поднята до `0.0.80`.
+
+## v0.0.80 -> v0.0.81
+
+- README.md rewritten around the world package as the core project deliverable.
+- Added architecture, output-format and roadmap documentation for the stabilized generator direction.
+- Changed `./r`/`./r all` to generate the core world package by default; full visual processing moved to explicit `./r visual-all`.
+- Simplified cleanup helper `./c` so it only clears output directories and no longer deletes arbitrary project files by extension.
+- Version bumped to `0.0.81`.

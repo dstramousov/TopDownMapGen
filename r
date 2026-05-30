@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-CMD="${1:-all}"
+CMD="${1:-world}"
 OUTPUT_DIR="${OUTPUT_DIR:-output}"
 CONFIG_PATH="${CONFIG_PATH:-configs/default.json}"
 VISUAL_PROFILE="${VISUAL_PROFILE:-top_down_visualgen/profiles/dark_forest}"
@@ -165,8 +165,10 @@ usage() {
 Usage: ./r [command]
 
 Commands:
-  all      Clean, generate world, build visual map/debug and print summary (default)
-  world    Clean and generate world package only
+  all      Alias for world: clean and generate core world package only
+  world    Clean and generate core world package only (default)
+  visual-all
+           Generate world, build optional visual map/debug, asset preview and summary
   preview  Render debug world preview from existing output
   visual   Build visual_tileset output from existing output/map_package
   visual-debug
@@ -198,7 +200,7 @@ Environment overrides:
   VISUAL_DEBUG_TILE_SIZE=...
   VISUAL_PREVIEW_TILE_SIZE=...
   WORLD_PREVIEW_CELL_SIZE=...
-  RUN_WORLD_PREVIEW=1   Also render output/full_world_preview.png during ./r all
+  RUN_WORLD_PREVIEW=1   Also render output/full_world_preview.png during ./r world/all
   WORLD_RENDER=1        Render world PNG layers during generation
   WORLD_DEBUG_LAYERS=1  Include world debug PNG layers when WORLD_RENDER=1
   LOG_DIR=...
@@ -208,7 +210,13 @@ EOF
 }
 
 case "${CMD}" in
-  all)
+  all|world)
+    run_world
+    if [[ "${RUN_WORLD_PREVIEW}" == "1" ]]; then
+      run_preview
+    fi
+    ;;
+  visual-all)
     run_world
     if [[ "${RUN_WORLD_PREVIEW}" == "1" ]]; then
       run_preview
@@ -218,9 +226,6 @@ case "${CMD}" in
     run_asset_pack
     run_asset_preview
     run_summary
-    ;;
-  world)
-    run_world
     ;;
   preview)
     run_preview

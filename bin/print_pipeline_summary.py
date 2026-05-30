@@ -46,16 +46,6 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     output_dir = output_dir.resolve()
     project_root = project_root.resolve()
     world_report = _read_json_object(output_dir / "world_density_report.json")
-    visual_report = _read_json_object(output_dir / "visual_map" / "debug" / "visual_density_report.json")
-    autotile_report = _read_json_object(output_dir / "visual_map" / "debug" / "autotile_report.json")
-    unmapped_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "unmapped_terrain_report.json")
-    decoration_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "decoration_report.json")
-    place_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "place_treatment_report.json")
-    elevation_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "elevation_visual_report.json")
-    boundary_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "boundary_visual_report.json")
-    forest_overlay_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "forest_overlay_report.json")
-    grass_render_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "grass_render_report.json")
-    final_render_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "final_render_report.json")
     manifest = _read_optional_json_object(output_dir / "_manifest.json")
 
     version = _project_version(project_root)
@@ -65,6 +55,46 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     area = _int(map_info.get("area_tiles"), width * height)
     seed = map_info.get("seed") or _nested(manifest, "versions").get("resolved_seed") or "unknown"
     world_status = _nested(world_report, "quality").get("status", "ok")
+
+    visual_debug_dir = output_dir / "visual_map" / "debug"
+    visual_report_path = visual_debug_dir / "visual_density_report.json"
+    autotile_report_path = visual_debug_dir / "autotile_report.json"
+    visual_available = visual_report_path.exists() and autotile_report_path.exists()
+    if not visual_available:
+        lines: list[str] = [
+            f"TopDownMapGen v{version}",
+            "Pipeline: world",
+            "",
+            "World generation:",
+            f"  output: {_display_path(output_dir, project_root)}/",
+            f"  map:    {width} x {height} = {area} tiles",
+            f"  seed:   {seed}",
+            f"  status: {world_status}",
+            "",
+        ]
+        lines.extend(_world_density_lines(world_report))
+        lines.extend([
+            "",
+            "Visual pipeline:",
+            "  status: not generated",
+            "  note:   run ./r visual or ./r visual-all to build optional visual output",
+            "",
+            "Overall:",
+            f"  status: {world_status}",
+        ])
+        print("\n".join(lines))
+        return
+
+    visual_report = _read_json_object(visual_report_path)
+    autotile_report = _read_json_object(autotile_report_path)
+    unmapped_report = _read_optional_json_object(visual_debug_dir / "unmapped_terrain_report.json")
+    decoration_report = _read_optional_json_object(visual_debug_dir / "decoration_report.json")
+    place_report = _read_optional_json_object(visual_debug_dir / "place_treatment_report.json")
+    elevation_report = _read_optional_json_object(visual_debug_dir / "elevation_visual_report.json")
+    boundary_report = _read_optional_json_object(visual_debug_dir / "boundary_visual_report.json")
+    forest_overlay_report = _read_optional_json_object(visual_debug_dir / "forest_overlay_report.json")
+    grass_render_report = _read_optional_json_object(visual_debug_dir / "grass_render_report.json")
+    final_render_report = _read_optional_json_object(visual_debug_dir / "final_render_report.json")
     visual_status = _nested(visual_report, "quality").get("status", "ok")
     overall_status = _overall_status([str(world_status), str(visual_status)])
 
