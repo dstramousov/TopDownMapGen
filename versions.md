@@ -616,3 +616,14 @@
 - Добавлен `final_render_report.json`, summary-блок `Final render` и команда `./r final-render`.
 - Visual pipeline теперь по умолчанию создаёт финальный PNG в нормальном разрешении через `assets_manifest.json`, не меняя gameplay/collision/routes.
 - Версия проекта поднята до `0.0.74`.
+
+
+## v0.0.74 -> v0.0.75
+
+- README.md переписан как актуальная текстовая точка входа в проект без устаревших image-only секций.
+- Добавлены `docs/ARCHITECTURE.md`, `docs/OUTPUT_FORMAT.md` и `docs/COMMANDS.md` с текущими командами, слоями проекта и структурой output.
+- Актуализированы документы `docs/map_package_v1.md`, `docs/game_consumer_guide.md`, `docs/world_building_algorithm.md` и `docs/world_package_file_map.md` под реальный `map_package/` и `visual_map/`.
+- Сокращены и синхронизированы visual-документы `dark_forest`: оставлены только актуальные правила visual layer, asset manifest, asset pack, registry preview, boundary, elevation, final render и micro scenes.
+- `./r` теперь явно печатает стадии стандартного pipeline и сохраняет полный запуск world + visual + debug + asset registry summary.
+- `./c` ограничен безопасной очисткой `output/`, `out/`, `__pycache__` и `.pytest_cache` без удаления `*.html`/`*.js` по всему проекту.
+- Версия проекта поднята до `0.0.75`.

@@ -17,6 +17,10 @@ WORLD_DEBUG_LAYERS="${WORLD_DEBUG_LAYERS:-0}"
 LOG_DIR="${LOG_DIR:-${OUTPUT_DIR}/logs}"
 QUIET="${QUIET:-1}"
 
+stage() {
+  echo "==> $*"
+}
+
 ensure_log_dir() {
   mkdir -p "${LOG_DIR}"
 }
@@ -46,6 +50,7 @@ run_maybe_logged() {
 }
 
 run_cleanup() {
+  stage "cleanup output"
   run_maybe_logged cleanup ./c
   ensure_log_dir
   rm -f -- "${OUTPUT_DIR}/generation.log"
@@ -61,6 +66,7 @@ run_cleanup() {
 }
 
 run_world() {
+  stage "world generation"
   run_cleanup
   local world_args=(
     env PYTHONPATH=. python3 top_down_generator.py
@@ -78,6 +84,7 @@ run_world() {
 }
 
 run_preview() {
+  stage "world preview"
   run_maybe_logged world_preview python3 examples/render_world_preview.py "${OUTPUT_DIR}" \
     --collision-overlay \
     --elevation-overlay \
@@ -92,6 +99,7 @@ run_preview() {
 }
 
 run_visual() {
+  stage "visual pipeline"
   run_maybe_logged visual_pipeline env PYTHONPATH=. python3 -m top_down_visualgen.cli \
     --input "${OUTPUT_DIR}" \
     --profile "${VISUAL_PROFILE}" \
@@ -100,6 +108,7 @@ run_visual() {
 }
 
 run_visual_debug() {
+  stage "visual debug steps"
   run_maybe_logged visual_debug env PYTHONPATH=. python3 bin/render_visual_pipeline_steps.py "${OUTPUT_DIR}" \
     --profile "${VISUAL_PROFILE}" \
     --output "${VISUAL_STEPS_OUTPUT}" \
@@ -107,27 +116,32 @@ run_visual_debug() {
 }
 
 run_final_render() {
+  stage "final render"
   run_maybe_logged final_render env PYTHONPATH=. python3 bin/render_final_asset_map.py "${VISUAL_OUTPUT}" \
     --profile "${VISUAL_PROFILE}" \
     --output "${VISUAL_OUTPUT}/final_render.png"
 }
 
 run_asset_preview() {
+  stage "asset registry preview"
   run_maybe_logged asset_registry_preview env PYTHONPATH=. python3 bin/generate_asset_registry_preview.py "${VISUAL_PROFILE}" \
     --output "${VISUAL_OUTPUT}/debug"
 }
 
 run_asset_pack() {
+  stage "asset pack"
   run_maybe_logged asset_pack env PYTHONPATH=. python3 bin/generate_asset_pack.py "${VISUAL_PROFILE}"
 }
 
 run_summary() {
+  stage "summary"
   env PYTHONPATH=. python3 bin/print_pipeline_summary.py "${OUTPUT_DIR}" \
     --project-root . \
     --profile "${VISUAL_PROFILE}"
 }
 
 run_assets() {
+  stage "assets manifest validation"
   run_maybe_logged assets_manifest env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}"
 }
 
@@ -137,10 +151,12 @@ run_assets_full() {
 }
 
 run_inspect() {
+  stage "inspect world package"
   python3 examples/inspect_world_package.py "${OUTPUT_DIR}"
 }
 
 run_tests() {
+  stage "compileall"
   python3 -m compileall top_down_worldgen top_down_visualgen examples bin
   env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}"
   PYTHONPATH=. pytest -q
@@ -194,9 +210,9 @@ case "${CMD}" in
     if [[ "${RUN_WORLD_PREVIEW}" == "1" ]]; then
       run_preview
     fi
+    run_asset_pack
     run_visual
     run_visual_debug
-    run_asset_pack
     run_asset_preview
     run_summary
     ;;

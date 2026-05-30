@@ -1,0 +1,4530 @@
+diff --git a/README.md b/README.md
+index aae327b..36d5437 100644
+--- a/README.md
++++ b/README.md
+@@ -1,5 +1,118 @@
+ # TopDownMapGen
+-<img width="3072" height="3072" alt="full_world_preview" src="https://github.com/user-attachments/assets/b5b71769-4c67-422f-a900-083982bb3ea8" />
+ 
+-<img width="3072" height="3072" alt="layer_all_debug" src="https://github.com/user-attachments/assets/b9a1b120-f7dd-4a1e-9b85-2327cc9456a8" />
++TopDownMapGen — процедурный генератор top-down карты для игры. Главный результат проекта — не картинка, а структурированный `world package`: terrain, runtime grids, collision, movement, objects, places, routes, world graph, gameplay zones and elevation data.
+ 
++Визуальный pipeline в проекте есть и запускается штатно, но он является слоем отображения поверх уже сгенерированных данных карты. Он не должен менять gameplay, collision, routes, start/goal или семантику мира.
++
++## Быстрый запуск
++
++```bash
++./r
++```
++
++Стандартный запуск делает полный pipeline:
++
++1. очищает старый `output/`;
++2. генерирует world package;
++3. строит visual map для профиля `dark_forest`;
++4. генерирует debug step PNG для visual pipeline;
++5. генерирует placeholder asset pack при необходимости;
++6. генерирует asset registry preview;
++7. печатает итоговый summary;
++8. завершает работу.
++
++Основные результаты появляются в `output/`.
++
++## Частые команды
++
++```bash
++./r              # полный стандартный pipeline
++./r world        # только world package
++./r visual       # visual map из уже существующего output/map_package
++./r visual-debug # PNG-шаги visual pipeline из уже существующего output/map_package
++./r summary      # итоговый отчёт по текущему output/
++./r inspect      # инспекция world package
++./r test         # compileall + asset manifest validation + pytest
++./r help         # список команд и переменных окружения
++```
++
++## Основные директории проекта
++
++```text
++top_down_worldgen/      ядро генерации мира
++top_down_visualgen/     визуальный слой поверх world package
++configs/                публичные конфиги генерации
++assets/dark_forest/     PNG-ассеты visual profile dark_forest
++bin/                    dev/runtime утилиты
++examples/               примеры чтения и отладки output package
++docs/                   актуальная документация по проекту
++tests/                  pytest-тесты
++output/                 результат текущего запуска, не исходники проекта
++```
++
++## Главный output
++
++Стабильная точка входа для внешних consumers:
++
++```text
++output/_manifest.json
++output/map_package/map.json
++```
++
++`_manifest.json` описывает один запуск генератора и список артефактов. `map_package/map.json` — индекс структурированного пакета мира.
++
++Важные файлы внутри `output/map_package/`:
++
++```text
++layers/terrain.json
++layers/tile_grid.json
++layers/collision.json
++layers/movement_costs.json
++layers/elevation.json
++runtime_grids.json
++objects/runtime_objects.json
++objects/places.json
++markers.json
++routes.json
++world_graph.json
++gameplay_zones.json
++elevation_model.json
++elevation_transitions.json
++```
++
++## Visual output
++
++Visual pipeline пишет результаты сюда:
++
++```text
++output/visual_map/
++```
++
++Основные visual-файлы:
++
++```text
++output/visual_map/visual_map.json
++output/visual_map/visual_layers.json
++output/visual_map/visual_objects.json
++output/visual_map/visual_chunks.json
++output/visual_map/preview.png
++output/visual_map/final_render.png
++output/visual_map/debug/
++```
++
++`preview.png` и `final_render.png` — это изображения, а не gameplay contract. Внешняя игра или редактор должны опираться на `map_package/`, если им нужны правила мира.
++
++## Документация
++
++- `docs/COMMANDS.md` — команды запуска и переменные окружения.
++- `docs/ARCHITECTURE.md` — границы worldgen и visualgen.
++- `docs/OUTPUT_FORMAT.md` — актуальная структура `output/`.
++- `docs/map_package_v1.md` — контракт `map_package/`.
++- `docs/game_consumer_guide.md` — как игре читать package.
++- `docs/world_building_algorithm.md` — порядок построения runtime-мира во внешнем проекте.
++- `docs/world_package_file_map.md` — карта файлов output root.
++- `docs/visual_*.md` — актуальные документы visual layer `dark_forest`.
++
++## Правило проекта
++
++World generation — ядро. Visual generation — потребитель и слой отображения. Если visual layer падает или меняется, это не должно менять смысл данных в `output/map_package/`.
+diff --git a/c b/c
+index ceb622a..3574d6e 100755
+--- a/c
++++ b/c
+@@ -1,87 +1,26 @@
+ #!/usr/bin/env bash
+ 
+-set -u
+-
+-# Comma-separated extensions to delete.
+-# Example: "tmp,log,bak"
+-EXTENSIONS_RAW="tmp,pyc,bak,html,js"
+-
+-rm -Rf ./out/*
+-rm -Rf ./output/*
+-
+-# Set to true to only print matching files without deleting them.
+-DRY_RUN=false
+-
+-parse_extensions() {
+-    local raw="$1"
+-    local -n result_ref="$2"
+-    local item
+-    local ext
+-
+-    IFS=',' read -r -a items <<< "$raw"
+-
+-    for item in "${items[@]}"; do
+-        ext="$(echo "$item" | xargs)"
+-        ext="${ext#.}"
+-        ext="${ext,,}"
+-
+-        if [[ -n "$ext" ]]; then
+-            result_ref["$ext"]=1
+-        fi
+-    done
++set -euo pipefail
++
++OUTPUT_DIR="${OUTPUT_DIR:-output}"
++OUT_DIR="${OUT_DIR:-out}"
++
++remove_dir_contents() {
++  local dir="$1"
++  if [[ -d "${dir}" ]]; then
++    rm -rf -- "${dir:?}"/*
++  else
++    mkdir -p -- "${dir}"
++  fi
+ }
+ 
+-
+-main() {
+-    local -A extensions_map=()
+-    local file_ext=""
+-    local deleted_count=0
+-    local matched_count=0
+-
+-    parse_extensions "$EXTENSIONS_RAW" extensions_map
+-
+-    if [[ "${#extensions_map[@]}" -eq 0 ]]; then
+-        echo "No extensions provided. Nothing to do."
+-        exit 0
+-    fi
+-
+-    echo "Current directory: $(pwd)"
+-    echo "Extensions to delete: $EXTENSIONS_RAW"
+-    echo "Dry run: $DRY_RUN"
+-    echo
+-
+-    while IFS= read -r -d '' file; do
+-        filename="$(basename "$file")"
+-
+-        if [[ "$filename" != *.* ]]; then
+-            continue
+-        fi
+-
+-        file_ext="${filename##*.}"
+-        file_ext="${file_ext,,}"
+-
+-        if [[ -n "${extensions_map[$file_ext]:-}" ]]; then
+-            ((matched_count++))
+-
+-            if [[ "$DRY_RUN" == "true" ]]; then
+-                echo "Would delete: $file"
+-            else
+-                if rm -f -- "$file"; then
+-                    echo "Deleted: $file"
+-                    ((deleted_count++))
+-                else
+-                    echo "Failed to delete: $file" >&2
+-                fi
+-            fi
+-        fi
+-    done < <(find . -type f -print0)
+-
+-    echo
+-    if [[ "$DRY_RUN" == "true" ]]; then
+-        echo "Done. Matched files: $matched_count"
+-    else
+-        echo "Done. Deleted files: $deleted_count"
+-    fi
++remove_pycache() {
++  find . -type d -name '__pycache__' -prune -exec rm -rf -- {} +
++  rm -rf -- .pytest_cache
+ }
+ 
+-main "$@"
+\ No newline at end of file
++remove_dir_contents "${OUTPUT_DIR}"
++remove_dir_contents "${OUT_DIR}"
++remove_pycache
++
++echo "Cleaned: ${OUTPUT_DIR}/, ${OUT_DIR}/, __pycache__, .pytest_cache"
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+new file mode 100644
+index 0000000..9202c8d
+--- /dev/null
++++ b/docs/ARCHITECTURE.md
+@@ -0,0 +1,87 @@
++# Architecture
++
++TopDownMapGen состоит из двух основных слоёв.
++
++```text
++top_down_worldgen  -> генерирует данные мира
++top_down_visualgen -> строит визуальное представление поверх данных мира
++```
++
++Главный контракт проекта — `output/map_package/`. Визуальные файлы являются производными артефактами.
++
++## World generation core
++
++Пакет `top_down_worldgen/` отвечает за:
++
++- загрузку публичного конфига;
++- запуск legacy engine;
++- нормализацию tactical data;
++- построение terrain, collision, movement, runtime grids;
++- построение objects, places, markers, routes и world graph;
++- построение gameplay zones;
++- построение elevation model/features/transitions;
++- экспорт legacy JSON и структурированного `map_package/`;
++- validation report, density report, manifest и metrics.
++
++Worldgen не зависит от visual output. Команда для чистой генерации:
++
++```bash
++./r world
++```
++
++## Visual layer
++
++Пакет `top_down_visualgen/` читает `output/map_package/` и visual profile `dark_forest`.
++
++Он отвечает за:
++
++- mapping terrain -> visual tile ids;
++- road/swamp/forest autotiling;
++- decorative visual objects;
++- place treatment;
++- elevation visual overlays;
++- boundary visual markers;
++- preview PNG;
++- asset-backed final render;
++- debug reports и step PNG.
++
++Visual layer не должен менять:
++
++```text
++terrain
++collision
++movement
++runtime grids
++routes
++start/goal
++gameplay zones
++world graph
++```
++
++## Runtime data flow
++
++```text
++configs/default.json
++  -> top_down_generator.py
++  -> top_down_worldgen
++  -> output/map_package/
++  -> top_down_visualgen
++  -> output/visual_map/
++```
++
++## Runner
++
++`./r` — основной helper для локальной разработки. Он не является отдельной бизнес-логикой, а только запускает существующие Python entrypoints в правильном порядке.
++
++Стандартный режим `./r` сохраняет совместимость: генерирует world data и visual data.
++
++## Stable API для внешней игры
++
++Внешняя игра должна читать:
++
++```text
++output/_manifest.json
++output/map_package/map.json
++```
++
++Внешняя игра не должна импортировать Python-модули генератора и не должна полагаться на visual PNG как источник gameplay-истины.
+diff --git a/docs/COMMANDS.md b/docs/COMMANDS.md
+new file mode 100644
+index 0000000..336de96
+--- /dev/null
++++ b/docs/COMMANDS.md
+@@ -0,0 +1,74 @@
++# Commands
++
++Этот документ описывает актуальные команды запуска проекта.
++
++## Основная команда
++
++```bash
++./r
++```
++
++Полный стандартный pipeline:
++
++```text
++cleanup -> world generation -> visual pipeline -> visual debug steps -> asset pack -> asset registry preview -> summary
++```
++
++Команда должна завершаться самостоятельно и печатать итоговый summary.
++
++## Команды `./r`
++
++| Команда | Назначение |
++|---|---|
++| `./r` или `./r all` | Полный стандартный pipeline. |
++| `./r world` | Очистить output и сгенерировать только world package. |
++| `./r preview` | Построить debug world preview из существующего `output/`. |
++| `./r visual` | Построить visual output из существующего `output/map_package/`. |
++| `./r visual-debug` | Построить PNG-шаги visual pipeline. |
++| `./r final-render` | Пересобрать `output/visual_map/final_render.png`. |
++| `./r asset-pack` | Сгенерировать placeholder PNG asset pack. |
++| `./r asset-preview` | Сгенерировать JSON/HTML preview asset registry. |
++| `./r assets` | Проверить visual assets manifest contract. |
++| `./r assets-full` | Сгенерировать asset pack и проверить наличие PNG. |
++| `./r summary` | Напечатать summary по текущему `output/`. |
++| `./r inspect` | Инспектировать текущий world package. |
++| `./r test` | Запустить compileall, проверку assets manifest и pytest. |
++| `./r help` | Показать справку. |
++
++## Переменные окружения
++
++| Переменная | Значение по умолчанию | Назначение |
++|---|---:|---|
++| `CONFIG_PATH` | `configs/default.json` | Конфиг генерации мира. |
++| `OUTPUT_DIR` | `output` | Output root текущего запуска. |
++| `VISUAL_PROFILE` | `top_down_visualgen/profiles/dark_forest` | Visual profile. |
++| `VISUAL_OUTPUT` | `output/visual_map` | Папка visual output. |
++| `VISUAL_STEPS_OUTPUT` | `output/visual_map/debug/steps` | Папка PNG-шагов visual pipeline. |
++| `VISUAL_DEBUG_TILE_SIZE` | `4` | Размер tile для PNG-шагов. |
++| `VISUAL_PREVIEW_TILE_SIZE` | `4` | Размер tile для visual preview. |
++| `WORLD_PREVIEW_CELL_SIZE` | `4` | Размер cell для world preview. |
++| `RUN_WORLD_PREVIEW` | `0` | Если `1`, `./r all` также строит `output/full_world_preview.png`. |
++| `WORLD_RENDER` | `0` | Если `1`, world generator пишет PNG render layers. |
++| `WORLD_DEBUG_LAYERS` | `0` | Если `1`, включает debug PNG layers при `WORLD_RENDER=1`. |
++| `LOG_DIR` | `output/logs` | Папка stage logs. |
++| `QUIET` | `1` | Если `0`, команды печатают raw output в терминал. |
++
++## Примеры
++
++Только world package:
++
++```bash
++./r world
++```
++
++Полный pipeline с world preview:
++
++```bash
++RUN_WORLD_PREVIEW=1 ./r
++```
++
++Запуск с другим output root:
++
++```bash
++OUTPUT_DIR=out/run_001 ./r
++```
+diff --git a/docs/OUTPUT_FORMAT.md b/docs/OUTPUT_FORMAT.md
+new file mode 100644
+index 0000000..ae9b0dd
+--- /dev/null
++++ b/docs/OUTPUT_FORMAT.md
+@@ -0,0 +1,120 @@
++# Output format
++
++Один запуск генератора создаёт один output root. По умолчанию это папка:
++
++```text
++output/
++```
++
++## Top-level files
++
++| Файл | Назначение |
++|---|---|
++| `_manifest.json` | Паспорт запуска и список артефактов. Главная точка входа. |
++| `generated_map.txt` | ASCII-карта для человека и legacy tools. |
++| `tactical_map.json` | Legacy runtime/tactical export. |
++| `tactical_map_debug.json` | Debug tactical export. |
++| `_raw_tactical_map.json` | Raw output legacy engine. Внутренний debug artifact. |
++| `validation_report.json` | Отчёт валидации world package. |
++| `world_density_report.json` | Terrain/collision/movement/elevation density report. |
++| `metrics.txt` | Текстовые метрики запуска. |
++| `object_catalog.md` | Человекочитаемый каталог runtime objects/place types. |
++| `generation.log` | Лог генерации legacy/world layer. |
++| `logs/` | Stage logs runner-а. |
++| `map_package/` | Главный структурированный пакет мира. |
++| `visual_map/` | Производный visual output. |
++
++## `map_package/`
++
++```text
++map_package/
++  map.json
++  runtime_grids.json
++  markers.json
++  routes.json
++  world_graph.json
++  gameplay_zones.json
++  elevation_model.json
++  elevation_features.json
++  elevation_transitions.json
++  layers/
++    terrain.json
++    tile_grid.json
++    collision.json
++    movement_costs.json
++    elevation.json
++    start_goal.json
++  objects/
++    runtime_objects.json
++    places.json
++  gameplay/
++    combat_zones.json
++    cover_points.json
++    choke_points.json
++    flank_routes.json
++    enemy_spawn_zones.json
++    fallback_positions.json
++  catalogs/
++    tile_types.json
++    object_types.json
++  render/
++    render_profile.json
++    tile_render_hints.json
++    object_render_hints.json
++```
++
++`map_package/map.json` содержит размеры, seed, координатную модель и относительные пути к остальным частям пакета.
++
++## Runtime grids
++
++`map_package/runtime_grids.json` содержит grids, нужные игре и tools:
++
++```text
++movement_grid
++collision_grid
++projectile_block_grid
++vision_block_grid
++cover_grid
++concealment_grid
++height_grid
++```
++
++## Visual output
++
++```text
++visual_map/
++  visual_map.json
++  visual_layers.json
++  visual_objects.json
++  visual_chunks.json
++  preview.png
++  final_render.png
++  debug/
++    visual_density_report.json
++    autotile_report.json
++    autotile_masks.json
++    unmapped_terrain_report.json
++    decoration_report.json
++    place_treatment_report.json
++    elevation_visual_report.json
++    boundary_visual_report.json
++    final_render_report.json
++    asset_registry_report.json
++    asset_registry_preview.html
++    steps/
++      00_world_terrain.png
++      01_base_visual_tiles.png
++      02_road_autotile.png
++      03_water_autotile.png
++      04_swamp_autotile.png
++      05_forest_autotile.png
++      06_autotile_fallbacks.png
++      07_objects.png
++      08_decoration.png
++      09_place_treatment.png
++      10_elevation_visual.png
++      11_boundary_visual.png
++      12_final_preview.png
++```
++
++Visual output нужен для просмотра и render pipeline. Gameplay consumer должен читать `map_package/`.
+diff --git a/docs/game_consumer_guide.md b/docs/game_consumer_guide.md
+index 3ded6f5..12338e7 100644
+--- a/docs/game_consumer_guide.md
++++ b/docs/game_consumer_guide.md
+@@ -1,403 +1,73 @@
+ # Game consumer guide
+ 
+-Этот документ описывает, как игре читать `map_package/` без знания внутренних деталей генератора.
++Этот документ описывает, как игре читать `output/map_package/` без знания внутренних Python-модулей генератора.
+ 
+-См. также `docs/world_building_algorithm.md` для пошагового алгоритма построения runtime-мира и `docs/world_package_file_map.md` для карты файлов output-пакета.
++## Правильная точка входа
+ 
+-
+-## Единый output root
+-
+-Начиная с v0.0.29 игра должна получать один путь — output root конкретного запуска. В этой папке лежат и legacy-файлы, и новый `map_package/`, и `_manifest.json`.
+-
+-Допустимые команды генерации:
+-
+-```bash
+-PYTHONPATH=. python3 top_down_generator.py --config configs/default.json -o output --no-render
+-PYTHONPATH=. python3 top_down_generator.py --config configs/default.json -o output/generated_map.txt --no-render
+-```
+-
+-Для consumer-а оба запуска эквивалентны: entrypoint остаётся `output/_manifest.json`, а основной пакет мира — `output/map_package/map.json`.
+-
+-Consumer не должен знать про `out/`, `old/`, `new` или другие папки. Если manifest ссылается на файл, путь считается относительным к тому же output root.
+-
+-## Минимальный сценарий загрузки
+-
+-Игра должна читать карту в таком порядке:
+-
+-1. открыть `_manifest.json`;
+-2. найти artifact с `kind = "map_package:index"`;
+-3. открыть указанный `map_package/map.json`;
+-4. прочитать `dimensions` и `coordinates`;
+-5. загрузить `layers/tile_grid.json`;
+-6. загрузить `layers/collision.json`;
+-7. загрузить `layers/movement_costs.json`;
+-8. загрузить `objects/runtime_objects.json`;
+-9. загрузить нужные `gameplay/*.json`;
+-10. построить runtime scene.
+-
+-Если `_manifest.json` недоступен, можно напрямую открыть `map_package/map.json`, но это fallback, а не основной путь.
+-
+-## Что игре нужно в первую очередь
+-
+-Для первой интеграции достаточно:
+-
+-```text
+-map.json
+-layers/tile_grid.json
+-layers/collision.json
+-layers/movement_costs.json
+-objects/runtime_objects.json
+-```
+-
+-Этого хватит, чтобы получить размеры карты, старт/цель, базовую проходимость, стоимость движения и список объектов.
+-
+-## Построение collision grid
+-
+-В v1 collision строится из `tile_grid.rows` и `collision.blocked_tiles`.
+-
+-Алгоритм:
+-
+-```text
+-blocked = set(collision.blocked_tiles)
+-for each y,row in tile_grid.rows:
+-  for each x,tile in row:
+-    collision_grid[y][x] = tile in blocked
+-```
+-
+-`true` означает blocked. `false` означает passable.
+-
+-Важно: runtime-объекты могут добавлять собственные коллизии. Поэтому итоговая collision scene игры должна учитывать и tile collision, и `runtime_objects`.
+-
+-## Построение movement grid
+-
+-Movement grid строится из `tile_grid.rows` и `movement_costs.costs_by_tile`.
+-
+-Алгоритм:
++Игра получает путь к output root конкретного запуска:
+ 
+ ```text
+-costs = movement_costs.costs_by_tile
+-for each tile:
+-  movement_cost = costs.get(tile, 1)
++output/
+ ```
+ 
+-Если клетка blocked по collision, игра может игнорировать movement cost или выставить бесконечную стоимость.
+-
+-## Старт и цель
+-
+-Старт и цель лежат в `map.json`:
+-
+-```text
+-points.start
+-points.goal
+-```
+-
+-Если значение `null`, значит точка не найдена. Валидная генерация должна иметь один старт и одну цель, но game loader всё равно должен проверять `null`, чтобы не падать на повреждённых пакетах.
+-
+-## Runtime-объекты
+-
+-`objects/runtime_objects.json` содержит `items`. Каждый item — конкретный объект на карте. Игра должна воспринимать эти объекты как сущности поверх terrain layer.
+-
+-На первом этапе можно использовать только:
+-
+-```text
+-id
+-type
+-position / x,y fields if present
+-collision_profile
+-combat_properties
+-```
+-
+-Точная структура объекта зависит от версии tactical pipeline, поэтому loader игры должен быть терпим к дополнительным полям.
+-
+-## Enemy spawn zones
+-
+-Для врагов читать:
+-
+-```text
+-gameplay/enemy_spawn_zones.json
+-```
+-
+-На первом этапе можно брать центр/позиции зон и не использовать весь tactical analysis.
+-
+-## Какие слои можно игнорировать сначала
+-
+-Игра может временно игнорировать:
+-
+-```text
+-cover_points.json
+-choke_points.json
+-flank_routes.json
+-fallback_positions.json
+-places.json
+-elevation.json
+-```
+-
+-Но эти слои уже есть для будущего AI, баланса, тактического поведения и narrative logic.
+-
+-## Ошибки загрузки
+-
+-Game loader не должен молча продолжать работу, если отсутствуют:
+-
+-```text
+-map.json
+-tile_grid.json
+-collision.json
+-movement_costs.json
+-```
+-
+-Это hard error. Отсутствие optional gameplay-слоя можно трактовать как пустой список.
+-
+-## Версионирование
+-
+-Игра должна проверять:
+-
+-```text
+-map.json.package_schema_version
+-map.json.schema_version
+-_manifest.json.versions.schemas
+-```
+-
+-Если major/version family неизвестна, лучше отказать в загрузке, чем неправильно интерпретировать карту.
+-
+-## Минимальный результат интеграции
+-
+-После загрузки `map_package/` игра должна уметь:
+-
+-```text
+-- создать карту нужного размера;
+-- поставить игрока в points.start;
+-- знать points.goal;
+-- построить blocked/passable grid;
+-- построить movement-cost grid;
+-- создать runtime-объекты;
+-- выбрать enemy spawn zones.
+-```
+-
+-Этого достаточно для первой проверки карты в игровом runtime без renderer-specific логики.
+-
+-
+-## Runtime-friendly loading since v0.0.26
+-
+-Для новой интеграции лучше использовать такие файлы:
++Дальше порядок такой:
+ 
+-1. `_manifest.json` — найти `map_package:index`;
+-2. `map_package/map.json` — получить размеры и ссылки на слои;
+-3. `layers/terrain.json` — получить типы поверхности;
+-4. `layers/collision.json` — построить boolean collision grid из `rows`;
+-5. `layers/movement_costs.json` — читать `costs_by_type`;
+-6. `layers/start_goal.json` — получить `start` и `goal`;
+-7. `objects/runtime_objects.json` — расставить объекты;
+-8. `gameplay/enemy_spawn_zones.json` — подключить спавны врагов, если они нужны.
+-
+-`tile_grid.json` остаётся полезным для отладки и legacy-инструментов, но игра не должна строить логику напрямую на символах `+`, `T`, `#` и других ASCII-тайлах.
+-
+-## Type catalogs since v0.0.27
+-
+-После загрузки `map.json` игра может открыть:
+-
+-```text
+-catalogs/tile_types.json
+-catalogs/object_types.json
+-```
+-
+-Рекомендуемый порядок:
+-
+-1. загрузить `terrain.json`;
+-2. загрузить `collision.json`;
+-3. загрузить `movement_costs.json`;
+-4. загрузить `catalogs/tile_types.json`;
+-5. загрузить `objects/runtime_objects.json`;
+-6. загрузить `catalogs/object_types.json`.
+-
+-`tile_types.json` нужен, чтобы не держать в игре таблицу вида “`tree_blocker` значит blocked, `water_slow` значит slow”. `object_types.json` нужен, чтобы игра понимала свойства типов объектов без ручного хардкода по каждому экземпляру.
+-
+-Для первой интеграции catalogs можно использовать так:
+-
+-```text
+-for terrain_type in terrain row:
+-  tile_def = tile_types[terrain_type]
+-  walkable = tile_def.walkable
+-  movement_cost = tile_def.movement_cost
+-```
+-
+-Для объектов:
+-
+-```text
+-for object in runtime_objects:
+-  object_def = object_types[object.type]
+-  blocks_movement = object_def.blocks_movement
+-  cover_type = object_def.cover_type
+-```
+-
+-Если catalog отсутствует, loader может fallback-нуться на поля самого объекта или на `collision.json`, но для новых интеграций это уже нежелательно.
+-
+-## Render hints для клиента
+-
+-Папка `map_package/render/` не обязательна для первой игровой интеграции. Она нужна тем клиентам, которые хотят построить preview, редактор или собственный renderer без знания внутренних эвристик генератора.
+-
+-Рекомендуемый порядок чтения для renderer-а:
+-
+-```text
+-1. открыть map_package/map.json;
+-2. прочитать map_json.render.profile;
+-3. открыть render/render_profile.json;
+-4. открыть layers/terrain.json;
+-5. открыть objects/runtime_objects.json;
+-6. открыть render/tile_render_hints.json;
+-7. открыть render/object_render_hints.json;
+-8. применить fallback для неизвестных visual_group.
+-```
+-
+-Важно: `visual_group` — это не путь к PNG. Это стабильное семантическое имя, например `terrain/grass`, `terrain/road/old_overgrown`, `objects/cover/stone_chunk`. Конкретный движок или renderer сам решает, какой tileset/objectset соответствует этой группе.
+-
+-Игровой runtime не должен принимать решения о проходимости по render hints. Для этого есть `collision.json`, `movement_costs.json`, `tile_types.json` и `object_types.json`.
+-
+-## Проверка пакета внешним consumer-ом since v0.0.30
++1. открыть `output/_manifest.json`;
++2. найти artifact с `kind = "map_package:index"`;
++3. открыть `output/map_package/map.json`;
++4. читать остальные файлы по относительным путям из `map.json`.
+ 
+-Для быстрой проверки результата генерации добавлен пример-инспектор:
++Если manifest отсутствует, tool может открыть `output/map_package/map.json` напрямую. Для игры это fallback, не основной сценарий.
+ 
+-```bash
+-python3 examples/inspect_world_package.py output
+-```
++## Минимальный набор для runtime scene
+ 
+-Он намеренно читает только публичные файлы результата:
++Обычно игре нужны:
+ 
+ ```text
+-output/_manifest.json
+-output/map_package/map.json
+-output/map_package/layers/*
+-output/map_package/objects/*
+-output/map_package/gameplay/*
+-output/map_package/catalogs/*
+-output/map_package/render/*
++map_package/layers/tile_grid.json
++map_package/layers/terrain.json
++map_package/layers/collision.json
++map_package/layers/movement_costs.json
++map_package/runtime_grids.json
++map_package/objects/runtime_objects.json
++map_package/objects/places.json
++map_package/markers.json
++map_package/routes.json
++map_package/world_graph.json
++map_package/gameplay_zones.json
++map_package/elevation_model.json
+ ```
+ 
+-Инспектор не импортирует pipeline генератора и не использует внутренние runtime-классы. Его задача — вести себя как внешний клиент: открыть output root, найти `map_package:index` через manifest, загрузить `map_package/map.json`, проверить базовые размеры слоёв и вывести короткую сводку.
+-
+-Нормальный результат выглядит так:
++Для tactical gameplay также нужны:
+ 
+ ```text
+-World package: OK
+-Map: 160x160 tiles, tile size 16 px
+-Layers:
+-- collision: OK, passable=..., blocked=..., blocked_ratio=...
+-Objects:
+-- runtime objects: ... total, ... types
+-Result:
+-- package is loadable by an external consumer
++map_package/gameplay/combat_zones.json
++map_package/gameplay/cover_points.json
++map_package/gameplay/choke_points.json
++map_package/gameplay/flank_routes.json
++map_package/gameplay/enemy_spawn_zones.json
++map_package/gameplay/fallback_positions.json
+ ```
+ 
+-Если пакет неполный или сломан, команда завершается с ненулевым кодом и выводит `World package: FAILED`. Это удобно использовать как smoke-check перед передачей output-папки в игру или отдельный renderer.
+-
+-## Визуальная smoke-проверка пакета
+-
+-После `examples/inspect_world_package.py` можно запустить внешний preview renderer:
+-
+-```bash
+-python3 examples/render_world_preview.py output
+-```
+-
+-Он читает только публичный контракт:
+-
+-```text
+-output/_manifest.json
+-output/map_package/map.json
+-output/map_package/layers/*
+-output/map_package/objects/*
+-```
++## Что не считать gameplay contract
+ 
+-и создаёт:
++Игра не должна использовать как источник gameplay-истины:
+ 
+ ```text
+-output/world_preview.png
+-```
+-
+-Это не игровой renderer и не финальная графика. Это проверка, что из файлов пакета реально можно
+-собрать видимое представление мира: terrain, collision overlay, runtime object markers, start и goal.
+-
+-Полезные варианты:
+-
+-```bash
+-python3 examples/render_world_preview.py output --collision-overlay
+-python3 examples/render_world_preview.py output --cell-size 8 --grid
+-python3 examples/render_world_preview.py output --no-objects
+-python3 examples/render_world_preview.py output --output output/debug/world_preview.png
++output/visual_map/*.png
++output/visual_map/visual_*.json
++output/generated_map.txt
+ ```
+ 
+-Если preview выглядит как каша, но инспектор говорит `World package: OK`, значит пакет формально
+-валиден, но семантические слои или render hints требуют отдельной настройки. Это нормальная роль
+-preview: быстро показать глазами, что данные дают осмысленный мир.
+-
+-## Multi-tile object handling
+-
+-A game consumer must not treat runtime objects as single-tile markers. Read `footprint` for occupied cells, `collision_footprint` for gameplay collision, `interaction_shape` for actor interaction checks, `visual_bounds` for coarse sprite placement, `sort_anchor` for top-down draw sorting, and `pivot` for renderer anchoring. The object's `x`, `y`, `position`, and `anchor` fields describe the anchor tile, not the full occupied size. Bunkers can also provide `firing_ports`, `surface_elevation`, and `interior_elevation` for directional interaction/line-of-fire rules.
+-
+-
+-## Generation tuning
+-
+-`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+-
+-
+-## Package consistency validation
+-
+-Начиная с `v0.0.41`, validation проверяет не только наличие файлов, но и согласованность публичного пакета: `markers` должны совпадать со `start_goal`, `runtime_grids` должны иметь ожидаемые размеры, `world_graph` должен ссылаться на реальные places/markers, а `routes` — на реальные nodes/edges. Start и goal также проверяются против `collision_grid`, чтобы внешний consumer не получал заблокированную стартовую или целевую клетку.
+-
+-Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
+-
+-## Markers and runtime grids
+-
+-Since v0.0.37, consumers should prefer `map_package/markers.json` for start/goal and gameplay points, and `map_package/runtime_grids.json` for immediate runtime grids. This avoids rebuilding common grids from lower-level layers during game startup.
+-
+-## `routes.json`
+-
+-`routes.json` contains semantic route records derived from `world_graph.json`. It does not replace tile pathfinding and it is not an exact step-by-step movement path. It tells a consumer what a route means in gameplay terms.
+-
+-Current route types:
++Visual output нужен renderer/debug layer. ASCII нужен человеку и legacy tools.
+ 
+-- `main_road` — primary intended route from start toward goal.
+-- `side_path` — optional branch route to a secondary place.
+-- `hidden_path` — secret or hard-to-notice optional route.
+-- `patrol_route` — AI/NPC route derived from risky place connections.
+-- `escape_route` — retreat or exit route derived from start/goal connections.
++## Проверки consumer-а
+ 
+-Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
+-
+-
+-## Elevation model
+-
+-Load `map_package/elevation_model.json` when the game needs height-aware movement, visibility, projectile or render-order logic. The package keeps the actual per-tile values in `runtime_grids.height_grid`; the elevation model explains the meaning of levels `-1..4` and the expected transition concepts.
+-
+-Do not assume that adjacent tiles with different heights are automatically walkable. Use the model's transition rules and future connector objects such as ramps, stairs, bridges or ladders.
+-
+-## Elevation consumer notes
+-
+-For simple games, `runtime_grids.height_grid` may be enough. For height-aware traversal, visibility, projectiles or rendering, also read `elevation_model.json`, `elevation_features.json` and `elevation_transitions.json`.
+-
+-Treat `height_grid` as exact data and the other files as semantic metadata. For example, a `+1` tile from a raised berm can be rendered and handled differently from a future bridge tile even if both are above ground level.
+-
+-
+-### Elevation preview
+-
+-Для визуальной проверки уровней высоты и переходов используйте:
+-
+-```bash
+-python3 examples/render_world_preview.py output \
+-  --elevation-overlay \
+-  --transition-overlay \
+-  --grid \
+-  --cell-size 8 \
+-  --output output/elevation_preview.png
+-```
+-
+-`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+-
+-
+-### Semantic preview overlays
+-
+-Для визуальной проверки смысловых слоёв используйте:
+-
+-```bash
+-python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+-```
++Перед загрузкой сцены consumer должен проверить:
+ 
+-Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.
++- размеры grid совпадают с `dimensions`;
++- start/goal существуют;
++- collision/movement grids прямоугольные;
++- runtime objects имеют координаты внутри карты;
++- routes/markers ссылаются на допустимые координаты;
++- версия схемы поддерживается consumer-ом.
+diff --git a/docs/map_package_v1.md b/docs/map_package_v1.md
+index 41538d5..5556735 100644
+--- a/docs/map_package_v1.md
++++ b/docs/map_package_v1.md
+@@ -1,493 +1,82 @@
+ # Map package v1
+ 
+-`map_package/` — это стабильный структурированный экспорт карты для игры, редактора, рендера и тестов. Он создаётся рядом со старым монолитным `tactical_map.json` и не заменяет legacy-файлы. Старый экспорт остаётся полезным для отладки и обратной совместимости, а `map_package/` становится новым контрактом данных.
++`map_package/` — стабильный структурированный экспорт карты. Это главный контракт проекта для игры, редактора, визуализатора и тестов.
+ 
+-## Зачем нужен пакет
++Генератор создаёт не финальную картинку, а описание мира:
+ 
+-Генератор строит не картинку, а описание мира: поверхность, движение, коллизии, высоты, объекты, места и тактические слои. Разные потребители читают разные части пакета:
++- terrain;
++- tile grid;
++- collision;
++- movement costs;
++- runtime grids;
++- objects and places;
++- markers;
++- routes;
++- world graph;
++- gameplay zones;
++- elevation model/features/transitions;
++- render hints.
+ 
+-- игра читает `collision`, `movement_costs`, `runtime_objects`, `enemy_spawn_zones`, `points`;
+-- renderer читает `tile_grid`, `runtime_objects` и позже catalog/render hints;
+-- validation читает обязательные слои и проверяет связность данных;
+-- редактор может читать `places`, `combat_zones`, `cover_points` и overlay-слои.
+-
+-Главное правило: PNG и ASCII — это представления. `map_package/` — это контракт мира.
++PNG и ASCII — представления. `map_package/` — источник истины.
+ 
+ ## Точка входа
+ 
+-Потребитель должен начинать с `_manifest.json`. В нём нужно найти primary output с kind `map_package:index` и открыть указанный файл. Обычно это:
+-
+-```text
+-map_package/map.json
+-```
+-
+-`map.json` — индекс пакета. Он содержит размеры карты, seed, профиль генерации, систему координат и относительные пути к слоям.
+-
+-
+-## Единый output root с v0.0.29
+-
+-Один запуск генератора создаёт один связанный output root. Все legacy-файлы, `map_package/`, validation report, manifest, metrics и PNG-слои одного мира должны лежать в одной папке результата.
+-
+-CLI `-o/--out` принимает два варианта:
+-
+-```text
+--o output
+--o output/generated_map.txt
+-```
+-
+-Оба варианта создают один и тот же контракт результата:
+-
+-```text
+-output/
+-  generated_map.txt
+-  tactical_map.json
+-  tactical_map_debug.json
+-  _raw_tactical_map.json
+-  _manifest.json
+-  validation_report.json
+-  metrics.txt
+-  object_catalog.md
+-  map_package/
+-    map.json
+-    layers/
+-    gameplay/
+-    objects/
+-    catalogs/
+-    render/
+-```
+-
+-Главное правило: потребитель получает путь к output root, открывает `_manifest.json` и дальше читает только файлы, перечисленные в manifest или `map_package/map.json`. Не нужно искать часть результата в `out/`, часть в `output/`, часть рядом с проектом.
+-
+-## Структура каталогов
++Обычный путь:
+ 
+ ```text
+-map_package/
+-  map.json
+-  layers/
+-    tile_grid.json
+-    terrain.json
+-    movement_costs.json
+-    collision.json
+-    elevation.json
+-    start_goal.json
+-  gameplay/
+-    combat_zones.json
+-    cover_points.json
+-    choke_points.json
+-    flank_routes.json
+-    enemy_spawn_zones.json
+-    fallback_positions.json
+-  objects/
+-    runtime_objects.json
+-    places.json
+-  catalogs/
+-    tile_types.json
+-    object_types.json
+-  render/
+-    render_profile.json
+-    tile_render_hints.json
+-    object_render_hints.json
+-```
+-
+-## Координаты
+-
+-Все координаты в `map_package/` используют tile-space:
+-
+-```text
+-origin: top_left
+-x_axis: right
+-y_axis: down
+-unit: tile
+-```
+-
+-То есть клетка `[0, 0]` находится в левом верхнем углу. `x` увеличивается вправо, `y` увеличивается вниз. Pixel-space вычисляется игрой или renderer-ом через `tile_size_px`.
+-
+-## map.json
+-
+-`map.json` содержит общую информацию и ссылки на остальные файлы.
+-
+-Ключевые поля:
+-
+-- `schema_version` — версия схемы индекса пакета;
+-- `package_schema_version` — версия пакета в целом;
+-- `generator_version` — версия генератора;
+-- `seed` и `resolved_seed` — исходный и фактический seed;
+-- `profile` — профиль генерации;
+-- `dimensions` — ширина, высота и размер тайла;
+-- `coordinates` — система координат;
+-- `points` — старт и цель, если они найдены;
+-- `layers` — относительные пути к слоям;
+-- `gameplay` — относительные пути к tactical/gameplay слоям;
+-- `objects` — относительные пути к runtime-объектам и places;
+-- `legacy_outputs` — ссылки на старые output-файлы;
+-- `render` — относительные пути к renderer-ready подсказкам.
+-
+-## layers/tile_grid.json
+-
+-Базовая сетка карты в формате ASCII rows. Это самый близкий слой к старому `generated_map.txt`, но теперь он лежит в машинном JSON-контракте.
+-
+-Ключевые поля:
+-
+-- `width`, `height` — размеры сетки;
+-- `format` — сейчас `ascii_rows`;
+-- `tile_legend` — расшифровка символов;
+-- `tile_counts` — количество символов;
+-- `rows` — массив строк одинаковой длины.
+-
+-Этот слой удобен для debug, базового renderer-а и первичной загрузки карты. Игра не должна навечно хардкодить символы как единственный источник истины: для движения и блокировки нужно использовать `movement_costs` и `collision`.
+-
+-## layers/movement_costs.json
+-
+-Слой стоимости движения по типам тайлов. Сейчас он хранит `costs_by_tile`, где ключ — символ или тип тайла из grid, а значение — стоимость движения.
+-
+-Пример смысла:
+-
+-- `1` — обычная стоимость;
+-- `2` или `3` — замедление;
+-- отсутствие тайла в `costs_by_tile` не должно автоматически означать passable. Для passability нужно читать `collision.json`.
+-
+-## layers/collision.json
+-
+-Слой базовой проходимости. Сейчас он содержит:
+-
+-- `blocked_tiles` — символы тайлов, считающихся непроходимыми;
+-- `passable_tiles` — символы тайлов, считающихся проходимыми;
+-- `source` — источник построения слоя.
+-
+-Это минимальная v1-форма. В следующих версиях слой может стать полноценной матрицей collision-классов, чтобы игре не приходилось интерпретировать символы.
+-
+-## layers/elevation.json
+-
+-Слой высот и углублений. Сейчас он хранит данные elevation, созданные tactical pipeline, например клетки окопов или ям уровня `-1`.
+-
+-Игра может игнорировать этот слой на первом этапе, если в ней ещё нет высот, stance logic или баллистики по высоте.
+-
+-## gameplay/*.json
+-
+-Gameplay-слои описывают tactical analysis карты:
+-
+-- `combat_zones.json` — зоны столкновений;
+-- `cover_points.json` — точки укрытий;
+-- `choke_points.json` — узкие места;
+-- `flank_routes.json` — маршруты обхода;
+-- `enemy_spawn_zones.json` — зоны появления врагов;
+-- `fallback_positions.json` — позиции отхода.
+-
+-Каждый файл содержит `items`. Потребитель может читать только нужные слои. Например, первая версия игры может использовать только `enemy_spawn_zones`, а `flank_routes` оставить на потом.
+-
+-## objects/runtime_objects.json
+-
+-Runtime-объекты — это сущности поверх tile grid: брёвна, камни, бочки, тайники, палатки, окопы, машины, колодцы и другие игровые объекты.
+-
+-Этот слой нужен игре и renderer-у. Игра использует его для collision, cover, loot, interaction и danger logic. Renderer использует его для выбора sprite/object visuals.
+-
+-Важное правило: крупные объекты не надо превращать в terrain tiles. Они должны оставаться объектами.
+-
+-## objects/places.json
+-
+-`places` — смысловые микролокации: блокпост, бункерная позиция, радиоточка, оборонительная позиция, лесной завал, руинная площадка. Это не отдельные тайлы и не обязательно physical objects. Это группировка объектов, маркеров и зон в маленькую сцену.
+-
+-С `places-v3` каждое место содержит:
+-
+-- `bounds` — прямоугольник места в tile-координатах;
+-- `entrances` — предполагаемые входы в место;
+-- `danger_level` и `loot_level` — нормализованные gameplay hints `0.0..1.0`;
+-- `story_role` и `encounter_type` — смысловую роль места;
+-- `object_refs`, `marker_refs`, `route_refs` — ссылки на связанные сущности;
+-- `connected_places` — ближайшие связанные места для будущего world graph;
+-- `biome_tags` — подсказки для визуала, звука, декора и контента.
+-
+-Игра может использовать `places` для заданий, интересных точек, narrative events, spawn rules и построения графа мира.
+-
+-## Обязательные файлы v1
+-
+-Минимальный валидный пакет должен содержать:
+-
+-```text
+-map_package/map.json
+-map_package/layers/tile_grid.json
+-map_package/layers/terrain.json
+-map_package/layers/movement_costs.json
+-map_package/layers/collision.json
+-map_package/layers/elevation.json
+-map_package/layers/start_goal.json
+-map_package/objects/runtime_objects.json
+-map_package/objects/places.json
+-map_package/catalogs/tile_types.json
+-map_package/catalogs/object_types.json
+-```
+-
+-Gameplay-слои сейчас тоже генерируются штатно, но игра может игнорировать часть из них.
+-
+-## Совместимость
+-
+-`map_package/` не отменяет старые файлы. Пока формат стабилизируется, допускается сравнивать данные с:
+-
+-```text
+-generated_map.txt
+-tactical_map.json
+-tactical_map_debug.json
+-```
+-
+-Но новые потребители должны начинать с `_manifest.json` и `map_package/map.json`.
+-
+-## Что будет дальше
+-
+-Ближайшие расширения формата:
+-
+-- отдельный `terrain.json` вместо зависимости от символов;
+-- более явный `collision` layer как матрица классов;
+-- machine-readable catalogs для tile/object types;
+-- renderer hints для autotile и sprite selection;
+-- экспорт в Tiled/Godot/собственный runtime format.
+-
+-
+-## v0.0.26 layer additions
+-
+-`map_package v1` теперь содержит два дополнительных runtime-friendly слоя:
+-
+-- `layers/terrain.json` — сетка типов поверхности в формате `type_rows`. Игра может читать `grass`, `old_overgrown_road`, `tree_blocker`, `ruin_wall_blocker` и другие типы без прямой зависимости от ASCII-символов.
+-- `layers/start_goal.json` — явный слой стартовой и целевой точки. Поле `points` в `map.json` остаётся для совместимости, но новым потребителям лучше читать этот слой.
+-
+-`layers/collision.json` использует schema `collision-layer-v2` и формат `boolean_rows`:
+-
+-```json
+-{
+-  "format": "boolean_rows",
+-  "legend": {
+-    "0": "passable",
+-    "1": "blocked"
+-  },
+-  "rows": ["0010", "1110"]
+-}
++output/_manifest.json
++  -> artifact kind = map_package:index
++  -> output/map_package/map.json
+ ```
+ 
+-Старые поля `legacy_blocked_tiles` и `legacy_passable_tiles` оставлены только для диагностики и переходного периода. Игровой runtime должен использовать `rows`, `blocked_tile_types` и `passable_tile_types`.
+-
+-`layers/movement_costs.json` дополнен `costs_by_type`. Это позволяет читать стоимость движения по типам поверхности, а не по ASCII-символам.
+-
+-## v0.0.27 catalogs
+-
+-`map_package v1` теперь содержит машинные каталоги типов:
++Fallback для tools допустим:
+ 
+ ```text
+-map_package/catalogs/
+-  tile_types.json
+-  object_types.json
++output/map_package/map.json
+ ```
+ 
+-`catalogs/tile_types.json` описывает типы поверхности, которые встречаются в `terrain.json`:
+-
+-- `symbol` — legacy ASCII-символ для диагностики;
+-- `movement_cost` — стоимость движения, если она известна;
+-- `collision` — `passable`, `blocked` или `unknown`;
+-- `walkable` — быстрый boolean-флаг для game loader-а;
+-- `tags` — простые семантические признаки: `road`, `water`, `blocker`, `vegetation`, `ruin`, `decor`, `marker`.
++## Индекс `map.json`
+ 
+-`catalogs/object_types.json` агрегирует runtime-объекты по типу. Это не список экземпляров, а справочник типов, построенный из фактически сгенерированных объектов текущей карты:
++`map.json` содержит:
+ 
+-- `role`;
+-- `cover_type`;
+-- `height`;
+-- `elevation`;
+-- `blocks_movement`;
+-- `blocks_projectiles`;
+-- `blocks_vision`;
+-- `interactive`;
+-- `collision_profile`;
+-- `combat_properties`;
+-- `tags`;
+-- `instance_count`.
++- generator version;
++- seed/resolved seed;
++- dimensions;
++- coordinate model;
++- ссылки на layers;
++- ссылки на gameplay data;
++- ссылки на objects/catalogs/render hints;
++- ссылки на legacy outputs.
+ 
+-Игра теперь может не хардкодить смысл `tree_blocker`, `water_slow`, `fallen_log`, `stone_chunk`, `trench` и других типов. На первом этапе catalogs можно читать как runtime metadata. Позже их можно будет заменить или дополнить внешними tileset/objectset definition-файлами.
++Все пути внутри `map.json` относительны к папке `map_package/`.
+ 
+-## v0.0.28 render hints
+-
+-`map_package v1` теперь содержит renderer-ready подсказки. Это не готовый tileset и не привязка к конкретному PNG-атласу. Это промежуточный контракт между семантической картой и будущим renderer-ом.
++## Основные секции пакета
+ 
+ ```text
+-map_package/render/
+-  render_profile.json
+-  tile_render_hints.json
+-  object_render_hints.json
++layers/      базовые карты terrain/collision/movement/elevation
++objects/     runtime objects и semantic places
++gameplay/    combat/cover/spawn/fallback tactical data
++catalogs/    описание tile/object типов
++render/      hints для render consumers
+ ```
+ 
+-`render/render_profile.json` описывает общий профиль рендера:
+-
+-- размеры карты и `tile_size_px`;
+-- рекомендуемый порядок рисования слоёв;
+-- ссылки на входные слои, каталоги и hint-файлы;
+-- правило, что hint-ы являются семантическими и могут иметь fallback.
+-
+-`render/tile_render_hints.json` объясняет, как потенциально рисовать типы поверхности из `layers/terrain.json`:
+-
+-- `render_mode = single_tile` — обычный одиночный тайл;
+-- `render_mode = autotile` — renderer должен выбирать вариант по соседям;
+-- `visual_group` — стабильная семантическая группа будущего tileset-а;
+-- `draw_layer` — рекомендуемый слой отрисовки;
+-- `variant_policy` — как выбирать варианты;
+-- `blend_edges` — можно ли визуально смешивать края с соседями.
+-
+-Например, `old_overgrown_road`, `water_slow` и `ruin_wall_blocker` получают `autotile`-подсказки, но генератор всё ещё не требует конкретных PNG-файлов.
+-
+-`render/object_render_hints.json` объясняет, как потенциально рисовать runtime-объекты из `objects/runtime_objects.json`:
+-
+-- `visual_group` — семантическая группа будущих sprite/object assets;
+-- `draw_layer` — где рисовать объект относительно terrain/actor/debug;
+-- `anchor` — базовая точка привязки;
+-- `orientation_source` — поле экземпляра, из которого renderer может брать ориентацию;
+-- `footprint_source` — поле экземпляра, из которого renderer может брать footprint.
+-
+-Игра может полностью игнорировать каталог `render/`. Он нужен renderer-у, редактору и будущему tileset pipeline. Runtime-логика должна продолжать опираться на `layers/`, `objects/`, `gameplay/` и `catalogs/`.
+-
+-## External inspection since v0.0.30
+-
+-`examples/inspect_world_package.py` is a small external-consumer smoke checker for `map_package v1`.
+-
+-It accepts any common public entrypoint:
+-
+-```bash
+-python3 examples/inspect_world_package.py output
+-python3 examples/inspect_world_package.py output/_manifest.json
+-python3 examples/inspect_world_package.py output/map_package
+-python3 examples/inspect_world_package.py output/map_package/map.json
+-```
+-
+-The inspector verifies that the package can be loaded from public artifacts only. It checks the manifest entrypoint, `map.json`, layer dimensions, collision encoding, movement costs, elevation summary, object counts, gameplay layer counts, catalogs, and render hint counts.
+-
+-This tool is not the game loader and not a visual renderer. It is a consumer-contract smoke test: if it passes, an external project has enough information to start loading the generated world package without reading generator internals.
+-
+-## Visual preview smoke test
+-
+-`examples/render_world_preview.py` is a tiny external preview renderer for `map_package v1`.
+-It is intentionally not a game renderer and not a final art pipeline. Its job is to prove that
+-an external consumer can resolve `_manifest.json`, read `map_package/map.json`, load public layers,
+-and produce a visible world preview without importing generator internals.
+-
+-Typical usage:
+-
+-```bash
+-python3 examples/render_world_preview.py output
+-```
+-
+-Alternative entrypoints:
+-
+-```bash
+-python3 examples/render_world_preview.py output/_manifest.json
+-python3 examples/render_world_preview.py output/map_package
+-python3 examples/render_world_preview.py output/map_package/map.json
+-```
+-
+-Useful options:
+-
+-```bash
+-python3 examples/render_world_preview.py output --collision-overlay
+-python3 examples/render_world_preview.py output --cell-size 8 --grid
+-python3 examples/render_world_preview.py output --no-objects
+-python3 examples/render_world_preview.py output --output output/debug/world_preview.png
+-```
+-
+-By default it writes:
++Отдельные top-level файлы `map_package/`:
+ 
+ ```text
+-output/world_preview.png
++runtime_grids.json
++markers.json
++routes.json
++world_graph.json
++gameplay_zones.json
++elevation_model.json
++elevation_features.json
++elevation_transitions.json
+ ```
+ 
+-The preview is a visual smoke test only. It uses simple semantic colors and object markers instead
+-of production sprites. A game renderer should still read the same package contract and apply its own
+-asset pipeline.
+-
+-## Object footprints
+-
+-Object instances are no longer guaranteed to be single-tile markers. Consumers must read `footprint`, `collision_footprint`, `visual_bounds`, and `pivot` from `objects/runtime_objects.json` instead of assuming that `x`/`y` is the full object size.
+-
+-The `x`, `y`, `position`, and `anchor` fields identify the object's anchor tile. The `footprint` field is the logical occupied shape. The `collision_footprint` field is the subset where the object affects movement, projectiles, or vision according to its `collision_profile`. The `visual_bounds` field is a coarse tile-space rectangle for preview/render placement. `interaction_shape` describes where an actor may interact with the object, `sort_anchor` is the recommended top-down draw-sort point, `draw_layer` is the coarse rendering layer, and `occlusion_hint` tells renderers whether the object may visually cover actors. Bunker-like objects may also expose `firing_ports`, `surface_elevation`, and `interior_elevation`; consumers should treat those as gameplay metadata, not as sprite instructions.
+-
+-
+-## Generation tuning
+-
+-`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+-
+-
+-## Package consistency validation
+-
+-Начиная с `v0.0.41`, validation проверяет не только наличие файлов, но и согласованность публичного пакета: `markers` должны совпадать со `start_goal`, `runtime_grids` должны иметь ожидаемые размеры, `world_graph` должен ссылаться на реальные places/markers, а `routes` — на реальные nodes/edges. Start и goal также проверяются против `collision_grid`, чтобы внешний consumer не получал заблокированную стартовую или целевую клетку.
+-
+-Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
+-
+-### World graph
+-
+-`world_graph.json` is the semantic graph of the map package. It links places and markers into a world-level structure.
+-It is intended for pacing, routing, encounter planning, and debugging. It is not a tile-level pathfinding grid. Starting with `world-graph-v2`, consumers can also use `quality`, anchored `side_paths`, denser place edges, and meaningful-place-only `dead_ends`.
+-
+-## `routes.json`
+-
+-`routes.json` contains semantic route records derived from `world_graph.json`. It does not replace tile pathfinding and it is not an exact step-by-step movement path. It tells a consumer what a route means in gameplay terms.
+-
+-Current route types:
+-
+-- `main_road` — primary intended route from start toward goal.
+-- `side_path` — optional branch route to a secondary place.
+-- `hidden_path` — secret or hard-to-notice optional route.
+-- `patrol_route` — AI/NPC route derived from risky place connections.
+-- `escape_route` — retreat or exit route derived from start/goal connections.
+-
+-Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
+-
+-
+-## `elevation_model.json`
+-
+-`elevation_model.json` is the semantic elevation contract for runtime consumers. It complements `layers/elevation.json` and `runtime_grids.height_grid`: the grid tells the consumer the level of each tile, while the model explains what levels mean.
+-
+-The first version defines levels `-1..4`:
+-
+-- `-1` — trenches, pits, bunker interiors and other below-ground spaces.
+-- `0` — normal ground.
+-- `1` — raised ground, berms and low hills.
+-- `2` — bridges, ruin decks, platforms and ledges.
+-- `3` — towers, roofs and strong high-ground positions.
+-- `4` — reserved for exceptional high landmarks.
+-
+-The file also describes transition types (`ramp`, `stairs`, `ladder`, `bridge`, `drop`) and high-level rules for movement, line of sight, projectiles and render order. These rules are intentionally semantic: the game remains responsible for exact combat math and actor abilities.
+-
+-## `elevation_features.json` and `elevation_transitions.json`
+-
+-Starting with `v0.0.43`, elevation semantics are no longer only embedded in `elevation_model.json`.
+-
+-`elevation_features.json` lists concrete map features that create or explain height differences: pits, trenches, bunker interiors, raised berms, hills, bridges, ramps, stairs, platforms, towers and special high landmarks. Each feature may reference a runtime object and includes its footprint.
+-
+-`elevation_transitions.json` lists adjacent height changes found in `height_grid`. The records include source/target cells, level delta, transition type and a suggested connector such as `ramp_or_stairs` or `ladder_or_scripted`.
+-
+-Use these files together with `runtime_grids.height_grid`. The grid is the exact tile data; the feature and transition files are the semantic explanation for runtime, AI and rendering.
+-
+-
+-### Elevation preview
+-
+-Для визуальной проверки уровней высоты и переходов используйте:
+-
+-```bash
+-python3 examples/render_world_preview.py output \
+-  --elevation-overlay \
+-  --transition-overlay \
+-  --grid \
+-  --cell-size 8 \
+-  --output output/elevation_preview.png
+-```
+-
+-`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+-
+-
+-## Elevation v1
+-
+-See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.
+-
+-
+-### Semantic preview overlays
++## Координаты
+ 
+-Для визуальной проверки смысловых слоёв используйте:
++Карта tile-based. Runtime consumers должны считать `x/y` tile coordinates основной системой. Pixel coordinates используются только renderer/tools и зависят от `tile_size_px`.
+ 
+-```bash
+-python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+-```
++## Совместимость
+ 
+-Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.
++Legacy файлы `generated_map.txt`, `tactical_map.json` и `tactical_map_debug.json` пока остаются рядом с `map_package/`, но новый consumer должен начинать с `_manifest.json` и `map_package/map.json`.
+diff --git a/docs/visual_asset_pack_dark_forest.md b/docs/visual_asset_pack_dark_forest.md
+index 5e1fc6b..b483637 100644
+--- a/docs/visual_asset_pack_dark_forest.md
++++ b/docs/visual_asset_pack_dark_forest.md
+@@ -1,124 +1,39 @@
+-# Visual Asset Pack — Dark Forest
++# Visual asset pack — dark_forest
+ 
+-Документ описывает первый физический asset pack для профиля `dark_forest`.
+-
+-Цель `v0.0.73`: не нарисовать финальный арт, а создать рабочий scaffold, чтобы каждый `tile_id` и `sprite_id` из `assets_manifest.json` имел PNG-файл-заглушку.
+-
+-## 1. Что уже есть
+-
+-Контракт ассетов лежит здесь:
+-
+-```text
+-top_down_visualgen/profiles/dark_forest/assets_manifest.json
+-```
+-
+-В нём описаны:
+-
+-```text
+-tile_id / sprite_id
+-path
+-size
+-pivot
+-sort_anchor
+-draw_layer
+-tags
+-fallbacks
+-```
+-
+-## 2. Где лежат физические ассеты
+-
+-Физический asset pack генерируется сюда:
++Физический asset pack профиля `dark_forest` лежит в:
+ 
+ ```text
+ assets/dark_forest/
+ ```
+ 
+-Пути внутри `assets_manifest.json` остаются короткими:
++Он используется final renderer-ом для создания:
+ 
+ ```text
+-tiles/dirt/base.png
+-sprites/decor/swamp/reeds_01.png
+-```
+-
+-А корень задаётся полем:
+-
+-```json
+-"asset_root": "../../../assets/dark_forest"
++output/visual_map/final_render.png
+ ```
+ 
+-Это значит: manifest живёт в профиле, а PNG лежат в общей папке `assets/dark_forest`.
+-
+-## 3. Генерация placeholder PNG
+-
+-Команда:
++## Генерация placeholder pack
+ 
+ ```bash
+ ./r asset-pack
+ ```
+ 
+-Она создаёт PNG-заглушки для всех записей из manifest.
+-
+-Заглушки нужны, чтобы:
++Команда читает:
+ 
+ ```text
+-- проверить файловый контракт
+-- увидеть весь asset vocabulary
+-- постепенно заменять placeholder на реальные PNG
+-- не блокировать visual pipeline отсутствием финального арта
++top_down_visualgen/profiles/dark_forest/assets_manifest.json
+ ```
+ 
+-## 4. Проверка файлов
++и создаёт отсутствующие placeholder PNG по путям из manifest-а.
+ 
+-Обычная проверка manifest:
+-
+-```bash
+-./r assets
+-```
+-
+-Проверка manifest + наличия PNG-файлов:
++## Проверка полного pack
+ 
+ ```bash
+ ./r assets-full
+ ```
+ 
+-Или вручную:
+-
+-```bash
+-python3 bin/generate_asset_pack.py top_down_visualgen/profiles/dark_forest
+-python3 bin/validate_assets_manifest.py top_down_visualgen/profiles/dark_forest --check-files
+-```
+-
+-## 5. Asset registry preview
+-
+-Команда:
+-
+-```bash
+-./r asset-preview
+-```
+-
+-Создаёт:
+-
+-```text
+-output/visual_map/debug/asset_registry_report.json
+-output/visual_map/debug/asset_registry_preview.html
+-```
+-
+-После генерации placeholder pack HTML показывает не только таблицу ID, но и маленькие preview-картинки.
+-
+-## 6. Что важно
+-
+-Placeholder PNG — это не финальный арт.
+-
+-Их нельзя воспринимать как стиль. Это технические заглушки, чтобы pipeline уже работал с файловыми ассетами.
++Команда создаёт placeholder PNG и затем проверяет, что все referenced files существуют.
+ 
+-Дальше реальные PNG можно заменять постепенно, не меняя `sprite_id`, `tile_id` и правила visual pipeline.
+-
+-## 7. Следующий шаг
+-
+-После scaffold-а логичный следующий patch:
+-
+-```text
+-v0.0.74 — asset-backed preview renderer MVP
+-```
++## Важное ограничение
+ 
+-То есть visual preview начнёт использовать реальные PNG из `assets/dark_forest`, а не только debug-цвета.
++Asset pack влияет только на визуализацию. Он не меняет collision, movement, routes, world graph, gameplay zones или elevation model.
+diff --git a/docs/visual_asset_registry_preview.md b/docs/visual_asset_registry_preview.md
+index 296ccfd..2e21043 100644
+--- a/docs/visual_asset_registry_preview.md
++++ b/docs/visual_asset_registry_preview.md
+@@ -1,30 +1,14 @@
+-# Visual Asset Registry Preview — Dark Forest
++# Visual asset registry preview — dark_forest
+ 
+-Документ описывает dev-утилиту предпросмотра asset registry для `dark_forest` profile.
+-
+-Цель: перед подключением реальных PNG видеть полный список логических `tile_id` и `sprite_id`, их категории, размеры, слои отрисовки и будущие пути ассетов.
+-
+-Важно:
+-
+-```text
+-Asset registry preview не проверяет художественное качество.
+-Asset registry preview показывает контракт ассетов и помогает понять, что надо рисовать/резать.
+-```
++Asset registry preview показывает полный список logical visual assets профиля `dark_forest`.
+ 
+ ## Команда
+ 
+-```bash
+-python3 bin/generate_asset_registry_preview.py top_down_visualgen/profiles/dark_forest \
+-  --output output/visual_map/debug
+-```
+-
+-Через helper:
+-
+ ```bash
+ ./r asset-preview
+ ```
+ 
+-В полном pipeline:
++В полном pipeline preview создаётся автоматически через:
+ 
+ ```bash
+ ./r
+@@ -37,60 +21,16 @@ output/visual_map/debug/asset_registry_report.json
+ output/visual_map/debug/asset_registry_preview.html
+ ```
+ 
+-## Что показывает JSON report
++## Назначение
+ 
+-```text
+-summary.total_entries
+-summary.tiles
+-summary.sprites
+-by_kind
+-by_category
+-by_draw_layer
+-by_asset_status
+-top_tags
+-entries[]
+-```
++Preview помогает увидеть:
+ 
+-Каждая запись содержит:
+-
+-```text
+-id
+-kind
+-category
+-path
+-size
+-pivot
+-sort_anchor
+-draw_layer
+-tags
+-asset_status
+-```
+-
+-## Что показывает HTML preview
+-
+-HTML-файл нужен для ручного просмотра текущего визуального словаря:
+-
+-```text
+-- сколько всего tile/sprite ids
+-- какие категории самые большие
+-- какие draw layers есть
+-- какие asset_status используются
+-- полный список entries с path/size/pivot/sort_anchor/tags
+-```
+-
+-## Чего утилита пока не делает
+-
+-```text
+-- не грузит реальные PNG
+-- не строит sprite atlas
+-- не проверяет художественный стиль
+-- не рендерит реальные ассеты на карте
+-```
+-
+-Для проверки наличия файлов уже есть отдельный режим валидатора:
+-
+-```bash
+-python3 bin/validate_assets_manifest.py top_down_visualgen/profiles/dark_forest --check-files
+-```
++- все `tile_id` и `sprite_id`;
++- категории;
++- draw layers;
++- размеры;
++- pivot/sort anchor;
++- наличие PNG-файлов;
++- thumbnails существующих assets.
+ 
+-Но пока реальные PNG не требуются: текущий этап фиксирует контракт.
++Это инструмент контроля asset contract, а не проверка художественного качества.
+diff --git a/docs/visual_assets_manifest_dark_forest.md b/docs/visual_assets_manifest_dark_forest.md
+index c2cc7e1..743718f 100644
+--- a/docs/visual_assets_manifest_dark_forest.md
++++ b/docs/visual_assets_manifest_dark_forest.md
+@@ -1,126 +1,47 @@
+-# Visual Assets Manifest — Dark Forest
++# Visual assets manifest — dark_forest
+ 
+-Документ фиксирует контракт будущих PNG-ассетов для visual pipeline `dark_forest`.
++`top_down_visualgen/profiles/dark_forest/assets_manifest.json` описывает связь между logical visual ids и физическими PNG-ассетами.
+ 
+-Важно: `assets_manifest.json` сейчас описывает **логические связи**, а не требует наличия реальных PNG-файлов.
++Manifest нужен для:
+ 
+-```text
+-visual_tilesets.json -> какие tile_id / sprite_id существуют
+-assets_manifest.json -> где эти tile_id / sprite_id будут лежать как ассеты
+-```
+-
+-## 1. Зачем нужен assets manifest
++- asset-backed final render;
++- проверки, что каждый `tile_id` и `sprite_id` имеет ожидаемый путь;
++- генерации placeholder asset pack;
++- asset registry preview.
+ 
+-Visual pipeline уже создаёт много логических идентификаторов:
+-
+-```text
+-road.turn_ne — поворот дороги на северо-восток
+-swamp.edge_s — южный край болота
+-decor.reeds_01 — камыш
+-elevation.lowland_shadow_edge — тёмный край низины
+-boundary.dense_forest_wall — плотная лесная стена края карты
+-```
+-
+-Пока они рисуются placeholder-превью. Для перехода к реальным ассетам нужен стабильный контракт:
+-
+-```text
+-tile_id / sprite_id
+-  -> path
+-  -> size
+-  -> pivot
+-  -> sort_anchor
+-  -> draw_layer
+-  -> tags
+-```
+-
+-## 2. Где лежит контракт
++## Где лежит manifest
+ 
+ ```text
+ top_down_visualgen/profiles/dark_forest/assets_manifest.json
+ ```
+ 
+-## 3. Что проверяет валидатор
+-
+-```bash
+-python3 bin/validate_assets_manifest.py top_down_visualgen/profiles/dark_forest
+-```
+-
+-Проверяется:
++## Где лежат PNG
+ 
+ ```text
+-- все tile_id из visual_tilesets.json есть в assets_manifest.json
+-- все sprite_id из visual_tilesets.json есть в assets_manifest.json
+-- у tile есть path и size
+-- у sprite есть path, size, pivot, sort_anchor и draw_layer
+-- fallback missing_tile / missing_sprite указывают на реальные записи manifest-а
+-```
+-
+-По умолчанию реальные PNG-файлы **не требуются**.
+-
+-Чтобы позже проверить уже сами файлы:
+-
+-```bash
+-python3 bin/validate_assets_manifest.py top_down_visualgen/profiles/dark_forest --check-files
++assets/dark_forest/
+ ```
+ 
+-## 4. Пример tile entry
+-
+-```json
+-{
+-  "road.turn_ne": {
+-    "path": "tiles/road/turn_ne.png",
+-    "size": [16, 16],
+-    "tags": ["road", "turn", "ne"],
+-    "asset_status": "placeholder_contract"
+-  }
+-}
+-```
++Пути внутри manifest относительны к `asset_root`.
+ 
+-## 5. Пример sprite entry
+-
+-```json
+-{
+-  "decor.reeds_01": {
+-    "path": "sprites/decor/reeds_01.png",
+-    "size": [16, 16],
+-    "pivot": [8, 12],
+-    "sort_anchor": [8, 12],
+-    "draw_layer": "decor",
+-    "tags": ["decor", "reeds"],
+-    "asset_status": "placeholder_contract"
+-  }
+-}
+-```
+-
+-## 6. Слои отрисовки
++## Что описывает entry
+ 
+ ```text
+-decor — мелкий декор
+-object — runtime/object sprites
+-elevation — маркеры высот и низин
+-boundary — визуальный край карты
+-debug — fallback/debug sprites
++id
++kind: tile | sprite
++path
++size
++pivot
++sort_anchor
++draw_layer
++tags
++fallbacks
+ ```
+ 
+-## 7. Текущий статус
++## Проверки
+ 
+-```text
+-asset_status: placeholder_contract
+-```
+-
+-Это значит:
+-
+-```text
+-контракт уже есть
+-реального PNG может ещё не быть
+-путь зарезервирован
+-валидатор проверяет структуру, но не файл
++```bash
++./r assets
++./r assets-full
+ ```
+ 
+-Когда реальные ассеты появятся, `asset_status` можно будет заменить, например:
+-
+-```text
+-production
+-draft
+-needs_review
+-```
++`./r assets` проверяет contract manifest-а. `./r assets-full` дополнительно генерирует placeholder PNG и проверяет наличие файлов.
+diff --git a/docs/visual_boundary_dark_forest.md b/docs/visual_boundary_dark_forest.md
+index 84c44d4..cd3430d 100644
+--- a/docs/visual_boundary_dark_forest.md
++++ b/docs/visual_boundary_dark_forest.md
+@@ -1,108 +1,31 @@
+-# Visual Boundary — Dark Forest
++# Visual boundary — dark_forest
+ 
+-Документ фиксирует MVP-идею `map boundary visual treatment` для профиля `dark_forest_post_soviet_ruins`.
++Boundary visual pass добавляет visual-only маркеры по краям карты, чтобы прямоугольный край выглядел как плотная чаща, руины, болото или обрыв.
+ 
+-Важно:
++## Входные данные
+ 
+ ```text
+-Boundary visual не меняет gameplay.
+-Boundary visual pass только показывает непроходимый край карты.
++output/map_package/
++top_down_visualgen/profiles/dark_forest/boundary_visual_rules.json
+ ```
+ 
+-Visual pipeline не должен:
+-
+-```text
+-- менять collision
+-- менять movement
+-- менять routes
+-- двигать start/goal
+-- создавать реальные проходы
+-```
+-
+-Visual pipeline может:
+-
+-```text
+-- добавлять visual-only boundary objects
+-- скрывать прямоугольность карты
+-- показывать, почему за край нельзя идти
+-- усиливать атмосферу тёмного леса
+-```
+-
+-## 1. Основная идея
+-
+-Край карты не должен выглядеть как обрезанный прямоугольник.
+-
+-Вместо этого по внешнему краю добавляются visual-only маркеры:
+-
+-```text
+-dense_forest_wall — плотная лесная стена
+-dark_tree_wall — тёмная чаща
+-cliff_wall — обрыв / высокий край
+-ruin_barrier — руинный завал
+-swamp_barrier — непроходимая болотная кромка
+-concrete_barrier — старые бетонные остатки / стена
+-```
+-
+-## 2. Отличие от Level 4
+-
+-`Level 4` внутри карты — это редкая визуальная доминанта / landmark.
+-
+-`Boundary treatment` — это внешний край мира.
+-
+-```text
+-Level 4 = ориентир внутри карты
+-Boundary = объяснение, почему карта заканчивается
+-```
+-
+-Обе системы visual-only, но у них разный смысл.
+-
+-## 3. Правила MVP
+-
+-```text
+-- boundary markers ставятся только у внешнего края карты
+-- boundary markers не должны быть одинаковой рамкой Paint-style
+-- тип boundary выбирается по terrain context
+-- лесной край чаще становится dense_forest_wall / dark_tree_wall
+-- болотный край чаще становится swamp_barrier
+-- руинный край чаще становится ruin_barrier / concrete_barrier
+-- дорога, уходящая за край, визуально перекрывается чащей
+-```
+-
+-## 4. Debug/report
+-
+-Visual pipeline пишет:
++## Выходные данные
+ 
+ ```text
++output/visual_map/visual_objects.json
+ output/visual_map/debug/boundary_visual_report.json
+-output/visual_map/debug/steps/11_boundary_visual.png
+ ```
+ 
+-Report показывает:
++## Правила
+ 
+-```text
+-total
+-by_boundary_type
+-by_sprite_id
+-by_edge
+-by_role
+-failed_placements
+-sampled_markers
+-```
+-
+-## 5. Summary
+-
+-`./r summary` показывает:
++Boundary visual не меняет:
+ 
+ ```text
+-Boundary visual:
+-  markers:             312 [ok]
+-  failed placements:     0 [ok]
+-  sampled markers:      89 [ok]
+-  by type:
+-    dense forest:      180
+-    dark trees:         72
+-    ruins:              24
+-    swamp:              19
+-    concrete:           17
+-    cliff:               0
++collision
++movement
++routes
++start/goal
++gameplay zones
+ ```
++
++Он только добавляет visual objects для чтения края карты.
+diff --git a/docs/visual_elevation_dark_forest.md b/docs/visual_elevation_dark_forest.md
+index e28963f..9dea275 100644
+--- a/docs/visual_elevation_dark_forest.md
++++ b/docs/visual_elevation_dark_forest.md
+@@ -1,723 +1,35 @@
+-# Visual Elevation — Dark Forest
++# Visual elevation — dark_forest
+ 
+-Документ описывает, как `visual_tileset_pipeline` должен показывать высоты и низины в стиле `dark_forest_post_soviet_ruins`.
++Elevation visual pass показывает уже существующие elevation данные из world package.
+ 
+-Цель: заранее договориться о визуальном языке `Elevation`, прежде чем писать `elevation visual pass`.
+-
+-Важно:
+-
+-```text
+-Elevation не меняет gameplay.
+-Elevation visual pass только показывает уже существующие данные world package.
+-```
+-
+-Visual pipeline не должен:
+-
+-```text
+-- менять height_grid
+-- менять collision
+-- менять movement
+-- двигать start/goal
+-- ломать routes
+-- менять zones
+-```
+-
+-Visual pipeline может:
+-
+-```text
+-- добавлять overlay tiles
+-- добавлять visual markers
+-- добавлять небоевые visual objects
+-- показывать края высот
+-- показывать спуски/подъёмы
+-- усиливать читаемость low/high areas
+-```
+-
+----
+-
+-## 1. Общая идея
+-
+-В world package уже есть уровни:
+-
+-```text
+--1  низины, ямы, окопы, внутренности бункеров
+- 0  обычная земля
+- 1  холмы, насыпи, бермы
+- 2  мосты, платформы, приподнятые руины
+- 3  вышки, башни, высокие наблюдательные точки
+- 4  visual-only landmark / beacon / непроходимая визуальная доминанта
+-```
+-
+-Для visual pipeline нужно сделать так, чтобы игрок глазами понимал:
+-
+-```text
+-- где ниже
+-- где выше
+-- где край высоты
+-- где можно подняться/спуститься
+-- где высокая тактическая точка
+-- где особый landmark
+-- где край мира визуально закрыт естественной преградой
+-```
+-
+-Принятое решение по стилю:
+-
+-```text
+-height_emphasis: readable — заметно, но не комиксово
+-lowlands_wetness: contextual — зависит от terrain/place/elevation feature
+-level_4_policy: visual_only_landmark — непроходимая визуальная доминанта
+-boundary_treatment: separate_boundary_visual_system — отдельная система края карты
+-```
+-
+----
+-
+-## 2. Level -1 — низины / углубления
+-
+-### Смысл
+-
+-```text
+-lowland — низина
+-pit — яма
+-trench — окоп
+-bunker_interior — внутренняя часть бункера
+-swamp_depression — болотная впадина
+-washed_ground — размытая земля
+-```
+-
+-Это места, которые должны ощущаться ниже обычной земли.
+-
+-### Визуальные признаки
+-
+-```text
+-darker_ground — более тёмная земля
+-wet_mud — мокрая грязь
+-shadowed_edge — затенённый край
+-recessed_floor — вдавленная поверхность
+-lowland_rim — край низины
+-water_seep — просачивающаяся вода
+-```
+-
+-### Возможные visual objects
+-
+-```text
+-elevation.mud_pool — грязевая лужа
+-elevation.wet_grass_dark — тёмная мокрая трава
+-elevation.trench_wall_edge — край окопа
+-elevation.pit_edge — край ямы
+-elevation.root_hanging — свисающие корни
+-elevation.broken_drain_pipe — сломанная труба
+-elevation.bunker_floor_dark — тёмный пол бункера
+-elevation.water_seep — просачивающаяся вода
+-elevation.dark_leaf_litter — тёмная мокрая листва
+-elevation.lowland_stones — камни в низине
+-```
+-
+-### Возможные transition objects
+-
+-```text
+-elevation.trench_step — ступень в окоп
+-elevation.mud_slope_down — грязный спуск вниз
+-elevation.bunker_descent — спуск в бункер
+-elevation.pit_ramp — пологий спуск в яму
+-elevation.root_step — корни как ступени
+-```
+-
+-### Тактический смысл
+-
+-```text
+-- может визуально показывать укрытие
+-- может намекать на замедление
+-- может быть опасной зоной
+-- может быть скрытым проходом
+-- может быть внутренней частью бункера
+-```
+-
+-### Осторожно
+-
+-Не делать все низины одинаково болотными.
+-`level -1` не всегда болото. Это может быть окоп, яма, бункер или просто просадка земли.
+-
+----
+-
+-## 3. Level 0 — обычная земля
+-
+-### Смысл
+-
+-```text
+-normal_ground — базовый уровень
+-grass — трава
+-old_road — старая дорога
+-ruin_floor — пол руин
+-forest_ground — лесная земля
+-```
+-
+-Это baseline.
+-
+-### Визуальные признаки
+-
+-```text
+-base_ground — базовая земля
+-neutral_grass — обычная трава
+-normal_shadow — обычная тень
+-```
+-
+-### Возможные visual objects
+-
+-Здесь живут обычные слои:
+-
+-```text
+-grass_tuft — пучок травы
+-small_stone — маленький камень
+-road_grass_tuft — трава на дороге
+-ruin_rubble — руинный щебень
+-forest_litter — лесная подстилка
+-```
+-
+-### Тактический смысл
+-
+-```text
+-- основной проходимый уровень
+-- точка сравнения для высот и низин
+-```
+-
+----
+-
+-## 4. Level 1 — небольшие возвышения
+-
+-### Смысл
+-
+-```text
+-raised_ground — приподнятая земля
+-hill — холм
+-raised_berm — насыпь / берма
+-earthwork — земляное укрепление
+-dry_ridge — сухая гряда
+-```
+-
+-Это не высокая платформа, а небольшое преимущество по высоте.
+-
+-### Визуальные признаки
+-
+-```text
+-slightly_lighter_ground — чуть более светлая земля
+-dry_grass — суховатая трава
+-raised_edge — край подъёма
+-hill_shoulder — плечо холма
+-berm_rim — кромка насыпи
+-```
+-
+-### Возможные visual objects
+-
+-```text
+-elevation.raised_berm_edge — край насыпи
+-elevation.hill_grass_edge — травяной склон
+-elevation.dry_stone_patch — сухой каменный участок
+-elevation.exposed_roots — открытые корни
+-elevation.slope_grass — трава на склоне
+-elevation.old_earthwork — старая земляная насыпь
+-elevation.ridge_stones — камни на гряде
+-elevation.dry_leaf_patch — сухие листья
+-```
+-
+-### Возможные transition objects
+-
+-```text
+-elevation.dirt_slope_up — земляной подъём
+-elevation.grass_slope_up — травяной подъём
+-elevation.low_berm_cut — проход через насыпь
+-elevation.root_slope — склон с корнями
+-```
+-
+-### Тактический смысл
+-
+-```text
+-- лёгкое преимущество позиции
+-- хорошая точка обзора
+-- естественная граница поляны
+-- место для укрытий и засад
+-```
+-
+-### Осторожно
+-
+-Level 1 не должен выглядеть как бетонная платформа.
+-Это скорее земляной рельеф: холм, вал, насыпь.
+-
+----
+-
+-## 5. Level 2 — платформы / мосты / поднятые руины
+-
+-### Смысл
+-
+-```text
+-platform — платформа
+-wooden_bridge — деревянный мост
+-stone_platform — каменная платформа
+-raised_ruin_floor — приподнятый пол руин
+-walkway — настил / проход
+-```
+-
+-Это уже явная конструкция или сильно читаемая высота.
+-
+-### Визуальные признаки
+-
+-```text
+-platform_edge — край платформы
+-strong_outline — сильнее обозначенный край
+-wooden_deck — деревянный настил
+-stone_floor — каменный пол
+-support_hint — намёк на опоры
+-```
+-
+-### Возможные visual objects
+-
+-```text
+-elevation.wooden_bridge_deck — деревянный настил моста
+-elevation.stone_platform_edge — край каменной платформы
+-elevation.broken_stairs_base — основание сломанной лестницы
+-elevation.ruin_platform_floor — пол приподнятых руин
+-elevation.bridge_support_post — опора моста
+-elevation.collapsed_platform_gap — провал в платформе
+-elevation.stone_guard_edge — каменный бортик
+-elevation.old_planks — старые доски
+-```
+-
+-### Возможные transition objects
+-
+-```text
+-elevation.stone_stairs — каменная лестница
+-elevation.wooden_ramp — деревянная рампа
+-elevation.dirt_ramp — земляной подъём
+-elevation.broken_stairs — сломанная лестница
+-elevation.bridge_entry — вход на мост
+-elevation.platform_step — ступень на платформу
+-```
+-
+-### Тактический смысл
+-
+-```text
+-- сильная позиция
+-- узкий проход
+-- мост через опасную зону
+-- место для обороны
+-- явный ориентир
+-```
+-
+-### Осторожно
+-
+-Если level 2 есть, переходы должны быть читаемыми.
+-Иначе игрок видит платформу, но не понимает, как туда попасть.
+-
+----
+-
+-## 6. Level 3 — высокая точка
+-
+-### Смысл
+-
+-```text
+-watchtower — вышка
+-tower — башня
+-lookout — наблюдательная точка
+-high_platform — высокая площадка
+-```
+-
+-Это редкая и заметная высокая позиция.
+-
+-### Визуальные признаки
+-
+-```text
+-tower_base — основание башни
+-high_shadow — сильная тень
+-vertical_marker — вертикальный ориентир
+-lookout_floor — площадка наблюдения
+-ladder_marker — лестница / подъём
+-```
+-
+-### Возможные visual objects
+-
+-```text
+-elevation.watchtower_base — основание вышки
+-elevation.watchtower_ladder — лестница вышки
+-elevation.high_platform_edge — край высокой площадки
+-elevation.lookout_planks — доски наблюдательной площадки
+-elevation.old_flag_pole — старый флагшток
+-elevation.signal_tripod — сигнальная тренога
+-elevation.broken_railing — сломанные перила
+-elevation.watch_post_debris — мусор сторожевого поста
+-```
+-
+-### Возможные transition objects
+-
+-```text
+-elevation.tower_ladder — лестница на вышку
+-elevation.wooden_stairs_high — высокая деревянная лестница
+-elevation.stone_steps_high — высокие каменные ступени
+-elevation.platform_ladder_entry — вход на площадку
+-```
+-
+-### Тактический смысл
+-
+-```text
+-- сильная обзорная точка
+-- снайперская/наблюдательная позиция
+-- landmark внутри локальной области
+-- место, к которому игрок может стремиться
+-```
+-
+-### Осторожно
+-
+-Level 3 должен быть редким.
+-Если высоких точек слишком много, они перестают быть важными.
+-
+----
+-
+-## 7. Level 4 — visual-only landmark / beacon
+-
+-### Смысл
+-
+-```text
+-ancient_beacon — древний маяк / beacon
+-special_high_landmark — особая высокая визуальная доминанта
+-ritual_high_point — ритуальная высокая точка
+-signal_monolith — сигнальный монолит
+-```
+-
+-Это не traversable high-ground. Это визуальная доминанта.
+-
+-Принятое решение:
+-
+-```text
+-Level 4 — чисто визуальная фигня.
+-Подняться нельзя.
+-Стоит красиво.
+-Помогает ориентироваться.
+-Может стать будущей story point, но сейчас gameplay не меняет.
+-```
+-
+-### Визуальные признаки
+-
+-```text
+-unique_marker — уникальный маркер
+-strong_silhouette — сильный силуэт
+-special_ground — особая земля вокруг
+-landmark_ring — кольцо/основание вокруг landmark
+-non_walkable_base — непроходимое основание
+-```
+-
+-### Возможные visual objects
+-
+-```text
+-elevation.ancient_beacon_base — основание древнего маяка
+-elevation.signal_stone — сигнальный камень
+-elevation.ritual_marker — ритуальный маркер
+-elevation.collapsed_monolith — рухнувший монолит
+-elevation.high_landmark_marker — маркер высокого ориентира
+-elevation.old_signal_device — старое сигнальное устройство
+-elevation.strange_stone_ring — странное каменное кольцо
+-elevation.beacon_debris — обломки маяка
+-```
+-
+-### Подходы и окружение, но не переходы
+-
+-Для level 4 не используем явные traversable transitions вроде лестницы наверх.
+-
+-Допустимо:
+-
+-```text
+-elevation.stone_approach — каменный подход
+-elevation.landmark_ring_edge — край основания landmark
+-elevation.beacon_debris — обломки маяка
+-elevation.strange_stone_ring — странное каменное кольцо
+-```
+-
+-Не использовать как обычный проход:
+-
+-```text
+-landmark_stairs — лестница к landmark
+-spiral_ramp_hint — намёк на спиральный подъём
+-ritual_steps — ритуальные ступени
+-```
+-
+-Эти элементы могут появиться позже только как `non_walkable_visual_only`, если будет понятно, что игрок не ожидает туда подняться.
+-
+-### Тактический смысл
+-
+-```text
+-- главный ориентир
+-- визуальная доминанта
+-- потенциальная сюжетная точка
+-- точка навигации на карте
+-```
+-
+-### Осторожно
+-
+-Level 4 должен быть очень редким.
+-На обычной карте может быть 0–1 таких зон.
+-
+----
+-
+-## 8. Boundary treatment — визуальный край карты
+-
+-Boundary treatment — это отдельная будущая система, не равная level 4.
+-
+-### Смысл
+-
+-Край карты не должен выглядеть как тупой прямоугольный обрыв массива. Он должен быть закрыт естественной или рукотворной преградой.
+-
+-Варианты:
+-
+-```text
+-boundary.dense_forest_wall — плотная лесная стена
+-boundary.cliff_wall — высокий обрыв
+-boundary.ruin_barrier — руинный барьер
+-boundary.swamp_barrier — непроходимая болотная кромка
+-boundary.concrete_barrier — старый бетонный завал / ограждение
+-boundary.dark_tree_wall — тёмная стена деревьев
+-```
+-
+-### Правило
+-
+-```text
+-Level 4 = редкая внутренняя визуальная доминанта.
+-Boundary treatment = внешний визуальный непроходимый край мира.
+-```
+-
+-Их нельзя смешивать в одну категорию.
+-
+-### Осторожно
+-
+-Не делать одинаковую рамку по всему периметру.
+-Иначе это будет выглядеть как обводка в Paint.
+-
+-Лучше:
+-
+-```text
+-60% dense forest wall — плотная лесная стена
+-15% cliff/raised edge — обрыв / высокий край
+-10% ruin barrier — руинный барьер
+-10% swamp barrier — болотный барьер
+-5% special blocked hint — заваленная тропа / сломанный мост / странный объект
+-```
+-
+----
+-
+-## 9. Переходы высот
+-
+-Переходы важнее самих цифр высоты.
+-Если переходы не видны, elevation не читается.
+-
+-### Основные transition types
+-
+-```text
+-slope — склон
+-ramp — рампа / подъём
+-stairs — лестница
+-bridge_entry — вход на мост
+-bunker_descent — спуск в бункер
+-trench_step — ступень в окоп
+-platform_step — ступень на платформу
+-tower_ladder — лестница на вышку
+-```
+-
+-### Visual objects для переходов
+-
+-```text
+-elevation.slope_grass — травяной склон
+-elevation.mud_slope_down — грязный спуск вниз
+-elevation.dirt_ramp — земляная рампа
+-elevation.wooden_ramp — деревянная рампа
+-elevation.stone_stairs — каменная лестница
+-elevation.broken_stairs — сломанная лестница
+-elevation.bridge_entry — вход на мост
+-elevation.bunker_descent — спуск в бункер
+-elevation.trench_step — ступень в окоп
+-elevation.tower_ladder — лестница на вышку
+-```
+-
+-### Что нужно проверять
+-
+-```text
+-- переход не должен перекрывать route
+-- переход должен визуально совпадать с реальным transition
+-- опасный край должен быть виден
+-- вход на мост/платформу должен быть читаем
+-```
+-
+----
+-
+-## 10. Edge markers
+-
+-Края высот должны читаться.
+-
+-### Lowland edges
+-
+-```text
+-elevation.lowland_shadow_edge — тёмный край низины
+-elevation.mud_rim — грязная кромка
+-elevation.pit_rim — край ямы
+-elevation.trench_wall_edge — край окопа
+-elevation.bunker_floor_edge — край пола бункера
+-```
+-
+-### Raised edges
+-
+-```text
+-elevation.raised_berm_edge — край насыпи
+-elevation.hill_shoulder — плечо холма
+-elevation.dry_ridge_edge — сухая кромка гряды
+-elevation.rooted_slope_edge — склон с корнями
+-```
+-
+-### Platform edges
+-
+-```text
+-elevation.stone_platform_edge — край каменной платформы
+-elevation.wooden_platform_edge — край деревянной платформы
+-elevation.ruin_platform_edge — край руинной платформы
+-elevation.bridge_side_edge — боковой край моста
+-```
+-
+-### High point edges
+-
+-```text
+-elevation.high_platform_edge — край высокой площадки
+-elevation.tower_base_edge — край основания башни
+-elevation.landmark_ring_edge — край основания landmark
+-```
+-
+----
+-
+-## 11. Роли elevation-объектов
+-
+-Пока интерактивности нет, но роли можно заложить:
+-
+-```text
+-visual — просто визуальный объект
+-height_edge — показывает край высоты
+-transition_hint — показывает проход вверх/вниз
+-danger_hint — показывает опасный край/падение/низину
+-cover_hint — намекает на укрытие
+-landmark_hint — показывает важный ориентир
+-story_candidate — потенциальный сюжетный объект
+-boundary_hint — показывает непроходимый край карты
+-```
+-
+----
+-
+-## 12. Предлагаемая структура правил
+-
+-Будущий файл:
++## Входные данные
+ 
+ ```text
++output/map_package/elevation_model.json
++output/map_package/elevation_features.json
++output/map_package/elevation_transitions.json
++output/map_package/layers/elevation.json
+ top_down_visualgen/profiles/dark_forest/elevation_visual_rules.json
+ ```
+ 
+-Примерно:
+-
+-```json
+-{
+-  "schema_version": "elevation-visual-rules-v1",
+-  "profile": "dark_forest",
+-  "world_style": "dark_forest_post_soviet_ruins",
+-  "style_decisions": {
+-    "height_emphasis": "readable",
+-    "lowlands_wetness": "contextual",
+-    "level_4_policy": "visual_only_landmark",
+-    "boundary_treatment": "separate_boundary_visual_system"
+-  }
+-}
+-```
+-
+----
+-
+-## 13. Debug output
+-
+-Когда elevation visual pass будет реализован, он должен писать:
++## Выходные данные
+ 
+ ```text
++output/visual_map/visual_objects.json
+ output/visual_map/debug/elevation_visual_report.json
+-output/visual_map/debug/steps/XX_elevation_visual.png
+-```
+-
+-Report должен показывать:
+-
+-```text
+-level_counts
+-lowland_visual_objects
+-raised_visual_objects
+-transition_markers
+-edge_markers
+-landmark_markers
+-boundary_markers
+-failed_placements
+-```
+-
+----
+-
+-## 14. Summary output
+-
+-В `./r` summary нужно показывать:
+-
+-```text
+-Visual elevation:
+-  lowland overlays:    812 [ok]
+-  raised edge markers: 490 [ok]
+-  transition markers:   64 [ok]
+-  landmark markers:      5 [ok]
+-```
+-
+-Позже можно расширить:
+-
+-```text
+-Visual elevation:
+-  lowland overlays:      812 / 812 [ok]
+-  raised edge markers:   490
+-  transition markers:     64 / 64 [ok]
+-  landmark markers:        5 / 5 [ok]
+-  failed placements:       0 [ok]
+ ```
+ 
+----
++## Правила
+ 
+-## 15. Зафиксированные решения
+-
+-```text
+-height emphasis:
+-  readable — заметно, но не комиксово
+-
+-lowlands wetness:
+-  contextual — зависит от terrain/place/elevation feature
+-
+-level 4:
+-  visual_only_landmark — непроходимая визуальная доминанта
+-
+-boundary treatment:
+-  отдельная будущая система визуального края карты
+-```
++Visual elevation не меняет gameplay elevation. Он только добавляет overlays/markers для читаемости низин, высот и переходов.
+ 
+----
++## Текущие правила профиля
+ 
+-## 16. Следующий patch после каталога
+-
+-После этого документа следующий технический шаг:
+-
+-```text
+-v0.0.67 — elevation visual pass MVP
+-```
+-
+-Он должен реализовать:
++В `elevation_visual_rules.json` сейчас зафиксировано:
+ 
+ ```text
+-- lowland overlays
+-- raised overlays
+-- height edge markers
+-- transition markers
+-- landmark markers
+-- elevation_visual_report.json
+-- debug step elevation_visual.png
++style_decisions.level_4_policy = visual_only_landmark
++boundary_treatment.status = separate_boundary_visual_system
+ ```
+ 
+-Boundary treatment лучше делать отдельным patch после elevation pass:
+-
+-```text
+-v0.0.68 — map boundary visual treatment
+-```
++То есть level 4 показывается как visual-only landmark, а boundary обрабатывается отдельной boundary visual system.
+diff --git a/docs/visual_final_render_dark_forest.md b/docs/visual_final_render_dark_forest.md
+index 836a614..81de0eb 100644
+--- a/docs/visual_final_render_dark_forest.md
++++ b/docs/visual_final_render_dark_forest.md
+@@ -1,8 +1,12 @@
+-# Visual Final Render — Dark Forest
++# Visual final render — dark_forest
+ 
+-`final_render.png` is the asset-backed final PNG produced at the end of the visual pipeline.
++Final renderer создаёт asset-backed PNG:
+ 
+-The renderer reads:
++```text
++output/visual_map/final_render.png
++```
++
++## Входные данные
+ 
+ ```text
+ output/visual_map/visual_layers.json
+@@ -11,35 +15,20 @@ top_down_visualgen/profiles/dark_forest/assets_manifest.json
+ assets/dark_forest/**/*.png
+ ```
+ 
+-It writes:
++## Выходные данные
+ 
+ ```text
+ output/visual_map/final_render.png
+ output/visual_map/debug/final_render_report.json
+ ```
+ 
+-Important rules:
+-
+-```text
+-- final render does not change gameplay
+-- final render does not change collision
+-- final render does not move routes, start, or goal
+-- missing assets use manifest fallbacks when possible
+-```
+-
+-For a `192 x 176` map with `16 px` tiles, the normal final PNG size is:
+-
+-```text
+-3072 x 2816 px
+-```
+-
+-Commands:
++## Команды
+ 
+ ```bash
+ ./r
+ ./r final-render
+ ```
+ 
+-`./r` runs the full pipeline and includes `final_render.png` in the final summary.
++## Правила
+ 
+-`./r final-render` rerenders only the final PNG from existing visual JSON files.
++Final render не меняет gameplay. Это только изображение текущего visual output.
+diff --git a/docs/visual_micro_scenes_dark_forest.md b/docs/visual_micro_scenes_dark_forest.md
+index d93ffbc..df42efa 100644
+--- a/docs/visual_micro_scenes_dark_forest.md
++++ b/docs/visual_micro_scenes_dark_forest.md
+@@ -1,770 +1,48 @@
+-# Visual micro scenes — dark_forest_post_soviet_ruins
++# Visual micro scenes — dark_forest
+ 
+-## 1. Цель документа
++Micro scenes — это небольшие visual-only композиции вокруг semantic places. Текущий world style id: `dark_forest_post_soviet_ruins`.
+ 
+-Этот документ фиксирует контентный каталог микросцен для visual pipeline профиля `dark_forest`.
+-
+-Микросцена — это небольшая смысловая композиция внутри `place`:
+-
+-```text
+-ruined_camp — разрушенный лагерь
+-blocked_road — заваленная дорога
+-swamp_crossing — болотный переход
+-secret_cache — скрытый тайник
+-```
+-
+-Задача микросцен — сделать карту визуально богаче и тактически читаемее, но не менять gameplay-данные world package.
+-
+-Visual pipeline не должен:
+-
+-```text
+-менять terrain
+-менять collision
+-менять movement
+-двигать start/goal
+-перекрывать routes
+-создавать реальный loot/gameplay interaction
+-```
+-
+-Он может:
+-
+-```text
+-добавлять небоевые visual objects
+-добавлять metadata на будущее
+-раскладывать визуальные акценты вокруг смысловых мест
+-```
+-
+----
+-
+-## 2. Стиль мира
+-
+-Выбранный стиль:
+-
+-```text
+-dark_forest_post_soviet_ruins — тёмный лес, постсоветские заброшенные объекты, старые дороги, бункеры, бетон, древние/непонятные руины
+-```
+-
+-Основа:
+-
+-```text
+-abandoned_dark_forest — заброшенный тёмный лес
+-overgrown_roads — заросшие старые дороги
+-post_soviet_remains — постсоветские остатки / бетон / бункеры / оборонительные точки
+-ancient_unknown_ruins — древние непонятные руины
+-swamp_lowlands — болота и низины
+-rare_landmarks — редкие странные ориентиры
+-```
+-
+-Не делаем основой:
+-
+-```text
+-pure_fantasy — чистое фэнтези
+-pure_horror — чистый хоррор
+-fairy_forest — сказочный яркий лес
+-modern_military_range — современный военный полигон
+-```
+-
+----
+-
+-## 3. Роли объектов на будущее
+-
+-Интерактивность сейчас не реализуется. Роли нужны только как metadata и как подготовка на будущее.
+-
+-Целевое распределение:
+-
+-```text
+-visual — просто визуальный предмет: 75–85%
+-inspectable_candidate — потенциально можно осмотреть: 10–15%
+-loot_candidate — потенциальный лут: 3–6%
+-story_candidate — потенциальный сюжетный объект: 1–2%
+-cover_hint — визуальная подсказка укрытия: context-based / зависит от места
+-```
+-
+-Роли:
+-
+-```text
+-visual — просто визуальный предмет
+-inspectable_candidate — потенциально можно осмотреть
+-loot_candidate — потенциальный лут
+-story_candidate — потенциальный сюжетный объект
+-cover_hint — визуальная подсказка укрытия
+-danger_hint — подсказка опасности
+-path_hint — подсказка прохода / направления
+-```
+-
+----
+-
+-## 4. Микросцены, которые уже есть
+-
+-```text
+-ruined_camp — разрушенный лагерь
+-swamp_crossing — болотный переход
+-blocked_road — заваленная дорога
+-small_loot_pocket — маленькая зона лута / небольшая находка
+-secret_cache — скрытый тайник
+-bunker_outer_area — внешняя зона бункера
+-bunker_inner_area — внутренняя зона бункера
+-dangerous_lowland — опасная низина
+-old_defensive_position — старая оборонительная позиция
+-ambush_clearing — поляна для засады
+-forest_obstruction — лесной завал / преграда
+-small_ruin_site — маленькие руины
+-ruined_structure — разрушенная структура
+-raised_platform_site — приподнятая руинная площадка
+-```
+-
+----
+-
+-## 5. Предметы, которые уже есть
+-
+-### 5.1. Болото
+-
+-```text
+-reeds — камыш
+-mud_patch — пятно грязи
+-wet_grass — мокрая трава
+-dead_branch — сухая ветка / мёртвая ветка
+-swamp_log — бревно в болоте
+-```
+-
+-### 5.2. Старые дороги
+-
+-```text
+-road_grass_tuft — пучок травы на дороге
+-road_dirt_noise — грязный шум / пятно земли на дороге
+-small_stone — маленький камень
+-broken_plank — сломанная доска
+-roadblock_debris — мусор от дорожного завала
+-```
+-
+-### 5.3. Руины
+-
+-```text
+-ruin_rubble — руинный щебень / обломки
+-cracked_stone — треснувший камень
+-fallen_bricks — упавшие кирпичи
+-broken_block — сломанный каменный блок
+-mossy_stone — камень со мхом
+-concrete_debris — бетонные обломки
+-```
+-
+-### 5.4. Лагерь / человеческие следы
+-
+-```text
+-campfire_ash — пепелище / остатки костра
+-abandoned_crate — брошенный ящик
+-firewood_stack — стопка дров
+-```
+-
+-### 5.5. Опасность / оборона
+-
+-```text
+-warning_bones — предупреждающие кости / останки
+-sandbag_remnant — остатки мешков с песком
+-fallen_log — упавшее бревно
+-hidden_cache_marker — скрытый маркер тайника
+-```
+-
+----
+-
+-## 6. Предметы, которые предлагается добавить
+-
+-### 6.1. Лагерь / следы людей
+-
+-```text
+-torn_cloth — рваная ткань
+-old_backpack — старый рюкзак
+-empty_bottle — пустая бутылка
+-rusty_pot — ржавая кастрюля / котелок
+-broken_lantern — сломанный фонарь
+-rope_piece — кусок верёвки
+-sack — мешок
+-collapsed_tent_piece — кусок рухнувшей палатки
+-burned_log — обгоревшее бревно
+-old_bedroll — старый спальник / подстилка
+-```
+-
+-### 6.2. Дорога / завалы
+-
+-```text
+-wagon_wheel_broken — сломанное колесо телеги
+-signpost_broken — сломанный указатель
+-barricade_stake — колышек баррикады
+-tire_rut_mud — грязная колея
+-branch_pile — куча веток
+-plank_stack — стопка досок
+-broken_cart_piece — кусок сломанной телеги
+-roadside_marker_stone — придорожный камень-метка
+-```
+-
+-### 6.3. Руины
+-
+-```text
+-broken_column — сломанная колонна
+-stone_slab — каменная плита
+-cracked_floor_piece — кусок треснувшего пола
+-half_wall_debris — обломки полустены
+-old_tile_fragment — фрагмент старой плитки
+-root_over_stone — корень поверх камня
+-collapsed_arch_piece — кусок рухнувшей арки
+-stone_dust_patch — пятно каменной пыли
+-```
+-
+-### 6.4. Болото
+-
+-```text
+-reeds_cluster — группа камыша
+-black_mud — чёрная грязь
+-rotten_log — гнилое бревно
+-water_puddle — лужа
+-moss_patch — пятно мха
+-bog_bubbles — болотные пузыри
+-dead_tree_root — мёртвый корень дерева
+-swamp_stones — болотные камни
+-```
+-
+-### 6.5. Оборона / бой
+-
+-```text
+-sandbag_broken — разорванный мешок с песком
+-ammo_crate_empty — пустой ящик от боеприпасов
+-spent_shells — стреляные гильзы
+-wooden_cover_piece — деревянный кусок укрытия
+-old_tripod — старая тренога
+-broken_shield_panel — сломанный защитный щит
+-rusty_barbed_wire — ржавая колючая проволока
+-foxhole_debris — мусор в стрелковой ячейке / окопе
+-```
+-
+-### 6.6. Лес
+-
+-```text
+-stump_large — большой пень
+-fallen_tree — упавшее дерево
+-root_cluster — скопление корней
+-mushroom_cluster — группа грибов
+-thorn_bush — колючий куст
+-animal_bones — кости животного
+-dry_leaves_patch — пятно сухих листьев
+-forest_litter — лесной мусор / подстилка
+-```
+-
+----
+-
+-## 7. Пулы по микросценам
+-
+-### 7.1. ruined_camp — разрушенный лагерь
+-
+-Частые:
+-
+-```text
+-campfire_ash — пепелище
+-abandoned_crate — брошенный ящик
+-firewood_stack — стопка дров
+-empty_bottle — пустая бутылка
+-torn_cloth — рваная ткань
+-burned_log — обгоревшее бревно
+-```
+-
+-Нечастые:
+-
+-```text
+-broken_lantern — сломанный фонарь
+-old_backpack — старый рюкзак
+-rusty_pot — ржавая кастрюля / котелок
+-collapsed_tent_piece — кусок рухнувшей палатки
+-old_bedroll — старый спальник / подстилка
+-```
+-
+-Редкие:
+-
+-```text
+-hidden_cache_marker — скрытый маркер тайника
+-warning_bones — предупреждающие кости
+-```
+-
+-Тактический смысл:
+-
+-```text
+-ориентир
+-небольшая зона интереса
+-потенциальное место укрытий вокруг лагеря
+-```
+-
+----
+-
+-### 7.2. swamp_crossing — болотный переход
+-
+-Частые:
+-
+-```text
+-swamp_log — бревно в болоте
+-reeds — камыш
+-mud_patch — пятно грязи
+-wet_grass — мокрая трава
+-reeds_cluster — группа камыша
+-```
+-
+-Нечастые:
+-
+-```text
+-rotten_log — гнилое бревно
+-water_puddle — лужа
+-moss_patch — пятно мха
+-swamp_stones — болотные камни
+-```
+-
+-Редкие:
+-
+-```text
+-bog_bubbles — болотные пузыри
+-dead_tree_root — мёртвый корень дерева
+-```
+-
+-Тактический смысл:
++Примеры:
+ 
+ ```text
+-замедленная зона
+-узкий проход
+-визуальная подсказка опасной/мокрой местности
++ruined_camp
++blocked_road
++swamp_crossing
++secret_cache
++broken_radio_site
++old_defensive_position
+ ```
+ 
+----
+-
+-### 7.3. blocked_road — заваленная дорога
+-
+-Частые:
+-
+-```text
+-roadblock_debris — мусор от дорожного завала
+-broken_plank — сломанная доска
+-small_stone — маленький камень
+-branch_pile — куча веток
+-```
+-
+-Нечастые:
+-
+-```text
+-wagon_wheel_broken — сломанное колесо телеги
+-signpost_broken — сломанный указатель
+-barricade_stake — колышек баррикады
+-plank_stack — стопка досок
+-broken_cart_piece — кусок сломанной телеги
+-```
+-
+-Редкие:
+-
+-```text
+-roadside_marker_stone — придорожный камень-метка
+-```
+-
+-Тактический смысл:
+-
+-```text
+-завал
+-читаемое препятствие
+-место потенциальной засады
+-```
+-
+----
+-
+-### 7.4. small_loot_pocket — маленькая находка
++## Назначение
+ 
+-Частые:
++Micro scenes делают карту визуально богаче и читаемее, но не создают gameplay interaction сами по себе.
+ 
+-```text
+-abandoned_crate — брошенный ящик
+-sack — мешок
+-small_stone — маленький камень
+-torn_cloth — рваная ткань
+-```
+-
+-Нечастые:
+-
+-```text
+-old_backpack — старый рюкзак
+-rope_piece — кусок верёвки
+-empty_bottle — пустая бутылка
+-```
+-
+-Редкие:
+-
+-```text
+-hidden_cache_marker — скрытый маркер тайника
+-```
+-
+-Тактический смысл:
+-
+-```text
+-маленький визуальный интерес
+-не должен быть слишком очевидным
+-```
+-
+----
+-
+-### 7.5. secret_cache — скрытый тайник
+-
+-Частые:
+-
+-```text
+-hidden_cache_marker — скрытый маркер тайника
+-moss_patch — пятно мха
+-root_cluster — скопление корней
+-small_stone — маленький камень
+-```
++## Правила
+ 
+-Нечастые:
++Visual micro scenes не меняют:
+ 
+ ```text
+-old_backpack — старый рюкзак
+-sack — мешок
+-rope_piece — кусок верёвки
++terrain
++collision
++movement
++routes
++start/goal
++gameplay zones
+ ```
+ 
+-Редкие:
++Они могут добавлять:
+ 
+ ```text
+-old_tile_fragment — фрагмент старой плитки
+-story_candidate_marker — потенциальный сюжетный маркер
++visual objects
++visual-only props
++future metadata hints
+ ```
+ 
+-Тактический смысл:
+-
+-```text
+-визуально скрытая точка интереса
+-не должна кричать игроку “тут тайник”
+-```
+-
+----
+-
+-### 7.6. bunker_outer_area — внешняя зона бункера
+-
+-Частые:
+-
+-```text
+-concrete_debris — бетонные обломки
+-broken_block — сломанный каменный блок
+-mossy_stone — камень со мхом
+-sandbag_remnant — остатки мешков с песком
+-```
+-
+-Нечастые:
+-
+-```text
+-rusty_barbed_wire — ржавая колючая проволока
+-ammo_crate_empty — пустой ящик от боеприпасов
+-old_tripod — старая тренога
+-broken_shield_panel — сломанный защитный щит
+-```
+-
+-Редкие:
+-
+-```text
+-warning_bones — предупреждающие кости
+-```
+-
+-Тактический смысл:
+-
+-```text
+-переход к опасной зоне
+-бетон/оборона/старый объект
+-```
+-
+----
+-
+-### 7.7. bunker_inner_area — внутренняя зона бункера
+-
+-Частые:
+-
+-```text
+-concrete_debris — бетонные обломки
+-broken_block — сломанный каменный блок
+-stone_dust_patch — пятно каменной пыли
+-```
+-
+-Нечастые:
+-
+-```text
+-ammo_crate_empty — пустой ящик от боеприпасов
+-broken_lantern — сломанный фонарь
+-rusty_pot — ржавая кастрюля / котелок
+-```
+-
+-Редкие:
+-
+-```text
+-hidden_cache_marker — скрытый маркер тайника
+-story_candidate_marker — потенциальный сюжетный маркер
+-```
+-
+-Тактический смысл:
+-
+-```text
+-замкнутая опасная зона
+-подземность / бетон / старая оборона
+-```
+-
+----
+-
+-### 7.8. dangerous_lowland — опасная низина
+-
+-Частые:
+-
+-```text
+-dead_branch — сухая ветка
+-mud_patch — пятно грязи
+-wet_grass — мокрая трава
+-warning_bones — предупреждающие кости
+-```
+-
+-Нечастые:
+-
+-```text
+-black_mud — чёрная грязь
+-water_puddle — лужа
+-animal_bones — кости животного
+-dead_tree_root — мёртвый корень дерева
+-```
+-
+-Редкие:
+-
+-```text
+-bog_bubbles — болотные пузыри
+-```
+-
+-Тактический смысл:
+-
+-```text
+-предупреждение об опасной или неудобной зоне
+-может быть медленно / плохо для боя
+-```
+-
+----
+-
+-### 7.9. old_defensive_position — старая оборонительная позиция
+-
+-Частые:
+-
+-```text
+-sandbag_remnant — остатки мешков с песком
+-broken_plank — сломанная доска
+-small_stone — маленький камень
+-wooden_cover_piece — деревянный кусок укрытия
+-```
+-
+-Нечастые:
+-
+-```text
+-ammo_crate_empty — пустой ящик от боеприпасов
+-spent_shells — стреляные гильзы
+-sandbag_broken — разорванный мешок с песком
+-old_tripod — старая тренога
+-```
+-
+-Редкие:
+-
+-```text
+-broken_shield_panel — сломанный защитный щит
+-rusty_barbed_wire — ржавая колючая проволока
+-```
+-
+-Тактический смысл:
+-
+-```text
+-визуальная подсказка укрытия
+-место для перестрелки
+-```
+-
+----
+-
+-### 7.10. ambush_clearing — поляна для засады
+-
+-Частые:
+-
+-```text
+-fallen_log — упавшее бревно
+-thorn_bush — колючий куст
+-branch_pile — куча веток
+-road_grass_tuft — пучок травы
+-```
+-
+-Нечастые:
+-
+-```text
+-wooden_cover_piece — деревянный кусок укрытия
+-animal_bones — кости животного
+-root_cluster — скопление корней
+-```
+-
+-Редкие:
+-
+-```text
+-warning_bones — предупреждающие кости
+-```
+-
+-Тактический смысл:
+-
+-```text
+-читаемое место засады
+-часть объектов может быть cover_hint
+-```
+-
+----
+-
+-### 7.11. forest_obstruction — лесной завал / преграда
+-
+-Частые:
+-
+-```text
+-fallen_log — упавшее бревно
+-dead_branch — сухая ветка
+-branch_pile — куча веток
+-root_cluster — скопление корней
+-```
+-
+-Нечастые:
+-
+-```text
+-stump_large — большой пень
+-thorn_bush — колючий куст
+-mushroom_cluster — группа грибов
+-```
+-
+-Редкие:
+-
+-```text
+-animal_bones — кости животного
+-```
+-
+-Тактический смысл:
+-
+-```text
+-визуальное сужение прохода
+-естественное укрытие / препятствие
+-```
+-
+----
+-
+-### 7.12. small_ruin_site / ruined_structure — маленькие руины
+-
+-Частые:
+-
+-```text
+-ruin_rubble — руинный щебень
+-cracked_stone — треснувший камень
+-broken_block — сломанный каменный блок
+-mossy_stone — камень со мхом
+-```
+-
+-Нечастые:
+-
+-```text
+-broken_column — сломанная колонна
+-stone_slab — каменная плита
+-cracked_floor_piece — кусок треснувшего пола
+-half_wall_debris — обломки полустены
+-old_tile_fragment — фрагмент старой плитки
+-root_over_stone — корень поверх камня
+-```
+-
+-Редкие:
+-
+-```text
+-collapsed_arch_piece — кусок рухнувшей арки
+-story_candidate_marker — потенциальный сюжетный маркер
+-```
+-
+-Тактический смысл:
+-
+-```text
+-ориентир
+-частичное укрытие
+-визуально значимое место
+-```
+-
+----
+-
+-### 7.13. raised_platform_site — приподнятая руинная площадка
+-
+-Частые:
+-
+-```text
+-stone_slab — каменная плита
+-cracked_floor_piece — кусок треснувшего пола
+-mossy_stone — камень со мхом
+-ruin_rubble — руинный щебень
+-```
+-
+-Нечастые:
+-
+-```text
+-broken_column — сломанная колонна
+-old_tile_fragment — фрагмент старой плитки
+-root_over_stone — корень поверх камня
+-```
+-
+-Редкие:
+-
+-```text
+-collapsed_arch_piece — кусок рухнувшей арки
+-```
+-
+-Тактический смысл:
+-
+-```text
+-визуальная подсказка возвышенности
+-переход к будущему elevation visual pass
+-```
+-
+----
+-
+-## 8. Правила раскладки микросцены
+-
+-Для будущего алгоритма `varied micro scene placement`:
+-
+-```text
+-1. выбрать place type
+-2. выбрать scene variant
+-3. выбрать anchor внутри bounds
+-4. выбрать 2–6 предметов из weighted pool
+-5. разложить предметы рядом с anchor
+-6. не ставить на blocked terrain
+-7. не ставить на start/goal
+-8. не перекрывать route centerline
+-9. не повторять одинаковый sprite слишком часто рядом
+-10. не делать каждый place одинаковым
+-```
+-
+-Рекомендуемые размеры:
+-
+-```text
+-small scene — 1–2 объекта
+-medium scene — 3–5 объектов
+-large scene — 5–8 объектов
+-```
+-
+----
+-
+-## 9. Что делать следующим patch
+-
+-`v0.0.64 — visual micro scene catalog`:
+-
+-```text
+-- добавить этот документ в docs/
+-- зафиксировать world_style
+-- зафиксировать object role distribution
+-- расширить place_visual_rules.json до scene variants / weighted pools metadata
+-- добавить placeholder sprite ids в visual_tilesets.json
+-- не менять gameplay
+-- не реализовывать реальную интерактивность
+-```
++## Output
+ 
+-`v0.0.65 — varied micro scene placement`:
++Результат попадает в:
+ 
+ ```text
+-- реализовать выбор scene variant
+-- реализовать weighted pools
+-- реализовать role metadata на visual objects
+-- улучшить place_treatment_report
+-- оставить все gameplay grids неизменными
++output/visual_map/visual_objects.json
++output/visual_map/debug/place_treatment_report.json
+ ```
+diff --git a/docs/world_building_algorithm.md b/docs/world_building_algorithm.md
+index 7b2fb34..eb6ccf9 100644
+--- a/docs/world_building_algorithm.md
++++ b/docs/world_building_algorithm.md
+@@ -1,318 +1,98 @@
+ # World building algorithm
+ 
+-Этот документ описывает, как внешний проект должен строить runtime-мир из `output/`, не зная внутренних классов генератора.
++Документ описывает практический порядок построения runtime-мира во внешнем проекте.
+ 
+-## Главный принцип
++## 1. Открыть output root
+ 
+-Один запуск генератора создаёт один output root. Внешний consumer получает путь к этой папке и начинает работу с `_manifest.json`.
++Consumer получает путь:
+ 
+ ```text
+ output/
+-  _manifest.json
+-  map_package/
+-    map.json
+-    layers/
+-    gameplay/
+-    objects/
+-    catalogs/
+-    render/
+ ```
+ 
+-Consumer не должен читать внутренние Python-модули генератора и не должен зависеть от `tactical_map.json`, если ему нужен новый runtime-контракт.
++Он не должен импортировать `top_down_worldgen` или читать внутренние Python-классы.
+ 
+-## 1. Найти пакет мира
++## 2. Найти package index
+ 
+-1. Открыть `output/_manifest.json`.
+-2. Найти artifact с `kind = "map_package:index"`.
+-3. Открыть указанный файл, обычно `output/map_package/map.json`.
+-4. Все относительные пути из `map.json` считать относительно папки `map_package/`.
+-
+-Fallback допустим только для инструментов: если manifest отсутствует, можно открыть `output/map_package/map.json` напрямую.
+-
+-## 2. Прочитать размеры и координаты
+-
+-Из `map.json` consumer берёт:
+-
+-- `dimensions.width_tiles`;
+-- `dimensions.height_tiles`;
+-- `dimensions.tile_size_px`;
+-- координатную модель карты;
+-- ссылки на слои, объекты, каталоги и render hints.
+-
+-Координаты тайловые: `x` растёт вправо, `y` растёт вниз, `(0, 0)` — верхний левый угол.
+-
+-## 3. Построить базовую terrain-сцену
+-
+-Для визуального и логического основания загрузить:
++Основной путь:
+ 
+ ```text
+-layers/terrain.json
+-layers/tile_grid.json
+-catalogs/tile_types.json
++output/_manifest.json -> map_package/map.json
+ ```
+ 
+-`terrain.json` — предпочтительный слой для смыслового типа клетки. `tile_grid.json` остаётся компактным и удобным debug/legacy-представлением. `tile_types.json` объясняет свойства типов: проходимость, теги, стоимость движения и collision-семантику.
+-
+-## 4. Построить collision grid
+-
+-Загрузить `layers/collision.json` и построить boolean-сетку размера `width × height`.
++Fallback для tools:
+ 
+ ```text
+-0 / false = passable
+-1 / true  = blocked
++output/map_package/map.json
+ ```
+ 
+-После этого применить collision runtime-объектов из `objects/runtime_objects.json` и `catalogs/object_types.json`. Итоговая collision scene игры должна учитывать и terrain/blocking tiles, и footprint объектов.
+-
+-## 5. Построить movement grid
++## 3. Прочитать размеры
+ 
+-Загрузить `layers/movement_costs.json`.
++Из `map_package/map.json` взять:
+ 
+-Movement cost применяется к проходимым клеткам. Заблокированные клетки из collision grid должны считаться недоступными независимо от movement cost.
++- width tiles;
++- height tiles;
++- tile size px;
++- coordinate model;
++- seed/resolved seed.
+ 
+-Рекомендуемый порядок:
+-
+-1. взять базовую стоимость клетки из `movement_costs`;
+-2. если collision blocked — пометить клетку как недоступную;
+-3. применить object modifiers, если игра их поддерживает;
+-4. передать результат pathfinding-системе.
+-
+-## 6. Применить elevation
++## 4. Загрузить базовые grids
+ 
+-Загрузить `layers/elevation.json`.
+-
+-Текущий базовый контракт:
++Минимально:
+ 
+ ```text
+--1 = углубление: окоп, яма, низина
+- 0 = обычная поверхность
++layers/tile_grid.json
++layers/terrain.json
++layers/collision.json
++layers/movement_costs.json
++runtime_grids.json
+ ```
+ 
+-Consumer должен хранить elevation отдельно от collision. Высота не равна блокировке. Например, траншея может быть проходимой, но должна влиять на укрытие, line of sight, stance rules или render order.
+-
+-Будущие уровни `1..4` должны добавляться только вместе с правилами movement, shooting, visibility и rendering. Иначе это будет декоративный мусор.
+-
+-## 7. Поставить start и goal
+-
+-Загрузить `layers/start_goal.json` или соответствующую секцию `map.json`.
+-
+-Игра должна проверить:
+-
+-- старт и цель находятся внутри карты;
+-- старт и цель не заблокированы итоговой collision scene;
+-- между ними существует путь, если режим игры этого требует.
+-
+-## 8. Расставить runtime objects
++`runtime_grids.json` содержит gameplay-ready grids, включая `height_grid`, `vision_block_grid`, `projectile_block_grid`, `cover_grid` и `concealment_grid`.
+ 
+-Загрузить:
++## 5. Загрузить semantic data
+ 
+ ```text
+ objects/runtime_objects.json
+-catalogs/object_types.json
++objects/places.json
++markers.json
++routes.json
++world_graph.json
++gameplay_zones.json
+ ```
+ 
+-Каждый instance задаёт конкретный объект на карте. Catalog описывает смысл типа: роль, укрытие, высоту, collision profile, projectile/vision blocking, интерактивность и теги.
+-
+-Рекомендуемый порядок:
+-
+-1. загрузить все object definitions из `object_types.json`;
+-2. пройти по instances из `runtime_objects.json`;
+-3. проверить координаты/footprint;
+-4. создать runtime entity;
+-5. применить collision/combat/interaction свойства из catalog;
+-6. связать entity с place/combat zone, если есть refs.
+-
+-## 9. Загрузить places и gameplay
+-
+-`objects/places.json` описывает микролокации: блокпосты, бункеры, руины, лагеря, завалы и другие смысловые места. Для `places-v3` consumer должен читать `bounds`, `entrances`, `danger_level`, `loot_level`, `story_role`, `encounter_type`, `object_refs`, `marker_refs`, `route_refs`, `connected_places` и `biome_tags`. Эти поля нужны не для рендера тайлов, а для построения runtime-мира, квестовых зон, encounter logic и будущего `world_graph.json`.
+-
+-`gameplay/*.json` содержит боевую семантику:
+-
+-- `combat_zones.json`;
+-- `cover_points.json`;
+-- `enemy_spawn_zones.json`;
+-- `choke_points.json`;
+-- `flank_routes.json`;
+-- `fallback_positions.json`.
+-
+-Игра может игнорировать часть gameplay-слоёв на первом этапе. Обязательны только те данные, которые реально используются её режимом.
+-
+-## 10. Использовать render hints
+-
+-`render/*.json` не является игровым runtime-источником. Это подсказки для renderer-а: как визуально трактовать terrain и object types.
+-
+-Правильная модель:
++## 6. Загрузить tactical data
+ 
+ ```text
+-catalogs/ = что это значит для игры
+-render/   = как это можно нарисовать
++gameplay/combat_zones.json
++gameplay/cover_points.json
++gameplay/choke_points.json
++gameplay/flank_routes.json
++gameplay/enemy_spawn_zones.json
++gameplay/fallback_positions.json
+ ```
+ 
+-Renderer может использовать hints для выбора тайлов, debug colors, object markers, будущих autotile-групп и render order.
+-
+-## Минимальный consumer pipeline
++## 7. Загрузить elevation
+ 
+ ```text
+-open output/_manifest.json
+-open map_package/map.json
+-load dimensions
+-load terrain/tile_grid
+-load collision
+-load movement_costs
+-load elevation
+-load start_goal
+-load object catalogs
+-spawn runtime objects
+-load gameplay layers needed by game mode
+-optionally load render hints
+-build runtime scene
++elevation_model.json
++elevation_features.json
++elevation_transitions.json
++layers/elevation.json
+ ```
+ 
+-## Что считается ошибкой
+-
+-Consumer должен считать пакет непригодным, если:
+-
+-- нет `_manifest.json` и нет fallback `map_package/map.json`;
+-- `map.json` ссылается на отсутствующие обязательные файлы;
+-- размеры любого grid-слоя не совпадают с `width × height`;
+-- start/goal отсутствуют или находятся вне карты;
+-- объект имеет неизвестный type;
+-- object footprint выходит за границы карты;
+-- catalog отсутствует для типа, который игра обязана интерпретировать.
+-
+-## Быстрая проверка
+-
+-Перед передачей пакета игре рекомендуется запускать:
+-
+-```bash
+-python3 examples/inspect_world_package.py output
+-python3 examples/render_world_preview.py output --collision-overlay
+-```
+-
+-Inspector проверяет загрузку и базовую целостность. Preview renderer показывает, получается ли из публичного пакета видимый мир.
+-
+-## Object footprint model v1
+-
+-Runtime objects must be treated as tile-space entities, not as single points. Each object instance exposes an `anchor`/`position` and three footprint-related fields:
+-
+-- `footprint`: all map cells occupied by the logical object instance.
+-- `collision_footprint`: cells where the object's collision profile applies. This may be empty for small passable loot/markers.
+-- `visual_bounds`: a rectangular tile-space box used by preview/render consumers to estimate sprite coverage.
+-
+-Consumers should use `footprint` for placement/overlap checks, `collision_footprint` for movement/projectile/vision rules, `interaction_shape` for actor interaction queries, `sort_anchor` for top-down draw ordering, and `visual_bounds` only for coarse sprite placement. `draw_layer` and `occlusion_hint` provide renderer-friendly defaults without forcing a specific engine. Large objects such as tents, carts, wrecks, wells, checkpoints, trenches, pits, logs, berms, big trees, and buried bunkers may occupy multiple tiles. Bunkers additionally expose `firing_ports` on two opposite sides and mark their interior footprint as elevation `-1`.
+-
++Elevation в текущем проекте уже присутствует в world package. Visual layer только показывает эти данные.
+ 
+-## Generation tuning
++## 8. Построить сцену
+ 
+-`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+-
+-
+-## Package consistency validation
+-
+-Начиная с `v0.0.41`, validation проверяет не только наличие файлов, но и согласованность публичного пакета: `markers` должны совпадать со `start_goal`, `runtime_grids` должны иметь ожидаемые размеры, `world_graph` должен ссылаться на реальные places/markers, а `routes` — на реальные nodes/edges. Start и goal также проверяются против `collision_grid`, чтобы внешний consumer не получал заблокированную стартовую или целевую клетку.
+-
+-Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
+-
+-## Runtime-ready loading shortcut
+-
+-For a quick runtime integration, load `map_package/runtime_grids.json` after `map_package/map.json`. The file contains movement, collision, projectile, vision, cover, concealment, and height grids with the same dimensions as the map.
+-
+-Use `map_package/markers.json` for start, goal, loot, story, point-of-interest, and defensive markers. Do not parse markers from `terrain.json`; terrain describes the ground, markers describe gameplay points.
+-
+-## Semantic world graph
+-
+-After loading markers, runtime grids, and places, a consumer may load `map_package/world_graph.json`.
+-This file is not a replacement for pathfinding. It describes the intended semantic structure of the world:
+-main route, side branches, meaningful dead ends, graph quality, and secret/high-reward areas.
+-
+-Recommended usage:
+-
+-1. Load `world_graph.json` from the path listed in `map_package/map.json`.
+-2. Use `nodes` to show or reason about important semantic locations.
+-3. Use `main_path.node_ids` as the high-level route from start to goal.
+-4. Use `side_paths` and `dead_ends` for optional exploration, loot, story hooks, or encounter placement.
+-5. Use runtime grids to verify exact tile-level movement before committing gameplay decisions.
+-
+-## `routes.json`
+-
+-`routes.json` contains semantic route records derived from `world_graph.json`. It does not replace tile pathfinding and it is not an exact step-by-step movement path. It tells a consumer what a route means in gameplay terms.
+-
+-Current route types:
+-
+-- `main_road` — primary intended route from start toward goal.
+-- `side_path` — optional branch route to a secondary place.
+-- `hidden_path` — secret or hard-to-notice optional route.
+-- `patrol_route` — AI/NPC route derived from risky place connections.
+-- `escape_route` — retreat or exit route derived from start/goal connections.
+-
+-Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
+-
+-
+-## Elevation model v1
+-
+-After loading `runtime_grids.json`, load `map_package/elevation_model.json`. Use `runtime_grids.grids.height_grid.rows` as the per-tile source of truth and use `elevation_model.json` to interpret those integer levels.
+-
+-The generator currently defines levels `-1..4`. A consumer should treat level `0` as normal ground, level `-1` as below-ground/interior-low-space, levels `1..4` as increasingly higher positions. Transitions between levels are not automatically walkable: movement between different levels should require a connector such as stairs, ramp, ladder, bridge or a game-specific scripted transition.
+-
+-For line of sight and projectile checks, combine `height_grid`, `vision_block_grid`, `projectile_block_grid` and the semantic rules in `elevation_model.json`. This keeps the package useful for fantasy, shooter, adventure and exploration games without hardcoding one combat model into the generator.
+-
+-## Elevation features and transitions
+-
+-After loading `runtime_grids.height_grid` and `elevation_model.json`, load `elevation_features.json` and `elevation_transitions.json` when the game needs height-aware movement or rendering.
+-
+-Recommended order:
+-
+-1. Use `height_grid` as the exact per-tile level map.
+-2. Use `elevation_model.json` to interpret levels and generic rules.
+-3. Use `elevation_features.json` to attach meaning to local features: pit, trench, bunker interior, raised berm, hill, bridge, ramp, stairs, platform, tower and special high landmark.
+-4. Use `elevation_transitions.json` to decide where movement needs ramps, stairs, ladders or scripted transitions.
+-
+-The game may ignore unknown feature or transition types, but it should not invent movement between levels without checking the transition records.
+-
+-
+-### Elevation preview
+-
+-Для визуальной проверки уровней высоты и переходов используйте:
+-
+-```bash
+-python3 examples/render_world_preview.py output \
+-  --elevation-overlay \
+-  --transition-overlay \
+-  --grid \
+-  --cell-size 8 \
+-  --output output/elevation_preview.png
+-```
+-
+-`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+-
+-
+-## Elevation v1
+-
+-See `docs/elevation_v1.md` for the runtime elevation/map-level contract: levels `-1..4`, elevation features, transitions, movement rules, and preview/debug usage.
+-
+-## Gameplay zones
+-
+-После загрузки `places`, `routes` и `world_graph` consumer может загрузить `map_package/gameplay_zones.json`.
+-
+-Этот файл отвечает на вопрос: "для чего нужен этот участок карты?". Зона может быть стартовой безопасной областью, encounter-зоной, местом лута, секретом, опасной низиной, story-локацией или extraction-точкой.
+-
+-Рекомендуемый порядок использования:
+-
+-1. Прочитать `gameplay_zones.json` из пути `gameplay_zones` в `map_package/map.json`.
+-2. Для каждой зоны проверить `bounds` и `polygon`.
+-3. Связать `linked_places`, `linked_routes` и `linked_markers` с уже загруженными объектами мира.
+-4. Использовать `danger_level`, `loot_level`, `recommended_encounter` и `elevation_usage` для runtime-логики.
+-5. Не использовать зоны как точный pathfinding: точная проходимость берётся из `runtime_grids.json`.
+-
+-Validation начиная с `v0.0.48` проверяет, что зоны ссылаются на существующие places/routes/markers и лежат внутри карты.
+-
+-
+-### Semantic preview overlays
+-
+-Для визуальной проверки смысловых слоёв используйте:
+-
+-```bash
+-python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+-```
++Рекомендуемый порядок:
+ 
+-Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.
++1. создать tile map;
++2. применить collision/movement;
++3. создать navigation/runtime grids;
++4. создать semantic places;
++5. создать runtime objects;
++6. применить routes/markers/world graph;
++7. применить gameplay zones;
++8. применить elevation;
++9. подключить renderer/visual layer, если нужен.
+diff --git a/docs/world_package_file_map.md b/docs/world_package_file_map.md
+index 64d2865..68f6c48 100644
+--- a/docs/world_package_file_map.md
++++ b/docs/world_package_file_map.md
+@@ -1,249 +1,59 @@
+ # World package file map
+ 
+-Этот документ кратко описывает, что лежит в output root после одного запуска генератора.
++Актуальная карта файлов после стандартного запуска:
++
++```bash
++./r
++```
+ 
+ ## Output root
+ 
+ ```text
+ output/
++  _manifest.json
++  _engine_config.json
++  _raw_tactical_map.json
+   generated_map.txt
+   tactical_map.json
+   tactical_map_debug.json
+-  _raw_tactical_map.json
+-  _manifest.json
+   validation_report.json
++  world_density_report.json
+   metrics.txt
+   object_catalog.md
+-  layer_base_map.png
+-  layer_*.png
+-  world_preview.png
++  generation.log
++  logs/
+   map_package/
++  visual_map/
+ ```
+ 
+-Не каждый файл появляется при любом запуске. PNG debug-слои зависят от render/debug flags.
++Некоторые PNG world layers появляются только при `WORLD_RENDER=1` и `WORLD_DEBUG_LAYERS=1`.
+ 
+ ## Главные entrypoints
+ 
+ | Файл | Для кого | Назначение |
+ |---|---|---|
+-| `_manifest.json` | все внешние tools/consumers | Паспорт одного запуска и список артефактов. |
+-| `map_package/map.json` | игра, renderer, tools | Индекс нового структурированного пакета мира. |
+-| `generated_map.txt` | человек, legacy tools | Простая ASCII-карта. |
+-| `tactical_map.json` | legacy/diagnostics | Старый монолитный tactical export. |
+-| `validation_report.json` | CI/debug | Подробный отчёт валидации. |
+-| `object_catalog.md` | человек | Человекочитаемый каталог созданных типов и количеств. |
+-
+-## map_package
+-
+-```text
+-map_package/
+-  map.json
+-  layers/
+-  gameplay/
+-  objects/
+-  catalogs/
+-  render/
+-```
+-
+-`map_package/` — основной контракт для будущей игры. Он должен быть достаточен, чтобы внешний проект построил runtime-мир без доступа к внутренностям генератора.
+-
+-## layers
+-
+-| Файл | Назначение |
+-|---|---|
+-| `tile_grid.json` | Компактная сетка исходных tile symbols. |
+-| `terrain.json` | Смысловые terrain-типы по клеткам. |
+-| `collision.json` | Runtime-ready passable/blocked grid. |
+-| `movement_costs.json` | Стоимости движения по тайлам/типам. |
+-| `elevation.json` | Уровни высоты/углубления. |
+-| `start_goal.json` | Стартовая и целевая точки. |
+-
+-## gameplay
+-
+-| Файл | Назначение |
+-|---|---|
+-| `combat_zones.json` | Боевые зоны и encounter-семантика. |
+-| `cover_points.json` | Точки укрытий. |
+-| `enemy_spawn_zones.json` | Зоны появления врагов. |
+-| `choke_points.json` | Узкие места маршрутов. |
+-| `flank_routes.json` | Фланговые маршруты. |
+-| `fallback_positions.json` | Возможные позиции отхода. |
+-
+-## objects
+-
+-| Файл | Назначение |
+-|---|---|
+-| `runtime_objects.json` | Конкретные объекты на карте. |
+-| `places.json` | Микролокации и смысловые сцены с bounds, entrances, danger/loot/story metadata и connected places. |
+-
+-## catalogs
++| `_manifest.json` | tools/consumers | Паспорт запуска и список артефактов. |
++| `map_package/map.json` | game/editor/renderer | Индекс структурированного пакета мира. |
++| `visual_map/visual_map.json` | visual tools | Индекс visual output. |
++| `visual_map/final_render.png` | человек/render preview | Финальная PNG-картинка. |
++| `world_density_report.json` | QA/debug | Итоговая плотность terrain/collision/movement/elevation. |
+ 
+-| Файл | Назначение |
+-|---|---|
+-| `tile_types.json` | Машинные свойства terrain/tile типов. |
+-| `object_types.json` | Машинные свойства object types. |
++## `map_package/`
+ 
+-Catalogs нужны, чтобы игра не хардкодила смысл `tree_blocker`, `water_slow`, `fallen_log`, `trench` и других типов.
++См. `docs/OUTPUT_FORMAT.md` и `docs/map_package_v1.md`.
+ 
+-## render
++## `visual_map/`
+ 
+-| Файл | Назначение |
+-|---|---|
+-| `render_profile.json` | Общий render-profile пакета. |
+-| `tile_render_hints.json` | Подсказки для отрисовки terrain/tile типов. |
+-| `object_render_hints.json` | Подсказки для отрисовки object types. |
++Visual output создаётся поверх `map_package/`. Он не меняет gameplay contract.
+ 
+-Render hints не являются обязательной игровой логикой. Они нужны preview/external renderer-ам.
+-
+-## Проверочные tools
+-
+-| Команда | Назначение |
+-|---|---|
+-| `python3 examples/inspect_world_package.py output` | Проверить, что пакет читается внешним consumer-ом. |
+-| `python3 examples/render_world_preview.py output` | Построить простой PNG preview из публичных файлов. |
+-| `python3 examples/read_map_package.py output` | Вывести краткую сводку пакета. |
+-
+-## Рекомендуемый порядок чтения
++Основные файлы:
+ 
+ ```text
+-_manifest.json
+-map_package/map.json
+-layers/terrain.json
+-layers/collision.json
+-layers/movement_costs.json
+-layers/elevation.json
+-layers/start_goal.json
+-objects/runtime_objects.json
+-catalogs/tile_types.json
+-catalogs/object_types.json
+-gameplay/*.json as needed
+-render/*.json as needed
++visual_map/visual_map.json
++visual_map/visual_layers.json
++visual_map/visual_objects.json
++visual_map/visual_chunks.json
++visual_map/preview.png
++visual_map/final_render.png
++visual_map/debug/
+ ```
+-
+-## Runtime object footprints
+-
+-`map_package/objects/runtime_objects.json` uses `object-instances-v4` and includes footprint-aware object instances. Object-related catalogs in `map_package/catalogs/object_types.json` use `object-types-catalog-v5` and expose default footprint, interaction, sorting, draw-layer and occlusion metadata derived from generated instances.
+-
+-Important fields:
+-
+-- `anchor`: tile-space placement point for the object instance.
+-- `footprint`: logical occupied cells.
+-- `collision_footprint`: cells affected by collision profile.
+-- `visual_bounds`: coarse tile-space visual rectangle.
+-- `pivot`: tile-space pivot hint for renderers.
+-- `firing_ports`: optional directional firing/interaction edges for bunker-like objects.
+-
+-`buried_bunker_2x2` and `buried_bunker_2x3` are the first explicit bunker test objects. They use multi-tile footprints, full collision footprints, `interior_elevation = -1`, and firing ports on two opposite sides.
+-
+-
+-## Generation tuning
+-
+-`map_package/map.json` and `_manifest.json` expose the `generation_tuning` block copied from the public config. These values are user-facing knobs for changing the generated world density: water, forests, open spaces, ruins, buildings, road width, decoration, and bunkers. Water has dedicated controls: `water_scale`, `water_patch_count_scale`, `water_patch_size_scale`, and `water_patch_density`. Consumers should treat these values as provenance/diagnostics, not as runtime rules. The generated layers and catalogs remain the source of truth for the final world.
+-
+-
+-## Package consistency validation
+-
+-Начиная с `v0.0.41`, validation проверяет не только наличие файлов, но и согласованность публичного пакета: `markers` должны совпадать со `start_goal`, `runtime_grids` должны иметь ожидаемые размеры, `world_graph` должен ссылаться на реальные places/markers, а `routes` — на реальные nodes/edges. Start и goal также проверяются против `collision_grid`, чтобы внешний consumer не получал заблокированную стартовую или целевую клетку.
+-
+-Non-critical quality violations caused by aggressive tuning are reported as warnings in `generation.log`, `_manifest.json`, and `validation_report.json`; they should not be treated as engine crashes unless a required file or structural layer is missing.
+-
+-## v0.0.37: markers and runtime grids
+-
+-`map_package/markers.json` contains gameplay markers that must not be mixed into terrain data. It currently includes `start`, `goal`, and marker projections for notable runtime objects such as loot, story markers, landmarks, and defensive points.
+-
+-`map_package/runtime_grids.json` contains ready-to-use grids for runtime consumers:
+-
+-- `movement_grid`
+-- `collision_grid`
+-- `projectile_block_grid`
+-- `vision_block_grid`
+-- `cover_grid`
+-- `concealment_grid`
+-- `height_grid`
+-
+-A game may load these grids directly instead of deriving them from terrain, objects, and catalogs on startup. Source layers are still exported for debugging, validation, and editor use.
+-
+-## `map_package/world_graph.json`
+-
+-`map_package/world_graph.json` contains the semantic graph of the generated world.
+-It is a higher-level navigation and pacing contract built from places and markers. Starting with `world-graph-v2`, it also adds proximity links between meaningful places, explicit side path anchors, graph quality metadata, and dead ends limited to meaningful place nodes.
+-It contains:
+-
+-- `nodes`: semantic places and important markers such as start/goal.
+-- `edges`: intended links between nodes.
+-- `main_path`: approximate start-to-goal semantic route.
+-- `side_paths`: optional branches through non-main places.
+-- `dead_ends`: low-degree nodes that can become loot/story branches.
+-- `secret_areas`: places or markers marked or inferred as high-reward/secret areas.
+-- `quality`: compact graph health summary for external consumers.
+-
+-Use `runtime_grids.json` for exact movement/pathfinding and `world_graph.json` for world structure.
+-
+-## `routes.json`
+-
+-`routes.json` contains semantic route records derived from `world_graph.json`. It does not replace tile pathfinding and it is not an exact step-by-step movement path. It tells a consumer what a route means in gameplay terms.
+-
+-Current route types:
+-
+-- `main_road` — primary intended route from start toward goal.
+-- `side_path` — optional branch route to a secondary place.
+-- `hidden_path` — secret or hard-to-notice optional route.
+-- `patrol_route` — AI/NPC route derived from risky place connections.
+-- `escape_route` — retreat or exit route derived from start/goal connections.
+-
+-Each route may contain `node_ids`, `edge_ids`, `waypoints`, `cost_tiles`, `bidirectional`, and `tags`. Use `runtime_grids.json` for exact movement/collision checks and `routes.json` for route intent.
+-
+-
+-## `map_package/elevation_model.json`
+-
+-`elevation_model.json` describes what elevation levels mean. `runtime_grids.json` contains the actual `height_grid`; `elevation_model.json` gives the semantic contract for those values.
+-
+-Current levels are `-1..4`: below-ground, ground, raised ground, platform, high platform and special high landmark. The file also lists possible transition types and high-level movement, line-of-sight, projectile and render-order rules.
+-
+-## Elevation files
+-
+-The package contains three elevation-related public files:
+-
+-- `runtime_grids.json` / `height_grid`: exact tile height values.
+-- `elevation_model.json`: semantic meaning of height levels and high-level rules.
+-- `elevation_features.json`: concrete map features that explain local height changes.
+-- `elevation_transitions.json`: adjacent level changes with suggested connectors.
+-
+-This separation keeps low-level runtime grids compact while still giving renderers and games enough context to draw and interpret pits, raised berms, bunker interiors and future bridge/ramp features.
+-
+-
+-### Elevation preview
+-
+-Для визуальной проверки уровней высоты и переходов используйте:
+-
+-```bash
+-python3 examples/render_world_preview.py output \
+-  --elevation-overlay \
+-  --transition-overlay \
+-  --grid \
+-  --cell-size 8 \
+-  --output output/elevation_preview.png
+-```
+-
+-`--elevation-overlay` подсвечивает уровни `-1..4`, а `--transition-overlay` рисует переходы между уровнями: slope, ramp, stairs, bridge и steep edges.
+-
+-## `map_package/gameplay_zones.json`
+-
+-Начиная с `v0.0.48`, `gameplay_zones.json` описывает нейтральное назначение областей карты. Это не замена `combat_zones.json`, а более общий слой для top-down игр разных жанров.
+-
+-Типы зон включают `safe_area`, `encounter_area`, `ambush_area`, `loot_area`, `boss_area`, `stealth_area`, `traversal_area`, `secret_area`, `danger_area`, `story_area` и `extraction_area`.
+-
+-Каждая зона содержит `bounds`, `polygon`, `entry_points`, `exit_points`, ссылки на `linked_places`, `linked_routes`, `linked_markers`, а также `danger_level`, `loot_level`, `recommended_enemy_types`, `recommended_encounter` и `elevation_usage`.
+-
+-Игра должна использовать `gameplay_zones.json` как слой намерения: что этот кусок карты должен делать для игрока. Для точного движения, видимости и коллизий всё равно используйте `runtime_grids.json`.
+-
+-
+-### Semantic preview overlays
+-
+-Для визуальной проверки смысловых слоёв используйте:
+-
+-```bash
+-python3 examples/render_world_preview.py output --semantic-overlays --grid --cell-size 8
+-```
+-
+-Это рисует places, gameplay zones, routes и world graph поверх preview, не обращаясь к внутренностям генератора.
+diff --git a/pyproject.toml b/pyproject.toml
+index 0bd704c..ec4a707 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "top-down-worldgen"
+-version = "0.0.74"
++version = "0.0.75"
+ description = "Seed-based procedural map generator for top-down games."
+ readme = "README.md"
+ requires-python = ">=3.12"
+diff --git a/r b/r
+index 89d9657..b46d526 100755
+--- a/r
++++ b/r
+@@ -17,6 +17,10 @@ WORLD_DEBUG_LAYERS="${WORLD_DEBUG_LAYERS:-0}"
+ LOG_DIR="${LOG_DIR:-${OUTPUT_DIR}/logs}"
+ QUIET="${QUIET:-1}"
+ 
++stage() {
++  echo "==> $*"
++}
++
+ ensure_log_dir() {
+   mkdir -p "${LOG_DIR}"
+ }
+@@ -46,6 +50,7 @@ run_maybe_logged() {
+ }
+ 
+ run_cleanup() {
++  stage "cleanup output"
+   run_maybe_logged cleanup ./c
+   ensure_log_dir
+   rm -f -- "${OUTPUT_DIR}/generation.log"
+@@ -61,6 +66,7 @@ run_cleanup() {
+ }
+ 
+ run_world() {
++  stage "world generation"
+   run_cleanup
+   local world_args=(
+     env PYTHONPATH=. python3 top_down_generator.py
+@@ -78,6 +84,7 @@ run_world() {
+ }
+ 
+ run_preview() {
++  stage "world preview"
+   run_maybe_logged world_preview python3 examples/render_world_preview.py "${OUTPUT_DIR}" \
+     --collision-overlay \
+     --elevation-overlay \
+@@ -92,6 +99,7 @@ run_preview() {
+ }
+ 
+ run_visual() {
++  stage "visual pipeline"
+   run_maybe_logged visual_pipeline env PYTHONPATH=. python3 -m top_down_visualgen.cli \
+     --input "${OUTPUT_DIR}" \
+     --profile "${VISUAL_PROFILE}" \
+@@ -100,6 +108,7 @@ run_visual() {
+ }
+ 
+ run_visual_debug() {
++  stage "visual debug steps"
+   run_maybe_logged visual_debug env PYTHONPATH=. python3 bin/render_visual_pipeline_steps.py "${OUTPUT_DIR}" \
+     --profile "${VISUAL_PROFILE}" \
+     --output "${VISUAL_STEPS_OUTPUT}" \
+@@ -107,27 +116,32 @@ run_visual_debug() {
+ }
+ 
+ run_final_render() {
++  stage "final render"
+   run_maybe_logged final_render env PYTHONPATH=. python3 bin/render_final_asset_map.py "${VISUAL_OUTPUT}" \
+     --profile "${VISUAL_PROFILE}" \
+     --output "${VISUAL_OUTPUT}/final_render.png"
+ }
+ 
+ run_asset_preview() {
++  stage "asset registry preview"
+   run_maybe_logged asset_registry_preview env PYTHONPATH=. python3 bin/generate_asset_registry_preview.py "${VISUAL_PROFILE}" \
+     --output "${VISUAL_OUTPUT}/debug"
+ }
+ 
+ run_asset_pack() {
++  stage "asset pack"
+   run_maybe_logged asset_pack env PYTHONPATH=. python3 bin/generate_asset_pack.py "${VISUAL_PROFILE}"
+ }
+ 
+ run_summary() {
++  stage "summary"
+   env PYTHONPATH=. python3 bin/print_pipeline_summary.py "${OUTPUT_DIR}" \
+     --project-root . \
+     --profile "${VISUAL_PROFILE}"
+ }
+ 
+ run_assets() {
++  stage "assets manifest validation"
+   run_maybe_logged assets_manifest env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}"
+ }
+ 
+@@ -137,10 +151,12 @@ run_assets_full() {
+ }
+ 
+ run_inspect() {
++  stage "inspect world package"
+   python3 examples/inspect_world_package.py "${OUTPUT_DIR}"
+ }
+ 
+ run_tests() {
++  stage "compileall"
+   python3 -m compileall top_down_worldgen top_down_visualgen examples bin
+   env PYTHONPATH=. python3 bin/validate_assets_manifest.py "${VISUAL_PROFILE}"
+   PYTHONPATH=. pytest -q
+@@ -194,9 +210,9 @@ case "${CMD}" in
+     if [[ "${RUN_WORLD_PREVIEW}" == "1" ]]; then
+       run_preview
+     fi
++    run_asset_pack
+     run_visual
+     run_visual_debug
+-    run_asset_pack
+     run_asset_preview
+     run_summary
+     ;;
+diff --git a/tests/test_manifest.py b/tests/test_manifest.py
+index 651f5f1..f01345f 100644
+--- a/tests/test_manifest.py
++++ b/tests/test_manifest.py
+@@ -41,7 +41,7 @@ def test_build_manifest_marks_primary_and_debug_outputs(tmp_path: Path) -> None:
+     )
+ 
+     assert manifest["schema_version"] == "generation-manifest-v39"
+-    assert manifest["versions"]["generator"] == "0.0.74"
++    assert manifest["versions"]["generator"] == "0.0.75"
+     assert manifest["versions"]["schemas"]["manifest"] == "generation-manifest-v39"
+     assert manifest["seed"] == 42
+     assert manifest["resolved_seed"] == 42
+diff --git a/tests/test_smoke.py b/tests/test_smoke.py
+index 26b89b9..1dcd196 100644
+--- a/tests/test_smoke.py
++++ b/tests/test_smoke.py
+@@ -6,7 +6,7 @@ from top_down_worldgen.config import PublicConfig
+ 
+ def test_package_version() -> None:
+     """Ensure package exposes the current version."""
+-    assert __version__ == "0.0.74"
++    assert __version__ == "0.0.75"
+ 
+ 
+ def test_default_config_can_be_loaded() -> None:
+diff --git a/top_down_visualgen/__init__.py b/top_down_visualgen/__init__.py
+index 0c06dcf..a9c62dc 100644
+--- a/top_down_visualgen/__init__.py
++++ b/top_down_visualgen/__init__.py
+@@ -1,3 +1,3 @@
+ """Top-down visual tileset pipeline package."""
+ 
+-__version__ = "0.0.74"
++__version__ = "0.0.75"
+diff --git a/top_down_worldgen/__init__.py b/top_down_worldgen/__init__.py
+index 45e7dfe..3e685a0 100644
+--- a/top_down_worldgen/__init__.py
++++ b/top_down_worldgen/__init__.py
+@@ -1,3 +1,3 @@
+ """Top-down procedural world generation package."""
+ 
+-__version__ = "0.0.74"
++__version__ = "0.0.75"
+diff --git a/versions.md b/versions.md
+index c0baae0..ce4cf45 100644
+--- a/versions.md
++++ b/versions.md
+@@ -616,3 +616,14 @@
+ - Добавлен `final_render_report.json`, summary-блок `Final render` и команда `./r final-render`.
+ - Visual pipeline теперь по умолчанию создаёт финальный PNG в нормальном разрешении через `assets_manifest.json`, не меняя gameplay/collision/routes.
+ - Версия проекта поднята до `0.0.74`.
++
++
++## v0.0.74 -> v0.0.75
++
++- README.md переписан как актуальная текстовая точка входа в проект без устаревших image-only секций.
++- Добавлены `docs/ARCHITECTURE.md`, `docs/OUTPUT_FORMAT.md` и `docs/COMMANDS.md` с текущими командами, слоями проекта и структурой output.
++- Актуализированы документы `docs/map_package_v1.md`, `docs/game_consumer_guide.md`, `docs/world_building_algorithm.md` и `docs/world_package_file_map.md` под реальный `map_package/` и `visual_map/`.
++- Сокращены и синхронизированы visual-документы `dark_forest`: оставлены только актуальные правила visual layer, asset manifest, asset pack, registry preview, boundary, elevation, final render и micro scenes.
++- `./r` теперь явно печатает стадии стандартного pipeline и сохраняет полный запуск world + visual + debug + asset registry summary.
++- `./c` ограничен безопасной очисткой `output/`, `out/`, `__pycache__` и `.pytest_cache` без удаления `*.html`/`*.js` по всему проекту.
++- Версия проекта поднята до `0.0.75`.
