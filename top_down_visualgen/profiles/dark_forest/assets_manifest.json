@@ -5103,6 +5103,236 @@
         "sprite"
       ],
       "asset_status": "placeholder_contract"
+    },
+    "forest.cluster_32x32_01": {
+      "path": "sprites/forest/cluster_32x32_01.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "cluster",
+        "32x32"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.cluster_32x32_02": {
+      "path": "sprites/forest/cluster_32x32_02.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "cluster",
+        "32x32"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.cluster_48x48_01": {
+      "path": "sprites/forest/cluster_48x48_01.png",
+      "size": [
+        48,
+        48
+      ],
+      "pivot": [
+        24,
+        44
+      ],
+      "sort_anchor": [
+        24,
+        44
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "cluster",
+        "48x48"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.cluster_48x48_02": {
+      "path": "sprites/forest/cluster_48x48_02.png",
+      "size": [
+        48,
+        48
+      ],
+      "pivot": [
+        24,
+        44
+      ],
+      "sort_anchor": [
+        24,
+        44
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "cluster",
+        "48x48"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.wall_32x48_01": {
+      "path": "sprites/forest/wall_32x48_01.png",
+      "size": [
+        32,
+        48
+      ],
+      "pivot": [
+        16,
+        44
+      ],
+      "sort_anchor": [
+        16,
+        44
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "wall",
+        "32x48"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.wall_32x48_02": {
+      "path": "sprites/forest/wall_32x48_02.png",
+      "size": [
+        32,
+        48
+      ],
+      "pivot": [
+        16,
+        44
+      ],
+      "sort_anchor": [
+        16,
+        44
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "wall",
+        "32x48"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.edge_cluster_n_32x32": {
+      "path": "sprites/forest/edge_cluster_n_32x32.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "edge",
+        "north"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.edge_cluster_s_32x32": {
+      "path": "sprites/forest/edge_cluster_s_32x32.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "edge",
+        "south"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.edge_cluster_e_32x32": {
+      "path": "sprites/forest/edge_cluster_e_32x32.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "edge",
+        "east"
+      ],
+      "asset_status": "production_draft_contract"
+    },
+    "forest.edge_cluster_w_32x32": {
+      "path": "sprites/forest/edge_cluster_w_32x32.png",
+      "size": [
+        32,
+        32
+      ],
+      "pivot": [
+        16,
+        28
+      ],
+      "sort_anchor": [
+        16,
+        28
+      ],
+      "draw_layer": "above_actor",
+      "tags": [
+        "forest",
+        "overlay",
+        "edge",
+        "west"
+      ],
+      "asset_status": "production_draft_contract"
     }
   },
   "asset_root": "../../../assets/dark_forest"

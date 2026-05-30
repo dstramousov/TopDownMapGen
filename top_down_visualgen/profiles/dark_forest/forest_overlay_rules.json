@@ -1,0 +1,57 @@
+{
+  "schema_version": "forest-overlay-rules-v1",
+  "profile": "dark_forest",
+  "world_style": "dark_forest_post_soviet_ruins",
+  "enabled": true,
+  "seed_salt": "dark-forest-overlay-v1",
+  "terrain_types": [
+    "tree_blocker"
+  ],
+  "clusters": {
+    "enabled": true,
+    "draw_layer": "above_actor",
+    "role": "canopy_mass",
+    "sort_elevation": 3,
+    "min_inner_radius": 1,
+    "stride": 5,
+    "chance_percent": 72,
+    "min_spacing_tiles": 5,
+    "sprites": [
+      "forest.cluster_32x32_01",
+      "forest.cluster_32x32_02",
+      "forest.cluster_48x48_01",
+      "forest.cluster_48x48_02",
+      "forest.wall_32x48_01",
+      "forest.wall_32x48_02"
+    ]
+  },
+  "edges": {
+    "enabled": true,
+    "draw_layer": "above_actor",
+    "role": "forest_edge_mass",
+    "sort_elevation": 3,
+    "stride": 4,
+    "chance_percent": 58,
+    "min_spacing_tiles": 4,
+    "sprites_by_edge": {
+      "n": [
+        "forest.edge_cluster_n_32x32"
+      ],
+      "s": [
+        "forest.edge_cluster_s_32x32"
+      ],
+      "e": [
+        "forest.edge_cluster_e_32x32"
+      ],
+      "w": [
+        "forest.edge_cluster_w_32x32"
+      ]
+    }
+  },
+  "contract": {
+    "changes_gameplay": false,
+    "changes_collision": false,
+    "moves_markers": false,
+    "purpose": "Add large visual-only forest canopy clusters over semantic forest areas."
+  }
+}

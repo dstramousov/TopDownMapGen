@@ -29,6 +29,7 @@ class VisualDensityReporter:
         place_treatment_result: dict[str, Any],
         elevation_visual_result: dict[str, Any] | None = None,
         boundary_visual_result: dict[str, Any] | None = None,
+        forest_overlay_result: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Build a JSON-serializable visual density report.
 
@@ -42,6 +43,7 @@ class VisualDensityReporter:
             place_treatment_result: Place treatment mapper result.
             elevation_visual_result: Optional elevation visual mapper result.
             boundary_visual_result: Optional boundary visual mapper result.
+            forest_overlay_result: Optional forest overlay mapper result.
 
         Returns:
             Visual density report.
@@ -57,6 +59,7 @@ class VisualDensityReporter:
         place_total = _summary_int(visual_objects, "place_treatment_total")
         elevation_visual_total = _summary_int(visual_objects, "elevation_visual_total")
         boundary_visual_total = _summary_int(visual_objects, "boundary_visual_total")
+        forest_overlay_total = _summary_int(visual_objects, "forest_overlay_total")
         places_total = len(_items(world.places))
 
         by_source = {
@@ -65,6 +68,7 @@ class VisualDensityReporter:
             "place_treatment": place_total,
             "elevation_visual": elevation_visual_total,
             "boundary_visual": boundary_visual_total,
+            "forest_overlay": forest_overlay_total,
         }
         by_category = _count_categories(items)
         top_sprites = _top_counts(_count_by(items, "sprite_id"), limit=10)
@@ -115,6 +119,7 @@ class VisualDensityReporter:
             },
             "elevation_visual": _elevation_visual_summary(world, elevation_visual_result),
             "boundary_visual": _boundary_visual_summary(boundary_visual_result),
+            "forest_overlay": _forest_overlay_summary(forest_overlay_result),
             "source_reports": {
                 "decoration_total": _report_total(decoration_result),
                 "place_treatment_total": _report_total(place_treatment_result),
@@ -198,6 +203,30 @@ def format_visual_density_summary(report: dict[str, Any]) -> list[str]:
     return lines
 
 
+
+
+def _forest_overlay_summary(forest_overlay_result: dict[str, Any] | None = None) -> dict[str, Any]:
+    report = forest_overlay_result.get("report") if isinstance(forest_overlay_result, dict) else None
+    summary = report.get("summary") if isinstance(report, dict) else None
+    if not isinstance(summary, dict):
+        return {
+            "total": 0,
+            "by_kind": {},
+            "by_edge": {},
+            "failed_placements": 0,
+            "sampled_markers": 0,
+            "status": "missing_report",
+        }
+    failed = summary.get("failed_placements")
+    failed_total = sum(value for value in failed.values() if isinstance(value, int)) if isinstance(failed, dict) else 0
+    return {
+        "total": _int_value(summary.get("total"), 0),
+        "by_kind": summary.get("by_kind", {}),
+        "by_edge": summary.get("by_edge", {}),
+        "failed_placements": failed_total,
+        "sampled_markers": _sum_int_mapping(summary.get("sampled_markers")),
+        "status": "ok" if failed_total == 0 else "has_failed_placements",
+    }
 
 def _boundary_visual_summary(boundary_visual_result: dict[str, Any] | None = None) -> dict[str, Any]:
     report = boundary_visual_result.get("report") if isinstance(boundary_visual_result, dict) else None
@@ -349,7 +378,9 @@ def _count_categories(items: list[dict[str, Any]]) -> Counter[str]:
         tags = item.get("source_tags", [])
         tag_text = " ".join(str(tag) for tag in tags) if isinstance(tags, list) else ""
         haystack = f"{source_type} {rule_id} {sprite_id} {tag_text}"
-        if source_type == "visual_boundary":
+        if source_type == "visual_forest_overlay":
+            counts["forest_overlay"] += 1
+        elif source_type == "visual_boundary":
             counts["boundary"] += 1
         elif source_type == "visual_elevation":
             counts["elevation"] += 1

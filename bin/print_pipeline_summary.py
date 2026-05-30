@@ -53,6 +53,7 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     place_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "place_treatment_report.json")
     elevation_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "elevation_visual_report.json")
     boundary_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "boundary_visual_report.json")
+    forest_overlay_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "forest_overlay_report.json")
     final_render_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "final_render_report.json")
     manifest = _read_optional_json_object(output_dir / "_manifest.json")
 
@@ -90,10 +91,11 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     lines.extend(["", *_autotiling_lines(visual_report, autotile_report, unmapped_report)])
     lines.extend(["", *_visual_elevation_lines(visual_report, elevation_report)])
     lines.extend(["", *_boundary_visual_lines(visual_report, boundary_report)])
+    lines.extend(["", *_forest_overlay_lines(visual_report, forest_overlay_report)])
     lines.extend(["", *_final_render_lines(output_dir, project_root, final_render_report)])
     lines.extend(["", *_debug_file_lines(output_dir, project_root)])
     lines.extend(["", "Overall:", f"  status: {overall_status}", "  notes:"])
-    lines.extend(_notes(world_report, visual_report, autotile_report, unmapped_report, decoration_report, place_report, boundary_report, final_render_report))
+    lines.extend(_notes(world_report, visual_report, autotile_report, unmapped_report, decoration_report, place_report, boundary_report, forest_overlay_report, final_render_report))
     print("\n".join(lines))
 
 
@@ -164,10 +166,11 @@ def _visual_density_lines(report: dict[str, Any]) -> list[str]:
         f"    place treatment: {_int(by_source.get('place_treatment'))} = {_float(place.get('objects_per_place')):4.1f} / place      [{place.get('status', 'unknown')}, target {_target(place)}]",
         f"    elevation:      {_int(by_source.get('elevation_visual'))} = {_per_1000(_int(by_source.get('elevation_visual')), _area(report)):4.1f} / 1000 tiles",
         f"    boundary:       {_int(by_source.get('boundary_visual'))} = {_per_1000(_int(by_source.get('boundary_visual')), _area(report)):4.1f} / 1000 tiles",
+        f"    forest overlay: {_int(by_source.get('forest_overlay'))} = {_per_1000(_int(by_source.get('forest_overlay')), _area(report)):4.1f} / 1000 tiles",
         "",
         "  by category:",
     ]
-    for key in ("swamp", "road", "ruins", "elevation", "boundary", "place", "runtime", "other"):
+    for key in ("swamp", "road", "ruins", "elevation", "boundary", "forest_overlay", "place", "runtime", "other"):
         lines.append(f"    {key + ':':<16} {_int(by_category.get(key)):6d}")
     lines.extend(["", "  top sprites:"])
     for item in top_sprites[:5]:
@@ -241,6 +244,27 @@ def _boundary_visual_lines(report: dict[str, Any], boundary_report: dict[str, An
     ]
 
 
+def _forest_overlay_lines(report: dict[str, Any], forest_report: dict[str, Any]) -> list[str]:
+    forest = _nested(report, "forest_overlay")
+    report_summary = _dict(forest_report.get("summary"))
+    failed = _int(forest.get("failed_placements"))
+    by_kind = _dict(forest.get("by_kind"))
+    by_edge = _dict(forest.get("by_edge"))
+    return [
+        "Forest overlay:",
+        f"  markers:            {_int(forest.get('total')):6d} [{forest.get('status', 'unknown')}]",
+        f"  clusters:           {_int(by_kind.get('cluster')):6d}",
+        f"  edge clusters:      {_int(by_kind.get('edge')):6d}",
+        f"  failed placements:  {failed:6d} [{'ok' if failed == 0 else 'warning'}]",
+        f"  sampled markers:    {_int(forest.get('sampled_markers')):6d} [ok]",
+        "  by edge:",
+        f"    north:            {_int(by_edge.get('n')):6d}",
+        f"    east:             {_int(by_edge.get('e')):6d}",
+        f"    south:            {_int(by_edge.get('s')):6d}",
+        f"    west:             {_int(by_edge.get('w')):6d}",
+        f"  report objects:     {_int(report_summary.get('total')):6d}",
+    ]
+
 def _final_render_lines(output_dir: Path, project_root: Path, report: dict[str, Any]) -> list[str]:
     summary = _dict(report.get("summary"))
     size_px = _dict(report.get("size_px"))
@@ -271,6 +295,7 @@ def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
         f"  place report:      {_display_path(visual_debug / 'place_treatment_report.json', project_root)}",
         f"  elevation report:  {_display_path(visual_debug / 'elevation_visual_report.json', project_root)}",
         f"  boundary report:   {_display_path(visual_debug / 'boundary_visual_report.json', project_root)}",
+        f"  forest report:     {_display_path(visual_debug / 'forest_overlay_report.json', project_root)}",
         f"  final render:      {_display_path(output_dir / 'visual_map' / 'final_render.png', project_root)}",
         f"  final report:      {_display_path(visual_debug / 'final_render_report.json', project_root)}",
         f"  asset registry:    {_display_path(visual_debug / 'asset_registry_report.json', project_root)}",
@@ -288,6 +313,7 @@ def _notes(
     decoration_report: dict[str, Any],
     place_report: dict[str, Any],
     boundary_report: dict[str, Any],
+    forest_overlay_report: dict[str, Any],
     final_render_report: dict[str, Any],
 ) -> list[str]:
     notes: list[str] = []
@@ -312,6 +338,10 @@ def _notes(
     notes.append("    - boundary visual is healthy" if boundary_status == "ok" else f"    - boundary visual needs attention: {boundary_status}")
     if not boundary_report:
         notes.append("    - boundary visual report is missing")
+    forest_status = str(_nested(visual_report, "forest_overlay").get("status", "unknown"))
+    notes.append("    - forest overlay is healthy" if forest_status == "ok" else f"    - forest overlay needs attention: {forest_status}")
+    if not forest_overlay_report:
+        notes.append("    - forest overlay report is missing")
     final_quality = str(_nested(final_render_report, "quality").get("status", "missing"))
     notes.append("    - final asset render is healthy" if final_quality == "ok" else f"    - final asset render needs attention: {final_quality}")
     return notes

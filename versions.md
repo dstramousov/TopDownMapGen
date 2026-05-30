@@ -633,3 +633,10 @@
 - Добавлена команда `./r import-asset-packs [path]`, которая пишет `asset_draft_import_report.json` и не требует ручной раскладки PNG по папкам.
 - Добавлен документ `docs/dark_forest_asset_draft_import.md` и тесты импортера draft-паков.
 - Версия проекта поднята до `0.0.76`.
+
+## v0.0.76 -> v0.0.77
+
+- Добавлен visual-only forest overlay pass для крупных хвойных кластеров поверх forest mask.
+- Добавлен профиль `forest_overlay_rules.json`, debug/report и summary-блок `Forest overlay`.
+- Добавлены asset manifest entries и import aliases для B08 forest large cluster sprites.
+- Visual debug steps теперь включают `12_forest_overlay.png`, а финальный preview переехал в `13_final_preview.png`.

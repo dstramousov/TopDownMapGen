@@ -10,6 +10,7 @@ from .decoration import DecorationMapper, merge_visual_objects
 from .density import VisualDensityReporter, write_visual_density_report
 from .elevation_visual import ElevationVisualMapper
 from .final_renderer import FinalAssetRenderer
+from .forest_overlay import ForestOverlayMapper
 from .io import write_json_object
 from .models import VisualPipelineResult
 from .object_mapper import ObjectVisualMapper
@@ -37,6 +38,7 @@ class VisualPipeline:
         elevation_visual_mapper: ElevationVisualMapper | None = None,
         boundary_visual_mapper: BoundaryVisualMapper | None = None,
         final_renderer: FinalAssetRenderer | None = None,
+        forest_overlay_mapper: ForestOverlayMapper | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -64,6 +66,7 @@ class VisualPipeline:
         self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
         self._boundary_visual_mapper = boundary_visual_mapper or BoundaryVisualMapper()
         self._final_renderer = final_renderer or FinalAssetRenderer()
+        self._forest_overlay_mapper = forest_overlay_mapper or ForestOverlayMapper()
 
     def run(
         self,
@@ -116,12 +119,18 @@ class VisualPipeline:
             profile=profile,
             visual_layers=visual_layers,
         )
+        forest_overlay_result = self._forest_overlay_mapper.map_forest_overlays(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+        )
         visual_objects = merge_visual_objects(
             runtime_visual_objects=runtime_visual_objects,
             decoration_result=decoration_result,
             place_treatment_result=place_treatment_result,
             elevation_visual_result=elevation_visual_result,
             boundary_visual_result=boundary_visual_result,
+            forest_overlay_result=forest_overlay_result,
         )
         width = _int_value(visual_layers.get("width"), 0)
         height = _int_value(visual_layers.get("height"), 0)
@@ -148,6 +157,7 @@ class VisualPipeline:
         debug_visual_density_report_path = debug_dir / "visual_density_report.json"
         debug_elevation_visual_report_path = debug_dir / "elevation_visual_report.json"
         debug_boundary_visual_report_path = debug_dir / "boundary_visual_report.json"
+        debug_forest_overlay_report_path = debug_dir / "forest_overlay_report.json"
         debug_final_render_report_path = debug_dir / "final_render_report.json" if final_render else None
 
         write_json_object(visual_layers, visual_layers_path)
@@ -175,6 +185,10 @@ class VisualPipeline:
             _build_boundary_visual_report_debug(boundary_visual_result),
             debug_boundary_visual_report_path,
         )
+        write_json_object(
+            _build_forest_overlay_report_debug(forest_overlay_result),
+            debug_forest_overlay_report_path,
+        )
         visual_density_report = self._density_reporter.build_report(
             world=world,
             profile=profile,
@@ -185,6 +199,7 @@ class VisualPipeline:
             place_treatment_result=place_treatment_result,
             elevation_visual_result=elevation_visual_result,
             boundary_visual_result=boundary_visual_result,
+            forest_overlay_result=forest_overlay_result,
         )
         write_visual_density_report(visual_density_report, debug_visual_density_report_path)
         if preview_path is not None:
@@ -221,6 +236,7 @@ class VisualPipeline:
             debug_visual_density_report_path=debug_visual_density_report_path,
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             debug_boundary_visual_report_path=debug_boundary_visual_report_path,
+            debug_forest_overlay_report_path=debug_forest_overlay_report_path,
             final_render_path=final_render_path,
             debug_final_render_report_path=debug_final_render_report_path,
             visual_layers=visual_layers,
@@ -244,6 +260,7 @@ class VisualPipeline:
             debug_visual_density_report_path=debug_visual_density_report_path,
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             debug_boundary_visual_report_path=debug_boundary_visual_report_path,
+            debug_forest_overlay_report_path=debug_forest_overlay_report_path,
             final_render_path=final_render_path,
             debug_final_render_report_path=debug_final_render_report_path,
         )
@@ -267,6 +284,7 @@ class VisualPipeline:
         debug_visual_density_report_path: Path,
         debug_elevation_visual_report_path: Path,
         debug_boundary_visual_report_path: Path,
+        debug_forest_overlay_report_path: Path,
         final_render_path: Path | None,
         debug_final_render_report_path: Path | None,
         visual_layers: dict[str, Any],
@@ -345,6 +363,10 @@ class VisualPipeline:
                     output_dir,
                     debug_boundary_visual_report_path,
                 ),
+                "debug_forest_overlay_report": _relative(
+                    output_dir,
+                    debug_forest_overlay_report_path,
+                ),
                 "debug_final_render_report": _relative(
                     output_dir,
                     debug_final_render_report_path,
@@ -367,6 +389,26 @@ class VisualPipeline:
     def _extract_visual_debug(visual_layers: dict[str, Any]) -> dict[str, Any]:
         debug = visual_layers.pop("debug", {})
         return debug if isinstance(debug, dict) else {}
+
+def _build_forest_overlay_report_debug(forest_overlay_result: dict[str, Any]) -> dict[str, Any]:
+    report = forest_overlay_result.get("report")
+    if isinstance(report, dict):
+        return report
+    return {
+        "schema_version": "visual-debug-forest-overlay-report-v1",
+        "kind": "visual_debug_forest_overlay_report",
+        "source_layer": "map_package.layers.terrain",
+        "rules_enabled": False,
+        "summary": {
+            "total": 0,
+            "by_kind": {},
+            "by_edge": {},
+            "by_sprite_id": {},
+            "failed_placements": {},
+            "sampled_markers": {},
+        },
+        "quality": {"status": "missing_report"},
+    }
 
 
 def _relative(root: Path, path: Path | None) -> str | None:

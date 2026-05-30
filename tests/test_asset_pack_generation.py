@@ -41,8 +41,8 @@ def test_asset_pack_generation_creates_placeholder_pngs(tmp_path: Path) -> None:
 
     report = generate_asset_pack(PROFILE_DIR, asset_root=tmp_path)
 
-    assert report["entries_total"] == 266
-    assert report["written"] == 266
+    assert report["entries_total"] == 276
+    assert report["written"] == 276
     assert (tmp_path / "asset_pack_report.json").exists()
     assert (tmp_path / "sprites/decor/reeds_01.png").exists()
     assert (tmp_path / "tiles/dirt/base.png").exists()

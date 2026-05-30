@@ -13,13 +13,11 @@
     "forest_corner_nw": "forest.outer_corner_wn",
     "forest_corner_se": "forest.outer_corner_es",
     "forest_corner_sw": "forest.outer_corner_sw",
-
     "grass_base_01": "grass.base",
     "grass_patches_01": "terrain.unknown",
     "dirt_01": "dirt.base",
     "mud_01": "mud.base",
     "rocky_ground_01": "sand.base",
-
     "road_straight_ns_01": "road.straight_ns",
     "road_straight_ew_01": "road.straight_ew",
     "road_turn_ne_01": "road.turn_ne",
@@ -30,7 +28,6 @@
     "road_t_junction_n_01": "road.t_new",
     "road_overgrown_01": "road.isolated",
     "road_broken_patch_01": "road.end_e",
-
     "swamp_fill_01": "swamp.fill",
     "swamp_fill_02": "swamp.isolated",
     "swamp_edge_mud_n_01": "swamp.edge_n",
@@ -41,7 +38,6 @@
     "wet_grass_01": "decor.wet_grass_01",
     "water_puddle_01": "decor.water_puddle_01",
     "black_mud_01": "decor.black_mud_01",
-
     "ruin_floor_01": "ruins.floor",
     "ruin_floor_cracked_01": "decor.cracked_floor_piece_01",
     "ruin_wall_ns_01": "wall.blocked",
@@ -52,7 +48,6 @@
     "fallen_bricks_01": "decor.fallen_bricks_01",
     "broken_block_01": "decor.broken_block_01",
     "mossy_stone_01": "decor.mossy_stone_01",
-
     "boundary_dense_forest_wall_01": "boundary.dense_forest_wall",
     "boundary_dark_tree_wall_01": "boundary.dark_tree_wall",
     "boundary_ruin_barrier_01": "boundary.ruin_barrier",
@@ -63,7 +58,6 @@
     "elevation_hill_grass_edge_01": "elevation.hill_grass_edge",
     "elevation_stone_stairs_01": "elevation.stone_stairs",
     "elevation_ancient_beacon_base_01": "elevation.ancient_beacon_base",
-
     "decor_reeds_01": "decor.reeds_01",
     "decor_dead_branch_01": "decor.dead_branch_01",
     "decor_small_stone_01": "decor.small_stone_01",
@@ -73,6 +67,16 @@
     "decor_firewood_stack_01": "decor.firewood_stack_01",
     "decor_hidden_cache_marker_01": "decor.hidden_cache_marker_01",
     "decor_warning_bones_01": "decor.warning_bones_01",
-    "decor_sandbag_remnant_01": "decor.sandbag_remnant_01"
+    "decor_sandbag_remnant_01": "decor.sandbag_remnant_01",
+    "forest_cluster_32x32_01": "forest.cluster_32x32_01",
+    "forest_cluster_32x32_02": "forest.cluster_32x32_02",
+    "forest_cluster_48x48_01": "forest.cluster_48x48_01",
+    "forest_cluster_48x48_02": "forest.cluster_48x48_02",
+    "forest_wall_32x48_01": "forest.wall_32x48_01",
+    "forest_wall_32x48_02": "forest.wall_32x48_02",
+    "forest_edge_cluster_n_32x32": "forest.edge_cluster_n_32x32",
+    "forest_edge_cluster_s_32x32": "forest.edge_cluster_s_32x32",
+    "forest_edge_cluster_e_32x32": "forest.edge_cluster_e_32x32",
+    "forest_edge_cluster_w_32x32": "forest.edge_cluster_w_32x32"
   }
 }

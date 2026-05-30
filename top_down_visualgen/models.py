@@ -40,6 +40,7 @@ class VisualProfile:
     place_rules: dict[str, Any]
     elevation_rules: dict[str, Any]
     boundary_rules: dict[str, Any]
+    forest_overlay_rules: dict[str, Any]
     assets_manifest: dict[str, Any]
 
 
@@ -61,5 +62,6 @@ class VisualPipelineResult:
     debug_visual_density_report_path: Path
     debug_elevation_visual_report_path: Path
     debug_boundary_visual_report_path: Path
+    debug_forest_overlay_report_path: Path
     final_render_path: Path | None
     debug_final_render_report_path: Path | None

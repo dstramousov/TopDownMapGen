@@ -246,7 +246,8 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "09_place_treatment.png",
         "10_elevation_visual.png",
         "11_boundary_visual.png",
-        "12_final_preview.png",
+        "12_forest_overlay.png",
+        "13_final_preview.png",
     ]
     assert all(path.exists() for path in paths)
 
