@@ -3,9 +3,9 @@
   "profile": "dark_forest",
   "asset_root": "/home/dimas/work/TopDownMapGen/assets/dark_forest",
   "manifest": "top_down_visualgen/profiles/dark_forest/assets_manifest.json",
-  "entries_total": 276,
+  "entries_total": 283,
   "written": 0,
-  "skipped_existing": 276,
+  "skipped_existing": 283,
   "written_files": [],
   "skipped_files": [
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/debug/missing_tile.png",
@@ -37,6 +37,13 @@
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/forest/thin_ew.png",
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/forest/thin_ns.png",
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/grass/base.png",
+    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/grass/base.png",
+    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/grass/base.png",
+    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/grass/base.png",
+    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/forest/fill.png",
+    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/grass/base.png",
+    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/dirt/base.png",
+    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/grass/base.png",
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/mud/base.png",
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/cross.png",
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/end_e.png",
@@ -50,13 +57,6 @@
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/t_nes.png",
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/t_new.png",
     "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/t_nsw.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/turn_es.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/turn_ne.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/turn_sw.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/turn_wn.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/ruins/floor.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/sand/base.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/swamp/cap_e.png",
-    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/swamp/cap_n.png"
+    "/home/dimas/work/TopDownMapGen/assets/dark_forest/tiles/road/turn_es.png"
   ]
 }

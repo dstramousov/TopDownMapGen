@@ -22,6 +22,7 @@ class VisualProfileLoader:
         "elevation_rules": "elevation_visual_rules.json",
         "boundary_rules": "boundary_visual_rules.json",
         "forest_overlay_rules": "forest_overlay_rules.json",
+        "grass_render_rules": "grass_render_rules.json",
         "assets_manifest": "assets_manifest.json",
     }
 
@@ -58,5 +59,6 @@ class VisualProfileLoader:
             elevation_rules=data["elevation_rules"],
             boundary_rules=data["boundary_rules"],
             forest_overlay_rules=data["forest_overlay_rules"],
+            grass_render_rules=data["grass_render_rules"],
             assets_manifest=data["assets_manifest"],
         )

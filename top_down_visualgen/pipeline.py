@@ -11,6 +11,7 @@ from .density import VisualDensityReporter, write_visual_density_report
 from .elevation_visual import ElevationVisualMapper
 from .final_renderer import FinalAssetRenderer
 from .forest_overlay import ForestOverlayMapper
+from .grass_base_renderer import GrassBaseRenderer
 from .io import write_json_object
 from .models import VisualPipelineResult
 from .object_mapper import ObjectVisualMapper
@@ -39,6 +40,7 @@ class VisualPipeline:
         boundary_visual_mapper: BoundaryVisualMapper | None = None,
         final_renderer: FinalAssetRenderer | None = None,
         forest_overlay_mapper: ForestOverlayMapper | None = None,
+        grass_base_renderer: GrassBaseRenderer | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -67,6 +69,7 @@ class VisualPipeline:
         self._boundary_visual_mapper = boundary_visual_mapper or BoundaryVisualMapper()
         self._final_renderer = final_renderer or FinalAssetRenderer()
         self._forest_overlay_mapper = forest_overlay_mapper or ForestOverlayMapper()
+        self._grass_base_renderer = grass_base_renderer or GrassBaseRenderer()
 
     def run(
         self,
@@ -96,6 +99,11 @@ class VisualPipeline:
         world = self._package_loader.load(input_dir)
         profile = self._profile_loader.load(profile_dir)
         visual_layers = self._terrain_mapper.map_terrain(world, profile)
+        visual_layers, grass_render_report = self._grass_base_renderer.render_grass_base(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+        )
         visual_debug = self._extract_visual_debug(visual_layers)
         runtime_visual_objects = self._object_mapper.map_objects(world, profile)
         decoration_result = self._decoration_mapper.map_decorations(
@@ -158,6 +166,7 @@ class VisualPipeline:
         debug_elevation_visual_report_path = debug_dir / "elevation_visual_report.json"
         debug_boundary_visual_report_path = debug_dir / "boundary_visual_report.json"
         debug_forest_overlay_report_path = debug_dir / "forest_overlay_report.json"
+        debug_grass_render_report_path = debug_dir / "grass_render_report.json"
         debug_final_render_report_path = debug_dir / "final_render_report.json" if final_render else None
 
         write_json_object(visual_layers, visual_layers_path)
@@ -189,6 +198,7 @@ class VisualPipeline:
             _build_forest_overlay_report_debug(forest_overlay_result),
             debug_forest_overlay_report_path,
         )
+        write_json_object(grass_render_report, debug_grass_render_report_path)
         visual_density_report = self._density_reporter.build_report(
             world=world,
             profile=profile,
@@ -200,6 +210,7 @@ class VisualPipeline:
             elevation_visual_result=elevation_visual_result,
             boundary_visual_result=boundary_visual_result,
             forest_overlay_result=forest_overlay_result,
+            grass_render_report=grass_render_report,
         )
         write_visual_density_report(visual_density_report, debug_visual_density_report_path)
         if preview_path is not None:
@@ -237,6 +248,7 @@ class VisualPipeline:
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             debug_boundary_visual_report_path=debug_boundary_visual_report_path,
             debug_forest_overlay_report_path=debug_forest_overlay_report_path,
+            debug_grass_render_report_path=debug_grass_render_report_path,
             final_render_path=final_render_path,
             debug_final_render_report_path=debug_final_render_report_path,
             visual_layers=visual_layers,
@@ -261,6 +273,7 @@ class VisualPipeline:
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             debug_boundary_visual_report_path=debug_boundary_visual_report_path,
             debug_forest_overlay_report_path=debug_forest_overlay_report_path,
+            debug_grass_render_report_path=debug_grass_render_report_path,
             final_render_path=final_render_path,
             debug_final_render_report_path=debug_final_render_report_path,
         )
@@ -285,6 +298,7 @@ class VisualPipeline:
         debug_elevation_visual_report_path: Path,
         debug_boundary_visual_report_path: Path,
         debug_forest_overlay_report_path: Path,
+        debug_grass_render_report_path: Path,
         final_render_path: Path | None,
         debug_final_render_report_path: Path | None,
         visual_layers: dict[str, Any],
@@ -366,6 +380,10 @@ class VisualPipeline:
                 "debug_forest_overlay_report": _relative(
                     output_dir,
                     debug_forest_overlay_report_path,
+                ),
+                "debug_grass_render_report": _relative(
+                    output_dir,
+                    debug_grass_render_report_path,
                 ),
                 "debug_final_render_report": _relative(
                     output_dir,

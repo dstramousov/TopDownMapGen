@@ -54,6 +54,7 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     elevation_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "elevation_visual_report.json")
     boundary_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "boundary_visual_report.json")
     forest_overlay_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "forest_overlay_report.json")
+    grass_render_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "grass_render_report.json")
     final_render_report = _read_optional_json_object(output_dir / "visual_map" / "debug" / "final_render_report.json")
     manifest = _read_optional_json_object(output_dir / "_manifest.json")
 
@@ -91,6 +92,7 @@ def print_pipeline_summary(output_dir: Path, project_root: Path, profile: str) -
     lines.extend(["", *_autotiling_lines(visual_report, autotile_report, unmapped_report)])
     lines.extend(["", *_visual_elevation_lines(visual_report, elevation_report)])
     lines.extend(["", *_boundary_visual_lines(visual_report, boundary_report)])
+    lines.extend(["", *_grass_render_lines(visual_report, grass_render_report)])
     lines.extend(["", *_forest_overlay_lines(visual_report, forest_overlay_report)])
     lines.extend(["", *_final_render_lines(output_dir, project_root, final_render_report)])
     lines.extend(["", *_debug_file_lines(output_dir, project_root)])
@@ -244,6 +246,32 @@ def _boundary_visual_lines(report: dict[str, Any], boundary_report: dict[str, An
     ]
 
 
+
+def _grass_render_lines(report: dict[str, Any], grass_report: dict[str, Any]) -> list[str]:
+    grass = _nested(report, "grass_render")
+    report_summary = _dict(grass_report.get("summary"))
+    by_tile = _dict(report_summary.get("by_tile_id"))
+    return [
+        "Grass renderer:",
+        f"  candidates:        {_int(grass.get('total_candidates')):6d} [{grass.get('status', 'unknown')}]",
+        f"  base tiles:        {_int(grass.get('base_tiles')):6d}",
+        f"  patch tiles:       {_int(grass.get('patch_tiles')):6d}",
+        f"  forest transition: {_int(grass.get('forest_transitions')):6d}",
+        "  top tiles:",
+        *_top_mapping_lines(by_tile, limit=5),
+    ]
+
+
+def _top_mapping_lines(mapping: dict[str, Any], *, limit: int) -> list[str]:
+    items = sorted(
+        ((key, _int(value)) for key, value in mapping.items()),
+        key=lambda item: item[1],
+        reverse=True,
+    )
+    if not items:
+        return ["    none:                   0"]
+    return [f"    {key + ':':<24} {value:6d}" for key, value in items[:limit]]
+
 def _forest_overlay_lines(report: dict[str, Any], forest_report: dict[str, Any]) -> list[str]:
     forest = _nested(report, "forest_overlay")
     report_summary = _dict(forest_report.get("summary"))
@@ -295,6 +323,7 @@ def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
         f"  place report:      {_display_path(visual_debug / 'place_treatment_report.json', project_root)}",
         f"  elevation report:  {_display_path(visual_debug / 'elevation_visual_report.json', project_root)}",
         f"  boundary report:   {_display_path(visual_debug / 'boundary_visual_report.json', project_root)}",
+        f"  grass report:      {_display_path(visual_debug / 'grass_render_report.json', project_root)}",
         f"  forest report:     {_display_path(visual_debug / 'forest_overlay_report.json', project_root)}",
         f"  final render:      {_display_path(output_dir / 'visual_map' / 'final_render.png', project_root)}",
         f"  final report:      {_display_path(visual_debug / 'final_render_report.json', project_root)}",

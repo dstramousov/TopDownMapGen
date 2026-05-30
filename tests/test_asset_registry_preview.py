@@ -30,13 +30,13 @@ def test_asset_registry_report_counts_manifest_entries() -> None:
     report = build_registry_report(PROFILE_DIR)
 
     assert report["schema_version"] == "asset-registry-report-v1"
-    assert report["summary"]["tiles"] == 92
+    assert report["summary"]["tiles"] == 99
     assert report["summary"]["sprites"] == 184
-    assert report["summary"]["total_entries"] == 276
+    assert report["summary"]["total_entries"] == 283
     assert report["by_draw_layer"]["decor"] > 0
     assert report["by_category"]["boundary"] > 0
     file_status_total = sum(report["by_file_status"].values())
-    assert file_status_total == 276
+    assert file_status_total == 283
 
 
 def test_asset_registry_preview_writes_json_and_html(tmp_path: Path) -> None:

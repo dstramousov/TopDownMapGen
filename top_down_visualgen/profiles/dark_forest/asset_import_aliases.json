@@ -13,8 +13,8 @@
     "forest_corner_nw": "forest.outer_corner_wn",
     "forest_corner_se": "forest.outer_corner_es",
     "forest_corner_sw": "forest.outer_corner_sw",
-    "grass_base_01": "grass.base",
-    "grass_patches_01": "terrain.unknown",
+    "grass_base_01": "grass.clean_base_01",
+    "grass_patches_01": "grass.soft_patch_01",
     "dirt_01": "dirt.base",
     "mud_01": "mud.base",
     "rocky_ground_01": "sand.base",
@@ -77,6 +77,11 @@
     "forest_edge_cluster_n_32x32": "forest.edge_cluster_n_32x32",
     "forest_edge_cluster_s_32x32": "forest.edge_cluster_s_32x32",
     "forest_edge_cluster_e_32x32": "forest.edge_cluster_e_32x32",
-    "forest_edge_cluster_w_32x32": "forest.edge_cluster_w_32x32"
+    "forest_edge_cluster_w_32x32": "forest.edge_cluster_w_32x32",
+    "grass_base_02": "grass.clean_base_02",
+    "grass_base_03": "grass.light_base_01",
+    "grass_patches_02": "grass.soft_patch_02",
+    "forest_ground_01": "grass.forest_transition_01",
+    "forest_litter_01": "grass.forest_transition_01"
   }
 }

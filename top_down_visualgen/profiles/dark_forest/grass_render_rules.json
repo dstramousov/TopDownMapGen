@@ -1,0 +1,40 @@
+{
+  "schema_version": "grass-render-rules-v1",
+  "kind": "grass_render_rules",
+  "enabled": true,
+  "candidate_terrain_types": [
+    "grass",
+    "empty",
+    "start",
+    "goal",
+    "flower_decor",
+    "mushroom_decor"
+  ],
+  "candidate_tile_ids": [
+    "grass.base"
+  ],
+  "base_tiles": [
+    "grass.clean_base_01",
+    "grass.clean_base_02",
+    "grass.light_base_01"
+  ],
+  "patch_tiles": [
+    "grass.soft_patch_01",
+    "grass.soft_patch_02"
+  ],
+  "forest_transition_tiles": [
+    "grass.forest_transition_01"
+  ],
+  "forest_terrain_types": [
+    "forest",
+    "tree_blocker",
+    "bush",
+    "bush_slow_concealment"
+  ],
+  "patch_period": 11,
+  "forest_transition_period": 2,
+  "notes": [
+    "Visual-only pass: it changes terrain tile ids in visual_layers only.",
+    "World package gameplay layers remain the source of truth."
+  ]
+}

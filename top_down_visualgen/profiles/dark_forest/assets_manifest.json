@@ -1224,6 +1224,99 @@
         "tile"
       ],
       "asset_status": "placeholder_contract"
+    },
+    "grass.clean_base_01": {
+      "path": "tiles/grass/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "grass",
+        "clean",
+        "base"
+      ],
+      "asset_status": "contract_alias_to_existing_asset"
+    },
+    "grass.clean_base_02": {
+      "path": "tiles/grass/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "grass",
+        "clean",
+        "base",
+        "variant"
+      ],
+      "asset_status": "contract_alias_to_existing_asset"
+    },
+    "grass.light_base_01": {
+      "path": "tiles/grass/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "grass",
+        "light",
+        "base"
+      ],
+      "asset_status": "contract_alias_to_existing_asset"
+    },
+    "grass.dark_base_01": {
+      "path": "tiles/grass/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "grass",
+        "dark",
+        "base"
+      ],
+      "asset_status": "contract_alias_to_existing_asset"
+    },
+    "grass.soft_patch_01": {
+      "path": "tiles/dirt/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "grass",
+        "soft",
+        "patch"
+      ],
+      "asset_status": "contract_alias_to_existing_asset"
+    },
+    "grass.soft_patch_02": {
+      "path": "tiles/grass/base.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "grass",
+        "soft",
+        "patch",
+        "variant"
+      ],
+      "asset_status": "contract_alias_to_existing_asset"
+    },
+    "grass.forest_transition_01": {
+      "path": "tiles/forest/fill.png",
+      "size": [
+        16,
+        16
+      ],
+      "tags": [
+        "grass",
+        "forest",
+        "transition"
+      ],
+      "asset_status": "contract_alias_to_existing_asset"
     }
   },
   "sprites": {

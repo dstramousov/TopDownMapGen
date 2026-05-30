@@ -10,6 +10,7 @@ from .boundary_visual import BoundaryVisualMapper
 from .decoration import DecorationMapper, merge_visual_objects
 from .elevation_visual import ElevationVisualMapper
 from .forest_overlay import ForestOverlayMapper
+from .grass_base_renderer import GrassBaseRenderer
 from .models import VisualProfile, WorldPackage
 from .object_mapper import ObjectVisualMapper
 from .place_treatment import PlaceTreatmentMapper
@@ -29,6 +30,7 @@ class VisualPipelineStepRenderer:
         elevation_visual_mapper: ElevationVisualMapper | None = None,
         boundary_visual_mapper: BoundaryVisualMapper | None = None,
         forest_overlay_mapper: ForestOverlayMapper | None = None,
+        grass_base_renderer: GrassBaseRenderer | None = None,
     ) -> None:
         """Initialize the step renderer.
 
@@ -40,6 +42,7 @@ class VisualPipelineStepRenderer:
             elevation_visual_mapper: Optional elevation visual mapper.
             boundary_visual_mapper: Optional boundary visual mapper.
             forest_overlay_mapper: Optional forest overlay mapper.
+            grass_base_renderer: Optional grass base renderer.
         """
         self._terrain_mapper = terrain_mapper or TerrainVisualMapper()
         self._object_mapper = object_mapper or ObjectVisualMapper()
@@ -48,6 +51,7 @@ class VisualPipelineStepRenderer:
         self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
         self._boundary_visual_mapper = boundary_visual_mapper or BoundaryVisualMapper()
         self._forest_overlay_mapper = forest_overlay_mapper or ForestOverlayMapper()
+        self._grass_base_renderer = grass_base_renderer or GrassBaseRenderer()
 
     def render_steps(
         self,
@@ -70,6 +74,11 @@ class VisualPipelineStepRenderer:
         """
         terrain_rows = _terrain_rows(world.terrain)
         visual_layers = self._terrain_mapper.map_terrain(world, profile)
+        visual_layers, grass_render_report = self._grass_base_renderer.render_grass_base(
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+        )
         debug = visual_layers.get("debug")
         autotile_rows = _autotile_rows(debug)
         runtime_visual_objects = self._object_mapper.map_objects(world, profile)
@@ -122,6 +131,12 @@ class VisualPipelineStepRenderer:
                 terrain_rows=terrain_rows,
                 profile=profile,
                 output_path=output_dir / "01_base_visual_tiles.png",
+                tile_size_px=tile_size,
+            ),
+            self._render_grass_base_step(
+                visual_layers=visual_layers,
+                profile=profile,
+                output_path=output_dir / "02_grass_base_render.png",
                 tile_size_px=tile_size,
             ),
             self._render_autotile_step(
@@ -254,6 +269,24 @@ class VisualPipelineStepRenderer:
             [terrain_to_tile.get(terrain_type, default_tile) for terrain_type in row]
             for row in terrain_rows
         ]
+        _render_tile_rows(
+            rows=rows,
+            tile_colors=_tile_colors(profile),
+            output_path=output_path,
+            tile_size_px=tile_size_px,
+        )
+        return output_path
+
+
+    def _render_grass_base_step(
+        self,
+        *,
+        visual_layers: dict[str, Any],
+        profile: VisualProfile,
+        output_path: Path,
+        tile_size_px: int,
+    ) -> Path:
+        rows = _visual_rows(visual_layers)
         _render_tile_rows(
             rows=rows,
             tile_colors=_tile_colors(profile),

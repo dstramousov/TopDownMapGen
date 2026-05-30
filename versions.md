@@ -648,3 +648,20 @@
 - Marked B01-B07 assets as useful prototype/test assets rather than final art quality.
 - Marked the forest overlay work as experimental and defined the next proposed steps around grass and forest region rendering.
 - Версия проекта поднята до `0.0.78`.
+
+## v0.0.78 -> v0.0.79
+
+- Добавлен `GrassBaseRenderer` как первый практический шаг новой модели рендера `dark_forest`.
+- Добавлен профильный файл `grass_render_rules.json` для спокойной травяной базы, мягких patches и переходов к лесу.
+- `visual_layers` теперь получает более спокойные grass tile IDs до декора/объектов.
+- Добавлены `grass_render_report.json` и debug step `02_grass_base_render.png`.
+- Summary выводит блок `Grass renderer`.
+- Gameplay-слои не меняются: collision, movement, routes, start/goal остаются источником истины world package.
+- Версия проекта поднята до `0.0.79`.
+
+## v0.0.79 -> v0.0.80
+
+- Восстановлен отсутствующий модуль `top_down_visualgen.grass_base_renderer`.
+- Добавлен отсутствующий профильный файл `grass_render_rules.json` для `dark_forest`.
+- `visual_pipeline` снова может импортировать и выполнять grass base pass без `ModuleNotFoundError`.
+- Версия проекта поднята до `0.0.80`.

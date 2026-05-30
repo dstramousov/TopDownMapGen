@@ -65,6 +65,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert result.debug_visual_density_report_path.exists()
     assert result.debug_elevation_visual_report_path.exists()
     assert result.debug_boundary_visual_report_path.exists()
+    assert result.debug_grass_render_report_path.exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
@@ -72,7 +73,7 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert rows[0][0] == "forest.cap_n"
     assert rows[1][1] == "road.turn_es"
     assert rows[2][2] == "swamp.isolated"
-    assert rows[3][3] == "grass.base"
+    assert rows[3][3].startswith("grass.")
 
     autotile_report = _read_json(visual_output / "debug/autotile_report.json")
     assert autotile_report["quality"]["status"] == "ok"
@@ -236,6 +237,7 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
     assert [path.name for path in paths] == [
         "00_world_terrain.png",
         "01_base_visual_tiles.png",
+        "02_grass_base_render.png",
         "02_road_autotile.png",
         "03_water_autotile.png",
         "04_swamp_autotile.png",

@@ -692,6 +692,27 @@
     "elevation.landmark_overlay": {
       "debug_color": "#a58d55",
       "source": "elevation_catalog_placeholder"
+    },
+    "grass.clean_base_01": {
+      "debug_color": "#4f6f37"
+    },
+    "grass.clean_base_02": {
+      "debug_color": "#5c7b3e"
+    },
+    "grass.light_base_01": {
+      "debug_color": "#6f8e49"
+    },
+    "grass.dark_base_01": {
+      "debug_color": "#354e2f"
+    },
+    "grass.soft_patch_01": {
+      "debug_color": "#6a7d41"
+    },
+    "grass.soft_patch_02": {
+      "debug_color": "#465c34"
+    },
+    "grass.forest_transition_01": {
+      "debug_color": "#2f4b2e"
     }
   }
 }

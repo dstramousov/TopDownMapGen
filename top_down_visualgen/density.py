@@ -30,6 +30,7 @@ class VisualDensityReporter:
         elevation_visual_result: dict[str, Any] | None = None,
         boundary_visual_result: dict[str, Any] | None = None,
         forest_overlay_result: dict[str, Any] | None = None,
+        grass_render_report: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Build a JSON-serializable visual density report.
 
@@ -44,6 +45,7 @@ class VisualDensityReporter:
             elevation_visual_result: Optional elevation visual mapper result.
             boundary_visual_result: Optional boundary visual mapper result.
             forest_overlay_result: Optional forest overlay mapper result.
+            grass_render_report: Optional grass render report.
 
         Returns:
             Visual density report.
@@ -120,6 +122,7 @@ class VisualDensityReporter:
             "elevation_visual": _elevation_visual_summary(world, elevation_visual_result),
             "boundary_visual": _boundary_visual_summary(boundary_visual_result),
             "forest_overlay": _forest_overlay_summary(forest_overlay_result),
+            "grass_render": _grass_render_summary(grass_render_report),
             "source_reports": {
                 "decoration_total": _report_total(decoration_result),
                 "place_treatment_total": _report_total(place_treatment_result),
@@ -203,6 +206,29 @@ def format_visual_density_summary(report: dict[str, Any]) -> list[str]:
     return lines
 
 
+
+
+def _grass_render_summary(grass_render_report: dict[str, Any] | None = None) -> dict[str, Any]:
+    report = grass_render_report if isinstance(grass_render_report, dict) else None
+    summary = report.get("summary") if isinstance(report, dict) else None
+    if not isinstance(summary, dict):
+        return {
+            "total_candidates": 0,
+            "base_tiles": 0,
+            "patch_tiles": 0,
+            "forest_transitions": 0,
+            "status": "missing_report",
+        }
+    quality = report.get("quality") if isinstance(report, dict) else None
+    status = quality.get("status") if isinstance(quality, dict) else "ok"
+    return {
+        "total_candidates": _int_value(summary.get("total_candidates"), 0),
+        "base_tiles": _int_value(summary.get("base_tiles"), 0),
+        "patch_tiles": _int_value(summary.get("patch_tiles"), 0),
+        "forest_transitions": _int_value(summary.get("forest_transitions"), 0),
+        "by_tile_id": summary.get("by_tile_id", {}),
+        "status": status,
+    }
 
 
 def _forest_overlay_summary(forest_overlay_result: dict[str, Any] | None = None) -> dict[str, Any]:
