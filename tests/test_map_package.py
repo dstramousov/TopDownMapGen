@@ -146,3 +146,84 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert "terrain" in render_profile["draw_order"]
     assert tile_render_hints["hints"]["grass"]["visual_group"] == "terrain/grass"
     assert object_render_hints["hints"]["stone_chunk"]["render_mode"] == "sprite"
+
+
+def test_map_package_supports_extended_numeric_elevation_range(tmp_path: Path) -> None:
+    """Ensure map package exports the ShootAndRun elevation range contract."""
+    outputs = OutputPaths.from_output_map(tmp_path / "generated_map.txt")
+    runtime_data = {
+        "map": {
+            "width": 3,
+            "height": 1,
+            "tile_legend": {"S": "start", "G": "goal", "+": "grass"},
+            "tile_grid": ["S+G"],
+            "tile_counts": {"S": 1, "G": 1, "+": 1},
+        },
+        "movement_costs": {"+": 1, "S": 1, "G": 1},
+        "combat_zones": [],
+        "cover_points": [],
+        "choke_points": [],
+        "flank_routes": [],
+        "enemy_spawn_zones": [],
+        "fallback_positions": [],
+        "runtime_objects": [],
+        "runtime_objects_summary": {"total": 0},
+        "places": [],
+        "places_summary": {"total": 0},
+        "elevation": {
+            "default": 0,
+            "cells": [
+                {"x": 1, "y": 0, "level": -8},
+                {"x": 2, "y": 0, "level": 20},
+            ],
+        },
+    }
+
+    write_map_package(
+        outputs=outputs,
+        runtime_data=runtime_data,
+        rows=["S+G"],
+        width=3,
+        height=1,
+        tile_size_px=16,
+        seed="random",
+        resolved_seed=42,
+        profile="clear_map",
+    )
+
+    runtime_grids = json.loads(
+        outputs.map_package_runtime_grids.read_text(encoding="utf-8"),
+    )
+    elevation_model = json.loads(
+        outputs.map_package_elevation_model.read_text(encoding="utf-8"),
+    )
+    elevation_transitions = json.loads(
+        outputs.map_package_elevation_transitions.read_text(encoding="utf-8"),
+    )
+
+    assert runtime_grids["grids"]["height_grid"]["format"] == "integer_rows"
+    assert runtime_grids["grids"]["height_grid"]["rows"] == [[0, -8, 20]]
+    assert elevation_model["elevation_range"] == [-8, 20]
+    assert set(elevation_model["levels"]) >= {"-8", "-1", "0", "20"}
+
+    down_transition = elevation_transitions["items"][0]
+    assert down_transition["from"]["level"] == 0
+    assert down_transition["to"]["level"] == -8
+    assert down_transition["drop_height"] == 8
+    assert down_transition["fall_damage"] == 35
+    assert down_transition["movement_allowed"] is True
+    assert down_transition["requires_step_up"] is False
+    assert down_transition["requires_explicit_transition"] is False
+
+    step_up_transition = elevation_transitions["items"][1]
+    assert step_up_transition["from"]["level"] == -8
+    assert step_up_transition["to"]["level"] == 0
+    assert step_up_transition["movement_allowed"] is False
+    assert step_up_transition["requires_explicit_transition"] is True
+
+    high_drop_transition = elevation_transitions["items"][3]
+    assert high_drop_transition["from"]["level"] == 20
+    assert high_drop_transition["to"]["level"] == -8
+    assert high_drop_transition["drop_height"] == 28
+    assert high_drop_transition["fall_damage"] == 135
+    assert high_drop_transition["movement_allowed"] is True

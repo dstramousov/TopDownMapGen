@@ -1040,6 +1040,16 @@ def _package_elevation_transitions_valid(
             return False
         if not _point_in_bounds(target, width=width, height=height):
             return False
+        source_obj = _json_object(transition.get("from"))
+        target_obj = _json_object(transition.get("to"))
+        from_level = source_obj.get("level")
+        to_level = target_obj.get("level")
+        if not isinstance(from_level, int) or not isinstance(to_level, int):
+            return False
+        if not (MIN_ELEVATION_LEVEL <= from_level <= MAX_ELEVATION_LEVEL):
+            return False
+        if not (MIN_ELEVATION_LEVEL <= to_level <= MAX_ELEVATION_LEVEL):
+            return False
         if not isinstance(transition.get("delta"), int):
             return False
     return True
@@ -1049,7 +1059,7 @@ def _package_elevation_model_valid(package: dict[str, Any]) -> bool:
     if elevation_model.get("kind") != "elevation_model":
         return False
     levels = _json_object(elevation_model.get("levels"))
-    required_levels = {"-1", "0", "1", "2", "3", "4"}
+    required_levels = {str(level) for level in range(MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL + 1)}
     if not required_levels.issubset(set(levels)):
         return False
     rules = _json_object(elevation_model.get("rules"))
@@ -1078,8 +1088,11 @@ def _package_height_grid_levels_valid(package: dict[str, Any]) -> bool:
     rows = _package_height_grid_rows(package)
     if not rows:
         return False
-    allowed_levels = {-1, 0, 1, 2, 3, 4}
-    return all(value in allowed_levels for row in rows for value in row)
+    return all(
+        MIN_ELEVATION_LEVEL <= value <= MAX_ELEVATION_LEVEL
+        for row in rows
+        for value in row
+    )
 
 
 def _package_elevation_transitions_match_height_grid(package: dict[str, Any]) -> bool:
@@ -1110,11 +1123,16 @@ def _package_elevation_transitions_match_height_grid(package: dict[str, Any]) ->
 def _package_elevation_transitions_have_movement_rules(package: dict[str, Any]) -> bool:
     transitions = _dict_list(_json_object(package.get("elevation_transitions")).get("items"))
     valid_connectors = {"slope", "ramp", "stairs", "bridge", "ladder_or_scripted", "none"}
+    explicit_connectors = {"ramp", "stairs", "bridge"}
     for transition in transitions:
         delta = transition.get("delta")
         connector = transition.get("suggested_connector")
         movement_allowed = transition.get("movement_allowed")
         movement_rule = transition.get("movement_rule")
+        drop_height = transition.get("drop_height")
+        fall_damage = transition.get("fall_damage")
+        requires_step_up = transition.get("requires_step_up")
+        requires_explicit_transition = transition.get("requires_explicit_transition")
         if not isinstance(delta, int):
             return False
         if connector not in valid_connectors:
@@ -1123,9 +1141,21 @@ def _package_elevation_transitions_have_movement_rules(package: dict[str, Any]) 
             return False
         if not isinstance(movement_rule, str) or not movement_rule:
             return False
-        if abs(delta) == 1 and movement_allowed and connector not in {"slope", "ramp", "stairs", "bridge"}:
+        if not isinstance(drop_height, int) or drop_height != max(0, -delta):
             return False
-        if abs(delta) > 1 and movement_allowed and connector != "bridge":
+        expected_damage = max(0, drop_height - 1) * 5
+        if not isinstance(fall_damage, int) or fall_damage != expected_damage:
+            return False
+        if not isinstance(requires_step_up, bool) or requires_step_up != (delta == 1):
+            return False
+        expected_explicit = delta >= 2
+        if (
+            not isinstance(requires_explicit_transition, bool)
+            or requires_explicit_transition != expected_explicit
+        ):
+            return False
+        expected_allowed = delta <= 1 or connector in explicit_connectors
+        if movement_allowed != expected_allowed:
             return False
     return True
 

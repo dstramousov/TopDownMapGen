@@ -31,6 +31,10 @@ from top_down_worldgen.manifest import (
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
+from top_down_worldgen.tactical.runtime_objects import (
+    MAX_ELEVATION_LEVEL,
+    MIN_ELEVATION_LEVEL,
+)
 from top_down_worldgen.utils.json_io import write_json
 
 _GAMEPLAY_FILES: tuple[tuple[str, str], ...] = (
@@ -1857,63 +1861,15 @@ def _build_elevation_model(
     feature_types = _count_by_key(features, "type")
     transition_connectors = _count_by_key(transitions, "suggested_connector")
     required_feature_types = _required_elevation_feature_types()
-    required_levels = {-1, 0, 1, 2, 3, 4}
+    required_levels = set(range(MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL + 1))
     return {
         "schema_version": ELEVATION_MODEL_SCHEMA_VERSION,
         "kind": "elevation_model",
         "coordinate_space": "tile",
         "width": width,
         "height": height,
-        "levels": {
-            "-1": {
-                "name": "below_ground",
-                "meaning": "Trenches, pits, bunker interiors, and other low ground.",
-                "movement": "walkable_if_connected",
-                "visibility": "reduced_against_surface",
-                "projectiles": "requires_line_of_sight_transition",
-                "render_role": "below_floor_overlay",
-            },
-            "0": {
-                "name": "ground",
-                "meaning": "Default outdoor ground level.",
-                "movement": "normal",
-                "visibility": "baseline",
-                "projectiles": "baseline",
-                "render_role": "terrain_base",
-            },
-            "1": {
-                "name": "raised_ground",
-                "meaning": "Hills, berms, raised earth, and shallow platforms.",
-                "movement": "normal_or_ramp_required",
-                "visibility": "minor_high_ground_advantage",
-                "projectiles": "minor_high_ground_advantage",
-                "render_role": "raised_terrain_overlay",
-            },
-            "2": {
-                "name": "platform",
-                "meaning": "Bridges, ruin decks, ledges, and constructed platforms.",
-                "movement": "explicit_transition_required",
-                "visibility": "high_ground",
-                "projectiles": "high_ground",
-                "render_role": "platform_layer",
-            },
-            "3": {
-                "name": "high_platform",
-                "meaning": "Towers, roofs, and strong high vantage points.",
-                "movement": "explicit_transition_required",
-                "visibility": "strong_high_ground",
-                "projectiles": "strong_high_ground",
-                "render_role": "high_object_layer",
-            },
-            "4": {
-                "name": "special_high_landmark",
-                "meaning": "Reserved for exceptional vertical landmarks.",
-                "movement": "usually_blocked_or_scripted",
-                "visibility": "special_case",
-                "projectiles": "special_case",
-                "render_role": "landmark_layer",
-            },
-        },
+        "elevation_range": [MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL],
+        "levels": _elevation_level_definitions(),
         "transition_types": {
             "ramp": "Smooth walkable elevation transition.",
             "stairs": "Discrete walkable constructed transition.",
@@ -1942,8 +1898,11 @@ def _build_elevation_model(
         "rules": {
             "movement": {
                 "same_level": "allowed_if_collision_grid_allows",
-                "level_delta_1": "requires_ramp_stairs_or_object_transition",
-                "level_delta_gt_1": "requires_ladder_bridge_script_or_is_blocked",
+                "down_by_1": "allowed_as_step_down_or_fall_without_damage",
+                "down_by_2_or_more": "allowed_as_fall_with_damage",
+                "up_by_1": "requires_space_step_up_or_explicit_transition",
+                "up_by_2_or_more": "blocked_without_explicit_transition",
+                "fall_damage": "max(0, drop_height - 1) * 5",
             },
             "line_of_sight": {
                 "same_level": "use_vision_block_grid",
@@ -1979,9 +1938,63 @@ def _build_elevation_model(
         "notes": [
             "This model defines elevation semantics for consumers; it is not a physics engine.",
             "Use runtime_grids.height_grid for per-tile heights and this file for meanings/rules.",
+            "runtime_grids.height_grid is always written as numeric integer rows, not compact strings.",
+            "Open pits/trenches are below-ground walkable cutaways; bunker/underground areas need explicit hatch/door/stairs semantics.",
         ],
     }
 
+
+
+def _elevation_level_definitions() -> dict[str, dict[str, str]]:
+    """Return public elevation level metadata for the supported range."""
+    levels: dict[str, dict[str, str]] = {}
+    for level in range(MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL + 1):
+        if level <= -2:
+            levels[str(level)] = {
+                "name": "deep_open_pit",
+                "meaning": "Deep open pit, trench, cutaway, or lower outdoor terrain.",
+                "movement": "walkable_if_collision_grid_allows; reachable by falling down",
+                "visibility": "lower_than_surface",
+                "projectiles": "consumer_should_apply_vertical_los_rule",
+                "render_role": "deep_cutaway_overlay",
+            }
+        elif level == -1:
+            levels[str(level)] = {
+                "name": "below_ground",
+                "meaning": "Shallow pit, trench, cutaway, or explicit bunker interior.",
+                "movement": "walkable_if_collision_grid_allows; bunker areas require hatch semantics",
+                "visibility": "reduced_against_surface",
+                "projectiles": "requires_line_of_sight_transition",
+                "render_role": "below_floor_overlay",
+            }
+        elif level == 0:
+            levels[str(level)] = {
+                "name": "ground",
+                "meaning": "Default outdoor ground level.",
+                "movement": "normal",
+                "visibility": "baseline",
+                "projectiles": "baseline",
+                "render_role": "terrain_base",
+            }
+        elif level <= 4:
+            levels[str(level)] = {
+                "name": "raised_ground",
+                "meaning": "Hills, berms, ledges, platforms, and ordinary high ground.",
+                "movement": "upward_movement_requires_step_up_or_explicit_transition",
+                "visibility": "high_ground",
+                "projectiles": "high_ground",
+                "render_role": "raised_terrain_overlay",
+            }
+        else:
+            levels[str(level)] = {
+                "name": "high_elevation",
+                "meaning": "High cliff, mountain, tower, or debug/playground elevation level.",
+                "movement": "upward_movement_requires_explicit_transition",
+                "visibility": "strong_high_ground",
+                "projectiles": "strong_high_ground_or_special_case",
+                "render_role": "high_elevation_layer",
+            }
+    return levels
 
 
 def _required_elevation_feature_types() -> set[str]:
@@ -2280,7 +2293,6 @@ def _elevation_transitions(
 ) -> list[dict[str, Any]]:
     transitions: list[dict[str, Any]] = []
     point_features = _elevation_features_by_point(features)
-    seen: set[tuple[tuple[int, int], tuple[int, int]]] = set()
     for y in range(height):
         for x in range(width):
             level = rows[y][x]
@@ -2290,48 +2302,76 @@ def _elevation_transitions(
                 other = rows[ny][nx]
                 if other == level:
                     continue
-                source = (x, y)
-                target = (nx, ny)
-                key = (source, target)
-                if key in seen:
-                    continue
-                seen.add(key)
-                delta = other - level
-                connector = _elevation_transition_connector(
-                    source=source,
-                    target=target,
-                    delta=delta,
+                _append_elevation_transition(
+                    transitions=transitions,
+                    source=(x, y),
+                    source_level=level,
+                    target=(nx, ny),
+                    target_level=other,
                     point_features=point_features,
                 )
-                transition_type = _elevation_transition_type(delta=delta, connector=connector)
-                movement_allowed = _elevation_transition_movement_allowed(
-                    delta=delta,
-                    connector=connector,
-                )
-                transitions.append(
-                    {
-                        "id": f"elevation_transition_{len(transitions):03d}",
-                        "type": transition_type,
-                        "from": {"x": x, "y": y, "level": level},
-                        "to": {"x": nx, "y": ny, "level": other},
-                        "delta": delta,
-                        "abs_delta": abs(delta),
-                        "requires_explicit_connector": abs(delta) > 0,
-                        "suggested_connector": connector,
-                        "movement_allowed": movement_allowed,
-                        "movement_rule": _elevation_transition_movement_rule(
-                            delta=delta,
-                            connector=connector,
-                            movement_allowed=movement_allowed,
-                        ),
-                        "feature_refs": _transition_feature_refs(
-                            source=source,
-                            target=target,
-                            point_features=point_features,
-                        ),
-                    },
+                _append_elevation_transition(
+                    transitions=transitions,
+                    source=(nx, ny),
+                    source_level=other,
+                    target=(x, y),
+                    target_level=level,
+                    point_features=point_features,
                 )
     return transitions[:256]
+
+
+def _append_elevation_transition(
+    *,
+    transitions: list[dict[str, Any]],
+    source: tuple[int, int],
+    source_level: int,
+    target: tuple[int, int],
+    target_level: int,
+    point_features: dict[tuple[int, int], list[dict[str, Any]]],
+) -> None:
+    delta = target_level - source_level
+    connector = _elevation_transition_connector(
+        source=source,
+        target=target,
+        delta=delta,
+        point_features=point_features,
+    )
+    transition_type = _elevation_transition_type(delta=delta, connector=connector)
+    movement_allowed = _elevation_transition_movement_allowed(
+        delta=delta,
+        connector=connector,
+    )
+    drop_height = max(0, -delta)
+    requires_step_up = delta == 1
+    requires_explicit_transition = delta >= 2
+    transitions.append(
+        {
+            "id": f"elevation_transition_{len(transitions):03d}",
+            "type": transition_type,
+            "from": {"x": source[0], "y": source[1], "level": source_level},
+            "to": {"x": target[0], "y": target[1], "level": target_level},
+            "delta": delta,
+            "abs_delta": abs(delta),
+            "drop_height": drop_height,
+            "fall_damage": max(0, drop_height - 1) * 5,
+            "requires_step_up": requires_step_up,
+            "requires_explicit_transition": requires_explicit_transition,
+            "requires_explicit_connector": requires_explicit_transition,
+            "suggested_connector": connector,
+            "movement_allowed": movement_allowed,
+            "movement_rule": _elevation_transition_movement_rule(
+                delta=delta,
+                connector=connector,
+                movement_allowed=movement_allowed,
+            ),
+            "feature_refs": _transition_feature_refs(
+                source=source,
+                target=target,
+                point_features=point_features,
+            ),
+        },
+    )
 
 
 def _elevation_features_by_point(
@@ -2381,11 +2421,12 @@ def _elevation_transition_type(*, delta: int, connector: str) -> str:
 
 
 def _elevation_transition_movement_allowed(*, delta: int, connector: str) -> bool:
-    if abs(delta) == 1 and connector in {"slope", "ramp", "stairs", "bridge"}:
+    explicit_connectors = {"ramp", "stairs", "bridge"}
+    if delta <= 0:
         return True
-    if abs(delta) > 1 and connector == "bridge":
+    if delta == 1:
         return True
-    return False
+    return connector in explicit_connectors
 
 
 def _elevation_transition_movement_rule(
@@ -2394,11 +2435,17 @@ def _elevation_transition_movement_rule(
     connector: str,
     movement_allowed: bool,
 ) -> str:
+    if delta < 0:
+        drop_height = -delta
+        damage = max(0, drop_height - 1) * 5
+        return f"allowed_drop_fall_damage_{damage}"
+    if delta == 1:
+        if connector in {"ramp", "stairs", "bridge"}:
+            return f"allowed_up_1_via_{connector}"
+        return "allowed_up_1_requires_space_step_up"
     if movement_allowed:
-        return f"allowed_via_{connector}"
-    if abs(delta) > 1:
-        return "blocked_without_ladder_or_scripted_connector"
-    return "blocked_without_ramp_stairs_or_slope"
+        return f"allowed_up_{delta}_via_explicit_{connector}"
+    return "blocked_up_2_or_more_without_explicit_transition"
 
 
 def _transition_feature_refs(

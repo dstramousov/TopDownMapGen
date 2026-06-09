@@ -627,3 +627,12 @@
 - `./r` теперь явно печатает стадии стандартного pipeline и сохраняет полный запуск world + visual + debug + asset registry summary.
 - `./c` ограничен безопасной очисткой `output/`, `out/`, `__pycache__` и `.pytest_cache` без удаления `*.html`/`*.js` по всему проекту.
 - Версия проекта поднята до `0.0.75`.
+
+## v0.0.75 -> v0.0.76
+
+- Контракт elevation расширен до диапазона `-8..20` для совместимости с ShootAndRun.
+- `height_grid` закреплён как numeric `integer_rows`; compact string rows для elevation не используются.
+- Валидация `height_grid`, `elevation_model` и `elevation_transitions` больше не ограничена старым набором `-1..4`.
+- `elevation_transitions` теперь содержит `drop_height`, `fall_damage`, `requires_step_up` и `requires_explicit_transition` по правилам клиента.
+- Документация `OUTPUT_FORMAT.md` и `map_package_v1.md` обновлена под новый elevation contract.
+- Версия проекта поднята до `0.0.76`.

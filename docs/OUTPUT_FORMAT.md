@@ -79,6 +79,25 @@ concealment_grid
 height_grid
 ```
 
+`height_grid` — numeric integer rows. Compact string rows для elevation запрещены,
+потому что диапазон высот поддерживает отрицательные и многозначные значения.
+Текущий контракт elevation для ShootAndRun-compatible consumers: `-8..20`.
+
+`elevation_transitions.json` использует тот же диапазон для `from.level` и
+`to.level`. Правила движения:
+
+```text
+same level: обычное движение по collision/movement grids
+down by 1: разрешено, damage = 0
+down by 2+: разрешено как падение, damage = max(0, drop_height - 1) * 5
+up by 1: нужен Space step-up или explicit transition
+up by 2+: запрещено без explicit transition
+```
+
+Open pit/trench/cutaway ниже `0` считается открытой проходимой формой рельефа,
+если `collision_grid` и `movement_grid` разрешают вход. Underground/bunker зоны должны
+быть представлены отдельно через hatch/door/stairs semantics и не считаются open pit.
+
 ## Visual output
 
 ```text

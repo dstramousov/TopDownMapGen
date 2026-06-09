@@ -80,3 +80,54 @@ elevation_transitions.json
 ## Совместимость
 
 Legacy файлы `generated_map.txt`, `tactical_map.json` и `tactical_map_debug.json` пока остаются рядом с `map_package/`, но новый consumer должен начинать с `_manifest.json` и `map_package/map.json`.
+
+
+## Elevation contract
+
+Поддерживаемый диапазон высот карты:
+
+```text
+-8..20
+```
+
+`runtime_grids.height_grid` всегда записывается как JSON-массив чисел:
+
+```json
+"height_grid": {
+  "format": "integer_rows",
+  "rows": [
+    [0, 1, 2, 10, 20, -8]
+  ]
+}
+```
+
+Строковые compact rows для `height_grid` не используются: они неоднозначны для
+значений `10`, `20` и отрицательных уровней вроде `-8`.
+
+`elevation_model.json` описывает все уровни `-8..20`. `elevation_transitions.json`
+должен использовать этот же диапазон в `from.level`, `to.level` и `delta`.
+
+Поля переходов, важные для C++/game consumers:
+
+```text
+delta                         to.level - from.level
+drop_height                   max(0, -delta)
+fall_damage                   max(0, drop_height - 1) * 5
+requires_step_up              true только для подъёма на +1
+requires_explicit_transition  true для подъёма на +2 и выше
+movement_allowed              true для спуска и +1 step-up, false для +2 без explicit connector
+```
+
+Семантика движения:
+
+```text
+same level: обычное движение
+down by 1: обычный шаг/падение вниз, damage = 0
+down by 2+: разрешённое падение с damage
+up by 1: Space step-up или explicit transition
+up by 2+: только explicit transition
+```
+
+Open pit/trench/cutaway и underground/bunker — разные семантики. Открытая яма ниже
+`0` должна оставаться walkable при разрешающем `collision_grid`. Закрытый bunker/
+underground может иметь collision perimeter и вход только через hatch/door/stairs marker.
