@@ -1,0 +1,643 @@
+{
+  "name": "forest_asset_pack_v1",
+  "source": "Generated original sprites. ideal.png used only as visual reference; no crops/extracted pixels.",
+  "tile_size_px": 16,
+  "intended_usage": {
+    "edge": "Sparse irregular border of forest masks.",
+    "mid": "Overlapping individual trees and small clusters.",
+    "deep": "Dense canopy clusters and dark floor patches.",
+    "shadows": "Draw below sprites; multiply/alpha blend in renderer."
+  },
+  "assets": [
+    {
+      "path": "trees/pine_small_01.png",
+      "family": "dark_pine",
+      "role": "small",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_small_02.png",
+      "family": "dark_pine",
+      "role": "small",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_small_03.png",
+      "family": "dark_pine",
+      "role": "small",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_small_04.png",
+      "family": "dark_pine",
+      "role": "small",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_small_05.png",
+      "family": "dark_pine",
+      "role": "small",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_small_06.png",
+      "family": "dark_pine",
+      "role": "small",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_mid_01.png",
+      "family": "dark_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_mid_02.png",
+      "family": "dark_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_mid_03.png",
+      "family": "dark_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_mid_04.png",
+      "family": "dark_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_mid_05.png",
+      "family": "dark_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_mid_06.png",
+      "family": "dark_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_mid_07.png",
+      "family": "dark_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_mid_08.png",
+      "family": "dark_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_large_01.png",
+      "family": "dark_pine",
+      "role": "large",
+      "width": 44,
+      "height": 60,
+      "anchor_x": 22,
+      "anchor_y": 57,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_large_02.png",
+      "family": "dark_pine",
+      "role": "large",
+      "width": 44,
+      "height": 60,
+      "anchor_x": 22,
+      "anchor_y": 57,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_large_03.png",
+      "family": "dark_pine",
+      "role": "large",
+      "width": 44,
+      "height": 60,
+      "anchor_x": 22,
+      "anchor_y": 57,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_large_04.png",
+      "family": "dark_pine",
+      "role": "large",
+      "width": 44,
+      "height": 60,
+      "anchor_x": 22,
+      "anchor_y": 57,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_large_05.png",
+      "family": "dark_pine",
+      "role": "large",
+      "width": 44,
+      "height": 60,
+      "anchor_x": 22,
+      "anchor_y": 57,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_large_06.png",
+      "family": "dark_pine",
+      "role": "large",
+      "width": 44,
+      "height": 60,
+      "anchor_x": 22,
+      "anchor_y": 57,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_tall_01.png",
+      "family": "dark_pine",
+      "role": "tall",
+      "width": 40,
+      "height": 68,
+      "anchor_x": 20,
+      "anchor_y": 65,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_tall_02.png",
+      "family": "dark_pine",
+      "role": "tall",
+      "width": 40,
+      "height": 68,
+      "anchor_x": 20,
+      "anchor_y": 65,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_tall_03.png",
+      "family": "dark_pine",
+      "role": "tall",
+      "width": 40,
+      "height": 68,
+      "anchor_x": 20,
+      "anchor_y": 65,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "trees/pine_tall_04.png",
+      "family": "dark_pine",
+      "role": "tall",
+      "width": 40,
+      "height": 68,
+      "anchor_x": 20,
+      "anchor_y": 65,
+      "notes": "Single tree sprite; bottom-center anchor; use y-sort."
+    },
+    {
+      "path": "clusters/canopy_cluster_small_01.png",
+      "family": "dark_pine_cluster",
+      "role": "small",
+      "width": 48,
+      "height": 48,
+      "anchor_x": 24,
+      "anchor_y": 45,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_small_02.png",
+      "family": "dark_pine_cluster",
+      "role": "small",
+      "width": 48,
+      "height": 48,
+      "anchor_x": 24,
+      "anchor_y": 45,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_small_03.png",
+      "family": "dark_pine_cluster",
+      "role": "small",
+      "width": 48,
+      "height": 48,
+      "anchor_x": 24,
+      "anchor_y": 45,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_small_04.png",
+      "family": "dark_pine_cluster",
+      "role": "small",
+      "width": 48,
+      "height": 48,
+      "anchor_x": 24,
+      "anchor_y": 45,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_mid_01.png",
+      "family": "dark_pine_cluster",
+      "role": "mid",
+      "width": 64,
+      "height": 56,
+      "anchor_x": 32,
+      "anchor_y": 53,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_mid_02.png",
+      "family": "dark_pine_cluster",
+      "role": "mid",
+      "width": 64,
+      "height": 56,
+      "anchor_x": 32,
+      "anchor_y": 53,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_mid_03.png",
+      "family": "dark_pine_cluster",
+      "role": "mid",
+      "width": 64,
+      "height": 56,
+      "anchor_x": 32,
+      "anchor_y": 53,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_mid_04.png",
+      "family": "dark_pine_cluster",
+      "role": "mid",
+      "width": 64,
+      "height": 56,
+      "anchor_x": 32,
+      "anchor_y": 53,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_mid_05.png",
+      "family": "dark_pine_cluster",
+      "role": "mid",
+      "width": 64,
+      "height": 56,
+      "anchor_x": 32,
+      "anchor_y": 53,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_large_01.png",
+      "family": "dark_pine_cluster",
+      "role": "large",
+      "width": 96,
+      "height": 76,
+      "anchor_x": 48,
+      "anchor_y": 73,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_large_02.png",
+      "family": "dark_pine_cluster",
+      "role": "large",
+      "width": 96,
+      "height": 76,
+      "anchor_x": 48,
+      "anchor_y": 73,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_large_03.png",
+      "family": "dark_pine_cluster",
+      "role": "large",
+      "width": 96,
+      "height": 76,
+      "anchor_x": 48,
+      "anchor_y": 73,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_large_04.png",
+      "family": "dark_pine_cluster",
+      "role": "large",
+      "width": 96,
+      "height": 76,
+      "anchor_x": 48,
+      "anchor_y": 73,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_large_05.png",
+      "family": "dark_pine_cluster",
+      "role": "large",
+      "width": 96,
+      "height": 76,
+      "anchor_x": 48,
+      "anchor_y": 73,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_deep_01.png",
+      "family": "dark_pine_cluster",
+      "role": "deep",
+      "width": 128,
+      "height": 96,
+      "anchor_x": 64,
+      "anchor_y": 93,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_deep_02.png",
+      "family": "dark_pine_cluster",
+      "role": "deep",
+      "width": 128,
+      "height": 96,
+      "anchor_x": 64,
+      "anchor_y": 93,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_deep_03.png",
+      "family": "dark_pine_cluster",
+      "role": "deep",
+      "width": 128,
+      "height": 96,
+      "anchor_x": 64,
+      "anchor_y": 93,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "clusters/canopy_cluster_deep_04.png",
+      "family": "dark_pine_cluster",
+      "role": "deep",
+      "width": 128,
+      "height": 96,
+      "anchor_x": 64,
+      "anchor_y": 93,
+      "notes": "Cluster/canopy mass; use for forest fill with overlap."
+    },
+    {
+      "path": "edge/forest_edge_bush_01.png",
+      "family": "forest_edge",
+      "role": "bush",
+      "width": 32,
+      "height": 26,
+      "anchor_x": 16,
+      "anchor_y": 23,
+      "notes": "Forest edge filler; use sparse at mask borders."
+    },
+    {
+      "path": "edge/forest_edge_bush_02.png",
+      "family": "forest_edge",
+      "role": "bush",
+      "width": 36,
+      "height": 22,
+      "anchor_x": 18,
+      "anchor_y": 19,
+      "notes": "Forest edge filler; use sparse at mask borders."
+    },
+    {
+      "path": "edge/forest_edge_bush_03.png",
+      "family": "forest_edge",
+      "role": "bush",
+      "width": 28,
+      "height": 26,
+      "anchor_x": 14,
+      "anchor_y": 23,
+      "notes": "Forest edge filler; use sparse at mask borders."
+    },
+    {
+      "path": "edge/forest_edge_bush_04.png",
+      "family": "forest_edge",
+      "role": "bush",
+      "width": 32,
+      "height": 22,
+      "anchor_x": 16,
+      "anchor_y": 19,
+      "notes": "Forest edge filler; use sparse at mask borders."
+    },
+    {
+      "path": "edge/forest_edge_bush_05.png",
+      "family": "forest_edge",
+      "role": "bush",
+      "width": 36,
+      "height": 26,
+      "anchor_x": 18,
+      "anchor_y": 23,
+      "notes": "Forest edge filler; use sparse at mask borders."
+    },
+    {
+      "path": "edge/forest_edge_bush_06.png",
+      "family": "forest_edge",
+      "role": "bush",
+      "width": 28,
+      "height": 22,
+      "anchor_x": 14,
+      "anchor_y": 19,
+      "notes": "Forest edge filler; use sparse at mask borders."
+    },
+    {
+      "path": "edge/forest_edge_young_pine_01.png",
+      "family": "forest_edge",
+      "role": "young_tree",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "notes": "Small young pine for irregular forest edge."
+    },
+    {
+      "path": "edge/forest_edge_young_pine_02.png",
+      "family": "forest_edge",
+      "role": "young_tree",
+      "width": 20,
+      "height": 28,
+      "anchor_x": 10,
+      "anchor_y": 25,
+      "notes": "Small young pine for irregular forest edge."
+    },
+    {
+      "path": "edge/forest_edge_young_pine_03.png",
+      "family": "forest_edge",
+      "role": "young_tree",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "notes": "Small young pine for irregular forest edge."
+    },
+    {
+      "path": "edge/forest_edge_young_pine_04.png",
+      "family": "forest_edge",
+      "role": "young_tree",
+      "width": 20,
+      "height": 28,
+      "anchor_x": 10,
+      "anchor_y": 25,
+      "notes": "Small young pine for irregular forest edge."
+    },
+    {
+      "path": "edge/forest_edge_stump_01.png",
+      "family": "forest_edge",
+      "role": "stump",
+      "width": 24,
+      "height": 20,
+      "anchor_x": 12,
+      "anchor_y": 17,
+      "notes": "Small stump/edge prop."
+    },
+    {
+      "path": "edge/forest_edge_stump_02.png",
+      "family": "forest_edge",
+      "role": "stump",
+      "width": 24,
+      "height": 20,
+      "anchor_x": 12,
+      "anchor_y": 17,
+      "notes": "Small stump/edge prop."
+    },
+    {
+      "path": "edge/forest_edge_stump_03.png",
+      "family": "forest_edge",
+      "role": "stump",
+      "width": 24,
+      "height": 20,
+      "anchor_x": 12,
+      "anchor_y": 17,
+      "notes": "Small stump/edge prop."
+    },
+    {
+      "path": "edge/forest_edge_stump_04.png",
+      "family": "forest_edge",
+      "role": "stump",
+      "width": 24,
+      "height": 20,
+      "anchor_x": 12,
+      "anchor_y": 17,
+      "notes": "Small stump/edge prop."
+    },
+    {
+      "path": "shadows/forest_shadow_small.png",
+      "family": "shadow",
+      "role": "small",
+      "width": 32,
+      "height": 16,
+      "anchor_x": 16,
+      "anchor_y": 8,
+      "notes": "Transparent shadow blob; draw below forest sprites."
+    },
+    {
+      "path": "shadows/forest_shadow_mid.png",
+      "family": "shadow",
+      "role": "mid",
+      "width": 48,
+      "height": 22,
+      "anchor_x": 24,
+      "anchor_y": 11,
+      "notes": "Transparent shadow blob; draw below forest sprites."
+    },
+    {
+      "path": "shadows/forest_shadow_large.png",
+      "family": "shadow",
+      "role": "large",
+      "width": 72,
+      "height": 30,
+      "anchor_x": 36,
+      "anchor_y": 15,
+      "notes": "Transparent shadow blob; draw below forest sprites."
+    },
+    {
+      "path": "shadows/forest_shadow_mass.png",
+      "family": "shadow",
+      "role": "mass",
+      "width": 128,
+      "height": 52,
+      "anchor_x": 64,
+      "anchor_y": 26,
+      "notes": "Transparent shadow blob; draw below forest sprites."
+    },
+    {
+      "path": "ground/forest_floor_dark_patch_01.png",
+      "family": "forest_floor",
+      "role": "dark_patch",
+      "width": 64,
+      "height": 48,
+      "anchor_x": 32,
+      "anchor_y": 24,
+      "notes": "Semi-transparent dark forest floor overlay."
+    },
+    {
+      "path": "ground/forest_floor_dark_patch_02.png",
+      "family": "forest_floor",
+      "role": "dark_patch",
+      "width": 96,
+      "height": 64,
+      "anchor_x": 48,
+      "anchor_y": 32,
+      "notes": "Semi-transparent dark forest floor overlay."
+    },
+    {
+      "path": "ground/forest_floor_dark_patch_03.png",
+      "family": "forest_floor",
+      "role": "dark_patch",
+      "width": 128,
+      "height": 96,
+      "anchor_x": 64,
+      "anchor_y": 48,
+      "notes": "Semi-transparent dark forest floor overlay."
+    }
+  ]
+}

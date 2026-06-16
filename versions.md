@@ -627,3 +627,19 @@
 - `./r` теперь явно печатает стадии стандартного pipeline и сохраняет полный запуск world + visual + debug + asset registry summary.
 - `./c` ограничен безопасной очисткой `output/`, `out/`, `__pycache__` и `.pytest_cache` без удаления `*.html`/`*.js` по всему проекту.
 - Версия проекта поднята до `0.0.75`.
+
+## v0.0.75 -> v0.0.76
+
+- Добавлен экспериментальный field-based `forest mass` diagnostic pass для проверки алгоритмического normalizer-а леса без изменения gameplay/final render.
+- Visual pipeline теперь пишет `debug/forest_mass_experiment_report.json` с forest mask, connected regions, edge/interior/deep bands и оценкой tree anchors.
+- Debug step renderer теперь создаёт `13_forest_mass_experiment.png` рядом с текущими `00..12` шагами, чтобы сравнить старый `05_forest_autotile.png` с новым лесным подходом.
+- Summary/debug outputs показывают путь к forest mass experiment report.
+- Версия проекта поднята до `0.0.76`.
+
+## v0.0.76 -> v0.0.77
+
+- Добавлен экспериментальный forest mass overlay step для проверки заливки леса реальными PNG-ассетами поверх текущей финальной карты.
+- В `assets/dark_forest/forest_mass/` добавлен оригинальный набор forest mass ассетов: деревья, кластеры крон, edge-элементы, тени и ground-патчи.
+- `render_visual_pipeline_steps` теперь пишет `14_forest_mass_overlay.png`, `15_forest_mass_compare.png` и `forest_mass_overlay_report.json`; summary выводит путь к overlay-report.
+- `final_render.png`, gameplay/collision/routes и старый `05_forest_autotile.png` не изменяются.
+- Версия проекта поднята до `0.0.77`.

@@ -9,6 +9,12 @@ from PIL import Image, ImageDraw
 from .boundary_visual import BoundaryVisualMapper
 from .decoration import DecorationMapper, merge_visual_objects
 from .elevation_visual import ElevationVisualMapper
+from .forest_mass import (
+    ForestMassExperimentBuilder,
+    render_forest_mass_experiment,
+    render_forest_mass_overlay,
+)
+from .io import write_json_object
 from .models import VisualProfile, WorldPackage
 from .object_mapper import ObjectVisualMapper
 from .place_treatment import PlaceTreatmentMapper
@@ -27,6 +33,7 @@ class VisualPipelineStepRenderer:
         place_treatment_mapper: PlaceTreatmentMapper | None = None,
         elevation_visual_mapper: ElevationVisualMapper | None = None,
         boundary_visual_mapper: BoundaryVisualMapper | None = None,
+        forest_mass_experiment_builder: ForestMassExperimentBuilder | None = None,
     ) -> None:
         """Initialize the step renderer.
 
@@ -37,6 +44,7 @@ class VisualPipelineStepRenderer:
             place_treatment_mapper: Optional place treatment mapper.
             elevation_visual_mapper: Optional elevation visual mapper.
             boundary_visual_mapper: Optional boundary visual mapper.
+            forest_mass_experiment_builder: Optional forest mass experiment builder.
         """
         self._terrain_mapper = terrain_mapper or TerrainVisualMapper()
         self._object_mapper = object_mapper or ObjectVisualMapper()
@@ -44,6 +52,9 @@ class VisualPipelineStepRenderer:
         self._place_treatment_mapper = place_treatment_mapper or PlaceTreatmentMapper()
         self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
         self._boundary_visual_mapper = boundary_visual_mapper or BoundaryVisualMapper()
+        self._forest_mass_experiment_builder = (
+            forest_mass_experiment_builder or ForestMassExperimentBuilder()
+        )
 
     def render_steps(
         self,
@@ -89,6 +100,10 @@ class VisualPipelineStepRenderer:
             world=world,
             profile=profile,
             visual_layers=visual_layers,
+        )
+        forest_mass_experiment_result = self._forest_mass_experiment_builder.build(
+            world=world,
+            profile=profile,
         )
         visual_objects = merge_visual_objects(
             runtime_visual_objects=runtime_visual_objects,
@@ -195,7 +210,34 @@ class VisualPipelineStepRenderer:
                 output_path=output_dir / "12_final_preview.png",
                 tile_size_px=tile_size,
             ),
+            render_forest_mass_experiment(
+                result=forest_mass_experiment_result,
+                world=world,
+                profile=profile,
+                output_path=output_dir / "13_forest_mass_experiment.png",
+                tile_size_px=tile_size,
+            ),
         ]
+        forest_mass_overlay_path = output_dir / "14_forest_mass_overlay.png"
+        forest_mass_compare_path = output_dir / "15_forest_mass_compare.png"
+        forest_mass_overlay_report = render_forest_mass_overlay(
+            result=forest_mass_experiment_result,
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+            output_path=forest_mass_overlay_path,
+            compare_output_path=forest_mass_compare_path,
+            tile_size_px=tile_size,
+        )
+        generated.extend([forest_mass_overlay_path, forest_mass_compare_path])
+        write_json_object(
+            forest_mass_experiment_result.to_report(),
+            output_dir.parent / "forest_mass_experiment_report.json",
+        )
+        write_json_object(
+            forest_mass_overlay_report,
+            output_dir.parent / "forest_mass_overlay_report.json",
+        )
         return generated
 
     def _render_terrain_step(

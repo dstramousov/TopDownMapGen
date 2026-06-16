@@ -54,6 +54,10 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
         visual_map["files"]["debug_boundary_visual_report"]
         == "debug/boundary_visual_report.json"
     )
+    assert (
+        visual_map["files"]["debug_forest_mass_experiment_report"]
+        == "debug/forest_mass_experiment_report.json"
+    )
     assert (visual_output / "debug/autotile_masks.json").exists()
     assert (visual_output / "debug/autotile_report.json").exists()
     assert (visual_output / "debug/unmapped_terrain_report.json").exists()
@@ -62,9 +66,11 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert (visual_output / "debug/visual_density_report.json").exists()
     assert (visual_output / "debug/elevation_visual_report.json").exists()
     assert (visual_output / "debug/boundary_visual_report.json").exists()
+    assert (visual_output / "debug/forest_mass_experiment_report.json").exists()
     assert result.debug_visual_density_report_path.exists()
     assert result.debug_elevation_visual_report_path.exists()
     assert result.debug_boundary_visual_report_path.exists()
+    assert result.debug_forest_mass_experiment_report_path.exists()
 
     visual_layers = _read_json(result.visual_layers_path)
     assert "debug" not in visual_layers
@@ -139,6 +145,17 @@ def test_visual_pipeline_writes_contract_outputs(tmp_path: Path) -> None:
     assert boundary_visual_report["schema_version"] == "visual-debug-boundary-visual-report-v1"
     assert boundary_visual_report["quality"]["status"] == "ok"
     assert boundary_visual_report["summary"]["total"] >= 1
+
+    forest_mass_report = _read_json(
+        visual_output / "debug/forest_mass_experiment_report.json"
+    )
+    assert forest_mass_report["schema_version"] == (
+        "visual-debug-forest-mass-experiment-v1"
+    )
+    assert forest_mass_report["policy"]["changes_final_render"] is False
+    assert forest_mass_report["policy"]["changes_gameplay"] is False
+    assert forest_mass_report["summary"]["forest_tiles"] >= 1
+    assert forest_mass_report["summary"]["forest_regions"] >= 1
 
     decoration_rules = _read_json(
         Path("top_down_visualgen/profiles/dark_forest/decoration_rules.json")
@@ -247,8 +264,13 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "10_elevation_visual.png",
         "11_boundary_visual.png",
         "12_final_preview.png",
+        "13_forest_mass_experiment.png",
+        "14_forest_mass_overlay.png",
+        "15_forest_mass_compare.png",
     ]
     assert all(path.exists() for path in paths)
+    assert (steps_output.parent / "forest_mass_experiment_report.json").exists()
+    assert (steps_output.parent / "forest_mass_overlay_report.json").exists()
 
 
 def _write_minimal_world_package(output_dir: Path) -> None:

@@ -10,6 +10,7 @@ from .decoration import DecorationMapper, merge_visual_objects
 from .density import VisualDensityReporter, write_visual_density_report
 from .elevation_visual import ElevationVisualMapper
 from .final_renderer import FinalAssetRenderer
+from .forest_mass import ForestMassExperimentBuilder
 from .io import write_json_object
 from .models import VisualPipelineResult
 from .object_mapper import ObjectVisualMapper
@@ -37,6 +38,7 @@ class VisualPipeline:
         elevation_visual_mapper: ElevationVisualMapper | None = None,
         boundary_visual_mapper: BoundaryVisualMapper | None = None,
         final_renderer: FinalAssetRenderer | None = None,
+        forest_mass_experiment_builder: ForestMassExperimentBuilder | None = None,
     ) -> None:
         """Initialize the visual pipeline.
 
@@ -52,6 +54,7 @@ class VisualPipeline:
             elevation_visual_mapper: Optional elevation visual mapper.
             boundary_visual_mapper: Optional boundary visual mapper.
             final_renderer: Optional final asset-backed renderer.
+            forest_mass_experiment_builder: Optional forest mass experiment builder.
         """
         self._package_loader = package_loader or WorldPackageLoader()
         self._profile_loader = profile_loader or VisualProfileLoader()
@@ -64,6 +67,9 @@ class VisualPipeline:
         self._elevation_visual_mapper = elevation_visual_mapper or ElevationVisualMapper()
         self._boundary_visual_mapper = boundary_visual_mapper or BoundaryVisualMapper()
         self._final_renderer = final_renderer or FinalAssetRenderer()
+        self._forest_mass_experiment_builder = (
+            forest_mass_experiment_builder or ForestMassExperimentBuilder()
+        )
 
     def run(
         self,
@@ -116,6 +122,10 @@ class VisualPipeline:
             profile=profile,
             visual_layers=visual_layers,
         )
+        forest_mass_experiment_result = self._forest_mass_experiment_builder.build(
+            world=world,
+            profile=profile,
+        )
         visual_objects = merge_visual_objects(
             runtime_visual_objects=runtime_visual_objects,
             decoration_result=decoration_result,
@@ -148,6 +158,9 @@ class VisualPipeline:
         debug_visual_density_report_path = debug_dir / "visual_density_report.json"
         debug_elevation_visual_report_path = debug_dir / "elevation_visual_report.json"
         debug_boundary_visual_report_path = debug_dir / "boundary_visual_report.json"
+        debug_forest_mass_experiment_report_path = (
+            debug_dir / "forest_mass_experiment_report.json"
+        )
         debug_final_render_report_path = debug_dir / "final_render_report.json" if final_render else None
 
         write_json_object(visual_layers, visual_layers_path)
@@ -174,6 +187,10 @@ class VisualPipeline:
         write_json_object(
             _build_boundary_visual_report_debug(boundary_visual_result),
             debug_boundary_visual_report_path,
+        )
+        write_json_object(
+            forest_mass_experiment_result.to_report(),
+            debug_forest_mass_experiment_report_path,
         )
         visual_density_report = self._density_reporter.build_report(
             world=world,
@@ -221,6 +238,7 @@ class VisualPipeline:
             debug_visual_density_report_path=debug_visual_density_report_path,
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             debug_boundary_visual_report_path=debug_boundary_visual_report_path,
+            debug_forest_mass_experiment_report_path=debug_forest_mass_experiment_report_path,
             final_render_path=final_render_path,
             debug_final_render_report_path=debug_final_render_report_path,
             visual_layers=visual_layers,
@@ -244,6 +262,7 @@ class VisualPipeline:
             debug_visual_density_report_path=debug_visual_density_report_path,
             debug_elevation_visual_report_path=debug_elevation_visual_report_path,
             debug_boundary_visual_report_path=debug_boundary_visual_report_path,
+            debug_forest_mass_experiment_report_path=debug_forest_mass_experiment_report_path,
             final_render_path=final_render_path,
             debug_final_render_report_path=debug_final_render_report_path,
         )
@@ -267,6 +286,7 @@ class VisualPipeline:
         debug_visual_density_report_path: Path,
         debug_elevation_visual_report_path: Path,
         debug_boundary_visual_report_path: Path,
+        debug_forest_mass_experiment_report_path: Path,
         final_render_path: Path | None,
         debug_final_render_report_path: Path | None,
         visual_layers: dict[str, Any],
@@ -344,6 +364,10 @@ class VisualPipeline:
                 "debug_boundary_visual_report": _relative(
                     output_dir,
                     debug_boundary_visual_report_path,
+                ),
+                "debug_forest_mass_experiment_report": _relative(
+                    output_dir,
+                    debug_forest_mass_experiment_report_path,
                 ),
                 "debug_final_render_report": _relative(
                     output_dir,

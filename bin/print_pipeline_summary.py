@@ -271,6 +271,8 @@ def _debug_file_lines(output_dir: Path, project_root: Path) -> list[str]:
         f"  place report:      {_display_path(visual_debug / 'place_treatment_report.json', project_root)}",
         f"  elevation report:  {_display_path(visual_debug / 'elevation_visual_report.json', project_root)}",
         f"  boundary report:   {_display_path(visual_debug / 'boundary_visual_report.json', project_root)}",
+        f"  forest experiment: {_display_path(visual_debug / 'forest_mass_experiment_report.json', project_root)}",
+        f"  forest overlay:    {_display_path(visual_debug / 'forest_mass_overlay_report.json', project_root)}",
         f"  final render:      {_display_path(output_dir / 'visual_map' / 'final_render.png', project_root)}",
         f"  final report:      {_display_path(visual_debug / 'final_render_report.json', project_root)}",
         f"  asset registry:    {_display_path(visual_debug / 'asset_registry_report.json', project_root)}",
