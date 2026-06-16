@@ -2,6 +2,9 @@
 
 TopDownMapGen is a procedural top-down **world package generator**.
 
+<img width="1491" height="1055" alt="ideal" src="https://github.com/user-attachments/assets/48c272b5-740f-4d4a-b93a-c287290d1150" />
+
+
 The core goal of the project is to generate a machine-readable map package that can be consumed by a game, simulator, editor, AI tool, or renderer. Visual rendering is supported, but it is an optional layer on top of the generated world data.
 
 ## What this project produces
