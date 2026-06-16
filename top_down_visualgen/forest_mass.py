@@ -764,6 +764,44 @@ def render_forest_mass_front_edge_layer(
     )
 
 
+
+
+def render_forest_mass_conifer_thicket(
+    *,
+    result: ForestMassExperimentResult,
+    world: WorldPackage,
+    profile: VisualProfile,
+    visual_layers: dict[str, Any],
+    output_path: Path,
+    compare_output_path: Path | None,
+    tile_size_px: int,
+) -> dict[str, Any]:
+    """Render a conifer-only forest mass overlay preview.
+
+    Args:
+        result: Forest mass experiment data.
+        world: Loaded world package.
+        profile: Loaded visual profile.
+        visual_layers: Current visual layers for fallback base rendering.
+        output_path: Output overlay PNG path.
+        compare_output_path: Optional A/B compare PNG path.
+        tile_size_px: Fallback tile size in pixels.
+
+    Returns:
+        JSON-compatible overlay diagnostics.
+    """
+    return _render_forest_mass_overlay_impl(
+        result=result,
+        world=world,
+        profile=profile,
+        visual_layers=visual_layers,
+        output_path=output_path,
+        compare_output_path=compare_output_path,
+        tile_size_px=tile_size_px,
+        variant="conifer_thicket",
+    )
+
+
 def _render_forest_mass_overlay_impl(
     *,
     result: ForestMassExperimentResult,
@@ -794,7 +832,9 @@ def _render_forest_mass_overlay_impl(
     )
 
     image = base_image.copy()
-    if variant in {"canopy_fill", "front_edge_layer"}:
+    if variant == "conifer_thicket":
+        _paint_conifer_canopy_fill(image=image, result=result, tile_size_px=tile_size)
+    elif variant in {"canopy_fill", "front_edge_layer"}:
         _paint_canopy_fill(image=image, result=result, tile_size_px=tile_size)
     elif variant == "placement_fix":
         _paint_soft_forest_floor(image=image, result=result, tile_size_px=tile_size)
@@ -817,6 +857,7 @@ def _render_forest_mass_overlay_impl(
         image=image,
         anchors=list(anchor_result.anchors),
         tile_size_px=tile_size,
+        variant=variant,
     )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -898,11 +939,17 @@ def _render_forest_mass_overlay_impl(
 
 def _front_edge_trunk_anchor_count(anchors: tuple[ForestMassAnchor, ...]) -> int:
     """Count explicit front-edge trunk anchors in an overlay result."""
-    return sum(1 for anchor in anchors if anchor.asset.category == "front_trunks")
+    return sum(
+        1
+        for anchor in anchors
+        if anchor.asset.category in {"front_trunks", "conifer_front"}
+    )
 
 
 def _condition_policy_label(variant: str) -> str:
     """Return the condition policy label for a forest mass overlay variant."""
+    if variant == "conifer_thicket":
+        return "conifer-only thicket: no broadleaf assets, stronger south-facing trunk edge"
     if variant == "front_edge_layer":
         return "dense canopy fill with explicit south-facing trunk edge layer"
     if variant == "canopy_fill":
@@ -914,6 +961,8 @@ def _condition_policy_label(variant: str) -> str:
 
 def _ground_policy_label(variant: str) -> str:
     """Return the ground policy label for a forest mass overlay variant."""
+    if variant == "conifer_thicket":
+        return "dark conifer canopy underpaint with no square ground holes"
     if variant == "front_edge_layer":
         return "organic canopy underpaint plus front-edge trunk sprites"
     if variant == "canopy_fill":
@@ -1036,6 +1085,113 @@ def _soft_floor_color(*, band: str) -> tuple[int, int, int, int]:
     if band == "interior":
         return (17, 50, 22, 255)
     return (38, 78, 35, 255)
+
+
+def _paint_conifer_canopy_fill(
+    *,
+    image: Image.Image,
+    result: ForestMassExperimentResult,
+    tile_size_px: int,
+) -> None:
+    """Paint a darker needle-like conifer underlayer without square ground gaps."""
+    canopy = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(canopy, "RGBA")
+    for y, row in enumerate(result.forest_mask):
+        for x, is_forest in enumerate(row):
+            if not is_forest:
+                continue
+            band = _band_for_distance(result.edge_distances[y][x])
+            count = 4 if band == "deep" else 3 if band == "interior" else 1
+            for blob_index in range(count):
+                cx, cy = _canopy_blob_center(
+                    x=x,
+                    y=y,
+                    blob_index=blob_index,
+                    seed=result.seed,
+                    tile_size_px=tile_size_px,
+                )
+                rx, ry = _conifer_canopy_blob_radius(
+                    band=band,
+                    blob_index=blob_index,
+                    tile_size_px=tile_size_px,
+                    x=x,
+                    y=y,
+                    seed=result.seed,
+                )
+                draw.ellipse(
+                    (cx - rx, cy - ry, cx + rx, cy + ry),
+                    fill=_conifer_canopy_blob_color(
+                        band=band,
+                        x=x,
+                        y=y,
+                        blob_index=blob_index,
+                        seed=result.seed,
+                    ),
+                )
+                if band != "edge":
+                    peak_y = cy - int(ry * 0.95)
+                    draw.polygon(
+                        (
+                            (cx, peak_y),
+                            (cx - int(rx * 0.72), cy + int(ry * 0.38)),
+                            (cx + int(rx * 0.72), cy + int(ry * 0.38)),
+                        ),
+                        fill=_conifer_canopy_blob_color(
+                            band=band,
+                            x=x,
+                            y=y,
+                            blob_index=blob_index + 11,
+                            seed=result.seed,
+                        ),
+                    )
+    canopy = canopy.filter(ImageFilter.GaussianBlur(radius=max(0.45, tile_size_px * 0.08)))
+    image.alpha_composite(canopy)
+
+
+def _conifer_canopy_blob_radius(
+    *,
+    band: str,
+    blob_index: int,
+    tile_size_px: int,
+    x: int,
+    y: int,
+    seed: int,
+) -> tuple[int, int]:
+    noise = _stable_noise(x=x, y=y, salt=821 + blob_index * 11, seed=seed)
+    if band == "deep":
+        base_x = tile_size_px * (0.86 + noise * 0.28)
+        base_y = tile_size_px * (0.82 + noise * 0.24)
+    elif band == "interior":
+        base_x = tile_size_px * (0.72 + noise * 0.24)
+        base_y = tile_size_px * (0.70 + noise * 0.22)
+    else:
+        base_x = tile_size_px * (0.46 + noise * 0.16)
+        base_y = tile_size_px * (0.42 + noise * 0.14)
+    return (max(2, int(base_x)), max(2, int(base_y)))
+
+
+def _conifer_canopy_blob_color(*, band: str, x: int, y: int, blob_index: int, seed: int) -> tuple[int, int, int, int]:
+    noise = _stable_noise(x=x, y=y, salt=853 + blob_index * 13, seed=seed)
+    if band == "deep":
+        return (
+            8 + int(noise * 10),
+            39 + int(noise * 18),
+            16 + int(noise * 9),
+            220,
+        )
+    if band == "interior":
+        return (
+            18 + int(noise * 15),
+            62 + int(noise * 20),
+            26 + int(noise * 12),
+            198,
+        )
+    return (
+        34 + int(noise * 16),
+        82 + int(noise * 18),
+        34 + int(noise * 11),
+        96,
+    )
 
 
 def _paint_canopy_fill(
@@ -1245,6 +1401,7 @@ def _build_forest_mass_anchors(
                 band=band,
                 tile_size_px=tile_size_px,
                 seed=result.seed,
+                variant=variant,
             )
             candidates = _candidate_assets_for_condition(
                 condition=condition,
@@ -1262,11 +1419,21 @@ def _build_forest_mass_anchors(
                 continue
             selected: tuple[ForestMassAsset, Image.Image, int, int] | None = None
             for asset in candidates:
-                if not _asset_policy_allowed(asset=asset, condition=condition, band=band):
+                if not _asset_policy_allowed(
+                    asset=asset,
+                    condition=condition,
+                    band=band,
+                    variant=variant,
+                ):
                     rejected_policy += 1
                     rejected_counts["policy"] += 1
                     continue
-                asset_image = _scaled_asset_image(asset.image, tile_size_px=tile_size_px)
+                asset_image = _scaled_anchor_asset_image(
+                    asset=asset,
+                    condition=condition,
+                    variant=variant,
+                    tile_size_px=tile_size_px,
+                )
                 draw_x, draw_y = _asset_draw_position(
                     asset=asset,
                     asset_image=asset_image,
@@ -1444,6 +1611,8 @@ def _is_water_terrain(value: str) -> bool:
 
 
 def _overlay_density_for_condition(*, condition: str, band: str, variant: str) -> float:
+    if variant == "conifer_thicket":
+        return _conifer_thicket_density_for_condition(condition=condition, band=band)
     if variant == "front_edge_layer":
         return _front_edge_density_for_condition(condition=condition, band=band)
     if variant == "canopy_fill":
@@ -1465,6 +1634,39 @@ def _overlay_density_for_condition(*, condition: str, band: str, variant: str) -
     if band == "interior":
         return 0.30
     return 0.38
+
+
+def _conifer_thicket_density_for_condition(*, condition: str, band: str) -> float:
+    """Resolve anchor density for conifer-only thicket rendering."""
+    if condition in {"edge_front_south", "outer_corner_es", "outer_corner_sw"}:
+        return 0.98
+    if condition in {
+        "forest_near_road_front",
+        "forest_near_ruins_front",
+        "forest_near_water_front",
+    }:
+        return 0.88
+    if condition == "map_border_guard":
+        return 0.28
+    if condition in {"forest_isolated_single", "small_forest_island"}:
+        return 0.66
+    if condition.startswith("forest_thin_strip"):
+        return 0.64
+    if condition.startswith("forest_near_"):
+        return 0.46
+    if condition.startswith("outer_corner"):
+        return 0.72
+    if condition.startswith("edge_side"):
+        return 0.62
+    if condition.startswith("edge_back"):
+        return 0.56
+    if condition.startswith("edge_"):
+        return 0.64
+    if band == "deep":
+        return 0.60
+    if band == "interior":
+        return 0.54
+    return 0.50
 
 
 def _front_edge_density_for_condition(*, condition: str, band: str) -> float:
@@ -1576,8 +1778,16 @@ def _asset_order_key(*, asset: ForestMassAsset, x: int, y: int, seed: int) -> tu
     return (_stable_noise(x=x, y=y, salt=salt, seed=seed), asset.asset_id)
 
 
-def _asset_policy_allowed(*, asset: ForestMassAsset, condition: str, band: str) -> bool:
+def _asset_policy_allowed(
+    *,
+    asset: ForestMassAsset,
+    condition: str,
+    band: str,
+    variant: str,
+) -> bool:
     """Reject visually risky assets before footprint validation."""
+    if variant == "conifer_thicket" and not _conifer_asset_allowed(asset=asset):
+        return False
     width = asset.image.width
     height = asset.image.height
     if condition == "map_border_guard":
@@ -1601,6 +1811,45 @@ def _asset_policy_allowed(*, asset: ForestMassAsset, condition: str, band: str) 
     if band == "interior":
         return width <= 76 and height <= 72 and asset.category not in {"ground", "shadows"}
     return asset.category not in {"ground", "shadows"}
+
+
+
+def _conifer_asset_allowed(*, asset: ForestMassAsset) -> bool:
+    """Return whether an asset belongs to the conifer-only forest style."""
+    if asset.category in {"bushes", "ground", "shadows", "caps", "special"}:
+        return False
+    blocked_families = {
+        "round_bush",
+        "small_round_bush",
+        "front_low_bush",
+        "edge_front_bush",
+        "edge_bush",
+        "bush_gap_filler",
+        "cap_bush_cluster",
+        "roadside_bush",
+        "overgrown_ruin_bush",
+        "wet_edge_bush",
+        "dark_low_tree",
+        "dead_small_tree_optional",
+        "side_bush",
+        "side_left_bush",
+        "side_right_bush",
+        "front_canopy_low",
+        "low_edge_canopy",
+    }
+    return asset.family not in blocked_families
+
+
+def _is_front_edge_condition(condition: str) -> bool:
+    """Return whether a condition describes the visible lower forest edge."""
+    return condition in {
+        "edge_front_south",
+        "outer_corner_es",
+        "outer_corner_sw",
+        "forest_near_road_front",
+        "forest_near_ruins_front",
+        "forest_near_water_front",
+    }
 
 
 def _sprite_footprint_allowed(
@@ -1741,6 +1990,82 @@ def _asset_pools_for_condition(
     variant: str = "",
 ) -> tuple[tuple[str, ...], ...]:
     del role
+    if variant == "conifer_thicket" and condition in {"edge_front_south", "outer_corner_es", "outer_corner_sw"}:
+        return (
+            (
+                "family:conifer_front_tall",
+                "family:conifer_front_mid",
+                "family:conifer_front_dense",
+                "family:front_trunk_pine_tall",
+                "family:front_trunk_pine_mid",
+            ),
+            ("family:conifer_front_small", "family:conifer_front_scrub", "family:edge_front_low_pine"),
+            ("category:conifer_front", "category:front_trunks"),
+        )
+    if variant == "conifer_thicket" and condition == "forest_near_road_front":
+        return (
+            ("family:conifer_front_mid", "family:conifer_front_small"),
+            ("family:roadside_young_pine", "family:young_pine"),
+            ("category:conifer_front", "category:front_trunks", "category:trees"),
+        )
+    if variant == "conifer_thicket" and condition in {"forest_near_ruins_front", "forest_near_water_front"}:
+        return (
+            ("family:conifer_front_mid", "family:conifer_front_small"),
+            ("family:young_pine", "family:edge_front_low_pine"),
+            ("category:conifer_front", "category:front_trunks", "category:trees"),
+        )
+    if variant == "conifer_thicket" and condition in {"forest_isolated_single", "small_forest_island"}:
+        return (
+            ("family:single_small_pine", "family:young_pine", "family:island_group_small"),
+            ("category:trees", "category:islands"),
+        )
+    if variant == "conifer_thicket" and condition.startswith("forest_thin_strip"):
+        return (
+            ("family:thin_strip_vertical_pine", "family:thin_strip_horizontal_pine"),
+            ("family:single_small_pine", "family:young_pine"),
+            ("category:thin_strips", "category:trees"),
+        )
+    if variant == "conifer_thicket" and condition == "forest_near_road":
+        return (
+            ("family:roadside_young_pine", "family:young_pine"),
+            ("family:single_small_pine", "family:edge_front_low_pine"),
+            ("category:context_road", "category:trees"),
+        )
+    if variant == "conifer_thicket" and condition == "forest_near_ruins":
+        return (
+            ("family:young_pine_ruin_edge", "family:young_pine"),
+            ("family:single_small_pine", "family:small_dark_canopy"),
+            ("category:context_ruins", "category:trees"),
+        )
+    if variant == "conifer_thicket" and condition == "forest_near_water":
+        return (
+            ("family:young_pine", "family:single_small_pine"),
+            ("family:edge_front_low_pine", "family:edge_back_pine"),
+            ("category:trees",),
+        )
+    if variant == "conifer_thicket" and condition in {"edge_side_west", "edge_side_east"}:
+        return (
+            ("family:edge_side_left_pine", "family:edge_side_right_pine", "family:young_pine"),
+            ("family:single_small_pine", "family:mid_pine"),
+            ("category:edge_side", "category:trees"),
+        )
+    if variant == "conifer_thicket" and condition == "edge_back_north":
+        return (
+            ("family:edge_back_pine", "family:back_canopy", "family:young_pine"),
+            ("category:edge_back", "category:trees"),
+        )
+    if variant == "conifer_thicket" and band == "interior":
+        return (
+            ("family:mid_pine", "family:mid_canopy_cluster_48_64"),
+            ("family:single_small_pine", "family:occasional_tall_pine"),
+            ("category:mid", "category:trees"),
+        )
+    if variant == "conifer_thicket" and band == "deep":
+        return (
+            ("family:deep_canopy_cluster_64_96", "family:deep_canopy_cluster_128"),
+            ("family:occasional_tall_pine", "family:mid_pine"),
+            ("category:deep", "category:trees"),
+        )
     if variant == "front_edge_layer" and condition in {"edge_front_south", "outer_corner_es", "outer_corner_sw"}:
         return (
             (
@@ -1843,6 +2168,7 @@ def _anchor_pixel_for_condition(
     band: str,
     tile_size_px: int,
     seed: int,
+    variant: str,
 ) -> tuple[int, int]:
     jitter_x_scale = 0.52 if condition.startswith("edge_") or condition.startswith("outer_") else 0.78
     jitter_y_scale = 0.34 if condition.startswith("edge_front") else 0.55
@@ -1851,15 +2177,8 @@ def _anchor_pixel_for_condition(
         jitter_y_scale = 0.22
     jitter_x = (_stable_noise(x=x, y=y, salt=223, seed=seed) - 0.5) * jitter_x_scale
     jitter_y = (_stable_noise(x=x, y=y, salt=227, seed=seed) - 0.5) * jitter_y_scale
-    if condition in {
-        "edge_front_south",
-        "outer_corner_es",
-        "outer_corner_sw",
-        "forest_near_road_front",
-        "forest_near_ruins_front",
-        "forest_near_water_front",
-    }:
-        y_bias = 1.05
+    if _is_front_edge_condition(condition):
+        y_bias = 1.18 if variant == "conifer_thicket" else 1.05
     else:
         y_bias = 0.94 if band == "edge" else 0.98
     return (
@@ -1915,6 +2234,16 @@ def _draw_anchor_shadows(
 
 def _shadow_opacity_for_anchor(*, anchor: ForestMassAnchor, variant: str) -> float:
     """Resolve shadow opacity for the overlay variant and forest band."""
+    if variant == "conifer_thicket":
+        if _is_front_edge_condition(anchor.condition):
+            return 0.30
+        if anchor.condition.startswith("edge_") or anchor.condition.startswith("outer_corner"):
+            return 0.13
+        if anchor.band == "deep":
+            return 0.18
+        if anchor.band == "interior":
+            return 0.15
+        return 0.12
     if variant == "front_edge_layer":
         if anchor.condition in {
             "edge_front_south",
@@ -1960,9 +2289,25 @@ def _draw_anchor_sprites(
     image: Image.Image,
     anchors: list[ForestMassAnchor],
     tile_size_px: int,
+    variant: str,
 ) -> None:
+    if variant == "conifer_thicket":
+        anchors = sorted(
+            anchors,
+            key=lambda item: (
+                1 if _is_front_edge_condition(item.condition) else 0,
+                item.y_px,
+                item.x_px,
+                item.asset.asset_id,
+            ),
+        )
     for anchor in anchors:
-        asset_image = _scaled_asset_image(anchor.asset.image, tile_size_px=tile_size_px)
+        asset_image = _scaled_anchor_asset_image(
+            asset=anchor.asset,
+            condition=anchor.condition,
+            variant=variant,
+            tile_size_px=tile_size_px,
+        )
         draw_x, draw_y = _asset_draw_position(
             asset=anchor.asset,
             asset_image=asset_image,
@@ -1995,6 +2340,8 @@ def _asset_draw_position(
 
 def _forest_mass_compare_label(variant: str) -> str:
     """Return a short label for the forest mass comparison image."""
+    if variant == "conifer_thicket":
+        return "forest conifer thicket"
     if variant == "front_edge_layer":
         return "forest front edge layer"
     if variant == "canopy_fill":
@@ -2205,6 +2552,34 @@ def _filter_asset_families(
     families: tuple[str, ...],
 ) -> tuple[ForestMassAsset, ...]:
     return tuple(asset for asset in assets if asset.family in families)
+
+
+def _scaled_anchor_asset_image(
+    *,
+    asset: ForestMassAsset,
+    condition: str,
+    variant: str,
+    tile_size_px: int,
+) -> Image.Image:
+    """Scale an asset for a specific forest overlay placement."""
+    image = _scaled_asset_image(asset.image, tile_size_px=tile_size_px)
+    if variant != "conifer_thicket":
+        return image
+    scale = 1.0
+    if asset.category == "conifer_front" and _is_front_edge_condition(condition):
+        scale = 1.10
+    elif asset.category == "front_trunks" and _is_front_edge_condition(condition):
+        scale = 1.16
+    elif asset.family in {"edge_front_low_pine", "single_small_pine"} and _is_front_edge_condition(condition):
+        scale = 1.10
+    elif asset.family in {"round_bush", "small_round_bush", "front_low_bush"}:
+        scale = 0.0
+    if scale <= 0.0 or abs(scale - 1.0) < 0.001:
+        return image
+    return image.resize(
+        (max(1, int(image.width * scale)), max(1, int(image.height * scale))),
+        Image.Resampling.BILINEAR,
+    )
 
 
 def _scaled_asset_image(image: Image.Image, *, tile_size_px: int) -> Image.Image:

@@ -3492,6 +3492,310 @@
       "zone": "front_edge",
       "priority_hint": 230,
       "notes": "Front-facing forest edge tree with visible trunk. Draw above canopy fill."
+    },
+    {
+      "path": "conifer_front/conifer_front_small_01.png",
+      "family": "conifer_front_small",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 10,
+      "anchor_y": 29
+    },
+    {
+      "path": "conifer_front/conifer_front_small_02.png",
+      "family": "conifer_front_small",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 11,
+      "anchor_y": 27
+    },
+    {
+      "path": "conifer_front/conifer_front_small_03.png",
+      "family": "conifer_front_small",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 9,
+      "anchor_y": 25
+    },
+    {
+      "path": "conifer_front/conifer_front_small_04.png",
+      "family": "conifer_front_small",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 10,
+      "anchor_y": 29
+    },
+    {
+      "path": "conifer_front/conifer_front_small_05.png",
+      "family": "conifer_front_small",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 11,
+      "anchor_y": 27
+    },
+    {
+      "path": "conifer_front/conifer_front_small_06.png",
+      "family": "conifer_front_small",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 9,
+      "anchor_y": 25
+    },
+    {
+      "path": "conifer_front/conifer_front_small_07.png",
+      "family": "conifer_front_small",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 10,
+      "anchor_y": 29
+    },
+    {
+      "path": "conifer_front/conifer_front_small_08.png",
+      "family": "conifer_front_small",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 11,
+      "anchor_y": 27
+    },
+    {
+      "path": "conifer_front/conifer_front_mid_01.png",
+      "family": "conifer_front_mid",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 13,
+      "anchor_y": 39
+    },
+    {
+      "path": "conifer_front/conifer_front_mid_02.png",
+      "family": "conifer_front_mid",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 14,
+      "anchor_y": 37
+    },
+    {
+      "path": "conifer_front/conifer_front_mid_03.png",
+      "family": "conifer_front_mid",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 12,
+      "anchor_y": 35
+    },
+    {
+      "path": "conifer_front/conifer_front_mid_04.png",
+      "family": "conifer_front_mid",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 13,
+      "anchor_y": 39
+    },
+    {
+      "path": "conifer_front/conifer_front_mid_05.png",
+      "family": "conifer_front_mid",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 14,
+      "anchor_y": 37
+    },
+    {
+      "path": "conifer_front/conifer_front_mid_06.png",
+      "family": "conifer_front_mid",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 12,
+      "anchor_y": 35
+    },
+    {
+      "path": "conifer_front/conifer_front_mid_07.png",
+      "family": "conifer_front_mid",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 13,
+      "anchor_y": 39
+    },
+    {
+      "path": "conifer_front/conifer_front_mid_08.png",
+      "family": "conifer_front_mid",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 14,
+      "anchor_y": 37
+    },
+    {
+      "path": "conifer_front/conifer_front_tall_01.png",
+      "family": "conifer_front_tall",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 14,
+      "anchor_y": 49
+    },
+    {
+      "path": "conifer_front/conifer_front_tall_02.png",
+      "family": "conifer_front_tall",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 15,
+      "anchor_y": 47
+    },
+    {
+      "path": "conifer_front/conifer_front_tall_03.png",
+      "family": "conifer_front_tall",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 13,
+      "anchor_y": 45
+    },
+    {
+      "path": "conifer_front/conifer_front_tall_04.png",
+      "family": "conifer_front_tall",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 14,
+      "anchor_y": 49
+    },
+    {
+      "path": "conifer_front/conifer_front_tall_05.png",
+      "family": "conifer_front_tall",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 15,
+      "anchor_y": 47
+    },
+    {
+      "path": "conifer_front/conifer_front_tall_06.png",
+      "family": "conifer_front_tall",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 13,
+      "anchor_y": 45
+    },
+    {
+      "path": "conifer_front/conifer_front_tall_07.png",
+      "family": "conifer_front_tall",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 14,
+      "anchor_y": 49
+    },
+    {
+      "path": "conifer_front/conifer_front_tall_08.png",
+      "family": "conifer_front_tall",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 15,
+      "anchor_y": 47
+    },
+    {
+      "path": "conifer_front/conifer_front_dense_01.png",
+      "family": "conifer_front_dense",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 17,
+      "anchor_y": 43
+    },
+    {
+      "path": "conifer_front/conifer_front_dense_02.png",
+      "family": "conifer_front_dense",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 18,
+      "anchor_y": 41
+    },
+    {
+      "path": "conifer_front/conifer_front_dense_03.png",
+      "family": "conifer_front_dense",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 16,
+      "anchor_y": 39
+    },
+    {
+      "path": "conifer_front/conifer_front_dense_04.png",
+      "family": "conifer_front_dense",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 17,
+      "anchor_y": 43
+    },
+    {
+      "path": "conifer_front/conifer_front_dense_05.png",
+      "family": "conifer_front_dense",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 18,
+      "anchor_y": 41
+    },
+    {
+      "path": "conifer_front/conifer_front_dense_06.png",
+      "family": "conifer_front_dense",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 16,
+      "anchor_y": 39
+    },
+    {
+      "path": "conifer_front/conifer_front_dense_07.png",
+      "family": "conifer_front_dense",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 17,
+      "anchor_y": 43
+    },
+    {
+      "path": "conifer_front/conifer_front_dense_08.png",
+      "family": "conifer_front_dense",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 18,
+      "anchor_y": 41
+    },
+    {
+      "path": "conifer_front/conifer_front_scrub_01.png",
+      "family": "conifer_front_scrub",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 16,
+      "anchor_y": 25
+    },
+    {
+      "path": "conifer_front/conifer_front_scrub_02.png",
+      "family": "conifer_front_scrub",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 18,
+      "anchor_y": 21
+    },
+    {
+      "path": "conifer_front/conifer_front_scrub_03.png",
+      "family": "conifer_front_scrub",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 14,
+      "anchor_y": 25
+    },
+    {
+      "path": "conifer_front/conifer_front_scrub_04.png",
+      "family": "conifer_front_scrub",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 16,
+      "anchor_y": 21
+    },
+    {
+      "path": "conifer_front/conifer_front_scrub_05.png",
+      "family": "conifer_front_scrub",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 18,
+      "anchor_y": 25
+    },
+    {
+      "path": "conifer_front/conifer_front_scrub_06.png",
+      "family": "conifer_front_scrub",
+      "role": "front_conifer",
+      "zone": "front_edge",
+      "anchor_x": 14,
+      "anchor_y": 21
     }
   ],
   "assets_by_family": {
@@ -4116,6 +4420,6 @@
     }
   ],
   "missing_families_in_rules": {},
-  "asset_count": 290,
+  "asset_count": 328,
   "notes": "v0.0.81 adds front_trunks assets for south-facing forest edges."
 }
