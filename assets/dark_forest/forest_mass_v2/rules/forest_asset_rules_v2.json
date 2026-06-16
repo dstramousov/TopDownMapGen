@@ -1,0 +1,624 @@
+{
+  "schema_version": "forest-asset-rules-v2",
+  "condition_rules": [
+    {
+      "rule_id": "map_border_guard",
+      "priority": 1000,
+      "use_asset_families": [
+        "edge_cut_safe_small",
+        "deep_fill_clipped_optional",
+        "shadow_inside_only"
+      ],
+      "avoid_asset_families": [
+        "deep_canopy_cluster_128",
+        "large_canopy_overhang_outside_canvas"
+      ],
+      "placement": {
+        "bounds_policy": "reject_full_bounds_outside_canvas"
+      }
+    },
+    {
+      "rule_id": "forest_isolated_single",
+      "priority": 950,
+      "use_asset_families": [
+        "single_small_pine",
+        "young_pine",
+        "round_bush",
+        "stump"
+      ],
+      "placement": {
+        "max_sprite_size_px": [
+          32,
+          40
+        ],
+        "density": "low"
+      }
+    },
+    {
+      "rule_id": "forest_cap_protrusion",
+      "priority": 930,
+      "use_asset_families": [
+        "cap_pine_small",
+        "cap_bush_cluster",
+        "young_pine"
+      ],
+      "avoid_asset_families": [
+        "deep_canopy_cluster_128",
+        "deep_canopy_cluster_64_96"
+      ]
+    },
+    {
+      "rule_id": "forest_thin_strip_ew",
+      "priority": 910,
+      "use_asset_families": [
+        "thin_strip_horizontal_pine",
+        "front_low_bush",
+        "small_canopy_filler"
+      ],
+      "placement": {
+        "max_height_px": 40
+      }
+    },
+    {
+      "rule_id": "forest_thin_strip_ns",
+      "priority": 910,
+      "use_asset_families": [
+        "thin_strip_vertical_pine",
+        "side_bush",
+        "small_canopy_filler"
+      ],
+      "placement": {
+        "max_width_px": 44
+      }
+    },
+    {
+      "rule_id": "outer_corner_es",
+      "priority": 880,
+      "use_asset_families": [
+        "corner_front_right",
+        "front_canopy_low",
+        "edge_side_right",
+        "side_right_bush"
+      ]
+    },
+    {
+      "rule_id": "outer_corner_ne",
+      "priority": 880,
+      "use_asset_families": [
+        "corner_back_right",
+        "back_canopy",
+        "edge_side_right",
+        "side_right_bush"
+      ]
+    },
+    {
+      "rule_id": "outer_corner_nw",
+      "priority": 880,
+      "use_asset_families": [
+        "corner_back_left",
+        "back_canopy",
+        "edge_side_left",
+        "side_left_bush"
+      ]
+    },
+    {
+      "rule_id": "outer_corner_sw",
+      "priority": 880,
+      "use_asset_families": [
+        "corner_front_left",
+        "front_canopy_low",
+        "edge_side_left",
+        "side_left_bush"
+      ]
+    },
+    {
+      "rule_id": "small_forest_island",
+      "priority": 840,
+      "use_asset_families": [
+        "island_group_small",
+        "young_pine",
+        "round_bush",
+        "stump"
+      ]
+    },
+    {
+      "rule_id": "edge_front_south",
+      "priority": 780,
+      "use_asset_families": [
+        "edge_front_low_pine",
+        "edge_front_bush",
+        "front_canopy_low",
+        "contact_shadow_front"
+      ]
+    },
+    {
+      "rule_id": "edge_back_north",
+      "priority": 760,
+      "use_asset_families": [
+        "edge_back_pine",
+        "back_canopy",
+        "soft_back_shadow"
+      ]
+    },
+    {
+      "rule_id": "edge_side_east",
+      "priority": 750,
+      "use_asset_families": [
+        "edge_side_right_pine",
+        "side_right_bush",
+        "edge_side_right",
+        "side_shadow"
+      ]
+    },
+    {
+      "rule_id": "edge_side_west",
+      "priority": 750,
+      "use_asset_families": [
+        "edge_side_left_pine",
+        "side_left_bush",
+        "edge_side_left",
+        "side_shadow"
+      ]
+    },
+    {
+      "rule_id": "forest_near_road",
+      "priority": 720,
+      "use_asset_families": [
+        "roadside_young_pine",
+        "roadside_bush",
+        "low_edge_canopy",
+        "roadside_shadow"
+      ],
+      "placement": {
+        "road_clearance_tiles": 1.25
+      }
+    },
+    {
+      "rule_id": "forest_near_ruins",
+      "priority": 710,
+      "use_asset_families": [
+        "overgrown_ruin_bush",
+        "young_pine_ruin_edge",
+        "creeper_shadow",
+        "small_dark_canopy",
+        "ruin_overgrowth_patch"
+      ]
+    },
+    {
+      "rule_id": "forest_near_water",
+      "priority": 700,
+      "use_asset_families": [
+        "wet_edge_bush",
+        "dark_low_tree",
+        "dead_small_tree_optional",
+        "wet_shadow",
+        "wet_forest_floor_patch"
+      ]
+    },
+    {
+      "rule_id": "edge_open_clearing",
+      "priority": 650,
+      "use_asset_families": [
+        "edge_front_low_pine",
+        "bush_gap_filler",
+        "small_round_bush",
+        "edge_shadow_soft"
+      ]
+    },
+    {
+      "rule_id": "medium_forest_island",
+      "priority": 620,
+      "use_asset_families": [
+        "island_group_medium",
+        "mid_pine",
+        "edge_bush",
+        "soft_shadow_blob"
+      ]
+    },
+    {
+      "rule_id": "mid_forest_body",
+      "priority": 500,
+      "use_asset_families": [
+        "mid_pine",
+        "mid_canopy_cluster_48_64",
+        "forest_floor_mid_patch",
+        "soft_shadow_blob"
+      ]
+    },
+    {
+      "rule_id": "deep_forest_core",
+      "priority": 450,
+      "use_asset_families": [
+        "deep_canopy_cluster_64_96",
+        "deep_canopy_cluster_128",
+        "forest_floor_dark_patch",
+        "deep_shadow_blob",
+        "occasional_tall_pine"
+      ]
+    }
+  ],
+  "assets_by_family": {
+    "contact_shadow_front": [
+      "shadows/contact_shadow_front_front_01.png"
+    ],
+    "soft_back_shadow": [
+      "shadows/soft_back_shadow_back_02.png"
+    ],
+    "side_shadow": [
+      "shadows/side_shadow_side_left_03.png",
+      "shadows/side_shadow_side_right_04.png"
+    ],
+    "roadside_shadow": [
+      "shadows/roadside_shadow_front_05.png"
+    ],
+    "creeper_shadow": [
+      "shadows/creeper_shadow_oval_06.png"
+    ],
+    "wet_shadow": [
+      "shadows/wet_shadow_oval_07.png"
+    ],
+    "edge_shadow_soft": [
+      "shadows/edge_shadow_soft_front_08.png"
+    ],
+    "soft_shadow_blob": [
+      "shadows/soft_shadow_blob_oval_09.png"
+    ],
+    "deep_shadow_blob": [
+      "shadows/deep_shadow_blob_oval_10.png"
+    ],
+    "shadow_inside_only": [
+      "guards/shadow_inside_only_inside_guard_11.png"
+    ],
+    "forest_floor_dark_patch": [
+      "ground/forest_floor_dark_patch_01.png",
+      "ground/forest_floor_dark_patch_02.png",
+      "ground/forest_floor_dark_patch_03.png",
+      "ground/forest_floor_dark_patch_04.png",
+      "ground/forest_floor_dark_patch_05.png"
+    ],
+    "forest_floor_mid_patch": [
+      "ground/forest_floor_mid_patch_01.png",
+      "ground/forest_floor_mid_patch_02.png",
+      "ground/forest_floor_mid_patch_03.png",
+      "ground/forest_floor_mid_patch_04.png"
+    ],
+    "wet_forest_floor_patch": [
+      "ground/wet_forest_floor_patch_01.png",
+      "ground/wet_forest_floor_patch_02.png",
+      "ground/wet_forest_floor_patch_03.png",
+      "ground/wet_forest_floor_patch_04.png"
+    ],
+    "ruin_overgrowth_patch": [
+      "ground/ruin_overgrowth_patch_01.png",
+      "ground/ruin_overgrowth_patch_02.png",
+      "ground/ruin_overgrowth_patch_03.png",
+      "ground/ruin_overgrowth_patch_04.png"
+    ],
+    "single_small_pine": [
+      "trees/single_small_pine_01.png",
+      "trees/single_small_pine_02.png",
+      "trees/single_small_pine_03.png",
+      "trees/single_small_pine_04.png",
+      "trees/single_small_pine_05.png"
+    ],
+    "young_pine": [
+      "trees/young_pine_01.png",
+      "trees/young_pine_02.png",
+      "trees/young_pine_03.png",
+      "trees/young_pine_04.png",
+      "trees/young_pine_05.png",
+      "trees/young_pine_06.png",
+      "trees/young_pine_07.png"
+    ],
+    "cap_pine_small": [
+      "trees/cap_pine_small_01.png",
+      "trees/cap_pine_small_02.png",
+      "trees/cap_pine_small_03.png",
+      "trees/cap_pine_small_04.png",
+      "trees/cap_pine_small_05.png"
+    ],
+    "mid_pine": [
+      "trees/mid_pine_01.png",
+      "trees/mid_pine_02.png",
+      "trees/mid_pine_03.png",
+      "trees/mid_pine_04.png",
+      "trees/mid_pine_05.png",
+      "trees/mid_pine_06.png",
+      "trees/mid_pine_07.png",
+      "trees/mid_pine_08.png"
+    ],
+    "occasional_tall_pine": [
+      "trees/occasional_tall_pine_01.png",
+      "trees/occasional_tall_pine_02.png",
+      "trees/occasional_tall_pine_03.png",
+      "trees/occasional_tall_pine_04.png"
+    ],
+    "edge_front_low_pine": [
+      "edge_front/edge_front_low_pine_01.png",
+      "edge_front/edge_front_low_pine_02.png",
+      "edge_front/edge_front_low_pine_03.png",
+      "edge_front/edge_front_low_pine_04.png",
+      "edge_front/edge_front_low_pine_05.png",
+      "edge_front/edge_front_low_pine_06.png"
+    ],
+    "edge_back_pine": [
+      "edge_back/edge_back_pine_01.png",
+      "edge_back/edge_back_pine_02.png",
+      "edge_back/edge_back_pine_03.png",
+      "edge_back/edge_back_pine_04.png",
+      "edge_back/edge_back_pine_05.png",
+      "edge_back/edge_back_pine_06.png"
+    ],
+    "edge_side_left_pine": [
+      "edge_side/edge_side_left_pine_01.png",
+      "edge_side/edge_side_left_pine_02.png",
+      "edge_side/edge_side_left_pine_03.png",
+      "edge_side/edge_side_left_pine_04.png",
+      "edge_side/edge_side_left_pine_05.png"
+    ],
+    "edge_side_right_pine": [
+      "edge_side/edge_side_right_pine_01.png",
+      "edge_side/edge_side_right_pine_02.png",
+      "edge_side/edge_side_right_pine_03.png",
+      "edge_side/edge_side_right_pine_04.png",
+      "edge_side/edge_side_right_pine_05.png"
+    ],
+    "roadside_young_pine": [
+      "context_road/roadside_young_pine_01.png",
+      "context_road/roadside_young_pine_02.png",
+      "context_road/roadside_young_pine_03.png",
+      "context_road/roadside_young_pine_04.png"
+    ],
+    "young_pine_ruin_edge": [
+      "context_ruins/young_pine_ruin_edge_01.png",
+      "context_ruins/young_pine_ruin_edge_02.png",
+      "context_ruins/young_pine_ruin_edge_03.png",
+      "context_ruins/young_pine_ruin_edge_04.png"
+    ],
+    "dark_low_tree": [
+      "context_water/dark_low_tree_01.png",
+      "context_water/dark_low_tree_02.png",
+      "context_water/dark_low_tree_03.png",
+      "context_water/dark_low_tree_04.png"
+    ],
+    "dead_small_tree_optional": [
+      "context_water/dead_small_tree_optional_01.png",
+      "context_water/dead_small_tree_optional_02.png",
+      "context_water/dead_small_tree_optional_03.png"
+    ],
+    "round_bush": [
+      "bushes/round_bush_01.png",
+      "bushes/round_bush_02.png",
+      "bushes/round_bush_03.png",
+      "bushes/round_bush_04.png",
+      "bushes/round_bush_05.png",
+      "bushes/round_bush_06.png"
+    ],
+    "small_round_bush": [
+      "bushes/small_round_bush_01.png",
+      "bushes/small_round_bush_02.png",
+      "bushes/small_round_bush_03.png",
+      "bushes/small_round_bush_04.png",
+      "bushes/small_round_bush_05.png",
+      "bushes/small_round_bush_06.png"
+    ],
+    "stump": [
+      "bushes/stump_01.png",
+      "bushes/stump_02.png",
+      "bushes/stump_03.png",
+      "bushes/stump_04.png",
+      "bushes/stump_05.png",
+      "bushes/stump_06.png"
+    ],
+    "edge_front_bush": [
+      "edge_front/edge_front_bush_01.png",
+      "edge_front/edge_front_bush_02.png",
+      "edge_front/edge_front_bush_03.png",
+      "edge_front/edge_front_bush_04.png",
+      "edge_front/edge_front_bush_05.png",
+      "edge_front/edge_front_bush_06.png"
+    ],
+    "front_low_bush": [
+      "edge_front/front_low_bush_01.png",
+      "edge_front/front_low_bush_02.png",
+      "edge_front/front_low_bush_03.png",
+      "edge_front/front_low_bush_04.png",
+      "edge_front/front_low_bush_05.png"
+    ],
+    "side_bush": [
+      "edge_side/side_bush_01.png",
+      "edge_side/side_bush_02.png",
+      "edge_side/side_bush_03.png",
+      "edge_side/side_bush_04.png",
+      "edge_side/side_bush_05.png"
+    ],
+    "side_left_bush": [
+      "edge_side/side_left_bush_01.png",
+      "edge_side/side_left_bush_02.png",
+      "edge_side/side_left_bush_03.png",
+      "edge_side/side_left_bush_04.png",
+      "edge_side/side_left_bush_05.png"
+    ],
+    "side_right_bush": [
+      "edge_side/side_right_bush_01.png",
+      "edge_side/side_right_bush_02.png",
+      "edge_side/side_right_bush_03.png",
+      "edge_side/side_right_bush_04.png",
+      "edge_side/side_right_bush_05.png"
+    ],
+    "roadside_bush": [
+      "context_road/roadside_bush_01.png",
+      "context_road/roadside_bush_02.png",
+      "context_road/roadside_bush_03.png",
+      "context_road/roadside_bush_04.png",
+      "context_road/roadside_bush_05.png"
+    ],
+    "overgrown_ruin_bush": [
+      "context_ruins/overgrown_ruin_bush_01.png",
+      "context_ruins/overgrown_ruin_bush_02.png",
+      "context_ruins/overgrown_ruin_bush_03.png",
+      "context_ruins/overgrown_ruin_bush_04.png",
+      "context_ruins/overgrown_ruin_bush_05.png",
+      "context_ruins/overgrown_ruin_bush_06.png"
+    ],
+    "wet_edge_bush": [
+      "context_water/wet_edge_bush_01.png",
+      "context_water/wet_edge_bush_02.png",
+      "context_water/wet_edge_bush_03.png",
+      "context_water/wet_edge_bush_04.png",
+      "context_water/wet_edge_bush_05.png",
+      "context_water/wet_edge_bush_06.png"
+    ],
+    "bush_gap_filler": [
+      "fillers/bush_gap_filler_01.png",
+      "fillers/bush_gap_filler_02.png",
+      "fillers/bush_gap_filler_03.png",
+      "fillers/bush_gap_filler_04.png",
+      "fillers/bush_gap_filler_05.png",
+      "fillers/bush_gap_filler_06.png",
+      "fillers/bush_gap_filler_07.png"
+    ],
+    "edge_bush": [
+      "fillers/edge_bush_01.png",
+      "fillers/edge_bush_02.png",
+      "fillers/edge_bush_03.png",
+      "fillers/edge_bush_04.png",
+      "fillers/edge_bush_05.png"
+    ],
+    "deep_canopy_cluster_64_96": [
+      "deep/deep_canopy_cluster_64_96_01.png",
+      "deep/deep_canopy_cluster_64_96_02.png",
+      "deep/deep_canopy_cluster_64_96_03.png",
+      "deep/deep_canopy_cluster_64_96_04.png",
+      "deep/deep_canopy_cluster_64_96_05.png"
+    ],
+    "deep_canopy_cluster_128": [
+      "deep/deep_canopy_cluster_128_01.png",
+      "deep/deep_canopy_cluster_128_02.png",
+      "deep/deep_canopy_cluster_128_03.png",
+      "deep/deep_canopy_cluster_128_04.png"
+    ],
+    "mid_canopy_cluster_48_64": [
+      "mid/mid_canopy_cluster_48_64_01.png",
+      "mid/mid_canopy_cluster_48_64_02.png",
+      "mid/mid_canopy_cluster_48_64_03.png",
+      "mid/mid_canopy_cluster_48_64_04.png",
+      "mid/mid_canopy_cluster_48_64_05.png",
+      "mid/mid_canopy_cluster_48_64_06.png"
+    ],
+    "front_canopy_low": [
+      "edge_front/front_canopy_low_01.png",
+      "edge_front/front_canopy_low_02.png",
+      "edge_front/front_canopy_low_03.png",
+      "edge_front/front_canopy_low_04.png",
+      "edge_front/front_canopy_low_05.png"
+    ],
+    "back_canopy": [
+      "edge_back/back_canopy_01.png",
+      "edge_back/back_canopy_02.png",
+      "edge_back/back_canopy_03.png",
+      "edge_back/back_canopy_04.png",
+      "edge_back/back_canopy_05.png"
+    ],
+    "edge_side_left": [
+      "edge_side/edge_side_left_01.png",
+      "edge_side/edge_side_left_02.png",
+      "edge_side/edge_side_left_03.png",
+      "edge_side/edge_side_left_04.png"
+    ],
+    "edge_side_right": [
+      "edge_side/edge_side_right_01.png",
+      "edge_side/edge_side_right_02.png",
+      "edge_side/edge_side_right_03.png",
+      "edge_side/edge_side_right_04.png"
+    ],
+    "small_canopy_filler": [
+      "special/small_canopy_filler_01.png",
+      "special/small_canopy_filler_02.png",
+      "special/small_canopy_filler_03.png",
+      "special/small_canopy_filler_04.png",
+      "special/small_canopy_filler_05.png"
+    ],
+    "low_edge_canopy": [
+      "special/low_edge_canopy_01.png",
+      "special/low_edge_canopy_02.png",
+      "special/low_edge_canopy_03.png",
+      "special/low_edge_canopy_04.png"
+    ],
+    "small_dark_canopy": [
+      "context_ruins/small_dark_canopy_01.png",
+      "context_ruins/small_dark_canopy_02.png",
+      "context_ruins/small_dark_canopy_03.png",
+      "context_ruins/small_dark_canopy_04.png"
+    ],
+    "island_group_small": [
+      "islands/island_group_small_01.png",
+      "islands/island_group_small_02.png",
+      "islands/island_group_small_03.png",
+      "islands/island_group_small_04.png"
+    ],
+    "island_group_medium": [
+      "islands/island_group_medium_01.png",
+      "islands/island_group_medium_02.png",
+      "islands/island_group_medium_03.png",
+      "islands/island_group_medium_04.png"
+    ],
+    "thin_strip_horizontal_pine": [
+      "thin_strips/thin_strip_horizontal_pine_01.png",
+      "thin_strips/thin_strip_horizontal_pine_02.png",
+      "thin_strips/thin_strip_horizontal_pine_03.png",
+      "thin_strips/thin_strip_horizontal_pine_04.png"
+    ],
+    "thin_strip_vertical_pine": [
+      "thin_strips/thin_strip_vertical_pine_01.png",
+      "thin_strips/thin_strip_vertical_pine_02.png",
+      "thin_strips/thin_strip_vertical_pine_03.png",
+      "thin_strips/thin_strip_vertical_pine_04.png"
+    ],
+    "cap_bush_cluster": [
+      "caps/cap_bush_cluster_01.png",
+      "caps/cap_bush_cluster_02.png",
+      "caps/cap_bush_cluster_03.png",
+      "caps/cap_bush_cluster_04.png",
+      "caps/cap_bush_cluster_05.png"
+    ],
+    "edge_cut_safe_small": [
+      "guards/edge_cut_safe_small_01.png",
+      "guards/edge_cut_safe_small_02.png",
+      "guards/edge_cut_safe_small_03.png",
+      "guards/edge_cut_safe_small_04.png",
+      "guards/edge_cut_safe_small_05.png",
+      "guards/edge_cut_safe_small_06.png"
+    ],
+    "deep_fill_clipped_optional": [
+      "guards/deep_fill_clipped_optional_01.png",
+      "guards/deep_fill_clipped_optional_02.png",
+      "guards/deep_fill_clipped_optional_03.png",
+      "guards/deep_fill_clipped_optional_04.png"
+    ],
+    "corner_front_left": [
+      "corners/corner_front_left_01.png",
+      "corners/corner_front_left_02.png",
+      "corners/corner_front_left_03.png",
+      "corners/corner_front_left_04.png"
+    ],
+    "corner_front_right": [
+      "corners/corner_front_right_01.png",
+      "corners/corner_front_right_02.png",
+      "corners/corner_front_right_03.png",
+      "corners/corner_front_right_04.png"
+    ],
+    "corner_back_left": [
+      "corners/corner_back_left_01.png",
+      "corners/corner_back_left_02.png",
+      "corners/corner_back_left_03.png",
+      "corners/corner_back_left_04.png"
+    ],
+    "corner_back_right": [
+      "corners/corner_back_right_01.png",
+      "corners/corner_back_right_02.png",
+      "corners/corner_back_right_03.png",
+      "corners/corner_back_right_04.png"
+    ]
+  }
+}

@@ -267,10 +267,17 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "13_forest_mass_experiment.png",
         "14_forest_mass_overlay.png",
         "15_forest_mass_compare.png",
+        "16_forest_mass_overlay_clean.png",
+        "17_forest_mass_compare_clean.png",
     ]
     assert all(path.exists() for path in paths)
     assert (steps_output.parent / "forest_mass_experiment_report.json").exists()
     assert (steps_output.parent / "forest_mass_overlay_report.json").exists()
+    assert (steps_output.parent / "forest_mass_overlay_clean_report.json").exists()
+    clean_report = _read_json(steps_output.parent / "forest_mass_overlay_clean_report.json")
+    assert clean_report["schema_version"] == "visual-debug-forest-mass-overlay-v2"
+    assert clean_report["policy"]["changes_final_render"] is False
+    assert clean_report["quality"]["bounds_policy"] == "reject_full_bounds_outside_canvas"
 
 
 def _write_minimal_world_package(output_dir: Path) -> None:

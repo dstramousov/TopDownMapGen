@@ -1,0 +1,993 @@
+{
+  "schema_version": "forest-edge-condition-matrix-v1",
+  "source": {
+    "map_zip": "map.zip",
+    "map_size_tiles": [
+      160,
+      160
+    ],
+    "tile_size_px": 16,
+    "generator_version": "0.0.77",
+    "visual_generator_version": "0.0.77"
+  },
+  "forest_types": [
+    "bush",
+    "bush_slow_concealment",
+    "forest",
+    "tree_blocker"
+  ],
+  "summary": {
+    "forest_tiles": 10448,
+    "forest_regions": 48,
+    "largest_region_tiles": 6783,
+    "terrain_counts": {
+      "tree_blocker": 10109,
+      "grass": 11188,
+      "water_slow": 861,
+      "old_overgrown_road": 1230,
+      "bush_slow_concealment": 339,
+      "cracked_ground": 423,
+      "ruin_wall_blocker": 605,
+      "goal": 1,
+      "mushroom_decor": 75,
+      "flower_decor": 257,
+      "ruin_floor": 511,
+      "start": 1
+    },
+    "band_counts": {
+      "edge_0": 2526,
+      "mid_1_2": 3827,
+      "deep_3_4": 2467,
+      "core_5_plus": 1628
+    },
+    "exposure_counts": {
+      "NW": 156,
+      "N": 463,
+      "NE": 162,
+      "W": 369,
+      "none": 7922,
+      "S": 505,
+      "E": 399,
+      "ES": 115,
+      "SW": 160,
+      "ESW": 38,
+      "NESW": 19,
+      "NES": 43,
+      "NEW": 37,
+      "NSW": 34,
+      "EW": 7,
+      "NS": 19
+    },
+    "direction_exposure_counts": {
+      "N": 933,
+      "W": 820,
+      "E": 820,
+      "S": 933
+    },
+    "context_counts_radius_3": {
+      "open_edge_3": 4660,
+      "near_water_3": 611,
+      "open_edge_1": 1773,
+      "near_road_3": 190,
+      "near_ruin_3": 438
+    },
+    "region_area_buckets": {
+      "huge_1025_plus": 1,
+      "single_tile": 19,
+      "small_5_16": 9,
+      "mass_257_1024": 5,
+      "medium_17_64": 5,
+      "large_65_256": 6,
+      "micro_2_4": 3
+    },
+    "direct_contact_counts": {
+      "map_border": 616,
+      "open_direct": 2630,
+      "water_direct": 134,
+      "ruin_direct": 109,
+      "road_direct": 17
+    }
+  },
+  "rules": [
+    {
+      "rule_id": "map_border_guard",
+      "priority": 1000,
+      "detected_count_on_sample_map": 616,
+      "when": {
+        "any_sprite_bounds_outside_canvas": true,
+        "or_forest_touches_map_border": true
+      },
+      "use_asset_families": [
+        "edge_cut_safe_small",
+        "deep_fill_clipped_optional",
+        "shadow_inside_only"
+      ],
+      "avoid_asset_families": [
+        "large_canopy_overhang_outside_canvas"
+      ],
+      "placement": {
+        "rule": "reject large sprites if full bounds do not fit, unless explicit clipped border asset is used"
+      },
+      "notes": "Нужен обязательно: у карты есть лес по краю, иначе будут обрезанные кроны."
+    },
+    {
+      "rule_id": "forest_isolated_single",
+      "priority": 950,
+      "detected_count_on_sample_map": 19,
+      "when": {
+        "exposure_mask": "NESW"
+      },
+      "use_asset_families": [
+        "single_small_pine",
+        "young_pine",
+        "round_bush",
+        "stump"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large",
+        "edge_wall_cluster"
+      ],
+      "placement": {
+        "max_sprite_size_px": [
+          32,
+          40
+        ]
+      },
+      "notes": "Одиночные лесные клетки — не лесная масса."
+    },
+    {
+      "rule_id": "forest_cap_protrusion",
+      "priority": 930,
+      "detected_count_on_sample_map": 152,
+      "when": {
+        "exposure_mask_any": [
+          "NES",
+          "NEW",
+          "NSW",
+          "ESW"
+        ]
+      },
+      "use_asset_families": [
+        "cap_pine_small",
+        "cap_bush_cluster",
+        "young_pine"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large"
+      ],
+      "placement": {
+        "density": "low",
+        "jitter_px": 5
+      },
+      "notes": "Выступы на 1 клетку. Большие ассеты выглядят обрубками."
+    },
+    {
+      "rule_id": "forest_thin_strip_ew",
+      "priority": 910,
+      "detected_count_on_sample_map": 7,
+      "when": {
+        "exposure_mask": "EW"
+      },
+      "use_asset_families": [
+        "thin_strip_horizontal_pine",
+        "front_low_bush",
+        "small_canopy_filler"
+      ],
+      "avoid_asset_families": [
+        "large_deep_canopy"
+      ],
+      "placement": {
+        "max_height_tiles": 1
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "forest_thin_strip_ns",
+      "priority": 910,
+      "detected_count_on_sample_map": 19,
+      "when": {
+        "exposure_mask": "NS"
+      },
+      "use_asset_families": [
+        "thin_strip_vertical_pine",
+        "side_bush",
+        "small_canopy_filler"
+      ],
+      "avoid_asset_families": [
+        "large_deep_canopy"
+      ],
+      "placement": {
+        "max_width_tiles": 1
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "outer_corner_es",
+      "priority": 890,
+      "detected_count_on_sample_map": 115,
+      "when": {
+        "exposure_mask": "ES"
+      },
+      "use_asset_families": [
+        "corner_front_right",
+        "front_edge_cluster",
+        "edge_side_right"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large"
+      ],
+      "placement": {
+        "anchor_bias": "inside_NW"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "outer_corner_ne",
+      "priority": 890,
+      "detected_count_on_sample_map": 162,
+      "when": {
+        "exposure_mask": "NE"
+      },
+      "use_asset_families": [
+        "corner_back_right",
+        "edge_back_tree",
+        "edge_side_right"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large"
+      ],
+      "placement": {
+        "anchor_bias": "inside_SW"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "outer_corner_nw",
+      "priority": 890,
+      "detected_count_on_sample_map": 156,
+      "when": {
+        "exposure_mask": "NW"
+      },
+      "use_asset_families": [
+        "corner_back_left",
+        "edge_back_tree",
+        "edge_side_left"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large"
+      ],
+      "placement": {
+        "anchor_bias": "inside_SE"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "outer_corner_sw",
+      "priority": 890,
+      "detected_count_on_sample_map": 160,
+      "when": {
+        "exposure_mask": "SW"
+      },
+      "use_asset_families": [
+        "corner_front_left",
+        "front_edge_cluster",
+        "edge_side_left"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large"
+      ],
+      "placement": {
+        "anchor_bias": "inside_NE"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "small_forest_island",
+      "priority": 880,
+      "detected_count_on_sample_map": 12,
+      "when": {
+        "region_area_tiles": [
+          2,
+          16
+        ]
+      },
+      "use_asset_families": [
+        "island_group_small",
+        "young_pine",
+        "round_bush",
+        "stump"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large"
+      ],
+      "placement": {
+        "instances_per_region": "1..3"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "edge_front_south",
+      "priority": 850,
+      "detected_count_on_sample_map": 933,
+      "when": {
+        "outside_direction_contains": "S",
+        "distance_to_edge_tiles": 0
+      },
+      "use_asset_families": [
+        "edge_front_low_pine",
+        "edge_front_bush",
+        "front_canopy_low",
+        "contact_shadow_front"
+      ],
+      "avoid_asset_families": [
+        "large_deep_cluster",
+        "tall_back_tree"
+      ],
+      "placement": {
+        "z_sort": "high_priority_visible_front",
+        "max_overhang_outside_tiles": 0.75
+      },
+      "notes": "Самый важный видимый край леса."
+    },
+    {
+      "rule_id": "edge_back_north",
+      "priority": 820,
+      "detected_count_on_sample_map": 933,
+      "when": {
+        "outside_direction_contains": "N",
+        "distance_to_edge_tiles": 0
+      },
+      "use_asset_families": [
+        "edge_back_pine",
+        "back_canopy",
+        "soft_back_shadow"
+      ],
+      "avoid_asset_families": [
+        "front_only_cluster"
+      ],
+      "placement": {
+        "can_overlap_inward_tiles": 1.0
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "edge_side_east",
+      "priority": 810,
+      "detected_count_on_sample_map": 820,
+      "when": {
+        "outside_direction_contains": "E",
+        "distance_to_edge_tiles": 0
+      },
+      "use_asset_families": [
+        "edge_side_right_pine",
+        "side_right_bush",
+        "side_shadow"
+      ],
+      "avoid_asset_families": [
+        "large_deep_cluster_on_edge"
+      ],
+      "placement": {
+        "anchor_bias": "inside_W"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "edge_side_west",
+      "priority": 810,
+      "detected_count_on_sample_map": 820,
+      "when": {
+        "outside_direction_contains": "W",
+        "distance_to_edge_tiles": 0
+      },
+      "use_asset_families": [
+        "edge_side_left_pine",
+        "side_left_bush",
+        "side_shadow"
+      ],
+      "avoid_asset_families": [
+        "large_deep_cluster_on_edge"
+      ],
+      "placement": {
+        "anchor_bias": "inside_E"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "forest_near_road",
+      "priority": 780,
+      "detected_count_on_sample_map": 190,
+      "when": {
+        "distance_to_road_tiles": [
+          1,
+          3
+        ]
+      },
+      "use_asset_families": [
+        "roadside_young_pine",
+        "roadside_bush",
+        "low_edge_canopy",
+        "roadside_shadow"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large",
+        "wide_canopy_that_covers_road"
+      ],
+      "placement": {
+        "exclusion_from_road_px": 10,
+        "density": "low_to_mid"
+      },
+      "notes": "Даже если прямого контакта мало, в радиусе 3 тайлов таких зон уже достаточно."
+    },
+    {
+      "rule_id": "forest_near_ruins",
+      "priority": 760,
+      "detected_count_on_sample_map": 438,
+      "when": {
+        "distance_to_ruin_tiles": [
+          1,
+          3
+        ]
+      },
+      "use_asset_families": [
+        "overgrown_ruin_bush",
+        "young_pine_ruin_edge",
+        "creeper_shadow",
+        "small_dark_canopy"
+      ],
+      "avoid_asset_families": [
+        "large_cluster_over_wall"
+      ],
+      "placement": {
+        "respect_collision_and_wall_bounds": true
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "forest_near_water",
+      "priority": 750,
+      "detected_count_on_sample_map": 611,
+      "when": {
+        "distance_to_water_or_swamp_tiles": [
+          1,
+          3
+        ]
+      },
+      "use_asset_families": [
+        "wet_edge_bush",
+        "dark_low_tree",
+        "dead_small_tree_optional",
+        "wet_shadow"
+      ],
+      "avoid_asset_families": [
+        "dry_stump_cluster_large"
+      ],
+      "placement": {
+        "density": "low",
+        "tint": "slightly_cool_optional"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "edge_open_clearing",
+      "priority": 730,
+      "detected_count_on_sample_map": 1773,
+      "when": {
+        "distance_to_open_tiles": [
+          0,
+          1
+        ]
+      },
+      "use_asset_families": [
+        "front_low_pine",
+        "bush_gap_filler",
+        "small_round_bush",
+        "edge_shadow_soft"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_large"
+      ],
+      "placement": {
+        "make_gaps": true,
+        "density": "variable"
+      },
+      "notes": "Основной край полян/открытой земли."
+    },
+    {
+      "rule_id": "medium_forest_island",
+      "priority": 700,
+      "detected_count_on_sample_map": 5,
+      "when": {
+        "region_area_tiles": [
+          17,
+          64
+        ]
+      },
+      "use_asset_families": [
+        "island_group_medium",
+        "mid_pine",
+        "edge_bush",
+        "small_shadow"
+      ],
+      "avoid_asset_families": [
+        "deep_cluster_128"
+      ],
+      "placement": {
+        "instances_per_region": "3..8"
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "mid_forest_body",
+      "priority": 600,
+      "detected_count_on_sample_map": 3827,
+      "when": {
+        "distance_to_edge_tiles": [
+          1,
+          2
+        ],
+        "region_area_min_tiles": 32
+      },
+      "use_asset_families": [
+        "mid_pine",
+        "mid_canopy_cluster_48_64",
+        "soft_shadow_blob"
+      ],
+      "avoid_asset_families": [
+        "edge_only_cut_sprites"
+      ],
+      "placement": {
+        "density": "mid",
+        "jitter_px": 7
+      },
+      "notes": ""
+    },
+    {
+      "rule_id": "deep_forest_core",
+      "priority": 500,
+      "detected_count_on_sample_map": 4095,
+      "when": {
+        "distance_to_edge_tiles_min": 3,
+        "region_area_min_tiles": 128
+      },
+      "use_asset_families": [
+        "deep_canopy_cluster_64_96",
+        "deep_canopy_cluster_128",
+        "deep_shadow_blob",
+        "occasional_tall_pine"
+      ],
+      "avoid_asset_families": [
+        "small_isolated_tree",
+        "edge_cut_sprite"
+      ],
+      "placement": {
+        "density": "high",
+        "allow_overlap": true
+      },
+      "notes": "Главная заливка массы: тут нужны крупные кластеры, а не отдельные елки."
+    }
+  ],
+  "asset_requirements": {
+    "schema_version": "forest-asset-requirements-v1",
+    "goal": "Cover forest mass rendering edge cases for map sample; expected to cover about 90% of current forest placement situations.",
+    "required_families": {
+      "deep": [
+        {
+          "family": "deep_canopy_cluster_64_96",
+          "min_variants": 8,
+          "sizes_px": [
+            [
+              64,
+              56
+            ],
+            [
+              80,
+              64
+            ],
+            [
+              96,
+              72
+            ]
+          ],
+          "role": "dense core fill"
+        },
+        {
+          "family": "deep_canopy_cluster_128",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              112,
+              80
+            ],
+            [
+              128,
+              96
+            ]
+          ],
+          "role": "large mass blocks; not allowed on edges"
+        },
+        {
+          "family": "deep_shadow_blob",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              64,
+              48
+            ],
+            [
+              96,
+              64
+            ],
+            [
+              128,
+              80
+            ]
+          ],
+          "role": "ambient darkness under dense forest"
+        }
+      ],
+      "mid": [
+        {
+          "family": "mid_pine",
+          "min_variants": 10,
+          "sizes_px": [
+            [
+              24,
+              32
+            ],
+            [
+              32,
+              44
+            ],
+            [
+              40,
+              56
+            ]
+          ],
+          "role": "body trees between edge and core"
+        },
+        {
+          "family": "mid_canopy_cluster_48_64",
+          "min_variants": 8,
+          "sizes_px": [
+            [
+              48,
+              44
+            ],
+            [
+              64,
+              56
+            ]
+          ],
+          "role": "medium filler"
+        }
+      ],
+      "front_edge": [
+        {
+          "family": "edge_front_low_pine",
+          "min_variants": 8,
+          "sizes_px": [
+            [
+              24,
+              28
+            ],
+            [
+              32,
+              36
+            ],
+            [
+              40,
+              44
+            ]
+          ],
+          "role": "visible south/front edge"
+        },
+        {
+          "family": "front_canopy_low",
+          "min_variants": 8,
+          "sizes_px": [
+            [
+              48,
+              36
+            ],
+            [
+              64,
+              44
+            ]
+          ],
+          "role": "low wall of crowns on visible edge"
+        },
+        {
+          "family": "edge_front_bush",
+          "min_variants": 8,
+          "sizes_px": [
+            [
+              16,
+              16
+            ],
+            [
+              24,
+              20
+            ],
+            [
+              32,
+              24
+            ]
+          ],
+          "role": "break straight edge and fill gaps"
+        }
+      ],
+      "back_edge": [
+        {
+          "family": "edge_back_pine",
+          "min_variants": 6,
+          "sizes_px": [
+            [
+              24,
+              32
+            ],
+            [
+              32,
+              44
+            ],
+            [
+              40,
+              56
+            ]
+          ],
+          "role": "north/back edge"
+        },
+        {
+          "family": "back_canopy",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              48,
+              40
+            ],
+            [
+              64,
+              48
+            ]
+          ],
+          "role": "soft back edge fill"
+        }
+      ],
+      "side_edges": [
+        {
+          "family": "edge_side_left_pine",
+          "min_variants": 6,
+          "sizes_px": [
+            [
+              24,
+              32
+            ],
+            [
+              32,
+              44
+            ]
+          ],
+          "role": "west exposed edge"
+        },
+        {
+          "family": "edge_side_right_pine",
+          "min_variants": 6,
+          "sizes_px": [
+            [
+              24,
+              32
+            ],
+            [
+              32,
+              44
+            ]
+          ],
+          "role": "east exposed edge"
+        },
+        {
+          "family": "side_shadow",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              32,
+              48
+            ],
+            [
+              48,
+              64
+            ]
+          ],
+          "role": "soft side darkening"
+        }
+      ],
+      "corners": [
+        {
+          "family": "corner_front_left",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              48,
+              40
+            ],
+            [
+              64,
+              48
+            ]
+          ],
+          "role": "south-west convex edge"
+        },
+        {
+          "family": "corner_front_right",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              48,
+              40
+            ],
+            [
+              64,
+              48
+            ]
+          ],
+          "role": "south-east convex edge"
+        },
+        {
+          "family": "corner_back_left",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              48,
+              40
+            ],
+            [
+              64,
+              48
+            ]
+          ],
+          "role": "north-west convex edge"
+        },
+        {
+          "family": "corner_back_right",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              48,
+              40
+            ],
+            [
+              64,
+              48
+            ]
+          ],
+          "role": "north-east convex edge"
+        }
+      ],
+      "special_context": [
+        {
+          "family": "roadside_bush",
+          "min_variants": 6,
+          "sizes_px": [
+            [
+              16,
+              16
+            ],
+            [
+              24,
+              20
+            ]
+          ],
+          "role": "forest near road"
+        },
+        {
+          "family": "overgrown_ruin_bush",
+          "min_variants": 6,
+          "sizes_px": [
+            [
+              16,
+              16
+            ],
+            [
+              24,
+              24
+            ],
+            [
+              32,
+              24
+            ]
+          ],
+          "role": "forest near ruins"
+        },
+        {
+          "family": "wet_edge_bush",
+          "min_variants": 6,
+          "sizes_px": [
+            [
+              16,
+              16
+            ],
+            [
+              24,
+              20
+            ],
+            [
+              32,
+              24
+            ]
+          ],
+          "role": "forest near water/swamp"
+        },
+        {
+          "family": "small_leaf_tree_dark",
+          "min_variants": 4,
+          "sizes_px": [
+            [
+              24,
+              28
+            ],
+            [
+              32,
+              36
+            ]
+          ],
+          "role": "10-15% non-pine variation, mainly edge/open areas"
+        }
+      ],
+      "guards_and_fillers": [
+        {
+          "family": "edge_cut_safe_small",
+          "min_variants": 6,
+          "sizes_px": [
+            [
+              16,
+              20
+            ],
+            [
+              24,
+              28
+            ]
+          ],
+          "role": "safe near map border/canvas bounds"
+        },
+        {
+          "family": "gap_filler_dark",
+          "min_variants": 8,
+          "sizes_px": [
+            [
+              16,
+              16
+            ],
+            [
+              24,
+              20
+            ],
+            [
+              32,
+              24
+            ]
+          ],
+          "role": "fill holes between crowns"
+        },
+        {
+          "family": "stump_branch_forest_edge",
+          "min_variants": 8,
+          "sizes_px": [
+            [
+              16,
+              16
+            ],
+            [
+              24,
+              20
+            ]
+          ],
+          "role": "edge detail without adding height"
+        }
+      ]
+    }
+  },
+  "implementation_notes": [
+    "Rules are condition families, not coordinate-specific placements.",
+    "A real placement pass should evaluate rules by priority: guards -> tiny/island/protrusion -> contextual edges -> generic edges -> mid/deep.",
+    "Large clusters must be rejected when sprite bounds cross road, ruin, water, route, or canvas exclusion masks.",
+    "The current sample has many edge/front/back/side cases and enough corner/protrusion cases to justify dedicated edge assets."
+  ]
+}

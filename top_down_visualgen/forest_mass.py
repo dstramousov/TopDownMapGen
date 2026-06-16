@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, deque
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,11 @@ class ForestMassAsset:
     category: str
     path: Path
     image: Image.Image
+    family: str
+    role_hint: str
+    zone: str
+    anchor_x: int | None = None
+    anchor_y: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,9 +34,22 @@ class ForestMassAnchor:
 
     x_px: int
     y_px: int
+    tile_x: int
+    tile_y: int
     band: str
     asset: ForestMassAsset
     role: str
+    condition: str
+
+
+@dataclass(frozen=True, slots=True)
+class ForestMassAnchorBuildResult:
+    """Resolved forest mass anchors and placement diagnostics."""
+
+    anchors: tuple[ForestMassAnchor, ...]
+    rejected_bounds: int
+    skipped_missing_asset: int
+    condition_counts: dict[str, int]
 
 @dataclass(frozen=True, slots=True)
 class ForestRegion:
@@ -585,19 +604,79 @@ def render_forest_mass_overlay(
     Returns:
         JSON-compatible overlay diagnostics.
     """
-    del world
+    return _render_forest_mass_overlay_impl(
+        result=result,
+        world=world,
+        profile=profile,
+        visual_layers=visual_layers,
+        output_path=output_path,
+        compare_output_path=compare_output_path,
+        tile_size_px=tile_size_px,
+        variant="overlay",
+    )
+
+
+def render_forest_mass_overlay_clean(
+    *,
+    result: ForestMassExperimentResult,
+    world: WorldPackage,
+    profile: VisualProfile,
+    visual_layers: dict[str, Any],
+    output_path: Path,
+    compare_output_path: Path | None,
+    tile_size_px: int,
+) -> dict[str, Any]:
+    """Render a cleaned condition-driven forest mass overlay preview.
+
+    Args:
+        result: Forest mass experiment data.
+        world: Loaded world package.
+        profile: Loaded visual profile.
+        visual_layers: Current visual layers for fallback base rendering.
+        output_path: Output overlay PNG path.
+        compare_output_path: Optional A/B compare PNG path.
+        tile_size_px: Fallback tile size in pixels.
+
+    Returns:
+        JSON-compatible overlay diagnostics.
+    """
+    return _render_forest_mass_overlay_impl(
+        result=result,
+        world=world,
+        profile=profile,
+        visual_layers=visual_layers,
+        output_path=output_path,
+        compare_output_path=compare_output_path,
+        tile_size_px=tile_size_px,
+        variant="clean",
+    )
+
+
+def _render_forest_mass_overlay_impl(
+    *,
+    result: ForestMassExperimentResult,
+    world: WorldPackage,
+    profile: VisualProfile,
+    visual_layers: dict[str, Any],
+    output_path: Path,
+    compare_output_path: Path | None,
+    tile_size_px: int,
+    variant: str,
+) -> dict[str, Any]:
     base_image, base_source, tile_size = _build_overlay_base_image(
         result=result,
         profile=profile,
         visual_layers=visual_layers,
-        output_path=output_path,
         fallback_tile_size_px=tile_size_px,
     )
     original_base = base_image.copy()
+    terrain_rows = _terrain_rows(world.terrain)
     asset_catalog = _load_forest_mass_assets(profile)
-    anchors = _build_forest_mass_anchors(
+    anchor_result = _build_forest_mass_anchors(
         result=result,
+        terrain_rows=terrain_rows,
         asset_catalog=asset_catalog,
+        image_size=base_image.size,
         tile_size_px=tile_size,
     )
 
@@ -611,11 +690,15 @@ def render_forest_mass_overlay(
     )
     _draw_anchor_shadows(
         image=image,
-        anchors=anchors,
+        anchors=list(anchor_result.anchors),
         asset_catalog=asset_catalog,
         tile_size_px=tile_size,
     )
-    _draw_anchor_sprites(image=image, anchors=anchors, tile_size_px=tile_size)
+    _draw_anchor_sprites(
+        image=image,
+        anchors=list(anchor_result.anchors),
+        tile_size_px=tile_size,
+    )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     image.save(output_path)
@@ -625,14 +708,17 @@ def render_forest_mass_overlay(
             before=original_base,
             after=image,
             output_path=compare_output_path,
+            label="forest mass clean" if variant == "clean" else "forest mass overlay",
         )
 
-    asset_counts = Counter(anchor.asset.asset_id for anchor in anchors)
-    band_counts = Counter(anchor.band for anchor in anchors)
-    role_counts = Counter(anchor.role for anchor in anchors)
+    asset_counts = Counter(anchor.asset.asset_id for anchor in anchor_result.anchors)
+    band_counts = Counter(anchor.band for anchor in anchor_result.anchors)
+    role_counts = Counter(anchor.role for anchor in anchor_result.anchors)
+    family_counts = Counter(anchor.asset.family for anchor in anchor_result.anchors)
     return {
-        "schema_version": "visual-debug-forest-mass-overlay-v1",
+        "schema_version": "visual-debug-forest-mass-overlay-v2",
         "kind": "visual_debug_forest_mass_overlay_report",
+        "variant": variant,
         "source_layer": "terrain",
         "coordinate_space": "pixel",
         "policy": {
@@ -655,25 +741,32 @@ def render_forest_mass_overlay(
         },
         "assets": {
             "root": _forest_mass_asset_root(profile).as_posix(),
-            "loaded_total": sum(len(items) for items in asset_catalog.values()),
-            "by_category": {
-                category: len(items)
-                for category, items in sorted(asset_catalog.items())
-            },
+            "loaded_total": len(asset_catalog.get("all", ())),
+            "by_category": _catalog_count_by_key(asset_catalog, prefix="category:"),
+            "by_family": _catalog_count_by_key(asset_catalog, prefix="family:", limit=24),
         },
         "summary": {
             "forest_tiles": sum(1 for row in result.forest_mask for item in row if item),
-            "tree_anchors": len(anchors),
+            "tree_anchors": len(anchor_result.anchors),
             "anchors_by_band": dict(sorted(band_counts.items())),
             "anchors_by_role": dict(sorted(role_counts.items())),
+            "anchors_by_condition": dict(sorted(anchor_result.condition_counts.items())),
             "unique_assets_used": len(asset_counts),
+            "rejected_bounds": anchor_result.rejected_bounds,
+            "skipped_missing_asset": anchor_result.skipped_missing_asset,
         },
         "top_assets": [
             {"asset_id": asset_id, "count": count}
             for asset_id, count in asset_counts.most_common(12)
         ],
+        "top_families": [
+            {"family": family, "count": count}
+            for family, count in family_counts.most_common(12)
+        ],
         "quality": {
-            "status": "ok" if anchors else "no_forest_anchors",
+            "status": "ok" if anchor_result.anchors else "no_forest_anchors",
+            "bounds_policy": "reject_full_bounds_outside_canvas",
+            "condition_policy": "rule-first condition matrix with zone fallbacks",
         },
     }
 
@@ -683,10 +776,8 @@ def _build_overlay_base_image(
     result: ForestMassExperimentResult,
     profile: VisualProfile,
     visual_layers: dict[str, Any],
-    output_path: Path,
     fallback_tile_size_px: int,
 ) -> tuple[Image.Image, str, int]:
-    del output_path
     tile_size = max(1, _profile_tile_size(profile), fallback_tile_size_px)
     rows = _visual_layer_rows(visual_layers)
     image = Image.new(
@@ -720,18 +811,6 @@ def _profile_tile_size(profile: VisualProfile) -> int:
     return 16
 
 
-def _image_tile_size(*, image: Image.Image, width_tiles: int, height_tiles: int) -> int | None:
-    if width_tiles <= 0 or height_tiles <= 0:
-        return None
-    if image.width % width_tiles != 0 or image.height % height_tiles != 0:
-        return None
-    tile_width = image.width // width_tiles
-    tile_height = image.height // height_tiles
-    if tile_width != tile_height or tile_width <= 0:
-        return None
-    return tile_width
-
-
 def _paint_forest_floor(
     *,
     image: Image.Image,
@@ -741,9 +820,9 @@ def _paint_forest_floor(
     overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
     colors = {
-        "edge": (36, 76, 35, 190),
-        "interior": (24, 58, 29, 215),
-        "deep": (9, 32, 17, 232),
+        "edge": (35, 75, 34, 150),
+        "interior": (21, 55, 27, 190),
+        "deep": (7, 28, 14, 220),
     }
     for y, row in enumerate(result.forest_mask):
         for x, is_forest in enumerate(row):
@@ -761,7 +840,16 @@ def _draw_ground_patches(
     asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
     tile_size_px: int,
 ) -> None:
-    ground_assets = asset_catalog.get("ground", ())
+    ground_assets = _catalog_get(
+        asset_catalog,
+        [
+            "family:forest_floor_dark_patch",
+            "family:forest_floor_mid_patch",
+            "family:wet_forest_floor_patch",
+            "category:ground",
+            "category:fillers",
+        ],
+    )
     if not ground_assets:
         return
     for y, row in enumerate(result.forest_mask):
@@ -770,7 +858,7 @@ def _draw_ground_patches(
                 continue
             distance = result.edge_distances[y][x]
             band = _band_for_distance(distance)
-            threshold = 0.06 if band == "edge" else 0.12 if band == "interior" else 0.18
+            threshold = 0.04 if band == "edge" else 0.10 if band == "interior" else 0.16
             if _stable_noise(x=x, y=y, salt=181, seed=result.seed) > threshold:
                 continue
             asset = _pick_asset(
@@ -781,7 +869,7 @@ def _draw_ground_patches(
                 seed=result.seed,
             )
             patch = _scaled_asset_image(asset.image, tile_size_px=tile_size_px)
-            patch = _with_opacity(patch, 0.55 if band == "edge" else 0.72)
+            patch = _with_opacity(patch, 0.45 if band == "edge" else 0.64)
             center_x = int((x + 0.5) * tile_size_px)
             center_y = int((y + 0.5) * tile_size_px)
             _alpha_composite_clipped(
@@ -795,20 +883,36 @@ def _draw_ground_patches(
 def _build_forest_mass_anchors(
     *,
     result: ForestMassExperimentResult,
+    terrain_rows: list[list[str]],
     asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
+    image_size: tuple[int, int],
     tile_size_px: int,
-) -> list[ForestMassAnchor]:
+) -> ForestMassAnchorBuildResult:
     anchors: list[ForestMassAnchor] = []
+    rejected_bounds = 0
+    skipped_missing_asset = 0
+    condition_counts: Counter[str] = Counter()
+    region_areas = {region.region_id: region.area_tiles for region in result.regions}
     for y, row in enumerate(result.forest_mask):
         for x, is_forest in enumerate(row):
             if not is_forest:
                 continue
             distance = result.edge_distances[y][x]
             band = _band_for_distance(distance)
-            if _stable_noise(x=x, y=y, salt=211, seed=result.seed) > _overlay_density_for_band(band):
+            condition = _forest_condition_for_tile(
+                result=result,
+                terrain_rows=terrain_rows,
+                region_areas=region_areas,
+                x=x,
+                y=y,
+                band=band,
+            )
+            density = _overlay_density_for_condition(condition=condition, band=band)
+            if _stable_noise(x=x, y=y, salt=211, seed=result.seed) > density:
                 continue
-            role = _anchor_role_for_band(band=band, x=x, y=y, seed=result.seed)
-            asset = _asset_for_role(
+            role = _anchor_role_for_condition(condition=condition, band=band, x=x, y=y, seed=result.seed)
+            asset = _asset_for_condition(
+                condition=condition,
                 role=role,
                 band=band,
                 asset_catalog=asset_catalog,
@@ -817,22 +921,346 @@ def _build_forest_mass_anchors(
                 seed=result.seed,
             )
             if asset is None:
+                skipped_missing_asset += 1
                 continue
-            jitter_x = (_stable_noise(x=x, y=y, salt=223, seed=result.seed) - 0.5) * 1.25
-            jitter_y = (_stable_noise(x=x, y=y, salt=227, seed=result.seed) - 0.5) * 0.85
-            anchor_x = int((x + 0.5 + jitter_x) * tile_size_px)
-            anchor_y = int((y + 1.0 + jitter_y) * tile_size_px)
+            anchor_x, anchor_y = _anchor_pixel_for_condition(
+                x=x,
+                y=y,
+                condition=condition,
+                band=band,
+                tile_size_px=tile_size_px,
+                seed=result.seed,
+            )
+            asset_image = _scaled_asset_image(asset.image, tile_size_px=tile_size_px)
+            draw_x, draw_y = _asset_draw_position(
+                asset=asset,
+                asset_image=asset_image,
+                x_px=anchor_x,
+                y_px=anchor_y,
+                fallback_mode="sprite",
+            )
+            if not _sprite_bounds_allowed(
+                x=draw_x,
+                y=draw_y,
+                width=asset_image.width,
+                height=asset_image.height,
+                image_size=image_size,
+                condition=condition,
+            ):
+                rejected_bounds += 1
+                continue
             anchors.append(
                 ForestMassAnchor(
                     x_px=anchor_x,
                     y_px=anchor_y,
+                    tile_x=x,
+                    tile_y=y,
                     band=band,
                     asset=asset,
                     role=role,
+                    condition=condition,
                 )
             )
+            condition_counts[condition] += 1
     anchors.sort(key=lambda item: (item.y_px, item.x_px, item.asset.asset_id))
-    return anchors
+    return ForestMassAnchorBuildResult(
+        anchors=tuple(anchors),
+        rejected_bounds=rejected_bounds,
+        skipped_missing_asset=skipped_missing_asset,
+        condition_counts=dict(condition_counts),
+    )
+
+
+def _forest_condition_for_tile(
+    *,
+    result: ForestMassExperimentResult,
+    terrain_rows: list[list[str]],
+    region_areas: dict[int, int],
+    x: int,
+    y: int,
+    band: str,
+) -> str:
+    width = result.width
+    height = result.height
+    region_id = result.region_ids[y][x]
+    region_area = region_areas.get(region_id, 0)
+    outside_n = _outside_forest(result=result, x=x, y=y - 1)
+    outside_s = _outside_forest(result=result, x=x, y=y + 1)
+    outside_w = _outside_forest(result=result, x=x - 1, y=y)
+    outside_e = _outside_forest(result=result, x=x + 1, y=y)
+    near = _near_context(terrain_rows=terrain_rows, x=x, y=y, radius=2)
+
+    if _near_map_border(width=width, height=height, x=x, y=y, margin=2):
+        return "map_border_guard"
+    if region_area <= 1:
+        return "forest_isolated_single"
+    if region_area <= 12:
+        return "small_forest_island"
+    if outside_n and outside_s and not outside_w and not outside_e:
+        return "forest_thin_strip_ew"
+    if outside_w and outside_e and not outside_n and not outside_s:
+        return "forest_thin_strip_ns"
+    if band == "edge" and near["road"]:
+        return "forest_near_road"
+    if band == "edge" and near["ruins"]:
+        return "forest_near_ruins"
+    if band == "edge" and near["water"]:
+        return "forest_near_water"
+    if outside_e and outside_s:
+        return "outer_corner_es"
+    if outside_w and outside_s:
+        return "outer_corner_sw"
+    if outside_e and outside_n:
+        return "outer_corner_ne"
+    if outside_w and outside_n:
+        return "outer_corner_nw"
+    if outside_s:
+        return "edge_front_south"
+    if outside_n:
+        return "edge_back_north"
+    if outside_w:
+        return "edge_side_west"
+    if outside_e:
+        return "edge_side_east"
+    if band == "deep":
+        return "deep_forest_mass"
+    if band == "interior":
+        return "mid_forest_mass"
+    return "edge_generic"
+
+
+def _outside_forest(*, result: ForestMassExperimentResult, x: int, y: int) -> bool:
+    if not _inside(width=result.width, height=result.height, x=x, y=y):
+        return True
+    return not result.forest_mask[y][x]
+
+
+def _near_map_border(*, width: int, height: int, x: int, y: int, margin: int) -> bool:
+    return x < margin or y < margin or x >= width - margin or y >= height - margin
+
+
+def _near_context(
+    *,
+    terrain_rows: list[list[str]],
+    x: int,
+    y: int,
+    radius: int,
+) -> dict[str, bool]:
+    height = len(terrain_rows)
+    width = len(terrain_rows[0]) if height else 0
+    result = {"road": False, "ruins": False, "water": False}
+    for ny in range(max(0, y - radius), min(height, y + radius + 1)):
+        for nx in range(max(0, x - radius), min(width, x + radius + 1)):
+            terrain = terrain_rows[ny][nx]
+            if _is_road_terrain(terrain):
+                result["road"] = True
+            if _is_ruins_terrain(terrain):
+                result["ruins"] = True
+            if _is_water_terrain(terrain):
+                result["water"] = True
+    return result
+
+
+def _is_road_terrain(value: str) -> bool:
+    normalized = value.lower()
+    return "road" in normalized or "path" in normalized or normalized == "bridge"
+
+
+def _is_ruins_terrain(value: str) -> bool:
+    normalized = value.lower()
+    return "ruin" in normalized or "wall" in normalized
+
+
+def _is_water_terrain(value: str) -> bool:
+    normalized = value.lower()
+    return "water" in normalized or "swamp" in normalized or "mud" in normalized
+
+
+def _overlay_density_for_condition(*, condition: str, band: str) -> float:
+    if condition == "map_border_guard":
+        return 0.22
+    if condition in {"forest_isolated_single", "small_forest_island"}:
+        return 0.50
+    if condition.startswith("forest_thin_strip"):
+        return 0.40
+    if condition.startswith("forest_near_"):
+        return 0.30
+    if condition.startswith("outer_corner"):
+        return 0.36
+    if condition.startswith("edge_"):
+        return 0.42
+    if band == "deep":
+        return 0.20
+    if band == "interior":
+        return 0.30
+    return 0.38
+
+
+def _anchor_role_for_condition(*, condition: str, band: str, x: int, y: int, seed: int) -> str:
+    value = _stable_noise(x=x, y=y, salt=257, seed=seed)
+    if condition == "map_border_guard":
+        return "guard_small" if value < 0.72 else "guard_filler"
+    if condition in {"forest_isolated_single", "small_forest_island"}:
+        return "island_group" if value < 0.55 else "young_tree"
+    if condition.startswith("forest_thin_strip"):
+        return "thin_strip" if value < 0.70 else "small_filler"
+    if condition == "forest_near_road":
+        return "roadside" if value < 0.70 else "edge_bush"
+    if condition == "forest_near_ruins":
+        return "ruin_overgrowth" if value < 0.72 else "young_tree"
+    if condition == "forest_near_water":
+        return "wet_edge" if value < 0.72 else "edge_bush"
+    if condition.startswith("outer_corner"):
+        return "corner" if value < 0.62 else "edge_bush"
+    if condition.startswith("edge_front"):
+        return "front_edge" if value < 0.68 else "edge_bush"
+    if condition.startswith("edge_back"):
+        return "back_edge" if value < 0.68 else "young_tree"
+    if condition.startswith("edge_side"):
+        return "side_edge" if value < 0.68 else "edge_bush"
+    if band == "deep":
+        return "deep_cluster" if value < 0.82 else "tall_tree"
+    if band == "interior":
+        return "mid_cluster" if value < 0.56 else "mid_tree"
+    return "edge_bush" if value < 0.55 else "young_tree"
+
+
+def _asset_for_condition(
+    *,
+    condition: str,
+    role: str,
+    band: str,
+    asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
+    x: int,
+    y: int,
+    seed: int,
+) -> ForestMassAsset | None:
+    pools = _asset_pools_for_condition(condition=condition, role=role, band=band)
+    for salt_offset, keys in enumerate(pools):
+        assets = _catalog_get(asset_catalog, keys)
+        if assets:
+            return _pick_asset(
+                assets=assets,
+                x=x,
+                y=y,
+                salt=503 + salt_offset * 17,
+                seed=seed,
+            )
+    return None
+
+
+def _asset_pools_for_condition(*, condition: str, role: str, band: str) -> tuple[tuple[str, ...], ...]:
+    del role
+    if condition == "map_border_guard":
+        return (
+            ("family:edge_cut_safe_small", "family:single_small_pine", "family:small_round_bush"),
+            ("category:guards", "category:bushes"),
+        )
+    if condition == "forest_isolated_single":
+        return (
+            ("family:single_small_pine", "family:young_pine", "family:round_bush"),
+            ("category:trees", "category:bushes"),
+        )
+    if condition == "small_forest_island":
+        return (
+            ("family:island_group_small", "family:single_small_pine", "family:young_pine"),
+            ("category:islands", "category:trees", "category:bushes"),
+        )
+    if condition == "forest_thin_strip_ew":
+        return (
+            ("family:thin_strip_horizontal_pine", "family:front_low_bush", "family:small_canopy_filler"),
+            ("category:thin_strips", "category:fillers"),
+        )
+    if condition == "forest_thin_strip_ns":
+        return (
+            ("family:thin_strip_vertical_pine", "family:side_bush", "family:small_canopy_filler"),
+            ("category:thin_strips", "category:fillers"),
+        )
+    if condition == "forest_near_road":
+        return (
+            ("family:roadside_bush", "family:roadside_young_pine", "family:front_low_bush"),
+            ("category:context_road", "category:edge_front"),
+        )
+    if condition == "forest_near_ruins":
+        return (
+            ("family:overgrown_ruin_bush", "family:young_pine_ruin_edge", "family:small_dark_canopy"),
+            ("category:context_ruins", "category:context_ruins"),
+        )
+    if condition == "forest_near_water":
+        return (
+            ("family:wet_edge_bush", "family:dark_low_tree", "family:dead_small_tree_optional"),
+            ("category:context_water", "category:bushes"),
+        )
+    if condition == "outer_corner_es":
+        return (("family:corner_front_right", "family:front_canopy_low", "family:edge_side_right"), ("category:corners",))
+    if condition == "outer_corner_sw":
+        return (("family:corner_front_left", "family:front_canopy_low", "family:edge_side_left"), ("category:corners",))
+    if condition == "outer_corner_ne":
+        return (("family:corner_back_right", "family:back_canopy", "family:edge_side_right"), ("category:corners",))
+    if condition == "outer_corner_nw":
+        return (("family:corner_back_left", "family:back_canopy", "family:edge_side_left"), ("category:corners",))
+    if condition == "edge_front_south":
+        return (("family:front_canopy_low", "family:edge_front_low_pine", "family:front_low_bush"), ("category:edge_front",))
+    if condition == "edge_back_north":
+        return (("family:back_canopy", "family:edge_back_pine", "family:young_pine"), ("category:edge_back", "category:trees"))
+    if condition == "edge_side_west":
+        return (("family:edge_side_left", "family:edge_side_left_pine", "family:side_left_bush"), ("category:edge_side",))
+    if condition == "edge_side_east":
+        return (("family:edge_side_right", "family:edge_side_right_pine", "family:side_right_bush"), ("category:edge_side",))
+    if band == "deep":
+        return (
+            ("family:deep_canopy_cluster_64_96", "family:deep_canopy_cluster_128"),
+            ("category:deep", "family:occasional_tall_pine"),
+        )
+    if band == "interior":
+        return (
+            ("family:mid_canopy_cluster_48_64", "family:mid_pine", "family:low_edge_canopy"),
+            ("category:mid", "category:trees"),
+        )
+    return (
+        ("family:edge_bush", "family:young_pine", "family:bush_gap_filler"),
+        ("category:bushes", "category:trees", "category:fillers"),
+    )
+
+
+def _anchor_pixel_for_condition(
+    *,
+    x: int,
+    y: int,
+    condition: str,
+    band: str,
+    tile_size_px: int,
+    seed: int,
+) -> tuple[int, int]:
+    jitter_x_scale = 0.52 if condition.startswith("edge_") or condition.startswith("outer_") else 0.78
+    jitter_y_scale = 0.34 if condition.startswith("edge_front") else 0.55
+    if condition == "map_border_guard":
+        jitter_x_scale = 0.28
+        jitter_y_scale = 0.22
+    jitter_x = (_stable_noise(x=x, y=y, salt=223, seed=seed) - 0.5) * jitter_x_scale
+    jitter_y = (_stable_noise(x=x, y=y, salt=227, seed=seed) - 0.5) * jitter_y_scale
+    y_bias = 0.94 if band == "edge" else 0.98
+    return (
+        int((x + 0.5 + jitter_x) * tile_size_px),
+        int((y + y_bias + jitter_y) * tile_size_px),
+    )
+
+
+def _sprite_bounds_allowed(
+    *,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    image_size: tuple[int, int],
+    condition: str,
+) -> bool:
+    image_width, image_height = image_size
+    if x < 0 or y < 0 or x + width > image_width or y + height > image_height:
+        return False
+    if condition == "map_border_guard":
+        return width <= 64 and height <= 72
+    return True
 
 
 def _draw_anchor_shadows(
@@ -842,22 +1270,24 @@ def _draw_anchor_shadows(
     asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
     tile_size_px: int,
 ) -> None:
-    shadows = asset_catalog.get("shadows", ())
+    shadows = _catalog_get(asset_catalog, ["category:shadows", "zone:shadow"])
     if not shadows:
         return
     for index, anchor in enumerate(anchors):
-        if anchor.role in {"edge_bush", "edge_stump"} and index % 2 == 1:
+        if anchor.role in {"edge_bush", "guard_small"} and index % 2 == 1:
             continue
         shadow = _shadow_asset_for_anchor(anchor=anchor, shadows=shadows)
         shadow_image = _scaled_asset_image(shadow.image, tile_size_px=tile_size_px)
-        opacity = 0.38 if anchor.band == "edge" else 0.52 if anchor.band == "interior" else 0.68
+        opacity = 0.30 if anchor.band == "edge" else 0.45 if anchor.band == "interior" else 0.58
         shadow_image = _with_opacity(shadow_image, opacity)
-        _alpha_composite_clipped(
-            base=image,
-            overlay=shadow_image,
-            x=anchor.x_px - shadow_image.width // 2,
-            y=anchor.y_px - shadow_image.height // 2,
+        draw_x, draw_y = _asset_draw_position(
+            asset=shadow,
+            asset_image=shadow_image,
+            x_px=anchor.x_px,
+            y_px=anchor.y_px,
+            fallback_mode="center",
         )
+        _alpha_composite_clipped(base=image, overlay=shadow_image, x=draw_x, y=draw_y)
 
 
 def _draw_anchor_sprites(
@@ -868,12 +1298,34 @@ def _draw_anchor_sprites(
 ) -> None:
     for anchor in anchors:
         asset_image = _scaled_asset_image(anchor.asset.image, tile_size_px=tile_size_px)
-        _alpha_composite_clipped(
-            base=image,
-            overlay=asset_image,
-            x=anchor.x_px - asset_image.width // 2,
-            y=anchor.y_px - asset_image.height,
+        draw_x, draw_y = _asset_draw_position(
+            asset=anchor.asset,
+            asset_image=asset_image,
+            x_px=anchor.x_px,
+            y_px=anchor.y_px,
+            fallback_mode="sprite",
         )
+        _alpha_composite_clipped(base=image, overlay=asset_image, x=draw_x, y=draw_y)
+
+
+def _asset_draw_position(
+    *,
+    asset: ForestMassAsset,
+    asset_image: Image.Image,
+    x_px: int,
+    y_px: int,
+    fallback_mode: str,
+) -> tuple[int, int]:
+    scale_x = asset_image.width / max(1, asset.image.width)
+    scale_y = asset_image.height / max(1, asset.image.height)
+    if asset.anchor_x is not None and asset.anchor_y is not None:
+        return (
+            int(x_px - asset.anchor_x * scale_x),
+            int(y_px - asset.anchor_y * scale_y),
+        )
+    if fallback_mode == "center":
+        return (x_px - asset_image.width // 2, y_px - asset_image.height // 2)
+    return (x_px - asset_image.width // 2, y_px - asset_image.height)
 
 
 def _save_forest_mass_compare(
@@ -881,6 +1333,7 @@ def _save_forest_mass_compare(
     before: Image.Image,
     after: Image.Image,
     output_path: Path,
+    label: str,
 ) -> Path:
     before_preview = _fit_compare_preview(before)
     after_preview = _fit_compare_preview(after)
@@ -893,7 +1346,7 @@ def _save_forest_mass_compare(
     draw.rectangle((0, 0, before_preview.width - 1, 18), fill=(0, 0, 0, 170))
     draw.rectangle((before_preview.width, 0, width - 1, 18), fill=(0, 0, 0, 170))
     draw.text((6, 4), "before", fill=(235, 235, 220, 255))
-    draw.text((before_preview.width + 6, 4), "forest mass overlay", fill=(235, 235, 220, 255))
+    draw.text((before_preview.width + 6, 4), label, fill=(235, 235, 220, 255))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     image.save(output_path)
     return output_path
@@ -909,21 +1362,75 @@ def _fit_compare_preview(image: Image.Image, max_width: int = 1536) -> Image.Ima
 
 def _load_forest_mass_assets(profile: VisualProfile) -> dict[str, tuple[ForestMassAsset, ...]]:
     root = _forest_mass_asset_root(profile)
-    result: dict[str, tuple[ForestMassAsset, ...]] = {}
+    manifest_path = root / "manifest.json"
+    if manifest_path.exists():
+        return _load_manifest_forest_mass_assets(root=root, manifest_path=manifest_path)
+    return _load_legacy_forest_mass_assets(root=root)
+
+
+def _load_manifest_forest_mass_assets(
+    *,
+    root: Path,
+    manifest_path: Path,
+) -> dict[str, tuple[ForestMassAsset, ...]]:
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    raw_assets = data.get("assets", [])
+    if not isinstance(raw_assets, list):
+        raw_assets = []
+    catalog: dict[str, list[ForestMassAsset]] = {"all": []}
+    for item in raw_assets:
+        if not isinstance(item, dict):
+            continue
+        rel_path_value = item.get("path")
+        if not isinstance(rel_path_value, str) or not rel_path_value:
+            continue
+        path = root / rel_path_value
+        if not path.exists() or path.suffix.lower() != ".png":
+            continue
+        parts = Path(rel_path_value).parts
+        category = parts[0] if parts else "misc"
+        family = _string_value(item.get("family"), path.stem)
+        role_hint = _string_value(item.get("role"), "")
+        zone = _string_value(item.get("zone"), category)
+        asset = ForestMassAsset(
+            asset_id=f"{category}.{path.stem}",
+            category=category,
+            path=path,
+            image=Image.open(path).convert("RGBA"),
+            family=family,
+            role_hint=role_hint,
+            zone=zone,
+            anchor_x=_optional_int(item.get("anchor_x")),
+            anchor_y=_optional_int(item.get("anchor_y")),
+        )
+        _catalog_append(catalog, "all", asset)
+        _catalog_append(catalog, f"category:{category}", asset)
+        _catalog_append(catalog, f"family:{family}", asset)
+        _catalog_append(catalog, f"zone:{zone}", asset)
+    return {key: tuple(value) for key, value in catalog.items()}
+
+
+def _load_legacy_forest_mass_assets(root: Path) -> dict[str, tuple[ForestMassAsset, ...]]:
+    catalog: dict[str, list[ForestMassAsset]] = {"all": []}
     for category in ("clusters", "trees", "edge", "ground", "shadows"):
         category_dir = root / category
-        assets: list[ForestMassAsset] = []
         for path in sorted(category_dir.glob("*.png")):
-            assets.append(
-                ForestMassAsset(
-                    asset_id=f"{category}.{path.stem}",
-                    category=category,
-                    path=path,
-                    image=Image.open(path).convert("RGBA"),
-                )
+            asset = ForestMassAsset(
+                asset_id=f"{category}.{path.stem}",
+                category=category,
+                path=path,
+                image=Image.open(path).convert("RGBA"),
+                family=path.stem,
+                role_hint="",
+                zone=category,
+                anchor_x=None,
+                anchor_y=None,
             )
-        result[category] = tuple(assets)
-    return result
+            _catalog_append(catalog, "all", asset)
+            _catalog_append(catalog, f"category:{category}", asset)
+            _catalog_append(catalog, f"family:{path.stem}", asset)
+            _catalog_append(catalog, f"zone:{category}", asset)
+    return {key: tuple(value) for key, value in catalog.items()}
 
 
 def _forest_mass_asset_root(profile: VisualProfile) -> Path:
@@ -932,112 +1439,54 @@ def _forest_mass_asset_root(profile: VisualProfile) -> Path:
         asset_root = (profile.root_dir / asset_root_value).resolve()
     else:
         asset_root = profile.root_dir.resolve()
+    v2_root = asset_root / "forest_mass_v2"
+    if v2_root.exists():
+        return v2_root
     return asset_root / "forest_mass"
 
 
-def _asset_for_role(
-    *,
-    role: str,
-    band: str,
-    asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
-    x: int,
-    y: int,
-    seed: int,
-) -> ForestMassAsset | None:
-    pools = _asset_pools_for_role(role=role, band=band, asset_catalog=asset_catalog)
-    for salt, assets in pools:
-        if assets:
-            return _pick_asset(assets=assets, x=x, y=y, salt=salt, seed=seed)
-    return None
+def _catalog_append(
+    catalog: dict[str, list[ForestMassAsset]],
+    key: str,
+    asset: ForestMassAsset,
+) -> None:
+    catalog.setdefault(key, []).append(asset)
 
 
-def _asset_pools_for_role(
-    *,
-    role: str,
-    band: str,
-    asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
-) -> tuple[tuple[int, tuple[ForestMassAsset, ...]], ...]:
-    clusters = asset_catalog.get("clusters", ())
-    trees = asset_catalog.get("trees", ())
-    edge = asset_catalog.get("edge", ())
-    if role == "deep_cluster":
-        return (
-            (311, _filter_assets(clusters, ("deep",))),
-            (313, _filter_assets(clusters, ("large",))),
-            (317, clusters),
-        )
-    if role == "mid_cluster":
-        return (
-            (331, _filter_assets(clusters, ("mid", "large"))),
-            (337, clusters),
-        )
-    if role == "edge_cluster":
-        return (
-            (347, _filter_assets(clusters, ("small", "mid"))),
-            (349, clusters),
-        )
-    if role == "edge_bush":
-        return (
-            (353, _filter_assets(edge, ("bush", "young"))),
-            (359, edge),
-        )
-    if role == "edge_stump":
-        return (
-            (367, _filter_assets(edge, ("stump",))),
-            (373, edge),
-        )
-    if band == "deep":
-        return (
-            (379, _filter_assets(trees, ("large", "tall"))),
-            (383, trees),
-        )
-    if band == "interior":
-        return (
-            (389, _filter_assets(trees, ("mid", "large"))),
-            (397, trees),
-        )
-    return (
-        (401, _filter_assets(trees, ("small", "mid"))),
-        (409, trees),
-    )
-
-
-def _anchor_role_for_band(*, band: str, x: int, y: int, seed: int) -> str:
-    value = _stable_noise(x=x, y=y, salt=257, seed=seed)
-    if band == "deep":
-        if value < 0.72:
-            return "deep_cluster"
-        return "deep_tree"
-    if band == "interior":
-        if value < 0.46:
-            return "mid_cluster"
-        return "mid_tree"
-    if value < 0.18:
-        return "edge_cluster"
-    if value < 0.68:
-        return "edge_tree"
-    if value < 0.9:
-        return "edge_bush"
-    return "edge_stump"
-
-
-def _overlay_density_for_band(band: str) -> float:
-    if band == "deep":
-        return 0.28
-    if band == "interior":
-        return 0.34
-    return 0.46
-
-
-def _filter_assets(
-    assets: tuple[ForestMassAsset, ...],
-    needles: tuple[str, ...],
+def _catalog_get(
+    catalog: dict[str, tuple[ForestMassAsset, ...]],
+    keys: list[str] | tuple[str, ...],
 ) -> tuple[ForestMassAsset, ...]:
-    return tuple(
-        asset
-        for asset in assets
-        if any(needle in asset.asset_id for needle in needles)
-    )
+    seen: set[str] = set()
+    result: list[ForestMassAsset] = []
+    for key in keys:
+        for asset in catalog.get(key, ()):
+            if asset.asset_id in seen:
+                continue
+            seen.add(asset.asset_id)
+            result.append(asset)
+    return tuple(result)
+
+
+def _catalog_count_by_key(
+    catalog: dict[str, tuple[ForestMassAsset, ...]],
+    *,
+    prefix: str,
+    limit: int | None = None,
+) -> dict[str, int]:
+    items = [
+        (key.removeprefix(prefix), len(value))
+        for key, value in catalog.items()
+        if key.startswith(prefix)
+    ]
+    items.sort(key=lambda item: (-item[1], item[0]))
+    if limit is not None:
+        items = items[:limit]
+    return dict(items)
+
+
+def _optional_int(value: Any) -> int | None:
+    return value if isinstance(value, int) else None
 
 
 def _pick_asset(
@@ -1057,16 +1506,27 @@ def _shadow_asset_for_anchor(
     anchor: ForestMassAnchor,
     shadows: tuple[ForestMassAsset, ...],
 ) -> ForestMassAsset:
-    if anchor.role in {"deep_cluster", "mid_cluster"}:
-        preferred = _filter_assets(shadows, ("mass", "large"))
-    elif anchor.band == "edge":
-        preferred = _filter_assets(shadows, ("small", "mid"))
+    if anchor.condition == "forest_near_road":
+        preferred = _filter_asset_families(shadows, ("roadside_shadow", "contact_shadow_front"))
+    elif anchor.condition.startswith("edge_side"):
+        preferred = _filter_asset_families(shadows, ("side_shadow",))
+    elif anchor.condition.startswith("edge_back"):
+        preferred = _filter_asset_families(shadows, ("soft_back_shadow",))
+    elif anchor.role in {"deep_cluster", "mid_cluster"}:
+        preferred = _filter_asset_families(shadows, ("deep_shadow_blob", "contact_shadow_front"))
     else:
-        preferred = _filter_assets(shadows, ("mid", "large"))
+        preferred = _filter_asset_families(shadows, ("contact_shadow_front", "small_contact_shadow"))
     if not preferred:
         preferred = shadows
     index = sum(ord(ch) for ch in anchor.asset.asset_id) % len(preferred)
     return preferred[index]
+
+
+def _filter_asset_families(
+    assets: tuple[ForestMassAsset, ...],
+    families: tuple[str, ...],
+) -> tuple[ForestMassAsset, ...]:
+    return tuple(asset for asset in assets if asset.family in families)
 
 
 def _scaled_asset_image(image: Image.Image, *, tile_size_px: int) -> Image.Image:

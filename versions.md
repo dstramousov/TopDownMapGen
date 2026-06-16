@@ -643,3 +643,10 @@
 - `render_visual_pipeline_steps` теперь пишет `14_forest_mass_overlay.png`, `15_forest_mass_compare.png` и `forest_mass_overlay_report.json`; summary выводит путь к overlay-report.
 - `final_render.png`, gameplay/collision/routes и старый `05_forest_autotile.png` не изменяются.
 - Версия проекта поднята до `0.0.77`.
+
+## v0.0.77 -> v0.0.78
+
+- Добавлен `assets/dark_forest/forest_mass_v2/` с condition-driven forest asset pack v2: deep/mid/edge/corners/thin/islands/context/guards/shadows.
+- Forest mass overlay теперь выбирает ассеты по лесным условиям: edge/front/back/side, corners, thin strips, small islands, road/ruins/water context и `map_border_guard`.
+- Добавлены debug steps `16_forest_mass_overlay_clean.png` и `17_forest_mass_compare_clean.png`; финальный рендер, gameplay, collision и routes не меняются.
+- Для forest overlay включён bounds guard: крупные спрайты не ставятся так, чтобы обрезаться за canvas.

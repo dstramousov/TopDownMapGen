@@ -1,0 +1,3759 @@
+{
+  "name": "forest_asset_pack_v2",
+  "version": "2",
+  "source": "Generated original sprites. ideal.png was used only as a visual direction reference; no pixels were copied or cropped.",
+  "seed": 18492731,
+  "tile_size_px": 16,
+  "purpose": "ForestMassOverlay condition-driven asset pack for map edge/mid/deep forest rendering.",
+  "coverage_target": "Covers common forest edge/mass conditions detected in forest_edge_condition_matrix_v1.json.",
+  "usage_notes": {
+    "z_sort": "Use bottom-center anchor for object ordering. Ground/shadow overlays use center anchors.",
+    "bounds": "Apply map_border_guard before picking large clusters.",
+    "zones": "Pick by condition first, then zone fallback: edge -> mid -> deep.",
+    "final_render": "This pack is intended for experimental overlay first, not immediate gameplay/collision changes."
+  },
+  "assets": [
+    {
+      "path": "shadows/contact_shadow_front_front_01.png",
+      "family": "contact_shadow_front",
+      "role": "front",
+      "width": 64,
+      "height": 22,
+      "anchor_x": 32,
+      "anchor_y": 11,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/soft_back_shadow_back_02.png",
+      "family": "soft_back_shadow",
+      "role": "back",
+      "width": 64,
+      "height": 24,
+      "anchor_x": 32,
+      "anchor_y": 12,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/side_shadow_side_left_03.png",
+      "family": "side_shadow",
+      "role": "side_left",
+      "width": 42,
+      "height": 64,
+      "anchor_x": 21,
+      "anchor_y": 32,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/side_shadow_side_right_04.png",
+      "family": "side_shadow",
+      "role": "side_right",
+      "width": 42,
+      "height": 64,
+      "anchor_x": 21,
+      "anchor_y": 32,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/roadside_shadow_front_05.png",
+      "family": "roadside_shadow",
+      "role": "front",
+      "width": 72,
+      "height": 24,
+      "anchor_x": 36,
+      "anchor_y": 12,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/creeper_shadow_oval_06.png",
+      "family": "creeper_shadow",
+      "role": "oval",
+      "width": 52,
+      "height": 30,
+      "anchor_x": 26,
+      "anchor_y": 15,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/wet_shadow_oval_07.png",
+      "family": "wet_shadow",
+      "role": "oval",
+      "width": 58,
+      "height": 24,
+      "anchor_x": 29,
+      "anchor_y": 12,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/edge_shadow_soft_front_08.png",
+      "family": "edge_shadow_soft",
+      "role": "front",
+      "width": 96,
+      "height": 28,
+      "anchor_x": 48,
+      "anchor_y": 14,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/soft_shadow_blob_oval_09.png",
+      "family": "soft_shadow_blob",
+      "role": "oval",
+      "width": 96,
+      "height": 42,
+      "anchor_x": 48,
+      "anchor_y": 21,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "shadows/deep_shadow_blob_oval_10.png",
+      "family": "deep_shadow_blob",
+      "role": "oval",
+      "width": 128,
+      "height": 58,
+      "anchor_x": 64,
+      "anchor_y": 29,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "guards/shadow_inside_only_inside_guard_11.png",
+      "family": "shadow_inside_only",
+      "role": "inside_guard",
+      "width": 72,
+      "height": 28,
+      "anchor_x": 36,
+      "anchor_y": 14,
+      "zone": "shadow",
+      "priority_hint": 500,
+      "notes": "Transparent shadow; draw below sprites."
+    },
+    {
+      "path": "ground/forest_floor_dark_patch_01.png",
+      "family": "forest_floor_dark_patch",
+      "role": "deep_floor",
+      "width": 108,
+      "height": 72,
+      "anchor_x": 54,
+      "anchor_y": 36,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/forest_floor_dark_patch_02.png",
+      "family": "forest_floor_dark_patch",
+      "role": "deep_floor",
+      "width": 96,
+      "height": 80,
+      "anchor_x": 48,
+      "anchor_y": 40,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/forest_floor_dark_patch_03.png",
+      "family": "forest_floor_dark_patch",
+      "role": "deep_floor",
+      "width": 108,
+      "height": 64,
+      "anchor_x": 54,
+      "anchor_y": 32,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/forest_floor_dark_patch_04.png",
+      "family": "forest_floor_dark_patch",
+      "role": "deep_floor",
+      "width": 96,
+      "height": 72,
+      "anchor_x": 48,
+      "anchor_y": 36,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/forest_floor_dark_patch_05.png",
+      "family": "forest_floor_dark_patch",
+      "role": "deep_floor",
+      "width": 108,
+      "height": 80,
+      "anchor_x": 54,
+      "anchor_y": 40,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/forest_floor_mid_patch_01.png",
+      "family": "forest_floor_mid_patch",
+      "role": "mid_floor",
+      "width": 84,
+      "height": 56,
+      "anchor_x": 42,
+      "anchor_y": 28,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/forest_floor_mid_patch_02.png",
+      "family": "forest_floor_mid_patch",
+      "role": "mid_floor",
+      "width": 72,
+      "height": 64,
+      "anchor_x": 36,
+      "anchor_y": 32,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/forest_floor_mid_patch_03.png",
+      "family": "forest_floor_mid_patch",
+      "role": "mid_floor",
+      "width": 84,
+      "height": 48,
+      "anchor_x": 42,
+      "anchor_y": 24,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/forest_floor_mid_patch_04.png",
+      "family": "forest_floor_mid_patch",
+      "role": "mid_floor",
+      "width": 72,
+      "height": 56,
+      "anchor_x": 36,
+      "anchor_y": 28,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/wet_forest_floor_patch_01.png",
+      "family": "wet_forest_floor_patch",
+      "role": "wet_floor",
+      "width": 84,
+      "height": 52,
+      "anchor_x": 42,
+      "anchor_y": 26,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/wet_forest_floor_patch_02.png",
+      "family": "wet_forest_floor_patch",
+      "role": "wet_floor",
+      "width": 72,
+      "height": 60,
+      "anchor_x": 36,
+      "anchor_y": 30,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/wet_forest_floor_patch_03.png",
+      "family": "wet_forest_floor_patch",
+      "role": "wet_floor",
+      "width": 84,
+      "height": 44,
+      "anchor_x": 42,
+      "anchor_y": 22,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/wet_forest_floor_patch_04.png",
+      "family": "wet_forest_floor_patch",
+      "role": "wet_floor",
+      "width": 72,
+      "height": 52,
+      "anchor_x": 36,
+      "anchor_y": 26,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/ruin_overgrowth_patch_01.png",
+      "family": "ruin_overgrowth_patch",
+      "role": "ruin_floor",
+      "width": 76,
+      "height": 54,
+      "anchor_x": 38,
+      "anchor_y": 27,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/ruin_overgrowth_patch_02.png",
+      "family": "ruin_overgrowth_patch",
+      "role": "ruin_floor",
+      "width": 64,
+      "height": 62,
+      "anchor_x": 32,
+      "anchor_y": 31,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/ruin_overgrowth_patch_03.png",
+      "family": "ruin_overgrowth_patch",
+      "role": "ruin_floor",
+      "width": 76,
+      "height": 46,
+      "anchor_x": 38,
+      "anchor_y": 23,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "ground/ruin_overgrowth_patch_04.png",
+      "family": "ruin_overgrowth_patch",
+      "role": "ruin_floor",
+      "width": 64,
+      "height": 54,
+      "anchor_x": 32,
+      "anchor_y": 27,
+      "zone": "ground",
+      "priority_hint": 90,
+      "notes": "Semi-transparent ground overlay for forest mass."
+    },
+    {
+      "path": "trees/single_small_pine_01.png",
+      "family": "single_small_pine",
+      "role": "small",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/single_small_pine_02.png",
+      "family": "single_small_pine",
+      "role": "small",
+      "width": 26,
+      "height": 30,
+      "anchor_x": 13,
+      "anchor_y": 27,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/single_small_pine_03.png",
+      "family": "single_small_pine",
+      "role": "small",
+      "width": 22,
+      "height": 32,
+      "anchor_x": 11,
+      "anchor_y": 29,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/single_small_pine_04.png",
+      "family": "single_small_pine",
+      "role": "small",
+      "width": 24,
+      "height": 30,
+      "anchor_x": 12,
+      "anchor_y": 27,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/single_small_pine_05.png",
+      "family": "single_small_pine",
+      "role": "small",
+      "width": 26,
+      "height": 32,
+      "anchor_x": 13,
+      "anchor_y": 29,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/young_pine_01.png",
+      "family": "young_pine",
+      "role": "young",
+      "width": 22,
+      "height": 30,
+      "anchor_x": 11,
+      "anchor_y": 27,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/young_pine_02.png",
+      "family": "young_pine",
+      "role": "young",
+      "width": 24,
+      "height": 28,
+      "anchor_x": 12,
+      "anchor_y": 25,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/young_pine_03.png",
+      "family": "young_pine",
+      "role": "young",
+      "width": 20,
+      "height": 30,
+      "anchor_x": 10,
+      "anchor_y": 27,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/young_pine_04.png",
+      "family": "young_pine",
+      "role": "young",
+      "width": 22,
+      "height": 28,
+      "anchor_x": 11,
+      "anchor_y": 25,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/young_pine_05.png",
+      "family": "young_pine",
+      "role": "young",
+      "width": 24,
+      "height": 30,
+      "anchor_x": 12,
+      "anchor_y": 27,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/young_pine_06.png",
+      "family": "young_pine",
+      "role": "young",
+      "width": 20,
+      "height": 28,
+      "anchor_x": 10,
+      "anchor_y": 25,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/young_pine_07.png",
+      "family": "young_pine",
+      "role": "young",
+      "width": 22,
+      "height": 30,
+      "anchor_x": 11,
+      "anchor_y": 27,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/cap_pine_small_01.png",
+      "family": "cap_pine_small",
+      "role": "cap",
+      "width": 22,
+      "height": 28,
+      "anchor_x": 11,
+      "anchor_y": 25,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/cap_pine_small_02.png",
+      "family": "cap_pine_small",
+      "role": "cap",
+      "width": 24,
+      "height": 26,
+      "anchor_x": 12,
+      "anchor_y": 23,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/cap_pine_small_03.png",
+      "family": "cap_pine_small",
+      "role": "cap",
+      "width": 20,
+      "height": 28,
+      "anchor_x": 10,
+      "anchor_y": 25,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/cap_pine_small_04.png",
+      "family": "cap_pine_small",
+      "role": "cap",
+      "width": 22,
+      "height": 26,
+      "anchor_x": 11,
+      "anchor_y": 23,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/cap_pine_small_05.png",
+      "family": "cap_pine_small",
+      "role": "cap",
+      "width": 24,
+      "height": 28,
+      "anchor_x": 12,
+      "anchor_y": 25,
+      "zone": "edge",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/mid_pine_01.png",
+      "family": "mid_pine",
+      "role": "mid",
+      "width": 34,
+      "height": 46,
+      "anchor_x": 17,
+      "anchor_y": 43,
+      "zone": "mid",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/mid_pine_02.png",
+      "family": "mid_pine",
+      "role": "mid",
+      "width": 36,
+      "height": 44,
+      "anchor_x": 18,
+      "anchor_y": 41,
+      "zone": "mid",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/mid_pine_03.png",
+      "family": "mid_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 46,
+      "anchor_x": 16,
+      "anchor_y": 43,
+      "zone": "mid",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/mid_pine_04.png",
+      "family": "mid_pine",
+      "role": "mid",
+      "width": 34,
+      "height": 44,
+      "anchor_x": 17,
+      "anchor_y": 41,
+      "zone": "mid",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/mid_pine_05.png",
+      "family": "mid_pine",
+      "role": "mid",
+      "width": 36,
+      "height": 46,
+      "anchor_x": 18,
+      "anchor_y": 43,
+      "zone": "mid",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/mid_pine_06.png",
+      "family": "mid_pine",
+      "role": "mid",
+      "width": 32,
+      "height": 44,
+      "anchor_x": 16,
+      "anchor_y": 41,
+      "zone": "mid",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/mid_pine_07.png",
+      "family": "mid_pine",
+      "role": "mid",
+      "width": 34,
+      "height": 46,
+      "anchor_x": 17,
+      "anchor_y": 43,
+      "zone": "mid",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/mid_pine_08.png",
+      "family": "mid_pine",
+      "role": "mid",
+      "width": 36,
+      "height": 44,
+      "anchor_x": 18,
+      "anchor_y": 41,
+      "zone": "mid",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/occasional_tall_pine_01.png",
+      "family": "occasional_tall_pine",
+      "role": "tall",
+      "width": 40,
+      "height": 66,
+      "anchor_x": 20,
+      "anchor_y": 63,
+      "zone": "deep",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/occasional_tall_pine_02.png",
+      "family": "occasional_tall_pine",
+      "role": "tall",
+      "width": 42,
+      "height": 64,
+      "anchor_x": 21,
+      "anchor_y": 61,
+      "zone": "deep",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/occasional_tall_pine_03.png",
+      "family": "occasional_tall_pine",
+      "role": "tall",
+      "width": 38,
+      "height": 66,
+      "anchor_x": 19,
+      "anchor_y": 63,
+      "zone": "deep",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "trees/occasional_tall_pine_04.png",
+      "family": "occasional_tall_pine",
+      "role": "tall",
+      "width": 40,
+      "height": 64,
+      "anchor_x": 20,
+      "anchor_y": 61,
+      "zone": "deep",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_front/edge_front_low_pine_01.png",
+      "family": "edge_front_low_pine",
+      "role": "front_low",
+      "width": 28,
+      "height": 34,
+      "anchor_x": 14,
+      "anchor_y": 31,
+      "zone": "edge_front",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_front/edge_front_low_pine_02.png",
+      "family": "edge_front_low_pine",
+      "role": "front_low",
+      "width": 30,
+      "height": 32,
+      "anchor_x": 15,
+      "anchor_y": 29,
+      "zone": "edge_front",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_front/edge_front_low_pine_03.png",
+      "family": "edge_front_low_pine",
+      "role": "front_low",
+      "width": 26,
+      "height": 34,
+      "anchor_x": 13,
+      "anchor_y": 31,
+      "zone": "edge_front",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_front/edge_front_low_pine_04.png",
+      "family": "edge_front_low_pine",
+      "role": "front_low",
+      "width": 28,
+      "height": 32,
+      "anchor_x": 14,
+      "anchor_y": 29,
+      "zone": "edge_front",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_front/edge_front_low_pine_05.png",
+      "family": "edge_front_low_pine",
+      "role": "front_low",
+      "width": 30,
+      "height": 34,
+      "anchor_x": 15,
+      "anchor_y": 31,
+      "zone": "edge_front",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_front/edge_front_low_pine_06.png",
+      "family": "edge_front_low_pine",
+      "role": "front_low",
+      "width": 26,
+      "height": 32,
+      "anchor_x": 13,
+      "anchor_y": 29,
+      "zone": "edge_front",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_back/edge_back_pine_01.png",
+      "family": "edge_back_pine",
+      "role": "back",
+      "width": 30,
+      "height": 42,
+      "anchor_x": 15,
+      "anchor_y": 39,
+      "zone": "edge_back",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_back/edge_back_pine_02.png",
+      "family": "edge_back_pine",
+      "role": "back",
+      "width": 32,
+      "height": 40,
+      "anchor_x": 16,
+      "anchor_y": 37,
+      "zone": "edge_back",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_back/edge_back_pine_03.png",
+      "family": "edge_back_pine",
+      "role": "back",
+      "width": 28,
+      "height": 42,
+      "anchor_x": 14,
+      "anchor_y": 39,
+      "zone": "edge_back",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_back/edge_back_pine_04.png",
+      "family": "edge_back_pine",
+      "role": "back",
+      "width": 30,
+      "height": 40,
+      "anchor_x": 15,
+      "anchor_y": 37,
+      "zone": "edge_back",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_back/edge_back_pine_05.png",
+      "family": "edge_back_pine",
+      "role": "back",
+      "width": 32,
+      "height": 42,
+      "anchor_x": 16,
+      "anchor_y": 39,
+      "zone": "edge_back",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_back/edge_back_pine_06.png",
+      "family": "edge_back_pine",
+      "role": "back",
+      "width": 28,
+      "height": 40,
+      "anchor_x": 14,
+      "anchor_y": 37,
+      "zone": "edge_back",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_left_pine_01.png",
+      "family": "edge_side_left_pine",
+      "role": "side_left",
+      "width": 26,
+      "height": 40,
+      "anchor_x": 13,
+      "anchor_y": 37,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_left_pine_02.png",
+      "family": "edge_side_left_pine",
+      "role": "side_left",
+      "width": 28,
+      "height": 38,
+      "anchor_x": 14,
+      "anchor_y": 35,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_left_pine_03.png",
+      "family": "edge_side_left_pine",
+      "role": "side_left",
+      "width": 24,
+      "height": 40,
+      "anchor_x": 12,
+      "anchor_y": 37,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_left_pine_04.png",
+      "family": "edge_side_left_pine",
+      "role": "side_left",
+      "width": 26,
+      "height": 38,
+      "anchor_x": 13,
+      "anchor_y": 35,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_left_pine_05.png",
+      "family": "edge_side_left_pine",
+      "role": "side_left",
+      "width": 28,
+      "height": 40,
+      "anchor_x": 14,
+      "anchor_y": 37,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_right_pine_01.png",
+      "family": "edge_side_right_pine",
+      "role": "side_right",
+      "width": 26,
+      "height": 40,
+      "anchor_x": 13,
+      "anchor_y": 37,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_right_pine_02.png",
+      "family": "edge_side_right_pine",
+      "role": "side_right",
+      "width": 28,
+      "height": 38,
+      "anchor_x": 14,
+      "anchor_y": 35,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_right_pine_03.png",
+      "family": "edge_side_right_pine",
+      "role": "side_right",
+      "width": 24,
+      "height": 40,
+      "anchor_x": 12,
+      "anchor_y": 37,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_right_pine_04.png",
+      "family": "edge_side_right_pine",
+      "role": "side_right",
+      "width": 26,
+      "height": 38,
+      "anchor_x": 13,
+      "anchor_y": 35,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "edge_side/edge_side_right_pine_05.png",
+      "family": "edge_side_right_pine",
+      "role": "side_right",
+      "width": 28,
+      "height": 40,
+      "anchor_x": 14,
+      "anchor_y": 37,
+      "zone": "edge_side",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_road/roadside_young_pine_01.png",
+      "family": "roadside_young_pine",
+      "role": "roadside",
+      "width": 22,
+      "height": 32,
+      "anchor_x": 11,
+      "anchor_y": 29,
+      "zone": "road",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_road/roadside_young_pine_02.png",
+      "family": "roadside_young_pine",
+      "role": "roadside",
+      "width": 24,
+      "height": 30,
+      "anchor_x": 12,
+      "anchor_y": 27,
+      "zone": "road",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_road/roadside_young_pine_03.png",
+      "family": "roadside_young_pine",
+      "role": "roadside",
+      "width": 20,
+      "height": 32,
+      "anchor_x": 10,
+      "anchor_y": 29,
+      "zone": "road",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_road/roadside_young_pine_04.png",
+      "family": "roadside_young_pine",
+      "role": "roadside",
+      "width": 22,
+      "height": 30,
+      "anchor_x": 11,
+      "anchor_y": 27,
+      "zone": "road",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_ruins/young_pine_ruin_edge_01.png",
+      "family": "young_pine_ruin_edge",
+      "role": "ruin_young",
+      "width": 22,
+      "height": 32,
+      "anchor_x": 11,
+      "anchor_y": 29,
+      "zone": "ruins",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_ruins/young_pine_ruin_edge_02.png",
+      "family": "young_pine_ruin_edge",
+      "role": "ruin_young",
+      "width": 24,
+      "height": 30,
+      "anchor_x": 12,
+      "anchor_y": 27,
+      "zone": "ruins",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_ruins/young_pine_ruin_edge_03.png",
+      "family": "young_pine_ruin_edge",
+      "role": "ruin_young",
+      "width": 20,
+      "height": 32,
+      "anchor_x": 10,
+      "anchor_y": 29,
+      "zone": "ruins",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_ruins/young_pine_ruin_edge_04.png",
+      "family": "young_pine_ruin_edge",
+      "role": "ruin_young",
+      "width": 22,
+      "height": 30,
+      "anchor_x": 11,
+      "anchor_y": 27,
+      "zone": "ruins",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_water/dark_low_tree_01.png",
+      "family": "dark_low_tree",
+      "role": "wet_low",
+      "width": 26,
+      "height": 30,
+      "anchor_x": 13,
+      "anchor_y": 27,
+      "zone": "water",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_water/dark_low_tree_02.png",
+      "family": "dark_low_tree",
+      "role": "wet_low",
+      "width": 28,
+      "height": 28,
+      "anchor_x": 14,
+      "anchor_y": 25,
+      "zone": "water",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_water/dark_low_tree_03.png",
+      "family": "dark_low_tree",
+      "role": "wet_low",
+      "width": 24,
+      "height": 30,
+      "anchor_x": 12,
+      "anchor_y": 27,
+      "zone": "water",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_water/dark_low_tree_04.png",
+      "family": "dark_low_tree",
+      "role": "wet_low",
+      "width": 26,
+      "height": 28,
+      "anchor_x": 13,
+      "anchor_y": 25,
+      "zone": "water",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_water/dead_small_tree_optional_01.png",
+      "family": "dead_small_tree_optional",
+      "role": "dead",
+      "width": 24,
+      "height": 34,
+      "anchor_x": 12,
+      "anchor_y": 31,
+      "zone": "water",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_water/dead_small_tree_optional_02.png",
+      "family": "dead_small_tree_optional",
+      "role": "dead",
+      "width": 26,
+      "height": 32,
+      "anchor_x": 13,
+      "anchor_y": 29,
+      "zone": "water",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "context_water/dead_small_tree_optional_03.png",
+      "family": "dead_small_tree_optional",
+      "role": "dead",
+      "width": 22,
+      "height": 34,
+      "anchor_x": 11,
+      "anchor_y": 31,
+      "zone": "water",
+      "priority_hint": 200,
+      "notes": "Bottom-center anchor; y-sort by anchor."
+    },
+    {
+      "path": "bushes/round_bush_01.png",
+      "family": "round_bush",
+      "role": "round",
+      "width": 26,
+      "height": 22,
+      "anchor_x": 13,
+      "anchor_y": 19,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/round_bush_02.png",
+      "family": "round_bush",
+      "role": "round",
+      "width": 28,
+      "height": 20,
+      "anchor_x": 14,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/round_bush_03.png",
+      "family": "round_bush",
+      "role": "round",
+      "width": 24,
+      "height": 22,
+      "anchor_x": 12,
+      "anchor_y": 19,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/round_bush_04.png",
+      "family": "round_bush",
+      "role": "round",
+      "width": 26,
+      "height": 20,
+      "anchor_x": 13,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/round_bush_05.png",
+      "family": "round_bush",
+      "role": "round",
+      "width": 28,
+      "height": 22,
+      "anchor_x": 14,
+      "anchor_y": 19,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/round_bush_06.png",
+      "family": "round_bush",
+      "role": "round",
+      "width": 24,
+      "height": 20,
+      "anchor_x": 12,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/small_round_bush_01.png",
+      "family": "small_round_bush",
+      "role": "small_round",
+      "width": 22,
+      "height": 20,
+      "anchor_x": 11,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/small_round_bush_02.png",
+      "family": "small_round_bush",
+      "role": "small_round",
+      "width": 24,
+      "height": 18,
+      "anchor_x": 12,
+      "anchor_y": 15,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/small_round_bush_03.png",
+      "family": "small_round_bush",
+      "role": "small_round",
+      "width": 20,
+      "height": 20,
+      "anchor_x": 10,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/small_round_bush_04.png",
+      "family": "small_round_bush",
+      "role": "small_round",
+      "width": 22,
+      "height": 18,
+      "anchor_x": 11,
+      "anchor_y": 15,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/small_round_bush_05.png",
+      "family": "small_round_bush",
+      "role": "small_round",
+      "width": 24,
+      "height": 20,
+      "anchor_x": 12,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/small_round_bush_06.png",
+      "family": "small_round_bush",
+      "role": "small_round",
+      "width": 20,
+      "height": 18,
+      "anchor_x": 10,
+      "anchor_y": 15,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/stump_01.png",
+      "family": "stump",
+      "role": "stump",
+      "width": 24,
+      "height": 19,
+      "anchor_x": 12,
+      "anchor_y": 16,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/stump_02.png",
+      "family": "stump",
+      "role": "stump",
+      "width": 22,
+      "height": 19,
+      "anchor_x": 11,
+      "anchor_y": 16,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/stump_03.png",
+      "family": "stump",
+      "role": "stump",
+      "width": 24,
+      "height": 19,
+      "anchor_x": 12,
+      "anchor_y": 16,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/stump_04.png",
+      "family": "stump",
+      "role": "stump",
+      "width": 22,
+      "height": 19,
+      "anchor_x": 11,
+      "anchor_y": 16,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/stump_05.png",
+      "family": "stump",
+      "role": "stump",
+      "width": 24,
+      "height": 19,
+      "anchor_x": 12,
+      "anchor_y": 16,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "bushes/stump_06.png",
+      "family": "stump",
+      "role": "stump",
+      "width": 22,
+      "height": 19,
+      "anchor_x": 11,
+      "anchor_y": 16,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/edge_front_bush_01.png",
+      "family": "edge_front_bush",
+      "role": "front_bush",
+      "width": 32,
+      "height": 24,
+      "anchor_x": 16,
+      "anchor_y": 21,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/edge_front_bush_02.png",
+      "family": "edge_front_bush",
+      "role": "front_bush",
+      "width": 34,
+      "height": 22,
+      "anchor_x": 17,
+      "anchor_y": 19,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/edge_front_bush_03.png",
+      "family": "edge_front_bush",
+      "role": "front_bush",
+      "width": 30,
+      "height": 24,
+      "anchor_x": 15,
+      "anchor_y": 21,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/edge_front_bush_04.png",
+      "family": "edge_front_bush",
+      "role": "front_bush",
+      "width": 32,
+      "height": 22,
+      "anchor_x": 16,
+      "anchor_y": 19,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/edge_front_bush_05.png",
+      "family": "edge_front_bush",
+      "role": "front_bush",
+      "width": 34,
+      "height": 24,
+      "anchor_x": 17,
+      "anchor_y": 21,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/edge_front_bush_06.png",
+      "family": "edge_front_bush",
+      "role": "front_bush",
+      "width": 30,
+      "height": 22,
+      "anchor_x": 15,
+      "anchor_y": 19,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/front_low_bush_01.png",
+      "family": "front_low_bush",
+      "role": "front_low_bush",
+      "width": 36,
+      "height": 22,
+      "anchor_x": 18,
+      "anchor_y": 19,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/front_low_bush_02.png",
+      "family": "front_low_bush",
+      "role": "front_low_bush",
+      "width": 38,
+      "height": 20,
+      "anchor_x": 19,
+      "anchor_y": 17,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/front_low_bush_03.png",
+      "family": "front_low_bush",
+      "role": "front_low_bush",
+      "width": 34,
+      "height": 22,
+      "anchor_x": 17,
+      "anchor_y": 19,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/front_low_bush_04.png",
+      "family": "front_low_bush",
+      "role": "front_low_bush",
+      "width": 36,
+      "height": 20,
+      "anchor_x": 18,
+      "anchor_y": 17,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_front/front_low_bush_05.png",
+      "family": "front_low_bush",
+      "role": "front_low_bush",
+      "width": 38,
+      "height": 22,
+      "anchor_x": 19,
+      "anchor_y": 19,
+      "zone": "edge_front",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_bush_01.png",
+      "family": "side_bush",
+      "role": "side_bush",
+      "width": 24,
+      "height": 34,
+      "anchor_x": 12,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_bush_02.png",
+      "family": "side_bush",
+      "role": "side_bush",
+      "width": 26,
+      "height": 32,
+      "anchor_x": 13,
+      "anchor_y": 29,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_bush_03.png",
+      "family": "side_bush",
+      "role": "side_bush",
+      "width": 22,
+      "height": 34,
+      "anchor_x": 11,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_bush_04.png",
+      "family": "side_bush",
+      "role": "side_bush",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_bush_05.png",
+      "family": "side_bush",
+      "role": "side_bush",
+      "width": 26,
+      "height": 34,
+      "anchor_x": 13,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_left_bush_01.png",
+      "family": "side_left_bush",
+      "role": "side_left_bush",
+      "width": 24,
+      "height": 34,
+      "anchor_x": 12,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_left_bush_02.png",
+      "family": "side_left_bush",
+      "role": "side_left_bush",
+      "width": 26,
+      "height": 32,
+      "anchor_x": 13,
+      "anchor_y": 29,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_left_bush_03.png",
+      "family": "side_left_bush",
+      "role": "side_left_bush",
+      "width": 22,
+      "height": 34,
+      "anchor_x": 11,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_left_bush_04.png",
+      "family": "side_left_bush",
+      "role": "side_left_bush",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_left_bush_05.png",
+      "family": "side_left_bush",
+      "role": "side_left_bush",
+      "width": 26,
+      "height": 34,
+      "anchor_x": 13,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_right_bush_01.png",
+      "family": "side_right_bush",
+      "role": "side_right_bush",
+      "width": 24,
+      "height": 34,
+      "anchor_x": 12,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_right_bush_02.png",
+      "family": "side_right_bush",
+      "role": "side_right_bush",
+      "width": 26,
+      "height": 32,
+      "anchor_x": 13,
+      "anchor_y": 29,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_right_bush_03.png",
+      "family": "side_right_bush",
+      "role": "side_right_bush",
+      "width": 22,
+      "height": 34,
+      "anchor_x": 11,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_right_bush_04.png",
+      "family": "side_right_bush",
+      "role": "side_right_bush",
+      "width": 24,
+      "height": 32,
+      "anchor_x": 12,
+      "anchor_y": 29,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "edge_side/side_right_bush_05.png",
+      "family": "side_right_bush",
+      "role": "side_right_bush",
+      "width": 26,
+      "height": 34,
+      "anchor_x": 13,
+      "anchor_y": 31,
+      "zone": "edge_side",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_road/roadside_bush_01.png",
+      "family": "roadside_bush",
+      "role": "roadside_bush",
+      "width": 30,
+      "height": 21,
+      "anchor_x": 15,
+      "anchor_y": 18,
+      "zone": "road",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_road/roadside_bush_02.png",
+      "family": "roadside_bush",
+      "role": "roadside_bush",
+      "width": 32,
+      "height": 19,
+      "anchor_x": 16,
+      "anchor_y": 16,
+      "zone": "road",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_road/roadside_bush_03.png",
+      "family": "roadside_bush",
+      "role": "roadside_bush",
+      "width": 28,
+      "height": 21,
+      "anchor_x": 14,
+      "anchor_y": 18,
+      "zone": "road",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_road/roadside_bush_04.png",
+      "family": "roadside_bush",
+      "role": "roadside_bush",
+      "width": 30,
+      "height": 19,
+      "anchor_x": 15,
+      "anchor_y": 16,
+      "zone": "road",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_road/roadside_bush_05.png",
+      "family": "roadside_bush",
+      "role": "roadside_bush",
+      "width": 32,
+      "height": 21,
+      "anchor_x": 16,
+      "anchor_y": 18,
+      "zone": "road",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_ruins/overgrown_ruin_bush_01.png",
+      "family": "overgrown_ruin_bush",
+      "role": "ruin_bush",
+      "width": 32,
+      "height": 26,
+      "anchor_x": 16,
+      "anchor_y": 23,
+      "zone": "ruins",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_ruins/overgrown_ruin_bush_02.png",
+      "family": "overgrown_ruin_bush",
+      "role": "ruin_bush",
+      "width": 34,
+      "height": 24,
+      "anchor_x": 17,
+      "anchor_y": 21,
+      "zone": "ruins",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_ruins/overgrown_ruin_bush_03.png",
+      "family": "overgrown_ruin_bush",
+      "role": "ruin_bush",
+      "width": 30,
+      "height": 26,
+      "anchor_x": 15,
+      "anchor_y": 23,
+      "zone": "ruins",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_ruins/overgrown_ruin_bush_04.png",
+      "family": "overgrown_ruin_bush",
+      "role": "ruin_bush",
+      "width": 32,
+      "height": 24,
+      "anchor_x": 16,
+      "anchor_y": 21,
+      "zone": "ruins",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_ruins/overgrown_ruin_bush_05.png",
+      "family": "overgrown_ruin_bush",
+      "role": "ruin_bush",
+      "width": 34,
+      "height": 26,
+      "anchor_x": 17,
+      "anchor_y": 23,
+      "zone": "ruins",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_ruins/overgrown_ruin_bush_06.png",
+      "family": "overgrown_ruin_bush",
+      "role": "ruin_bush",
+      "width": 30,
+      "height": 24,
+      "anchor_x": 15,
+      "anchor_y": 21,
+      "zone": "ruins",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_water/wet_edge_bush_01.png",
+      "family": "wet_edge_bush",
+      "role": "wet_bush",
+      "width": 30,
+      "height": 22,
+      "anchor_x": 15,
+      "anchor_y": 19,
+      "zone": "water",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_water/wet_edge_bush_02.png",
+      "family": "wet_edge_bush",
+      "role": "wet_bush",
+      "width": 32,
+      "height": 20,
+      "anchor_x": 16,
+      "anchor_y": 17,
+      "zone": "water",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_water/wet_edge_bush_03.png",
+      "family": "wet_edge_bush",
+      "role": "wet_bush",
+      "width": 28,
+      "height": 22,
+      "anchor_x": 14,
+      "anchor_y": 19,
+      "zone": "water",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_water/wet_edge_bush_04.png",
+      "family": "wet_edge_bush",
+      "role": "wet_bush",
+      "width": 30,
+      "height": 20,
+      "anchor_x": 15,
+      "anchor_y": 17,
+      "zone": "water",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_water/wet_edge_bush_05.png",
+      "family": "wet_edge_bush",
+      "role": "wet_bush",
+      "width": 32,
+      "height": 22,
+      "anchor_x": 16,
+      "anchor_y": 19,
+      "zone": "water",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "context_water/wet_edge_bush_06.png",
+      "family": "wet_edge_bush",
+      "role": "wet_bush",
+      "width": 28,
+      "height": 20,
+      "anchor_x": 14,
+      "anchor_y": 17,
+      "zone": "water",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/bush_gap_filler_01.png",
+      "family": "bush_gap_filler",
+      "role": "gap_bush",
+      "width": 26,
+      "height": 20,
+      "anchor_x": 13,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/bush_gap_filler_02.png",
+      "family": "bush_gap_filler",
+      "role": "gap_bush",
+      "width": 28,
+      "height": 18,
+      "anchor_x": 14,
+      "anchor_y": 15,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/bush_gap_filler_03.png",
+      "family": "bush_gap_filler",
+      "role": "gap_bush",
+      "width": 24,
+      "height": 20,
+      "anchor_x": 12,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/bush_gap_filler_04.png",
+      "family": "bush_gap_filler",
+      "role": "gap_bush",
+      "width": 26,
+      "height": 18,
+      "anchor_x": 13,
+      "anchor_y": 15,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/bush_gap_filler_05.png",
+      "family": "bush_gap_filler",
+      "role": "gap_bush",
+      "width": 28,
+      "height": 20,
+      "anchor_x": 14,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/bush_gap_filler_06.png",
+      "family": "bush_gap_filler",
+      "role": "gap_bush",
+      "width": 24,
+      "height": 18,
+      "anchor_x": 12,
+      "anchor_y": 15,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/bush_gap_filler_07.png",
+      "family": "bush_gap_filler",
+      "role": "gap_bush",
+      "width": 26,
+      "height": 20,
+      "anchor_x": 13,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/edge_bush_01.png",
+      "family": "edge_bush",
+      "role": "edge_bush",
+      "width": 28,
+      "height": 22,
+      "anchor_x": 14,
+      "anchor_y": 19,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/edge_bush_02.png",
+      "family": "edge_bush",
+      "role": "edge_bush",
+      "width": 30,
+      "height": 20,
+      "anchor_x": 15,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/edge_bush_03.png",
+      "family": "edge_bush",
+      "role": "edge_bush",
+      "width": 26,
+      "height": 22,
+      "anchor_x": 13,
+      "anchor_y": 19,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/edge_bush_04.png",
+      "family": "edge_bush",
+      "role": "edge_bush",
+      "width": 28,
+      "height": 20,
+      "anchor_x": 14,
+      "anchor_y": 17,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "fillers/edge_bush_05.png",
+      "family": "edge_bush",
+      "role": "edge_bush",
+      "width": 30,
+      "height": 22,
+      "anchor_x": 15,
+      "anchor_y": 19,
+      "zone": "edge",
+      "priority_hint": 180,
+      "notes": "Low edge/filler sprite."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_64_96_01.png",
+      "family": "deep_canopy_cluster_64_96",
+      "role": "deep64",
+      "width": 80,
+      "height": 64,
+      "anchor_x": 40,
+      "anchor_y": 61,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_64_96_02.png",
+      "family": "deep_canopy_cluster_64_96",
+      "role": "deep64",
+      "width": 80,
+      "height": 64,
+      "anchor_x": 40,
+      "anchor_y": 61,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_64_96_03.png",
+      "family": "deep_canopy_cluster_64_96",
+      "role": "deep64",
+      "width": 80,
+      "height": 64,
+      "anchor_x": 40,
+      "anchor_y": 61,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_64_96_04.png",
+      "family": "deep_canopy_cluster_64_96",
+      "role": "deep64",
+      "width": 80,
+      "height": 64,
+      "anchor_x": 40,
+      "anchor_y": 61,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_64_96_05.png",
+      "family": "deep_canopy_cluster_64_96",
+      "role": "deep64",
+      "width": 80,
+      "height": 64,
+      "anchor_x": 40,
+      "anchor_y": 61,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_128_01.png",
+      "family": "deep_canopy_cluster_128",
+      "role": "deep128",
+      "width": 128,
+      "height": 92,
+      "anchor_x": 64,
+      "anchor_y": 89,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_128_02.png",
+      "family": "deep_canopy_cluster_128",
+      "role": "deep128",
+      "width": 128,
+      "height": 92,
+      "anchor_x": 64,
+      "anchor_y": 89,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_128_03.png",
+      "family": "deep_canopy_cluster_128",
+      "role": "deep128",
+      "width": 128,
+      "height": 92,
+      "anchor_x": 64,
+      "anchor_y": 89,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "deep/deep_canopy_cluster_128_04.png",
+      "family": "deep_canopy_cluster_128",
+      "role": "deep128",
+      "width": 128,
+      "height": 92,
+      "anchor_x": 64,
+      "anchor_y": 89,
+      "zone": "deep",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for deep placement."
+    },
+    {
+      "path": "mid/mid_canopy_cluster_48_64_01.png",
+      "family": "mid_canopy_cluster_48_64",
+      "role": "mid_cluster",
+      "width": 64,
+      "height": 54,
+      "anchor_x": 32,
+      "anchor_y": 51,
+      "zone": "mid",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for mid placement."
+    },
+    {
+      "path": "mid/mid_canopy_cluster_48_64_02.png",
+      "family": "mid_canopy_cluster_48_64",
+      "role": "mid_cluster",
+      "width": 64,
+      "height": 54,
+      "anchor_x": 32,
+      "anchor_y": 51,
+      "zone": "mid",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for mid placement."
+    },
+    {
+      "path": "mid/mid_canopy_cluster_48_64_03.png",
+      "family": "mid_canopy_cluster_48_64",
+      "role": "mid_cluster",
+      "width": 64,
+      "height": 54,
+      "anchor_x": 32,
+      "anchor_y": 51,
+      "zone": "mid",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for mid placement."
+    },
+    {
+      "path": "mid/mid_canopy_cluster_48_64_04.png",
+      "family": "mid_canopy_cluster_48_64",
+      "role": "mid_cluster",
+      "width": 64,
+      "height": 54,
+      "anchor_x": 32,
+      "anchor_y": 51,
+      "zone": "mid",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for mid placement."
+    },
+    {
+      "path": "mid/mid_canopy_cluster_48_64_05.png",
+      "family": "mid_canopy_cluster_48_64",
+      "role": "mid_cluster",
+      "width": 64,
+      "height": 54,
+      "anchor_x": 32,
+      "anchor_y": 51,
+      "zone": "mid",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for mid placement."
+    },
+    {
+      "path": "mid/mid_canopy_cluster_48_64_06.png",
+      "family": "mid_canopy_cluster_48_64",
+      "role": "mid_cluster",
+      "width": 64,
+      "height": 54,
+      "anchor_x": 32,
+      "anchor_y": 51,
+      "zone": "mid",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for mid placement."
+    },
+    {
+      "path": "edge_front/front_canopy_low_01.png",
+      "family": "front_canopy_low",
+      "role": "front_canopy",
+      "width": 72,
+      "height": 44,
+      "anchor_x": 36,
+      "anchor_y": 41,
+      "zone": "edge_front",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "edge_front/front_canopy_low_02.png",
+      "family": "front_canopy_low",
+      "role": "front_canopy",
+      "width": 72,
+      "height": 44,
+      "anchor_x": 36,
+      "anchor_y": 41,
+      "zone": "edge_front",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "edge_front/front_canopy_low_03.png",
+      "family": "front_canopy_low",
+      "role": "front_canopy",
+      "width": 72,
+      "height": 44,
+      "anchor_x": 36,
+      "anchor_y": 41,
+      "zone": "edge_front",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "edge_front/front_canopy_low_04.png",
+      "family": "front_canopy_low",
+      "role": "front_canopy",
+      "width": 72,
+      "height": 44,
+      "anchor_x": 36,
+      "anchor_y": 41,
+      "zone": "edge_front",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "edge_front/front_canopy_low_05.png",
+      "family": "front_canopy_low",
+      "role": "front_canopy",
+      "width": 72,
+      "height": 44,
+      "anchor_x": 36,
+      "anchor_y": 41,
+      "zone": "edge_front",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "edge_back/back_canopy_01.png",
+      "family": "back_canopy",
+      "role": "back_canopy",
+      "width": 72,
+      "height": 48,
+      "anchor_x": 36,
+      "anchor_y": 45,
+      "zone": "edge_back",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "edge_back/back_canopy_02.png",
+      "family": "back_canopy",
+      "role": "back_canopy",
+      "width": 72,
+      "height": 48,
+      "anchor_x": 36,
+      "anchor_y": 45,
+      "zone": "edge_back",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "edge_back/back_canopy_03.png",
+      "family": "back_canopy",
+      "role": "back_canopy",
+      "width": 72,
+      "height": 48,
+      "anchor_x": 36,
+      "anchor_y": 45,
+      "zone": "edge_back",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "edge_back/back_canopy_04.png",
+      "family": "back_canopy",
+      "role": "back_canopy",
+      "width": 72,
+      "height": 48,
+      "anchor_x": 36,
+      "anchor_y": 45,
+      "zone": "edge_back",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "edge_back/back_canopy_05.png",
+      "family": "back_canopy",
+      "role": "back_canopy",
+      "width": 72,
+      "height": 48,
+      "anchor_x": 36,
+      "anchor_y": 45,
+      "zone": "edge_back",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "edge_side/edge_side_left_01.png",
+      "family": "edge_side_left",
+      "role": "side_left",
+      "width": 48,
+      "height": 72,
+      "anchor_x": 24,
+      "anchor_y": 69,
+      "zone": "edge_side",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for left placement."
+    },
+    {
+      "path": "edge_side/edge_side_left_02.png",
+      "family": "edge_side_left",
+      "role": "side_left",
+      "width": 48,
+      "height": 72,
+      "anchor_x": 24,
+      "anchor_y": 69,
+      "zone": "edge_side",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for left placement."
+    },
+    {
+      "path": "edge_side/edge_side_left_03.png",
+      "family": "edge_side_left",
+      "role": "side_left",
+      "width": 48,
+      "height": 72,
+      "anchor_x": 24,
+      "anchor_y": 69,
+      "zone": "edge_side",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for left placement."
+    },
+    {
+      "path": "edge_side/edge_side_left_04.png",
+      "family": "edge_side_left",
+      "role": "side_left",
+      "width": 48,
+      "height": 72,
+      "anchor_x": 24,
+      "anchor_y": 69,
+      "zone": "edge_side",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for left placement."
+    },
+    {
+      "path": "edge_side/edge_side_right_01.png",
+      "family": "edge_side_right",
+      "role": "side_right",
+      "width": 48,
+      "height": 72,
+      "anchor_x": 24,
+      "anchor_y": 69,
+      "zone": "edge_side",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for right placement."
+    },
+    {
+      "path": "edge_side/edge_side_right_02.png",
+      "family": "edge_side_right",
+      "role": "side_right",
+      "width": 48,
+      "height": 72,
+      "anchor_x": 24,
+      "anchor_y": 69,
+      "zone": "edge_side",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for right placement."
+    },
+    {
+      "path": "edge_side/edge_side_right_03.png",
+      "family": "edge_side_right",
+      "role": "side_right",
+      "width": 48,
+      "height": 72,
+      "anchor_x": 24,
+      "anchor_y": 69,
+      "zone": "edge_side",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for right placement."
+    },
+    {
+      "path": "edge_side/edge_side_right_04.png",
+      "family": "edge_side_right",
+      "role": "side_right",
+      "width": 48,
+      "height": 72,
+      "anchor_x": 24,
+      "anchor_y": 69,
+      "zone": "edge_side",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for right placement."
+    },
+    {
+      "path": "special/small_canopy_filler_01.png",
+      "family": "small_canopy_filler",
+      "role": "small_filler",
+      "width": 42,
+      "height": 34,
+      "anchor_x": 21,
+      "anchor_y": 31,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "special/small_canopy_filler_02.png",
+      "family": "small_canopy_filler",
+      "role": "small_filler",
+      "width": 42,
+      "height": 34,
+      "anchor_x": 21,
+      "anchor_y": 31,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "special/small_canopy_filler_03.png",
+      "family": "small_canopy_filler",
+      "role": "small_filler",
+      "width": 42,
+      "height": 34,
+      "anchor_x": 21,
+      "anchor_y": 31,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "special/small_canopy_filler_04.png",
+      "family": "small_canopy_filler",
+      "role": "small_filler",
+      "width": 42,
+      "height": 34,
+      "anchor_x": 21,
+      "anchor_y": 31,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "special/small_canopy_filler_05.png",
+      "family": "small_canopy_filler",
+      "role": "small_filler",
+      "width": 42,
+      "height": 34,
+      "anchor_x": 21,
+      "anchor_y": 31,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "special/low_edge_canopy_01.png",
+      "family": "low_edge_canopy",
+      "role": "low_edge",
+      "width": 54,
+      "height": 36,
+      "anchor_x": 27,
+      "anchor_y": 33,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "special/low_edge_canopy_02.png",
+      "family": "low_edge_canopy",
+      "role": "low_edge",
+      "width": 54,
+      "height": 36,
+      "anchor_x": 27,
+      "anchor_y": 33,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "special/low_edge_canopy_03.png",
+      "family": "low_edge_canopy",
+      "role": "low_edge",
+      "width": 54,
+      "height": 36,
+      "anchor_x": 27,
+      "anchor_y": 33,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "special/low_edge_canopy_04.png",
+      "family": "low_edge_canopy",
+      "role": "low_edge",
+      "width": 54,
+      "height": 36,
+      "anchor_x": 27,
+      "anchor_y": 33,
+      "zone": "special",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for front placement."
+    },
+    {
+      "path": "context_ruins/small_dark_canopy_01.png",
+      "family": "small_dark_canopy",
+      "role": "ruin_dark",
+      "width": 48,
+      "height": 38,
+      "anchor_x": 24,
+      "anchor_y": 35,
+      "zone": "context_ruins",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "context_ruins/small_dark_canopy_02.png",
+      "family": "small_dark_canopy",
+      "role": "ruin_dark",
+      "width": 48,
+      "height": 38,
+      "anchor_x": 24,
+      "anchor_y": 35,
+      "zone": "context_ruins",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "context_ruins/small_dark_canopy_03.png",
+      "family": "small_dark_canopy",
+      "role": "ruin_dark",
+      "width": 48,
+      "height": 38,
+      "anchor_x": 24,
+      "anchor_y": 35,
+      "zone": "context_ruins",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "context_ruins/small_dark_canopy_04.png",
+      "family": "small_dark_canopy",
+      "role": "ruin_dark",
+      "width": 48,
+      "height": 38,
+      "anchor_x": 24,
+      "anchor_y": 35,
+      "zone": "context_ruins",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "islands/island_group_small_01.png",
+      "family": "island_group_small",
+      "role": "island_small",
+      "width": 48,
+      "height": 42,
+      "anchor_x": 24,
+      "anchor_y": 39,
+      "zone": "islands",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "islands/island_group_small_02.png",
+      "family": "island_group_small",
+      "role": "island_small",
+      "width": 48,
+      "height": 42,
+      "anchor_x": 24,
+      "anchor_y": 39,
+      "zone": "islands",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "islands/island_group_small_03.png",
+      "family": "island_group_small",
+      "role": "island_small",
+      "width": 48,
+      "height": 42,
+      "anchor_x": 24,
+      "anchor_y": 39,
+      "zone": "islands",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "islands/island_group_small_04.png",
+      "family": "island_group_small",
+      "role": "island_small",
+      "width": 48,
+      "height": 42,
+      "anchor_x": 24,
+      "anchor_y": 39,
+      "zone": "islands",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "islands/island_group_medium_01.png",
+      "family": "island_group_medium",
+      "role": "island_medium",
+      "width": 72,
+      "height": 58,
+      "anchor_x": 36,
+      "anchor_y": 55,
+      "zone": "islands",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "islands/island_group_medium_02.png",
+      "family": "island_group_medium",
+      "role": "island_medium",
+      "width": 72,
+      "height": 58,
+      "anchor_x": 36,
+      "anchor_y": 55,
+      "zone": "islands",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "islands/island_group_medium_03.png",
+      "family": "island_group_medium",
+      "role": "island_medium",
+      "width": 72,
+      "height": 58,
+      "anchor_x": 36,
+      "anchor_y": 55,
+      "zone": "islands",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "islands/island_group_medium_04.png",
+      "family": "island_group_medium",
+      "role": "island_medium",
+      "width": 72,
+      "height": 58,
+      "anchor_x": 36,
+      "anchor_y": 55,
+      "zone": "islands",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "thin_strips/thin_strip_horizontal_pine_01.png",
+      "family": "thin_strip_horizontal_pine",
+      "role": "thin_h",
+      "width": 82,
+      "height": 32,
+      "anchor_x": 41,
+      "anchor_y": 29,
+      "zone": "thin_strips",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for thin_h placement."
+    },
+    {
+      "path": "thin_strips/thin_strip_horizontal_pine_02.png",
+      "family": "thin_strip_horizontal_pine",
+      "role": "thin_h",
+      "width": 82,
+      "height": 32,
+      "anchor_x": 41,
+      "anchor_y": 29,
+      "zone": "thin_strips",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for thin_h placement."
+    },
+    {
+      "path": "thin_strips/thin_strip_horizontal_pine_03.png",
+      "family": "thin_strip_horizontal_pine",
+      "role": "thin_h",
+      "width": 82,
+      "height": 32,
+      "anchor_x": 41,
+      "anchor_y": 29,
+      "zone": "thin_strips",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for thin_h placement."
+    },
+    {
+      "path": "thin_strips/thin_strip_horizontal_pine_04.png",
+      "family": "thin_strip_horizontal_pine",
+      "role": "thin_h",
+      "width": 82,
+      "height": 32,
+      "anchor_x": 41,
+      "anchor_y": 29,
+      "zone": "thin_strips",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for thin_h placement."
+    },
+    {
+      "path": "thin_strips/thin_strip_vertical_pine_01.png",
+      "family": "thin_strip_vertical_pine",
+      "role": "thin_v",
+      "width": 34,
+      "height": 82,
+      "anchor_x": 17,
+      "anchor_y": 79,
+      "zone": "thin_strips",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for thin_v placement."
+    },
+    {
+      "path": "thin_strips/thin_strip_vertical_pine_02.png",
+      "family": "thin_strip_vertical_pine",
+      "role": "thin_v",
+      "width": 34,
+      "height": 82,
+      "anchor_x": 17,
+      "anchor_y": 79,
+      "zone": "thin_strips",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for thin_v placement."
+    },
+    {
+      "path": "thin_strips/thin_strip_vertical_pine_03.png",
+      "family": "thin_strip_vertical_pine",
+      "role": "thin_v",
+      "width": 34,
+      "height": 82,
+      "anchor_x": 17,
+      "anchor_y": 79,
+      "zone": "thin_strips",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for thin_v placement."
+    },
+    {
+      "path": "thin_strips/thin_strip_vertical_pine_04.png",
+      "family": "thin_strip_vertical_pine",
+      "role": "thin_v",
+      "width": 34,
+      "height": 82,
+      "anchor_x": 17,
+      "anchor_y": 79,
+      "zone": "thin_strips",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for thin_v placement."
+    },
+    {
+      "path": "caps/cap_bush_cluster_01.png",
+      "family": "cap_bush_cluster",
+      "role": "cap_bush",
+      "width": 44,
+      "height": 32,
+      "anchor_x": 22,
+      "anchor_y": 29,
+      "zone": "caps",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "caps/cap_bush_cluster_02.png",
+      "family": "cap_bush_cluster",
+      "role": "cap_bush",
+      "width": 44,
+      "height": 32,
+      "anchor_x": 22,
+      "anchor_y": 29,
+      "zone": "caps",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "caps/cap_bush_cluster_03.png",
+      "family": "cap_bush_cluster",
+      "role": "cap_bush",
+      "width": 44,
+      "height": 32,
+      "anchor_x": 22,
+      "anchor_y": 29,
+      "zone": "caps",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "caps/cap_bush_cluster_04.png",
+      "family": "cap_bush_cluster",
+      "role": "cap_bush",
+      "width": 44,
+      "height": 32,
+      "anchor_x": 22,
+      "anchor_y": 29,
+      "zone": "caps",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "caps/cap_bush_cluster_05.png",
+      "family": "cap_bush_cluster",
+      "role": "cap_bush",
+      "width": 44,
+      "height": 32,
+      "anchor_x": 22,
+      "anchor_y": 29,
+      "zone": "caps",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "guards/edge_cut_safe_small_01.png",
+      "family": "edge_cut_safe_small",
+      "role": "safe_small",
+      "width": 30,
+      "height": 28,
+      "anchor_x": 15,
+      "anchor_y": 25,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "guards/edge_cut_safe_small_02.png",
+      "family": "edge_cut_safe_small",
+      "role": "safe_small",
+      "width": 30,
+      "height": 28,
+      "anchor_x": 15,
+      "anchor_y": 25,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "guards/edge_cut_safe_small_03.png",
+      "family": "edge_cut_safe_small",
+      "role": "safe_small",
+      "width": 30,
+      "height": 28,
+      "anchor_x": 15,
+      "anchor_y": 25,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "guards/edge_cut_safe_small_04.png",
+      "family": "edge_cut_safe_small",
+      "role": "safe_small",
+      "width": 30,
+      "height": 28,
+      "anchor_x": 15,
+      "anchor_y": 25,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "guards/edge_cut_safe_small_05.png",
+      "family": "edge_cut_safe_small",
+      "role": "safe_small",
+      "width": 30,
+      "height": 28,
+      "anchor_x": 15,
+      "anchor_y": 25,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "guards/edge_cut_safe_small_06.png",
+      "family": "edge_cut_safe_small",
+      "role": "safe_small",
+      "width": 30,
+      "height": 28,
+      "anchor_x": 15,
+      "anchor_y": 25,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for island placement."
+    },
+    {
+      "path": "guards/deep_fill_clipped_optional_01.png",
+      "family": "deep_fill_clipped_optional",
+      "role": "clipped_fill",
+      "width": 62,
+      "height": 36,
+      "anchor_x": 31,
+      "anchor_y": 33,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "guards/deep_fill_clipped_optional_02.png",
+      "family": "deep_fill_clipped_optional",
+      "role": "clipped_fill",
+      "width": 62,
+      "height": 36,
+      "anchor_x": 31,
+      "anchor_y": 33,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "guards/deep_fill_clipped_optional_03.png",
+      "family": "deep_fill_clipped_optional",
+      "role": "clipped_fill",
+      "width": 62,
+      "height": 36,
+      "anchor_x": 31,
+      "anchor_y": 33,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "guards/deep_fill_clipped_optional_04.png",
+      "family": "deep_fill_clipped_optional",
+      "role": "clipped_fill",
+      "width": 62,
+      "height": 36,
+      "anchor_x": 31,
+      "anchor_y": 33,
+      "zone": "guards",
+      "priority_hint": 260,
+      "notes": "Cluster shaped for back placement."
+    },
+    {
+      "path": "corners/corner_front_left_01.png",
+      "family": "corner_front_left",
+      "role": "front_left",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_front_left_02.png",
+      "family": "corner_front_left",
+      "role": "front_left",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_front_left_03.png",
+      "family": "corner_front_left",
+      "role": "front_left",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_front_left_04.png",
+      "family": "corner_front_left",
+      "role": "front_left",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_front_right_01.png",
+      "family": "corner_front_right",
+      "role": "front_right",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_front_right_02.png",
+      "family": "corner_front_right",
+      "role": "front_right",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_front_right_03.png",
+      "family": "corner_front_right",
+      "role": "front_right",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_front_right_04.png",
+      "family": "corner_front_right",
+      "role": "front_right",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_back_left_01.png",
+      "family": "corner_back_left",
+      "role": "back_left",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_back_left_02.png",
+      "family": "corner_back_left",
+      "role": "back_left",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_back_left_03.png",
+      "family": "corner_back_left",
+      "role": "back_left",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_back_left_04.png",
+      "family": "corner_back_left",
+      "role": "back_left",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_back_right_01.png",
+      "family": "corner_back_right",
+      "role": "back_right",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_back_right_02.png",
+      "family": "corner_back_right",
+      "role": "back_right",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_back_right_03.png",
+      "family": "corner_back_right",
+      "role": "back_right",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    },
+    {
+      "path": "corners/corner_back_right_04.png",
+      "family": "corner_back_right",
+      "role": "back_right",
+      "width": 58,
+      "height": 58,
+      "anchor_x": 29,
+      "anchor_y": 55,
+      "zone": "corner",
+      "priority_hint": 350,
+      "notes": "Corner forest edge cluster; avoids cropped-looking generic clusters."
+    }
+  ],
+  "assets_by_family": {
+    "contact_shadow_front": [
+      "shadows/contact_shadow_front_front_01.png"
+    ],
+    "soft_back_shadow": [
+      "shadows/soft_back_shadow_back_02.png"
+    ],
+    "side_shadow": [
+      "shadows/side_shadow_side_left_03.png",
+      "shadows/side_shadow_side_right_04.png"
+    ],
+    "roadside_shadow": [
+      "shadows/roadside_shadow_front_05.png"
+    ],
+    "creeper_shadow": [
+      "shadows/creeper_shadow_oval_06.png"
+    ],
+    "wet_shadow": [
+      "shadows/wet_shadow_oval_07.png"
+    ],
+    "edge_shadow_soft": [
+      "shadows/edge_shadow_soft_front_08.png"
+    ],
+    "soft_shadow_blob": [
+      "shadows/soft_shadow_blob_oval_09.png"
+    ],
+    "deep_shadow_blob": [
+      "shadows/deep_shadow_blob_oval_10.png"
+    ],
+    "shadow_inside_only": [
+      "guards/shadow_inside_only_inside_guard_11.png"
+    ],
+    "forest_floor_dark_patch": [
+      "ground/forest_floor_dark_patch_01.png",
+      "ground/forest_floor_dark_patch_02.png",
+      "ground/forest_floor_dark_patch_03.png",
+      "ground/forest_floor_dark_patch_04.png",
+      "ground/forest_floor_dark_patch_05.png"
+    ],
+    "forest_floor_mid_patch": [
+      "ground/forest_floor_mid_patch_01.png",
+      "ground/forest_floor_mid_patch_02.png",
+      "ground/forest_floor_mid_patch_03.png",
+      "ground/forest_floor_mid_patch_04.png"
+    ],
+    "wet_forest_floor_patch": [
+      "ground/wet_forest_floor_patch_01.png",
+      "ground/wet_forest_floor_patch_02.png",
+      "ground/wet_forest_floor_patch_03.png",
+      "ground/wet_forest_floor_patch_04.png"
+    ],
+    "ruin_overgrowth_patch": [
+      "ground/ruin_overgrowth_patch_01.png",
+      "ground/ruin_overgrowth_patch_02.png",
+      "ground/ruin_overgrowth_patch_03.png",
+      "ground/ruin_overgrowth_patch_04.png"
+    ],
+    "single_small_pine": [
+      "trees/single_small_pine_01.png",
+      "trees/single_small_pine_02.png",
+      "trees/single_small_pine_03.png",
+      "trees/single_small_pine_04.png",
+      "trees/single_small_pine_05.png"
+    ],
+    "young_pine": [
+      "trees/young_pine_01.png",
+      "trees/young_pine_02.png",
+      "trees/young_pine_03.png",
+      "trees/young_pine_04.png",
+      "trees/young_pine_05.png",
+      "trees/young_pine_06.png",
+      "trees/young_pine_07.png"
+    ],
+    "cap_pine_small": [
+      "trees/cap_pine_small_01.png",
+      "trees/cap_pine_small_02.png",
+      "trees/cap_pine_small_03.png",
+      "trees/cap_pine_small_04.png",
+      "trees/cap_pine_small_05.png"
+    ],
+    "mid_pine": [
+      "trees/mid_pine_01.png",
+      "trees/mid_pine_02.png",
+      "trees/mid_pine_03.png",
+      "trees/mid_pine_04.png",
+      "trees/mid_pine_05.png",
+      "trees/mid_pine_06.png",
+      "trees/mid_pine_07.png",
+      "trees/mid_pine_08.png"
+    ],
+    "occasional_tall_pine": [
+      "trees/occasional_tall_pine_01.png",
+      "trees/occasional_tall_pine_02.png",
+      "trees/occasional_tall_pine_03.png",
+      "trees/occasional_tall_pine_04.png"
+    ],
+    "edge_front_low_pine": [
+      "edge_front/edge_front_low_pine_01.png",
+      "edge_front/edge_front_low_pine_02.png",
+      "edge_front/edge_front_low_pine_03.png",
+      "edge_front/edge_front_low_pine_04.png",
+      "edge_front/edge_front_low_pine_05.png",
+      "edge_front/edge_front_low_pine_06.png"
+    ],
+    "edge_back_pine": [
+      "edge_back/edge_back_pine_01.png",
+      "edge_back/edge_back_pine_02.png",
+      "edge_back/edge_back_pine_03.png",
+      "edge_back/edge_back_pine_04.png",
+      "edge_back/edge_back_pine_05.png",
+      "edge_back/edge_back_pine_06.png"
+    ],
+    "edge_side_left_pine": [
+      "edge_side/edge_side_left_pine_01.png",
+      "edge_side/edge_side_left_pine_02.png",
+      "edge_side/edge_side_left_pine_03.png",
+      "edge_side/edge_side_left_pine_04.png",
+      "edge_side/edge_side_left_pine_05.png"
+    ],
+    "edge_side_right_pine": [
+      "edge_side/edge_side_right_pine_01.png",
+      "edge_side/edge_side_right_pine_02.png",
+      "edge_side/edge_side_right_pine_03.png",
+      "edge_side/edge_side_right_pine_04.png",
+      "edge_side/edge_side_right_pine_05.png"
+    ],
+    "roadside_young_pine": [
+      "context_road/roadside_young_pine_01.png",
+      "context_road/roadside_young_pine_02.png",
+      "context_road/roadside_young_pine_03.png",
+      "context_road/roadside_young_pine_04.png"
+    ],
+    "young_pine_ruin_edge": [
+      "context_ruins/young_pine_ruin_edge_01.png",
+      "context_ruins/young_pine_ruin_edge_02.png",
+      "context_ruins/young_pine_ruin_edge_03.png",
+      "context_ruins/young_pine_ruin_edge_04.png"
+    ],
+    "dark_low_tree": [
+      "context_water/dark_low_tree_01.png",
+      "context_water/dark_low_tree_02.png",
+      "context_water/dark_low_tree_03.png",
+      "context_water/dark_low_tree_04.png"
+    ],
+    "dead_small_tree_optional": [
+      "context_water/dead_small_tree_optional_01.png",
+      "context_water/dead_small_tree_optional_02.png",
+      "context_water/dead_small_tree_optional_03.png"
+    ],
+    "round_bush": [
+      "bushes/round_bush_01.png",
+      "bushes/round_bush_02.png",
+      "bushes/round_bush_03.png",
+      "bushes/round_bush_04.png",
+      "bushes/round_bush_05.png",
+      "bushes/round_bush_06.png"
+    ],
+    "small_round_bush": [
+      "bushes/small_round_bush_01.png",
+      "bushes/small_round_bush_02.png",
+      "bushes/small_round_bush_03.png",
+      "bushes/small_round_bush_04.png",
+      "bushes/small_round_bush_05.png",
+      "bushes/small_round_bush_06.png"
+    ],
+    "stump": [
+      "bushes/stump_01.png",
+      "bushes/stump_02.png",
+      "bushes/stump_03.png",
+      "bushes/stump_04.png",
+      "bushes/stump_05.png",
+      "bushes/stump_06.png"
+    ],
+    "edge_front_bush": [
+      "edge_front/edge_front_bush_01.png",
+      "edge_front/edge_front_bush_02.png",
+      "edge_front/edge_front_bush_03.png",
+      "edge_front/edge_front_bush_04.png",
+      "edge_front/edge_front_bush_05.png",
+      "edge_front/edge_front_bush_06.png"
+    ],
+    "front_low_bush": [
+      "edge_front/front_low_bush_01.png",
+      "edge_front/front_low_bush_02.png",
+      "edge_front/front_low_bush_03.png",
+      "edge_front/front_low_bush_04.png",
+      "edge_front/front_low_bush_05.png"
+    ],
+    "side_bush": [
+      "edge_side/side_bush_01.png",
+      "edge_side/side_bush_02.png",
+      "edge_side/side_bush_03.png",
+      "edge_side/side_bush_04.png",
+      "edge_side/side_bush_05.png"
+    ],
+    "side_left_bush": [
+      "edge_side/side_left_bush_01.png",
+      "edge_side/side_left_bush_02.png",
+      "edge_side/side_left_bush_03.png",
+      "edge_side/side_left_bush_04.png",
+      "edge_side/side_left_bush_05.png"
+    ],
+    "side_right_bush": [
+      "edge_side/side_right_bush_01.png",
+      "edge_side/side_right_bush_02.png",
+      "edge_side/side_right_bush_03.png",
+      "edge_side/side_right_bush_04.png",
+      "edge_side/side_right_bush_05.png"
+    ],
+    "roadside_bush": [
+      "context_road/roadside_bush_01.png",
+      "context_road/roadside_bush_02.png",
+      "context_road/roadside_bush_03.png",
+      "context_road/roadside_bush_04.png",
+      "context_road/roadside_bush_05.png"
+    ],
+    "overgrown_ruin_bush": [
+      "context_ruins/overgrown_ruin_bush_01.png",
+      "context_ruins/overgrown_ruin_bush_02.png",
+      "context_ruins/overgrown_ruin_bush_03.png",
+      "context_ruins/overgrown_ruin_bush_04.png",
+      "context_ruins/overgrown_ruin_bush_05.png",
+      "context_ruins/overgrown_ruin_bush_06.png"
+    ],
+    "wet_edge_bush": [
+      "context_water/wet_edge_bush_01.png",
+      "context_water/wet_edge_bush_02.png",
+      "context_water/wet_edge_bush_03.png",
+      "context_water/wet_edge_bush_04.png",
+      "context_water/wet_edge_bush_05.png",
+      "context_water/wet_edge_bush_06.png"
+    ],
+    "bush_gap_filler": [
+      "fillers/bush_gap_filler_01.png",
+      "fillers/bush_gap_filler_02.png",
+      "fillers/bush_gap_filler_03.png",
+      "fillers/bush_gap_filler_04.png",
+      "fillers/bush_gap_filler_05.png",
+      "fillers/bush_gap_filler_06.png",
+      "fillers/bush_gap_filler_07.png"
+    ],
+    "edge_bush": [
+      "fillers/edge_bush_01.png",
+      "fillers/edge_bush_02.png",
+      "fillers/edge_bush_03.png",
+      "fillers/edge_bush_04.png",
+      "fillers/edge_bush_05.png"
+    ],
+    "deep_canopy_cluster_64_96": [
+      "deep/deep_canopy_cluster_64_96_01.png",
+      "deep/deep_canopy_cluster_64_96_02.png",
+      "deep/deep_canopy_cluster_64_96_03.png",
+      "deep/deep_canopy_cluster_64_96_04.png",
+      "deep/deep_canopy_cluster_64_96_05.png"
+    ],
+    "deep_canopy_cluster_128": [
+      "deep/deep_canopy_cluster_128_01.png",
+      "deep/deep_canopy_cluster_128_02.png",
+      "deep/deep_canopy_cluster_128_03.png",
+      "deep/deep_canopy_cluster_128_04.png"
+    ],
+    "mid_canopy_cluster_48_64": [
+      "mid/mid_canopy_cluster_48_64_01.png",
+      "mid/mid_canopy_cluster_48_64_02.png",
+      "mid/mid_canopy_cluster_48_64_03.png",
+      "mid/mid_canopy_cluster_48_64_04.png",
+      "mid/mid_canopy_cluster_48_64_05.png",
+      "mid/mid_canopy_cluster_48_64_06.png"
+    ],
+    "front_canopy_low": [
+      "edge_front/front_canopy_low_01.png",
+      "edge_front/front_canopy_low_02.png",
+      "edge_front/front_canopy_low_03.png",
+      "edge_front/front_canopy_low_04.png",
+      "edge_front/front_canopy_low_05.png"
+    ],
+    "back_canopy": [
+      "edge_back/back_canopy_01.png",
+      "edge_back/back_canopy_02.png",
+      "edge_back/back_canopy_03.png",
+      "edge_back/back_canopy_04.png",
+      "edge_back/back_canopy_05.png"
+    ],
+    "edge_side_left": [
+      "edge_side/edge_side_left_01.png",
+      "edge_side/edge_side_left_02.png",
+      "edge_side/edge_side_left_03.png",
+      "edge_side/edge_side_left_04.png"
+    ],
+    "edge_side_right": [
+      "edge_side/edge_side_right_01.png",
+      "edge_side/edge_side_right_02.png",
+      "edge_side/edge_side_right_03.png",
+      "edge_side/edge_side_right_04.png"
+    ],
+    "small_canopy_filler": [
+      "special/small_canopy_filler_01.png",
+      "special/small_canopy_filler_02.png",
+      "special/small_canopy_filler_03.png",
+      "special/small_canopy_filler_04.png",
+      "special/small_canopy_filler_05.png"
+    ],
+    "low_edge_canopy": [
+      "special/low_edge_canopy_01.png",
+      "special/low_edge_canopy_02.png",
+      "special/low_edge_canopy_03.png",
+      "special/low_edge_canopy_04.png"
+    ],
+    "small_dark_canopy": [
+      "context_ruins/small_dark_canopy_01.png",
+      "context_ruins/small_dark_canopy_02.png",
+      "context_ruins/small_dark_canopy_03.png",
+      "context_ruins/small_dark_canopy_04.png"
+    ],
+    "island_group_small": [
+      "islands/island_group_small_01.png",
+      "islands/island_group_small_02.png",
+      "islands/island_group_small_03.png",
+      "islands/island_group_small_04.png"
+    ],
+    "island_group_medium": [
+      "islands/island_group_medium_01.png",
+      "islands/island_group_medium_02.png",
+      "islands/island_group_medium_03.png",
+      "islands/island_group_medium_04.png"
+    ],
+    "thin_strip_horizontal_pine": [
+      "thin_strips/thin_strip_horizontal_pine_01.png",
+      "thin_strips/thin_strip_horizontal_pine_02.png",
+      "thin_strips/thin_strip_horizontal_pine_03.png",
+      "thin_strips/thin_strip_horizontal_pine_04.png"
+    ],
+    "thin_strip_vertical_pine": [
+      "thin_strips/thin_strip_vertical_pine_01.png",
+      "thin_strips/thin_strip_vertical_pine_02.png",
+      "thin_strips/thin_strip_vertical_pine_03.png",
+      "thin_strips/thin_strip_vertical_pine_04.png"
+    ],
+    "cap_bush_cluster": [
+      "caps/cap_bush_cluster_01.png",
+      "caps/cap_bush_cluster_02.png",
+      "caps/cap_bush_cluster_03.png",
+      "caps/cap_bush_cluster_04.png",
+      "caps/cap_bush_cluster_05.png"
+    ],
+    "edge_cut_safe_small": [
+      "guards/edge_cut_safe_small_01.png",
+      "guards/edge_cut_safe_small_02.png",
+      "guards/edge_cut_safe_small_03.png",
+      "guards/edge_cut_safe_small_04.png",
+      "guards/edge_cut_safe_small_05.png",
+      "guards/edge_cut_safe_small_06.png"
+    ],
+    "deep_fill_clipped_optional": [
+      "guards/deep_fill_clipped_optional_01.png",
+      "guards/deep_fill_clipped_optional_02.png",
+      "guards/deep_fill_clipped_optional_03.png",
+      "guards/deep_fill_clipped_optional_04.png"
+    ],
+    "corner_front_left": [
+      "corners/corner_front_left_01.png",
+      "corners/corner_front_left_02.png",
+      "corners/corner_front_left_03.png",
+      "corners/corner_front_left_04.png"
+    ],
+    "corner_front_right": [
+      "corners/corner_front_right_01.png",
+      "corners/corner_front_right_02.png",
+      "corners/corner_front_right_03.png",
+      "corners/corner_front_right_04.png"
+    ],
+    "corner_back_left": [
+      "corners/corner_back_left_01.png",
+      "corners/corner_back_left_02.png",
+      "corners/corner_back_left_03.png",
+      "corners/corner_back_left_04.png"
+    ],
+    "corner_back_right": [
+      "corners/corner_back_right_01.png",
+      "corners/corner_back_right_02.png",
+      "corners/corner_back_right_03.png",
+      "corners/corner_back_right_04.png"
+    ]
+  },
+  "condition_rules": [
+    {
+      "rule_id": "map_border_guard",
+      "priority": 1000,
+      "use_asset_families": [
+        "edge_cut_safe_small",
+        "deep_fill_clipped_optional",
+        "shadow_inside_only"
+      ],
+      "avoid_asset_families": [
+        "deep_canopy_cluster_128",
+        "large_canopy_overhang_outside_canvas"
+      ],
+      "placement": {
+        "bounds_policy": "reject_full_bounds_outside_canvas"
+      }
+    },
+    {
+      "rule_id": "forest_isolated_single",
+      "priority": 950,
+      "use_asset_families": [
+        "single_small_pine",
+        "young_pine",
+        "round_bush",
+        "stump"
+      ],
+      "placement": {
+        "max_sprite_size_px": [
+          32,
+          40
+        ],
+        "density": "low"
+      }
+    },
+    {
+      "rule_id": "forest_cap_protrusion",
+      "priority": 930,
+      "use_asset_families": [
+        "cap_pine_small",
+        "cap_bush_cluster",
+        "young_pine"
+      ],
+      "avoid_asset_families": [
+        "deep_canopy_cluster_128",
+        "deep_canopy_cluster_64_96"
+      ]
+    },
+    {
+      "rule_id": "forest_thin_strip_ew",
+      "priority": 910,
+      "use_asset_families": [
+        "thin_strip_horizontal_pine",
+        "front_low_bush",
+        "small_canopy_filler"
+      ],
+      "placement": {
+        "max_height_px": 40
+      }
+    },
+    {
+      "rule_id": "forest_thin_strip_ns",
+      "priority": 910,
+      "use_asset_families": [
+        "thin_strip_vertical_pine",
+        "side_bush",
+        "small_canopy_filler"
+      ],
+      "placement": {
+        "max_width_px": 44
+      }
+    },
+    {
+      "rule_id": "outer_corner_es",
+      "priority": 880,
+      "use_asset_families": [
+        "corner_front_right",
+        "front_canopy_low",
+        "edge_side_right",
+        "side_right_bush"
+      ]
+    },
+    {
+      "rule_id": "outer_corner_ne",
+      "priority": 880,
+      "use_asset_families": [
+        "corner_back_right",
+        "back_canopy",
+        "edge_side_right",
+        "side_right_bush"
+      ]
+    },
+    {
+      "rule_id": "outer_corner_nw",
+      "priority": 880,
+      "use_asset_families": [
+        "corner_back_left",
+        "back_canopy",
+        "edge_side_left",
+        "side_left_bush"
+      ]
+    },
+    {
+      "rule_id": "outer_corner_sw",
+      "priority": 880,
+      "use_asset_families": [
+        "corner_front_left",
+        "front_canopy_low",
+        "edge_side_left",
+        "side_left_bush"
+      ]
+    },
+    {
+      "rule_id": "small_forest_island",
+      "priority": 840,
+      "use_asset_families": [
+        "island_group_small",
+        "young_pine",
+        "round_bush",
+        "stump"
+      ]
+    },
+    {
+      "rule_id": "edge_front_south",
+      "priority": 780,
+      "use_asset_families": [
+        "edge_front_low_pine",
+        "edge_front_bush",
+        "front_canopy_low",
+        "contact_shadow_front"
+      ]
+    },
+    {
+      "rule_id": "edge_back_north",
+      "priority": 760,
+      "use_asset_families": [
+        "edge_back_pine",
+        "back_canopy",
+        "soft_back_shadow"
+      ]
+    },
+    {
+      "rule_id": "edge_side_east",
+      "priority": 750,
+      "use_asset_families": [
+        "edge_side_right_pine",
+        "side_right_bush",
+        "edge_side_right",
+        "side_shadow"
+      ]
+    },
+    {
+      "rule_id": "edge_side_west",
+      "priority": 750,
+      "use_asset_families": [
+        "edge_side_left_pine",
+        "side_left_bush",
+        "edge_side_left",
+        "side_shadow"
+      ]
+    },
+    {
+      "rule_id": "forest_near_road",
+      "priority": 720,
+      "use_asset_families": [
+        "roadside_young_pine",
+        "roadside_bush",
+        "low_edge_canopy",
+        "roadside_shadow"
+      ],
+      "placement": {
+        "road_clearance_tiles": 1.25
+      }
+    },
+    {
+      "rule_id": "forest_near_ruins",
+      "priority": 710,
+      "use_asset_families": [
+        "overgrown_ruin_bush",
+        "young_pine_ruin_edge",
+        "creeper_shadow",
+        "small_dark_canopy",
+        "ruin_overgrowth_patch"
+      ]
+    },
+    {
+      "rule_id": "forest_near_water",
+      "priority": 700,
+      "use_asset_families": [
+        "wet_edge_bush",
+        "dark_low_tree",
+        "dead_small_tree_optional",
+        "wet_shadow",
+        "wet_forest_floor_patch"
+      ]
+    },
+    {
+      "rule_id": "edge_open_clearing",
+      "priority": 650,
+      "use_asset_families": [
+        "edge_front_low_pine",
+        "bush_gap_filler",
+        "small_round_bush",
+        "edge_shadow_soft"
+      ]
+    },
+    {
+      "rule_id": "medium_forest_island",
+      "priority": 620,
+      "use_asset_families": [
+        "island_group_medium",
+        "mid_pine",
+        "edge_bush",
+        "soft_shadow_blob"
+      ]
+    },
+    {
+      "rule_id": "mid_forest_body",
+      "priority": 500,
+      "use_asset_families": [
+        "mid_pine",
+        "mid_canopy_cluster_48_64",
+        "forest_floor_mid_patch",
+        "soft_shadow_blob"
+      ]
+    },
+    {
+      "rule_id": "deep_forest_core",
+      "priority": 450,
+      "use_asset_families": [
+        "deep_canopy_cluster_64_96",
+        "deep_canopy_cluster_128",
+        "forest_floor_dark_patch",
+        "deep_shadow_blob",
+        "occasional_tall_pine"
+      ]
+    }
+  ],
+  "missing_families_in_rules": {}
+}
