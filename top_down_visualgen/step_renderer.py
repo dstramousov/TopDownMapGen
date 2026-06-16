@@ -14,6 +14,7 @@ from .forest_mass import (
     render_forest_mass_experiment,
     render_forest_mass_overlay,
     render_forest_mass_overlay_clean,
+    render_forest_mass_overlay_placement_fix,
 )
 from .io import write_json_object
 from .models import VisualProfile, WorldPackage
@@ -243,6 +244,18 @@ class VisualPipelineStepRenderer:
             tile_size_px=tile_size,
         )
         generated.extend([forest_mass_overlay_clean_path, forest_mass_compare_clean_path])
+        forest_mass_overlay_fix_path = output_dir / "18_forest_mass_overlay_placement_fix.png"
+        forest_mass_compare_fix_path = output_dir / "19_forest_mass_compare_placement_fix.png"
+        forest_mass_overlay_fix_report = render_forest_mass_overlay_placement_fix(
+            result=forest_mass_experiment_result,
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+            output_path=forest_mass_overlay_fix_path,
+            compare_output_path=forest_mass_compare_fix_path,
+            tile_size_px=tile_size,
+        )
+        generated.extend([forest_mass_overlay_fix_path, forest_mass_compare_fix_path])
         write_json_object(
             forest_mass_experiment_result.to_report(),
             output_dir.parent / "forest_mass_experiment_report.json",
@@ -254,6 +267,10 @@ class VisualPipelineStepRenderer:
         write_json_object(
             forest_mass_overlay_clean_report,
             output_dir.parent / "forest_mass_overlay_clean_report.json",
+        )
+        write_json_object(
+            forest_mass_overlay_fix_report,
+            output_dir.parent / "forest_mass_overlay_placement_fix_report.json",
         )
         return generated
 

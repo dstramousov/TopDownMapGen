@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 from .models import VisualProfile, WorldPackage
 
@@ -48,8 +48,12 @@ class ForestMassAnchorBuildResult:
 
     anchors: tuple[ForestMassAnchor, ...]
     rejected_bounds: int
+    rejected_footprint: int
+    rejected_policy: int
     skipped_missing_asset: int
     condition_counts: dict[str, int]
+    selected_family_counts: dict[str, int]
+    rejected_counts: dict[str, int]
 
 @dataclass(frozen=True, slots=True)
 class ForestRegion:
@@ -652,6 +656,42 @@ def render_forest_mass_overlay_clean(
     )
 
 
+def render_forest_mass_overlay_placement_fix(
+    *,
+    result: ForestMassExperimentResult,
+    world: WorldPackage,
+    profile: VisualProfile,
+    visual_layers: dict[str, Any],
+    output_path: Path,
+    compare_output_path: Path | None,
+    tile_size_px: int,
+) -> dict[str, Any]:
+    """Render a placement-policy fixed forest mass overlay preview.
+
+    Args:
+        result: Forest mass experiment data.
+        world: Loaded world package.
+        profile: Loaded visual profile.
+        visual_layers: Current visual layers for fallback base rendering.
+        output_path: Output overlay PNG path.
+        compare_output_path: Optional A/B compare PNG path.
+        tile_size_px: Fallback tile size in pixels.
+
+    Returns:
+        JSON-compatible overlay diagnostics.
+    """
+    return _render_forest_mass_overlay_impl(
+        result=result,
+        world=world,
+        profile=profile,
+        visual_layers=visual_layers,
+        output_path=output_path,
+        compare_output_path=compare_output_path,
+        tile_size_px=tile_size_px,
+        variant="placement_fix",
+    )
+
+
 def _render_forest_mass_overlay_impl(
     *,
     result: ForestMassExperimentResult,
@@ -681,18 +721,22 @@ def _render_forest_mass_overlay_impl(
     )
 
     image = base_image.copy()
-    _paint_forest_floor(image=image, result=result, tile_size_px=tile_size)
-    _draw_ground_patches(
-        image=image,
-        result=result,
-        asset_catalog=asset_catalog,
-        tile_size_px=tile_size,
-    )
+    if variant == "placement_fix":
+        _paint_soft_forest_floor(image=image, result=result, tile_size_px=tile_size)
+    else:
+        _paint_forest_floor(image=image, result=result, tile_size_px=tile_size)
+        _draw_ground_patches(
+            image=image,
+            result=result,
+            asset_catalog=asset_catalog,
+            tile_size_px=tile_size,
+        )
     _draw_anchor_shadows(
         image=image,
         anchors=list(anchor_result.anchors),
         asset_catalog=asset_catalog,
         tile_size_px=tile_size,
+        variant=variant,
     )
     _draw_anchor_sprites(
         image=image,
@@ -708,7 +752,7 @@ def _render_forest_mass_overlay_impl(
             before=original_base,
             after=image,
             output_path=compare_output_path,
-            label="forest mass clean" if variant == "clean" else "forest mass overlay",
+            label=_forest_mass_compare_label(variant),
         )
 
     asset_counts = Counter(anchor.asset.asset_id for anchor in anchor_result.anchors)
@@ -753,7 +797,11 @@ def _render_forest_mass_overlay_impl(
             "anchors_by_condition": dict(sorted(anchor_result.condition_counts.items())),
             "unique_assets_used": len(asset_counts),
             "rejected_bounds": anchor_result.rejected_bounds,
+            "rejected_footprint": anchor_result.rejected_footprint,
+            "rejected_policy": anchor_result.rejected_policy,
             "skipped_missing_asset": anchor_result.skipped_missing_asset,
+            "selected_families": dict(sorted(anchor_result.selected_family_counts.items())),
+            "rejected_by_reason": dict(sorted(anchor_result.rejected_counts.items())),
         },
         "top_assets": [
             {"asset_id": asset_id, "count": count}
@@ -766,7 +814,16 @@ def _render_forest_mass_overlay_impl(
         "quality": {
             "status": "ok" if anchor_result.anchors else "no_forest_anchors",
             "bounds_policy": "reject_full_bounds_outside_canvas",
-            "condition_policy": "rule-first condition matrix with zone fallbacks",
+            "condition_policy": (
+                "priority condition matrix with sprite bounds and footprint validation"
+                if variant == "placement_fix"
+                else "rule-first condition matrix with zone fallbacks"
+            ),
+            "ground_policy": (
+                "soft_mask_no_square_ground_patches"
+                if variant == "placement_fix"
+                else "tile_rectangles_and_ground_patches"
+            ),
         },
     }
 
@@ -833,6 +890,59 @@ def _paint_forest_floor(
     image.alpha_composite(overlay)
 
 
+def _paint_soft_forest_floor(
+    *,
+    image: Image.Image,
+    result: ForestMassExperimentResult,
+    tile_size_px: int,
+) -> None:
+    """Paint forest floor as a blurred mask instead of tile rectangles."""
+    alpha = Image.new("L", image.size, 0)
+    alpha_draw = ImageDraw.Draw(alpha)
+    color_layer = Image.new("RGBA", image.size, (9, 28, 13, 0))
+    color_draw = ImageDraw.Draw(color_layer)
+    for y, row in enumerate(result.forest_mask):
+        for x, is_forest in enumerate(row):
+            if not is_forest:
+                continue
+            band = _band_for_distance(result.edge_distances[y][x])
+            cx = int((x + 0.5) * tile_size_px)
+            cy = int((y + 0.5) * tile_size_px)
+            radius = _soft_floor_radius(tile_size_px=tile_size_px, band=band)
+            opacity = _soft_floor_opacity(band=band)
+            bbox = (cx - radius, cy - radius, cx + radius, cy + radius)
+            alpha_draw.ellipse(bbox, fill=opacity)
+            color_draw.ellipse(bbox, fill=_soft_floor_color(band=band))
+    blur_radius = max(1.25, tile_size_px * 0.65)
+    alpha = alpha.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+    color_layer.putalpha(alpha)
+    image.alpha_composite(color_layer)
+
+
+def _soft_floor_radius(*, tile_size_px: int, band: str) -> int:
+    if band == "deep":
+        return int(tile_size_px * 1.25)
+    if band == "interior":
+        return int(tile_size_px * 1.05)
+    return int(tile_size_px * 0.78)
+
+
+def _soft_floor_opacity(*, band: str) -> int:
+    if band == "deep":
+        return 118
+    if band == "interior":
+        return 86
+    return 42
+
+
+def _soft_floor_color(*, band: str) -> tuple[int, int, int, int]:
+    if band == "deep":
+        return (5, 22, 10, 255)
+    if band == "interior":
+        return (17, 50, 22, 255)
+    return (38, 78, 35, 255)
+
+
 def _draw_ground_patches(
     *,
     image: Image.Image,
@@ -890,8 +1000,12 @@ def _build_forest_mass_anchors(
 ) -> ForestMassAnchorBuildResult:
     anchors: list[ForestMassAnchor] = []
     rejected_bounds = 0
+    rejected_footprint = 0
+    rejected_policy = 0
     skipped_missing_asset = 0
     condition_counts: Counter[str] = Counter()
+    selected_family_counts: Counter[str] = Counter()
+    rejected_counts: Counter[str] = Counter()
     region_areas = {region.region_id: region.area_tiles for region in result.regions}
     for y, row in enumerate(result.forest_mask):
         for x, is_forest in enumerate(row):
@@ -911,18 +1025,6 @@ def _build_forest_mass_anchors(
             if _stable_noise(x=x, y=y, salt=211, seed=result.seed) > density:
                 continue
             role = _anchor_role_for_condition(condition=condition, band=band, x=x, y=y, seed=result.seed)
-            asset = _asset_for_condition(
-                condition=condition,
-                role=role,
-                band=band,
-                asset_catalog=asset_catalog,
-                x=x,
-                y=y,
-                seed=result.seed,
-            )
-            if asset is None:
-                skipped_missing_asset += 1
-                continue
             anchor_x, anchor_y = _anchor_pixel_for_condition(
                 x=x,
                 y=y,
@@ -931,24 +1033,64 @@ def _build_forest_mass_anchors(
                 tile_size_px=tile_size_px,
                 seed=result.seed,
             )
-            asset_image = _scaled_asset_image(asset.image, tile_size_px=tile_size_px)
-            draw_x, draw_y = _asset_draw_position(
-                asset=asset,
-                asset_image=asset_image,
-                x_px=anchor_x,
-                y_px=anchor_y,
-                fallback_mode="sprite",
-            )
-            if not _sprite_bounds_allowed(
-                x=draw_x,
-                y=draw_y,
-                width=asset_image.width,
-                height=asset_image.height,
-                image_size=image_size,
+            candidates = _candidate_assets_for_condition(
                 condition=condition,
-            ):
-                rejected_bounds += 1
+                role=role,
+                band=band,
+                asset_catalog=asset_catalog,
+                x=x,
+                y=y,
+                seed=result.seed,
+            )
+            if not candidates:
+                skipped_missing_asset += 1
+                rejected_counts["missing_asset"] += 1
                 continue
+            selected: tuple[ForestMassAsset, Image.Image, int, int] | None = None
+            for asset in candidates:
+                if not _asset_policy_allowed(asset=asset, condition=condition, band=band):
+                    rejected_policy += 1
+                    rejected_counts["policy"] += 1
+                    continue
+                asset_image = _scaled_asset_image(asset.image, tile_size_px=tile_size_px)
+                draw_x, draw_y = _asset_draw_position(
+                    asset=asset,
+                    asset_image=asset_image,
+                    x_px=anchor_x,
+                    y_px=anchor_y,
+                    fallback_mode="sprite",
+                )
+                if not _sprite_bounds_allowed(
+                    x=draw_x,
+                    y=draw_y,
+                    width=asset_image.width,
+                    height=asset_image.height,
+                    image_size=image_size,
+                    condition=condition,
+                ):
+                    rejected_bounds += 1
+                    rejected_counts["bounds"] += 1
+                    continue
+                if not _sprite_footprint_allowed(
+                    result=result,
+                    terrain_rows=terrain_rows,
+                    condition=condition,
+                    band=band,
+                    x=draw_x,
+                    y=draw_y,
+                    width=asset_image.width,
+                    height=asset_image.height,
+                    tile_size_px=tile_size_px,
+                ):
+                    rejected_footprint += 1
+                    rejected_counts["footprint"] += 1
+                    continue
+                selected = (asset, asset_image, draw_x, draw_y)
+                break
+            if selected is None:
+                skipped_missing_asset += 1
+                continue
+            asset = selected[0]
             anchors.append(
                 ForestMassAnchor(
                     x_px=anchor_x,
@@ -962,12 +1104,17 @@ def _build_forest_mass_anchors(
                 )
             )
             condition_counts[condition] += 1
+            selected_family_counts[asset.family] += 1
     anchors.sort(key=lambda item: (item.y_px, item.x_px, item.asset.asset_id))
     return ForestMassAnchorBuildResult(
         anchors=tuple(anchors),
         rejected_bounds=rejected_bounds,
+        rejected_footprint=rejected_footprint,
+        rejected_policy=rejected_policy,
         skipped_missing_asset=skipped_missing_asset,
         condition_counts=dict(condition_counts),
+        selected_family_counts=dict(selected_family_counts),
+        rejected_counts=dict(rejected_counts),
     )
 
 
@@ -1125,6 +1272,157 @@ def _anchor_role_for_condition(*, condition: str, band: str, x: int, y: int, see
     return "edge_bush" if value < 0.55 else "young_tree"
 
 
+def _candidate_assets_for_condition(
+    *,
+    condition: str,
+    role: str,
+    band: str,
+    asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
+    x: int,
+    y: int,
+    seed: int,
+) -> tuple[ForestMassAsset, ...]:
+    """Build a deterministic candidate list for a forest condition."""
+    pools = _asset_pools_for_condition(condition=condition, role=role, band=band)
+    candidates: list[ForestMassAsset] = []
+    seen: set[str] = set()
+    for keys in pools:
+        for asset in _catalog_get(asset_catalog, keys):
+            if asset.asset_id in seen:
+                continue
+            seen.add(asset.asset_id)
+            candidates.append(asset)
+    if not candidates:
+        return ()
+    return tuple(
+        sorted(
+            candidates,
+            key=lambda asset: _asset_order_key(asset=asset, x=x, y=y, seed=seed),
+        )
+    )
+
+
+def _asset_order_key(*, asset: ForestMassAsset, x: int, y: int, seed: int) -> tuple[float, str]:
+    salt = 571 + sum(ord(ch) for ch in asset.asset_id)
+    return (_stable_noise(x=x, y=y, salt=salt, seed=seed), asset.asset_id)
+
+
+def _asset_policy_allowed(*, asset: ForestMassAsset, condition: str, band: str) -> bool:
+    """Reject visually risky assets before footprint validation."""
+    width = asset.image.width
+    height = asset.image.height
+    if condition == "map_border_guard":
+        return width <= 72 and height <= 44 and asset.category not in {"deep", "ground", "shadows"}
+    if condition in {"forest_isolated_single", "small_forest_island"}:
+        return width <= 76 and height <= 62 and asset.category not in {"deep", "ground", "shadows"}
+    if condition.startswith("forest_thin_strip"):
+        return width <= 86 and height <= 86 and asset.category not in {"deep", "ground", "shadows"}
+    if condition.startswith("forest_near_"):
+        return width <= 54 and height <= 44 and asset.category not in {"deep", "ground", "shadows"}
+    if condition.startswith("outer_corner"):
+        return width <= 64 and height <= 64 and asset.category not in {"deep", "ground", "shadows"}
+    if condition.startswith("edge_"):
+        return width <= 76 and height <= 76 and asset.category not in {"deep", "ground", "shadows"}
+    if band == "interior":
+        return width <= 76 and height <= 72 and asset.category not in {"ground", "shadows"}
+    return asset.category not in {"ground", "shadows"}
+
+
+def _sprite_footprint_allowed(
+    *,
+    result: ForestMassExperimentResult,
+    terrain_rows: list[list[str]],
+    condition: str,
+    band: str,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    tile_size_px: int,
+) -> bool:
+    """Validate the lower sprite footprint against forest and forbidden terrain."""
+    samples = _sprite_footprint_samples(
+        x=x,
+        y=y,
+        width=width,
+        height=height,
+        tile_size_px=tile_size_px,
+    )
+    if not samples:
+        return True
+    forest_count = 0
+    forbidden_count = 0
+    valid_count = 0
+    for tx, ty in samples:
+        if not _inside(width=result.width, height=result.height, x=tx, y=ty):
+            continue
+        valid_count += 1
+        if result.forest_mask[ty][tx]:
+            forest_count += 1
+            continue
+        terrain = terrain_rows[ty][tx]
+        if _is_road_terrain(terrain) or _is_ruins_terrain(terrain) or _is_water_terrain(terrain):
+            forbidden_count += 1
+    if valid_count == 0:
+        return True
+    forest_ratio = forest_count / valid_count
+    forbidden_ratio = forbidden_count / valid_count
+    return (
+        forest_ratio >= _required_footprint_forest_ratio(condition=condition, band=band)
+        and forbidden_ratio <= _allowed_footprint_forbidden_ratio(condition=condition)
+    )
+
+
+def _sprite_footprint_samples(
+    *,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    tile_size_px: int,
+) -> tuple[tuple[int, int], ...]:
+    left = x + int(width * 0.18)
+    right = x + int(width * 0.82)
+    top = y + int(height * 0.62)
+    bottom = y + int(height * 0.94)
+    samples: list[tuple[int, int]] = []
+    step = max(1, tile_size_px // 2)
+    for py in range(top, max(top + 1, bottom + 1), step):
+        for px in range(left, max(left + 1, right + 1), step):
+            samples.append((px // tile_size_px, py // tile_size_px))
+    if not samples:
+        samples.append(((x + width // 2) // tile_size_px, (y + height - 1) // tile_size_px))
+    return tuple(dict.fromkeys(samples))
+
+
+def _required_footprint_forest_ratio(*, condition: str, band: str) -> float:
+    if condition == "map_border_guard":
+        return 0.20
+    if condition.startswith("forest_near_"):
+        return 0.35
+    if condition.startswith("outer_corner") or condition.startswith("edge_"):
+        return 0.42
+    if condition.startswith("forest_thin_strip"):
+        return 0.38
+    if condition in {"forest_isolated_single", "small_forest_island"}:
+        return 0.34
+    if band == "deep":
+        return 0.72
+    if band == "interior":
+        return 0.58
+    return 0.42
+
+
+def _allowed_footprint_forbidden_ratio(*, condition: str) -> float:
+    if condition == "forest_near_road":
+        return 0.12
+    if condition in {"forest_near_ruins", "forest_near_water"}:
+        return 0.08
+    if condition.startswith("edge_") or condition.startswith("outer_corner"):
+        return 0.05
+    return 0.0
+
+
 def _asset_for_condition(
     *,
     condition: str,
@@ -1269,6 +1567,7 @@ def _draw_anchor_shadows(
     anchors: list[ForestMassAnchor],
     asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
     tile_size_px: int,
+    variant: str,
 ) -> None:
     shadows = _catalog_get(asset_catalog, ["category:shadows", "zone:shadow"])
     if not shadows:
@@ -1278,7 +1577,7 @@ def _draw_anchor_shadows(
             continue
         shadow = _shadow_asset_for_anchor(anchor=anchor, shadows=shadows)
         shadow_image = _scaled_asset_image(shadow.image, tile_size_px=tile_size_px)
-        opacity = 0.30 if anchor.band == "edge" else 0.45 if anchor.band == "interior" else 0.58
+        opacity = _shadow_opacity_for_anchor(anchor=anchor, variant=variant)
         shadow_image = _with_opacity(shadow_image, opacity)
         draw_x, draw_y = _asset_draw_position(
             asset=shadow,
@@ -1288,6 +1587,21 @@ def _draw_anchor_shadows(
             fallback_mode="center",
         )
         _alpha_composite_clipped(base=image, overlay=shadow_image, x=draw_x, y=draw_y)
+
+
+def _shadow_opacity_for_anchor(*, anchor: ForestMassAnchor, variant: str) -> float:
+    """Resolve shadow opacity for the overlay variant and forest band."""
+    if variant == "placement_fix":
+        if anchor.condition.startswith("edge_") or anchor.condition.startswith("outer_corner"):
+            return 0.18
+        if anchor.condition.startswith("forest_near_"):
+            return 0.16
+        if anchor.band == "deep":
+            return 0.30
+        if anchor.band == "interior":
+            return 0.23
+        return 0.16
+    return 0.30 if anchor.band == "edge" else 0.45 if anchor.band == "interior" else 0.58
 
 
 def _draw_anchor_sprites(
@@ -1326,6 +1640,15 @@ def _asset_draw_position(
     if fallback_mode == "center":
         return (x_px - asset_image.width // 2, y_px - asset_image.height // 2)
     return (x_px - asset_image.width // 2, y_px - asset_image.height)
+
+
+def _forest_mass_compare_label(variant: str) -> str:
+    """Return a short label for the forest mass comparison image."""
+    if variant == "placement_fix":
+        return "forest mass placement fix"
+    if variant == "clean":
+        return "forest mass clean"
+    return "forest mass overlay"
 
 
 def _save_forest_mass_compare(

@@ -650,3 +650,11 @@
 - Forest mass overlay теперь выбирает ассеты по лесным условиям: edge/front/back/side, corners, thin strips, small islands, road/ruins/water context и `map_border_guard`.
 - Добавлены debug steps `16_forest_mass_overlay_clean.png` и `17_forest_mass_compare_clean.png`; финальный рендер, gameplay, collision и routes не меняются.
 - Для forest overlay включён bounds guard: крупные спрайты не ставятся так, чтобы обрезаться за canvas.
+
+
+## v0.0.78 -> v0.0.79
+
+- Добавлен debug step `18_forest_mass_overlay_placement_fix.png` и A/B сравнение `19_forest_mass_compare_placement_fix.png`.
+- ForestMassOverlay получил мягкую forest-floor маску вместо квадратных ground/shadow-плашек для placement-fix варианта.
+- Добавлена проверка sprite footprint, policy-filter по размеру/категории и подробный report по rejected bounds/footprint/policy.
+- Финальный рендер, gameplay, collision и routes не меняются.
