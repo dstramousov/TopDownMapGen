@@ -14,6 +14,7 @@ from .forest_mass import (
     render_forest_mass_experiment,
     render_forest_mass_overlay,
     render_forest_mass_canopy_fill,
+    render_forest_mass_front_edge_layer,
     render_forest_mass_overlay_clean,
     render_forest_mass_overlay_placement_fix,
 )
@@ -269,6 +270,18 @@ class VisualPipelineStepRenderer:
             tile_size_px=tile_size,
         )
         generated.extend([forest_mass_canopy_fill_path, forest_mass_canopy_compare_path])
+        forest_mass_front_edge_path = output_dir / "22_forest_mass_front_edge_layer.png"
+        forest_mass_front_edge_compare_path = output_dir / "23_forest_mass_front_edge_compare.png"
+        forest_mass_front_edge_report = render_forest_mass_front_edge_layer(
+            result=forest_mass_experiment_result,
+            world=world,
+            profile=profile,
+            visual_layers=visual_layers,
+            output_path=forest_mass_front_edge_path,
+            compare_output_path=forest_mass_front_edge_compare_path,
+            tile_size_px=tile_size,
+        )
+        generated.extend([forest_mass_front_edge_path, forest_mass_front_edge_compare_path])
         write_json_object(
             forest_mass_experiment_result.to_report(),
             output_dir.parent / "forest_mass_experiment_report.json",
@@ -288,6 +301,10 @@ class VisualPipelineStepRenderer:
         write_json_object(
             forest_mass_canopy_fill_report,
             output_dir.parent / "forest_mass_canopy_fill_report.json",
+        )
+        write_json_object(
+            forest_mass_front_edge_report,
+            output_dir.parent / "forest_mass_front_edge_layer_report.json",
         )
         return generated
 

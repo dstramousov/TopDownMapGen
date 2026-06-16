@@ -665,3 +665,10 @@
 - ForestMassOverlay получил canopy-fill underpaint: глубокий/средний лес закрывается органическими кронами, а не оставляет зелёные квадратные просветы.
 - Для canopy-fill варианта повышена плотность deep/interior placement, но финальный рендер, gameplay, collision и routes не меняются.
 - Добавлен `forest_mass_canopy_fill_report.json` с variant/policy/condition/family summary.
+
+## v0.0.80 -> v0.0.81
+
+- Добавлен экспериментальный слой `22_forest_mass_front_edge_layer.png` для южной/передней кромки леса.
+- Добавлены `front_trunks` ассеты: видимые передние деревья со стволами для нижней опушки.
+- Улучшен выбор ассетов для front-edge условий: южная кромка, front-corners и лес рядом с дорогой/руинами/водой.
+- Добавлен отчёт `forest_mass_front_edge_layer_report.json`; финальный рендер и gameplay-данные не меняются.

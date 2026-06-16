@@ -728,6 +728,42 @@ def render_forest_mass_canopy_fill(
     )
 
 
+def render_forest_mass_front_edge_layer(
+    *,
+    result: ForestMassExperimentResult,
+    world: WorldPackage,
+    profile: VisualProfile,
+    visual_layers: dict[str, Any],
+    output_path: Path,
+    compare_output_path: Path | None,
+    tile_size_px: int,
+) -> dict[str, Any]:
+    """Render a forest mass overlay with explicit front-edge tree trunks.
+
+    Args:
+        result: Forest mass experiment data.
+        world: Loaded world package.
+        profile: Loaded visual profile.
+        visual_layers: Current visual layers for fallback base rendering.
+        output_path: Output overlay PNG path.
+        compare_output_path: Optional A/B compare PNG path.
+        tile_size_px: Fallback tile size in pixels.
+
+    Returns:
+        JSON-compatible overlay diagnostics.
+    """
+    return _render_forest_mass_overlay_impl(
+        result=result,
+        world=world,
+        profile=profile,
+        visual_layers=visual_layers,
+        output_path=output_path,
+        compare_output_path=compare_output_path,
+        tile_size_px=tile_size_px,
+        variant="front_edge_layer",
+    )
+
+
 def _render_forest_mass_overlay_impl(
     *,
     result: ForestMassExperimentResult,
@@ -758,7 +794,7 @@ def _render_forest_mass_overlay_impl(
     )
 
     image = base_image.copy()
-    if variant == "canopy_fill":
+    if variant in {"canopy_fill", "front_edge_layer"}:
         _paint_canopy_fill(image=image, result=result, tile_size_px=tile_size)
     elif variant == "placement_fix":
         _paint_soft_forest_floor(image=image, result=result, tile_size_px=tile_size)
@@ -799,7 +835,7 @@ def _render_forest_mass_overlay_impl(
     role_counts = Counter(anchor.role for anchor in anchor_result.anchors)
     family_counts = Counter(anchor.asset.family for anchor in anchor_result.anchors)
     return {
-        "schema_version": "visual-debug-forest-mass-overlay-v3",
+        "schema_version": "visual-debug-forest-mass-overlay-v4",
         "kind": "visual_debug_forest_mass_overlay_report",
         "variant": variant,
         "source_layer": "terrain",
@@ -834,6 +870,7 @@ def _render_forest_mass_overlay_impl(
             "anchors_by_band": dict(sorted(band_counts.items())),
             "anchors_by_role": dict(sorted(role_counts.items())),
             "anchors_by_condition": dict(sorted(anchor_result.condition_counts.items())),
+            "front_edge_trunk_anchors": _front_edge_trunk_anchor_count(anchor_result.anchors),
             "unique_assets_used": len(asset_counts),
             "rejected_bounds": anchor_result.rejected_bounds,
             "rejected_footprint": anchor_result.rejected_footprint,
@@ -859,8 +896,15 @@ def _render_forest_mass_overlay_impl(
     }
 
 
+def _front_edge_trunk_anchor_count(anchors: tuple[ForestMassAnchor, ...]) -> int:
+    """Count explicit front-edge trunk anchors in an overlay result."""
+    return sum(1 for anchor in anchors if anchor.asset.category == "front_trunks")
+
+
 def _condition_policy_label(variant: str) -> str:
     """Return the condition policy label for a forest mass overlay variant."""
+    if variant == "front_edge_layer":
+        return "dense canopy fill with explicit south-facing trunk edge layer"
     if variant == "canopy_fill":
         return "dense canopy fill with priority conditions and footprint validation"
     if variant == "placement_fix":
@@ -870,6 +914,8 @@ def _condition_policy_label(variant: str) -> str:
 
 def _ground_policy_label(variant: str) -> str:
     """Return the ground policy label for a forest mass overlay variant."""
+    if variant == "front_edge_layer":
+        return "organic canopy underpaint plus front-edge trunk sprites"
     if variant == "canopy_fill":
         return "organic canopy underpaint hides deep forest ground holes"
     if variant == "placement_fix":
@@ -1208,6 +1254,7 @@ def _build_forest_mass_anchors(
                 x=x,
                 y=y,
                 seed=result.seed,
+                variant=variant,
             )
             if not candidates:
                 skipped_missing_asset += 1
@@ -1314,6 +1361,12 @@ def _forest_condition_for_tile(
         return "forest_thin_strip_ew"
     if outside_w and outside_e and not outside_n and not outside_s:
         return "forest_thin_strip_ns"
+    if band == "edge" and outside_s and near["road"]:
+        return "forest_near_road_front"
+    if band == "edge" and outside_s and near["ruins"]:
+        return "forest_near_ruins_front"
+    if band == "edge" and outside_s and near["water"]:
+        return "forest_near_water_front"
     if band == "edge" and near["road"]:
         return "forest_near_road"
     if band == "edge" and near["ruins"]:
@@ -1391,6 +1444,8 @@ def _is_water_terrain(value: str) -> bool:
 
 
 def _overlay_density_for_condition(*, condition: str, band: str, variant: str) -> float:
+    if variant == "front_edge_layer":
+        return _front_edge_density_for_condition(condition=condition, band=band)
     if variant == "canopy_fill":
         return _canopy_fill_density_for_condition(condition=condition, band=band)
     if condition == "map_border_guard":
@@ -1410,6 +1465,19 @@ def _overlay_density_for_condition(*, condition: str, band: str, variant: str) -
     if band == "interior":
         return 0.30
     return 0.38
+
+
+def _front_edge_density_for_condition(*, condition: str, band: str) -> float:
+    """Resolve anchor density for explicit front-edge trunk rendering."""
+    if condition in {"edge_front_south", "outer_corner_es", "outer_corner_sw"}:
+        return 0.88
+    if condition in {
+        "forest_near_road_front",
+        "forest_near_ruins_front",
+        "forest_near_water_front",
+    }:
+        return 0.74
+    return _canopy_fill_density_for_condition(condition=condition, band=band)
 
 
 def _canopy_fill_density_for_condition(*, condition: str, band: str) -> float:
@@ -1440,6 +1508,12 @@ def _anchor_role_for_condition(*, condition: str, band: str, x: int, y: int, see
         return "island_group" if value < 0.55 else "young_tree"
     if condition.startswith("forest_thin_strip"):
         return "thin_strip" if value < 0.70 else "small_filler"
+    if condition == "forest_near_road_front":
+        return "front_trunk" if value < 0.78 else "roadside"
+    if condition == "forest_near_ruins_front":
+        return "front_trunk" if value < 0.74 else "ruin_overgrowth"
+    if condition == "forest_near_water_front":
+        return "front_trunk" if value < 0.74 else "wet_edge"
     if condition == "forest_near_road":
         return "roadside" if value < 0.70 else "edge_bush"
     if condition == "forest_near_ruins":
@@ -1449,7 +1523,7 @@ def _anchor_role_for_condition(*, condition: str, band: str, x: int, y: int, see
     if condition.startswith("outer_corner"):
         return "corner" if value < 0.62 else "edge_bush"
     if condition.startswith("edge_front"):
-        return "front_edge" if value < 0.68 else "edge_bush"
+        return "front_trunk" if value < 0.78 else "front_edge"
     if condition.startswith("edge_back"):
         return "back_edge" if value < 0.68 else "young_tree"
     if condition.startswith("edge_side"):
@@ -1470,9 +1544,15 @@ def _candidate_assets_for_condition(
     x: int,
     y: int,
     seed: int,
+    variant: str,
 ) -> tuple[ForestMassAsset, ...]:
     """Build a deterministic candidate list for a forest condition."""
-    pools = _asset_pools_for_condition(condition=condition, role=role, band=band)
+    pools = _asset_pools_for_condition(
+        condition=condition,
+        role=role,
+        band=band,
+        variant=variant,
+    )
     candidates: list[ForestMassAsset] = []
     seen: set[str] = set()
     for keys in pools:
@@ -1506,12 +1586,18 @@ def _asset_policy_allowed(*, asset: ForestMassAsset, condition: str, band: str) 
         return width <= 76 and height <= 62 and asset.category not in {"deep", "ground", "shadows"}
     if condition.startswith("forest_thin_strip"):
         return width <= 86 and height <= 86 and asset.category not in {"deep", "ground", "shadows"}
+    if condition in {
+        "forest_near_road_front",
+        "forest_near_ruins_front",
+        "forest_near_water_front",
+    }:
+        return width <= 70 and height <= 72 and asset.category not in {"deep", "ground", "shadows"}
     if condition.startswith("forest_near_"):
         return width <= 54 and height <= 44 and asset.category not in {"deep", "ground", "shadows"}
     if condition.startswith("outer_corner"):
-        return width <= 64 and height <= 64 and asset.category not in {"deep", "ground", "shadows"}
-    if condition.startswith("edge_"):
         return width <= 76 and height <= 76 and asset.category not in {"deep", "ground", "shadows"}
+    if condition.startswith("edge_"):
+        return width <= 82 and height <= 80 and asset.category not in {"deep", "ground", "shadows"}
     if band == "interior":
         return width <= 76 and height <= 72 and asset.category not in {"ground", "shadows"}
     return asset.category not in {"ground", "shadows"}
@@ -1587,6 +1673,12 @@ def _sprite_footprint_samples(
 def _required_footprint_forest_ratio(*, condition: str, band: str) -> float:
     if condition == "map_border_guard":
         return 0.20
+    if condition in {
+        "forest_near_road_front",
+        "forest_near_ruins_front",
+        "forest_near_water_front",
+    }:
+        return 0.32
     if condition.startswith("forest_near_"):
         return 0.35
     if condition.startswith("outer_corner") or condition.startswith("edge_"):
@@ -1603,9 +1695,14 @@ def _required_footprint_forest_ratio(*, condition: str, band: str) -> float:
 
 
 def _allowed_footprint_forbidden_ratio(*, condition: str) -> float:
-    if condition == "forest_near_road":
+    if condition in {"forest_near_road", "forest_near_road_front"}:
         return 0.12
-    if condition in {"forest_near_ruins", "forest_near_water"}:
+    if condition in {
+        "forest_near_ruins",
+        "forest_near_water",
+        "forest_near_ruins_front",
+        "forest_near_water_front",
+    }:
         return 0.08
     if condition.startswith("edge_") or condition.startswith("outer_corner"):
         return 0.05
@@ -1636,8 +1733,36 @@ def _asset_for_condition(
     return None
 
 
-def _asset_pools_for_condition(*, condition: str, role: str, band: str) -> tuple[tuple[str, ...], ...]:
+def _asset_pools_for_condition(
+    *,
+    condition: str,
+    role: str,
+    band: str,
+    variant: str = "",
+) -> tuple[tuple[str, ...], ...]:
     del role
+    if variant == "front_edge_layer" and condition in {"edge_front_south", "outer_corner_es", "outer_corner_sw"}:
+        return (
+            (
+                "family:front_trunk_pine_mid",
+                "family:front_trunk_pine_tall",
+                "family:front_trunk_pine_dense",
+            ),
+            ("family:front_trunk_cluster", "family:front_trunk_pine_small"),
+            ("category:front_trunks",),
+        )
+    if variant == "front_edge_layer" and condition == "forest_near_road_front":
+        return (
+            ("family:front_trunk_pine_small", "family:front_trunk_pine_mid"),
+            ("family:roadside_young_pine", "family:roadside_bush"),
+            ("category:front_trunks", "category:context_road"),
+        )
+    if variant == "front_edge_layer" and condition in {"forest_near_ruins_front", "forest_near_water_front"}:
+        return (
+            ("family:front_trunk_pine_small", "family:front_trunk_pine_mid"),
+            ("family:front_trunk_pine_dense", "family:front_low_bush"),
+            ("category:front_trunks",),
+        )
     if condition == "map_border_guard":
         return (
             ("family:edge_cut_safe_small", "family:single_small_pine", "family:small_round_bush"),
@@ -1726,7 +1851,17 @@ def _anchor_pixel_for_condition(
         jitter_y_scale = 0.22
     jitter_x = (_stable_noise(x=x, y=y, salt=223, seed=seed) - 0.5) * jitter_x_scale
     jitter_y = (_stable_noise(x=x, y=y, salt=227, seed=seed) - 0.5) * jitter_y_scale
-    y_bias = 0.94 if band == "edge" else 0.98
+    if condition in {
+        "edge_front_south",
+        "outer_corner_es",
+        "outer_corner_sw",
+        "forest_near_road_front",
+        "forest_near_ruins_front",
+        "forest_near_water_front",
+    }:
+        y_bias = 1.05
+    else:
+        y_bias = 0.94 if band == "edge" else 0.98
     return (
         int((x + 0.5 + jitter_x) * tile_size_px),
         int((y + y_bias + jitter_y) * tile_size_px),
@@ -1780,6 +1915,23 @@ def _draw_anchor_shadows(
 
 def _shadow_opacity_for_anchor(*, anchor: ForestMassAnchor, variant: str) -> float:
     """Resolve shadow opacity for the overlay variant and forest band."""
+    if variant == "front_edge_layer":
+        if anchor.condition in {
+            "edge_front_south",
+            "outer_corner_es",
+            "outer_corner_sw",
+            "forest_near_road_front",
+            "forest_near_ruins_front",
+            "forest_near_water_front",
+        }:
+            return 0.24
+        if anchor.condition.startswith("edge_") or anchor.condition.startswith("outer_corner"):
+            return 0.16
+        if anchor.band == "deep":
+            return 0.20
+        if anchor.band == "interior":
+            return 0.17
+        return 0.14
     if variant == "canopy_fill":
         if anchor.condition.startswith("edge_") or anchor.condition.startswith("outer_corner"):
             return 0.16
@@ -1843,6 +1995,8 @@ def _asset_draw_position(
 
 def _forest_mass_compare_label(variant: str) -> str:
     """Return a short label for the forest mass comparison image."""
+    if variant == "front_edge_layer":
+        return "forest front edge layer"
     if variant == "canopy_fill":
         return "forest mass canopy fill"
     if variant == "placement_fix":

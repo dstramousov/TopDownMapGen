@@ -273,6 +273,8 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "19_forest_mass_compare_placement_fix.png",
         "20_forest_mass_canopy_fill.png",
         "21_forest_mass_canopy_fill_compare.png",
+        "22_forest_mass_front_edge_layer.png",
+        "23_forest_mass_front_edge_compare.png",
     ]
     assert all(path.exists() for path in paths)
     assert (steps_output.parent / "forest_mass_experiment_report.json").exists()
@@ -280,8 +282,9 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
     assert (steps_output.parent / "forest_mass_overlay_clean_report.json").exists()
     assert (steps_output.parent / "forest_mass_overlay_placement_fix_report.json").exists()
     assert (steps_output.parent / "forest_mass_canopy_fill_report.json").exists()
+    assert (steps_output.parent / "forest_mass_front_edge_layer_report.json").exists()
     clean_report = _read_json(steps_output.parent / "forest_mass_overlay_clean_report.json")
-    assert clean_report["schema_version"] == "visual-debug-forest-mass-overlay-v3"
+    assert clean_report["schema_version"] == "visual-debug-forest-mass-overlay-v4"
     assert clean_report["policy"]["changes_final_render"] is False
     assert clean_report["quality"]["bounds_policy"] == "reject_full_bounds_outside_canvas"
     fix_report = _read_json(steps_output.parent / "forest_mass_overlay_placement_fix_report.json")
@@ -291,6 +294,12 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
     assert canopy_report["variant"] == "canopy_fill"
     assert canopy_report["quality"]["ground_policy"] == (
         "organic canopy underpaint hides deep forest ground holes"
+    )
+    front_report = _read_json(steps_output.parent / "forest_mass_front_edge_layer_report.json")
+    assert front_report["variant"] == "front_edge_layer"
+    assert front_report["summary"]["front_edge_trunk_anchors"] >= 0
+    assert front_report["quality"]["ground_policy"] == (
+        "organic canopy underpaint plus front-edge trunk sprites"
     )
 
 
