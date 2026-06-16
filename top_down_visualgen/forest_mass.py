@@ -692,6 +692,42 @@ def render_forest_mass_overlay_placement_fix(
     )
 
 
+def render_forest_mass_canopy_fill(
+    *,
+    result: ForestMassExperimentResult,
+    world: WorldPackage,
+    profile: VisualProfile,
+    visual_layers: dict[str, Any],
+    output_path: Path,
+    compare_output_path: Path | None,
+    tile_size_px: int,
+) -> dict[str, Any]:
+    """Render a canopy-fill forest mass overlay preview.
+
+    Args:
+        result: Forest mass experiment data.
+        world: Loaded world package.
+        profile: Loaded visual profile.
+        visual_layers: Current visual layers for fallback base rendering.
+        output_path: Output overlay PNG path.
+        compare_output_path: Optional A/B compare PNG path.
+        tile_size_px: Fallback tile size in pixels.
+
+    Returns:
+        JSON-compatible overlay diagnostics.
+    """
+    return _render_forest_mass_overlay_impl(
+        result=result,
+        world=world,
+        profile=profile,
+        visual_layers=visual_layers,
+        output_path=output_path,
+        compare_output_path=compare_output_path,
+        tile_size_px=tile_size_px,
+        variant="canopy_fill",
+    )
+
+
 def _render_forest_mass_overlay_impl(
     *,
     result: ForestMassExperimentResult,
@@ -718,10 +754,13 @@ def _render_forest_mass_overlay_impl(
         asset_catalog=asset_catalog,
         image_size=base_image.size,
         tile_size_px=tile_size,
+        variant=variant,
     )
 
     image = base_image.copy()
-    if variant == "placement_fix":
+    if variant == "canopy_fill":
+        _paint_canopy_fill(image=image, result=result, tile_size_px=tile_size)
+    elif variant == "placement_fix":
         _paint_soft_forest_floor(image=image, result=result, tile_size_px=tile_size)
     else:
         _paint_forest_floor(image=image, result=result, tile_size_px=tile_size)
@@ -760,7 +799,7 @@ def _render_forest_mass_overlay_impl(
     role_counts = Counter(anchor.role for anchor in anchor_result.anchors)
     family_counts = Counter(anchor.asset.family for anchor in anchor_result.anchors)
     return {
-        "schema_version": "visual-debug-forest-mass-overlay-v2",
+        "schema_version": "visual-debug-forest-mass-overlay-v3",
         "kind": "visual_debug_forest_mass_overlay_report",
         "variant": variant,
         "source_layer": "terrain",
@@ -814,18 +853,28 @@ def _render_forest_mass_overlay_impl(
         "quality": {
             "status": "ok" if anchor_result.anchors else "no_forest_anchors",
             "bounds_policy": "reject_full_bounds_outside_canvas",
-            "condition_policy": (
-                "priority condition matrix with sprite bounds and footprint validation"
-                if variant == "placement_fix"
-                else "rule-first condition matrix with zone fallbacks"
-            ),
-            "ground_policy": (
-                "soft_mask_no_square_ground_patches"
-                if variant == "placement_fix"
-                else "tile_rectangles_and_ground_patches"
-            ),
+            "condition_policy": _condition_policy_label(variant),
+            "ground_policy": _ground_policy_label(variant),
         },
     }
+
+
+def _condition_policy_label(variant: str) -> str:
+    """Return the condition policy label for a forest mass overlay variant."""
+    if variant == "canopy_fill":
+        return "dense canopy fill with priority conditions and footprint validation"
+    if variant == "placement_fix":
+        return "priority condition matrix with sprite bounds and footprint validation"
+    return "rule-first condition matrix with zone fallbacks"
+
+
+def _ground_policy_label(variant: str) -> str:
+    """Return the ground policy label for a forest mass overlay variant."""
+    if variant == "canopy_fill":
+        return "organic canopy underpaint hides deep forest ground holes"
+    if variant == "placement_fix":
+        return "soft_mask_no_square_ground_patches"
+    return "tile_rectangles_and_ground_patches"
 
 
 def _build_overlay_base_image(
@@ -943,6 +992,119 @@ def _soft_floor_color(*, band: str) -> tuple[int, int, int, int]:
     return (38, 78, 35, 255)
 
 
+def _paint_canopy_fill(
+    *,
+    image: Image.Image,
+    result: ForestMassExperimentResult,
+    tile_size_px: int,
+) -> None:
+    """Paint an organic canopy underlayer that hides square ground gaps."""
+    canopy = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(canopy, "RGBA")
+    for y, row in enumerate(result.forest_mask):
+        for x, is_forest in enumerate(row):
+            if not is_forest:
+                continue
+            band = _band_for_distance(result.edge_distances[y][x])
+            for blob_index in range(_canopy_blob_count(band=band)):
+                cx, cy = _canopy_blob_center(
+                    x=x,
+                    y=y,
+                    blob_index=blob_index,
+                    seed=result.seed,
+                    tile_size_px=tile_size_px,
+                )
+                rx, ry = _canopy_blob_radius(
+                    band=band,
+                    blob_index=blob_index,
+                    tile_size_px=tile_size_px,
+                    x=x,
+                    y=y,
+                    seed=result.seed,
+                )
+                draw.ellipse(
+                    (cx - rx, cy - ry, cx + rx, cy + ry),
+                    fill=_canopy_blob_color(
+                        band=band,
+                        x=x,
+                        y=y,
+                        blob_index=blob_index,
+                        seed=result.seed,
+                    ),
+                )
+    image.alpha_composite(canopy)
+
+
+def _canopy_blob_count(*, band: str) -> int:
+    if band == "deep":
+        return 3
+    if band == "interior":
+        return 2
+    return 1
+
+
+def _canopy_blob_center(
+    *,
+    x: int,
+    y: int,
+    blob_index: int,
+    seed: int,
+    tile_size_px: int,
+) -> tuple[int, int]:
+    jitter_x = (_stable_noise(x=x, y=y, salt=701 + blob_index * 7, seed=seed) - 0.5)
+    jitter_y = (_stable_noise(x=x, y=y, salt=719 + blob_index * 7, seed=seed) - 0.5)
+    return (
+        int((x + 0.5 + jitter_x * 0.72) * tile_size_px),
+        int((y + 0.5 + jitter_y * 0.56) * tile_size_px),
+    )
+
+
+def _canopy_blob_radius(
+    *,
+    band: str,
+    blob_index: int,
+    tile_size_px: int,
+    x: int,
+    y: int,
+    seed: int,
+) -> tuple[int, int]:
+    noise = _stable_noise(x=x, y=y, salt=743 + blob_index * 11, seed=seed)
+    if band == "deep":
+        base_x = tile_size_px * (0.92 + noise * 0.35)
+        base_y = tile_size_px * (0.66 + noise * 0.22)
+    elif band == "interior":
+        base_x = tile_size_px * (0.78 + noise * 0.28)
+        base_y = tile_size_px * (0.56 + noise * 0.20)
+    else:
+        base_x = tile_size_px * (0.52 + noise * 0.20)
+        base_y = tile_size_px * (0.38 + noise * 0.14)
+    return (max(2, int(base_x)), max(2, int(base_y)))
+
+
+def _canopy_blob_color(*, band: str, x: int, y: int, blob_index: int, seed: int) -> tuple[int, int, int, int]:
+    noise = _stable_noise(x=x, y=y, salt=761 + blob_index * 13, seed=seed)
+    if band == "deep":
+        return (
+            12 + int(noise * 12),
+            43 + int(noise * 22),
+            19 + int(noise * 12),
+            218,
+        )
+    if band == "interior":
+        return (
+            24 + int(noise * 18),
+            70 + int(noise * 24),
+            30 + int(noise * 14),
+            192,
+        )
+    return (
+        43 + int(noise * 18),
+        92 + int(noise * 22),
+        42 + int(noise * 14),
+        112,
+    )
+
+
 def _draw_ground_patches(
     *,
     image: Image.Image,
@@ -997,6 +1159,7 @@ def _build_forest_mass_anchors(
     asset_catalog: dict[str, tuple[ForestMassAsset, ...]],
     image_size: tuple[int, int],
     tile_size_px: int,
+    variant: str,
 ) -> ForestMassAnchorBuildResult:
     anchors: list[ForestMassAnchor] = []
     rejected_bounds = 0
@@ -1021,7 +1184,11 @@ def _build_forest_mass_anchors(
                 y=y,
                 band=band,
             )
-            density = _overlay_density_for_condition(condition=condition, band=band)
+            density = _overlay_density_for_condition(
+                condition=condition,
+                band=band,
+                variant=variant,
+            )
             if _stable_noise(x=x, y=y, salt=211, seed=result.seed) > density:
                 continue
             role = _anchor_role_for_condition(condition=condition, band=band, x=x, y=y, seed=result.seed)
@@ -1223,7 +1390,9 @@ def _is_water_terrain(value: str) -> bool:
     return "water" in normalized or "swamp" in normalized or "mud" in normalized
 
 
-def _overlay_density_for_condition(*, condition: str, band: str) -> float:
+def _overlay_density_for_condition(*, condition: str, band: str, variant: str) -> float:
+    if variant == "canopy_fill":
+        return _canopy_fill_density_for_condition(condition=condition, band=band)
     if condition == "map_border_guard":
         return 0.22
     if condition in {"forest_isolated_single", "small_forest_island"}:
@@ -1241,6 +1410,26 @@ def _overlay_density_for_condition(*, condition: str, band: str) -> float:
     if band == "interior":
         return 0.30
     return 0.38
+
+
+def _canopy_fill_density_for_condition(*, condition: str, band: str) -> float:
+    if condition == "map_border_guard":
+        return 0.24
+    if condition in {"forest_isolated_single", "small_forest_island"}:
+        return 0.62
+    if condition.startswith("forest_thin_strip"):
+        return 0.56
+    if condition.startswith("forest_near_"):
+        return 0.44
+    if condition.startswith("outer_corner"):
+        return 0.56
+    if condition.startswith("edge_"):
+        return 0.58
+    if band == "deep":
+        return 0.58
+    if band == "interior":
+        return 0.52
+    return 0.46
 
 
 def _anchor_role_for_condition(*, condition: str, band: str, x: int, y: int, seed: int) -> str:
@@ -1591,6 +1780,16 @@ def _draw_anchor_shadows(
 
 def _shadow_opacity_for_anchor(*, anchor: ForestMassAnchor, variant: str) -> float:
     """Resolve shadow opacity for the overlay variant and forest band."""
+    if variant == "canopy_fill":
+        if anchor.condition.startswith("edge_") or anchor.condition.startswith("outer_corner"):
+            return 0.16
+        if anchor.condition.startswith("forest_near_"):
+            return 0.14
+        if anchor.band == "deep":
+            return 0.20
+        if anchor.band == "interior":
+            return 0.17
+        return 0.14
     if variant == "placement_fix":
         if anchor.condition.startswith("edge_") or anchor.condition.startswith("outer_corner"):
             return 0.18
@@ -1644,6 +1843,8 @@ def _asset_draw_position(
 
 def _forest_mass_compare_label(variant: str) -> str:
     """Return a short label for the forest mass comparison image."""
+    if variant == "canopy_fill":
+        return "forest mass canopy fill"
     if variant == "placement_fix":
         return "forest mass placement fix"
     if variant == "clean":

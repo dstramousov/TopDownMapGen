@@ -658,3 +658,10 @@
 - ForestMassOverlay получил мягкую forest-floor маску вместо квадратных ground/shadow-плашек для placement-fix варианта.
 - Добавлена проверка sprite footprint, policy-filter по размеру/категории и подробный report по rejected bounds/footprint/policy.
 - Финальный рендер, gameplay, collision и routes не меняются.
+
+## v0.0.79 -> v0.0.80
+
+- Добавлен debug step `20_forest_mass_canopy_fill.png` и A/B сравнение `21_forest_mass_canopy_fill_compare.png`.
+- ForestMassOverlay получил canopy-fill underpaint: глубокий/средний лес закрывается органическими кронами, а не оставляет зелёные квадратные просветы.
+- Для canopy-fill варианта повышена плотность deep/interior placement, но финальный рендер, gameplay, collision и routes не меняются.
+- Добавлен `forest_mass_canopy_fill_report.json` с variant/policy/condition/family summary.

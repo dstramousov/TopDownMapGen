@@ -271,19 +271,27 @@ def test_visual_step_renderer_writes_debug_pngs(tmp_path: Path) -> None:
         "17_forest_mass_compare_clean.png",
         "18_forest_mass_overlay_placement_fix.png",
         "19_forest_mass_compare_placement_fix.png",
+        "20_forest_mass_canopy_fill.png",
+        "21_forest_mass_canopy_fill_compare.png",
     ]
     assert all(path.exists() for path in paths)
     assert (steps_output.parent / "forest_mass_experiment_report.json").exists()
     assert (steps_output.parent / "forest_mass_overlay_report.json").exists()
     assert (steps_output.parent / "forest_mass_overlay_clean_report.json").exists()
     assert (steps_output.parent / "forest_mass_overlay_placement_fix_report.json").exists()
+    assert (steps_output.parent / "forest_mass_canopy_fill_report.json").exists()
     clean_report = _read_json(steps_output.parent / "forest_mass_overlay_clean_report.json")
-    assert clean_report["schema_version"] == "visual-debug-forest-mass-overlay-v2"
+    assert clean_report["schema_version"] == "visual-debug-forest-mass-overlay-v3"
     assert clean_report["policy"]["changes_final_render"] is False
     assert clean_report["quality"]["bounds_policy"] == "reject_full_bounds_outside_canvas"
     fix_report = _read_json(steps_output.parent / "forest_mass_overlay_placement_fix_report.json")
     assert fix_report["variant"] == "placement_fix"
     assert fix_report["quality"]["ground_policy"] == "soft_mask_no_square_ground_patches"
+    canopy_report = _read_json(steps_output.parent / "forest_mass_canopy_fill_report.json")
+    assert canopy_report["variant"] == "canopy_fill"
+    assert canopy_report["quality"]["ground_policy"] == (
+        "organic canopy underpaint hides deep forest ground holes"
+    )
 
 
 def _write_minimal_world_package(output_dir: Path) -> None:
