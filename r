@@ -103,6 +103,8 @@ python3 examples/render_geography_3d_preview.py output \
 
 print_summary
 
+open output/
+
 #python3 examples/inspect_world_package.py output
 #python3 examples/render_world_preview.py output --collision-overlay
 #cat output/validation_report.json
