@@ -472,3 +472,89 @@
 - Helper `./r` теперь строит оба preview-файла перед финальной summary.
 - В Debug files summary добавлены пути к `full_world_preview.png` и `elevation_preview.png`.
 - Версия проекта поднята до `0.0.56`.
+
+## v0.0.56 -> v0.0.57
+
+- Elevation generator получил отдельный geographic pass: macro regions, moisture field и geographic masks перед финальным террасированием.
+- Red Blob-подход уточнён как geography-first: крупные формы мира строятся до visual/object placement и не зависят от руин, бункеров, дорог или других gameplay-фич.
+- В elevation reports добавлены macro regions, moisture stats, slope bands и маски `basins`, `lowlands`, `plains`, `hills`, `plateaus`, `ridges`, `mountains`, `peaks`.
+- Preview renderer получил standalone-режимы `--geography-only`, `--moisture-only` и `--slope-only`.
+- Helper `./r` теперь дополнительно создаёт `geography_preview.png`, `moisture_preview.png` и `slope_preview.png`.
+- Версия проекта поднята до `0.0.57`.
+
+## v0.0.57 -> v0.0.58
+
+- Разделён preview смыслов высоты: география, вода и структурная глубина больше не смешиваются в один "синий низ".
+- `elevation_preview.png` теперь красит воду только по terrain/hydrology source, а bunker/trench/pit depth показывает отдельной структурной палитрой.
+- `geography_preview.png` теперь использует чистую географическую высоту до object-derived elevation overrides.
+- Добавлен `output/elevation_source_preview.png` для контроля источников высоты: geography/water/structural.
+- В geography/elevation reports добавлены `source_grid`, `geographic_level_grid`, `runtime_level_grid` и source summary.
+- Версия проекта поднята до `0.0.58`.
+
+## v0.0.58 -> v0.0.59
+
+- Добавлен standing-water / lowland слой диагностики без рек и flow-map.
+- География теперь отдельно классифицирует deep/shallow water, wet lowlands, dry lowlands, dry land и structural depth.
+- В отчёты добавлены standing-water summary и `water_lowland_grid`.
+- Добавлен debug preview `output/water_lowland_preview.png` и CLI-режим `--water-lowlands-only`.
+- Summary теперь показывает, что water model работает без рек и не смешивает структурную глубину с водой.
+- Версия проекта поднята до `0.0.59`.
+
+
+## v0.0.59 -> v0.0.60
+
+- Исправлен источник шахматных elevation-артефактов: старый simultaneous min/max relax мог заставлять соседние клетки обмениваться высокими/низкими уровнями и создавать checkerboard-террасы.
+- Relax высот переведён на stable median-envelope pass с in-place обновлением, чтобы резкие перепады сходились к локальной форме вместо ping-pong oscillation.
+- Имя elevation generator обновлено до `size_aware_red_blob_geography_v2`.
+- Географические preview должны давать плавные террасы без ряби из чередующихся уровней.
+- Версия проекта поднята до `0.0.60`.
+
+## v0.0.60 -> v0.0.61
+
+- Добавлен pseudo-3D preview чистой географической высоты из четырёх углов карты: NW, NE, SE, SW.
+- Новый renderer `examples/render_geography_3d_preview.py` строит PNG 2560×1440 в `output/geography_3d_preview/`.
+- `./r` теперь добавляет стадию `3d geography preview` и генерирует четыре 3D diagnostic PNG после обычных 2D geography/slope preview.
+- Summary/debug files теперь перечисляет новые 3D preview-файлы.
+- Версия проекта поднята до `0.0.61`.
+
+## v0.0.61 -> v0.0.62
+
+- 3D preview renderer получил режим `--overlay walkability`, который накладывает проходимость поверх чистой географической высоты.
+- Добавлены четыре PNG `walkability_nw/ne/se/sw.png` в `output/geography_3d_preview/` с разрешением 2560×1440.
+- Walkability overlay показывает reachable, slow terrain, blocked, water, structural depth, unreachable walkable, start и goal.
+- Renderer дополнительно пишет `output/geography_3d_preview/walkability_report.json` с количеством тайлов по категориям.
+- Helper `./r` теперь добавляет стадию `3d walkability preview` после чистой 3D-географии.
+- Summary/debug files теперь перечисляет новые 3D walkability preview-файлы и отчёт.
+- Версия проекта поднята до `0.0.62`.
+
+
+## v0.0.62 -> v0.0.63
+
+- Добавлен 3D traversal overlay, который проверяет проходимость с учётом географической высоты и запрещает естественные переходы с перепадом больше одного уровня.
+- В `geography_3d_preview` добавлены четыре PNG `traversal_nw/ne/se/sw.png` и `traversal_report.json` с 2D/3D reachability, слишком крутыми тайлами и passable cliff edges.
+- Structural depth в 3D overlay больше не красит всю колонну в фиолетовый: бункеры/ямы/траншеи показываются маркером на поверхности географии.
+- Helper `./r` теперь добавляет стадию `3d traversal preview`, а summary/debug files перечисляет новые traversal-артефакты.
+- Версия проекта поднята до `0.0.63`.
+
+## v0.0.63 -> v0.0.64
+
+- Добавлен repair-pass 3D traversal consistency для start-connected walkable области.
+- Географические уровни теперь мягко чинятся там, где 2D-проходимость ломалась перепадом высоты больше допустимого `max_natural_delta`.
+- `traversal_report.json` теперь различает 3D-недостижимые тайлы и отдельные 2D terrain islands.
+- Summary расширен строкой `traversal repair` с количеством исправленных недостижимых тайлов.
+- Версия проекта поднята до `0.0.64`.
+
+## v0.0.64 -> v0.0.65
+
+- Добавлена policy-очистка tiny 2D terrain islands перед построением runtime layers.
+- Малые isolated walkable-компоненты, не связанные со стартовой областью, теперь переводятся в ближайший blocker terrain и перестают выглядеть как ложные playable-острова.
+- Крупные isolated-регионы не соединяются и не удаляются: они сохраняются, но явно попадают в `terrain_island_report.json`.
+- Summary и `elevation_density_report.json` теперь показывают, сколько малых островов удалено и сколько крупных сохранено.
+- Версия проекта поднята до `0.0.65`.
+
+
+## v0.0.65 -> v0.0.66
+
+- Добавлен отсутствующий модуль `top_down_worldgen.tactical.terrain_islands`, который был подключён в pipeline в `v0.0.65`.
+- Реализованы `elevation_cell_points()` и `repair_terrain_islands()` для удаления мелких 2D walkable-островов и отчёта `terrain_island_report.json`.
+- Версия проекта поднята до `0.0.66`.

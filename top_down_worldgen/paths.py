@@ -33,6 +33,7 @@ class OutputPaths:
     world_density_report: Path
     elevation_density_report: Path
     world_summary_report: Path
+    terrain_island_report: Path
     object_catalog: Path
     map_package_dir: Path
     map_package_map: Path
@@ -121,6 +122,7 @@ class OutputPaths:
             world_density_report=output_dir / "world_density_report.json",
             elevation_density_report=output_dir / "elevation_density_report.json",
             world_summary_report=output_dir / "world_summary_report.json",
+            terrain_island_report=output_dir / "terrain_island_report.json",
             object_catalog=output_dir / "object_catalog.md",
             map_package_dir=map_package_dir,
             map_package_map=map_package_dir / "map.json",

@@ -48,6 +48,7 @@ ELEVATION_TRANSITIONS_SCHEMA_VERSION = "elevation-transitions-v4"
 WORLD_DENSITY_REPORT_SCHEMA_VERSION = "world-density-report-v1"
 ELEVATION_DENSITY_REPORT_SCHEMA_VERSION = "elevation-density-report-v1"
 WORLD_SUMMARY_REPORT_SCHEMA_VERSION = "world-summary-report-v1"
+TERRAIN_ISLAND_REPORT_SCHEMA_VERSION = "terrain-island-repair-report-v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,6 +158,7 @@ def build_manifest(
         "world_density_report": WORLD_DENSITY_REPORT_SCHEMA_VERSION,
         "elevation_density_report": ELEVATION_DENSITY_REPORT_SCHEMA_VERSION,
         "world_summary_report": WORLD_SUMMARY_REPORT_SCHEMA_VERSION,
+        "terrain_island_report": TERRAIN_ISLAND_REPORT_SCHEMA_VERSION,
     }
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,

@@ -55,11 +55,11 @@ ELEVATION_CONTOUR_COLOR = (35, 35, 30, 105)
 ELEVATION_ZERO_OVERLAY_ALPHA = 0
 ELEVATION_OVERLAY_ALPHA = 145
 ELEVATION_OPAQUE_COLORS: dict[int, tuple[int, int, int, int]] = {
-    -5: (13, 27, 84, 255),
-    -4: (18, 47, 120, 255),
-    -3: (25, 77, 156, 255),
-    -2: (45, 113, 180, 255),
-    -1: (86, 156, 202, 255),
+    -5: (36, 95, 111, 255),
+    -4: (48, 119, 128, 255),
+    -3: (64, 143, 139, 255),
+    -2: (87, 164, 148, 255),
+    -1: (118, 186, 157, 255),
     0: (76, 132, 72, 255),
     1: (96, 153, 77, 255),
     2: (126, 174, 83, 255),
@@ -82,6 +82,65 @@ ELEVATION_OPAQUE_COLORS: dict[int, tuple[int, int, int, int]] = {
     19: (219, 219, 209, 255),
     20: (246, 246, 238, 255),
 }
+GEOGRAPHY_COLORS: dict[str, tuple[int, int, int, int]] = {
+    "B": (54, 104, 150, 255),
+    "L": (78, 151, 176, 255),
+    "P": (99, 148, 80, 255),
+    "H": (168, 181, 88, 255),
+    "T": (204, 173, 83, 255),
+    "R": (157, 103, 68, 255),
+    "M": (122, 101, 88, 255),
+    "K": (231, 230, 218, 255),
+}
+GEOGRAPHY_FALLBACK_COLOR = (90, 90, 84, 255)
+SLOPE_COLORS: dict[int, tuple[int, int, int, int]] = {
+    0: (94, 145, 76, 255),
+    1: (190, 184, 92, 255),
+    2: (196, 116, 67, 255),
+    3: (136, 62, 57, 255),
+}
+ELEVATION_SOURCE_COLORS: dict[str, tuple[int, int, int, int]] = {
+    "G": (92, 146, 78, 255),
+    "W": (42, 105, 177, 255),
+    "S": (136, 96, 164, 255),
+}
+ELEVATION_SOURCE_LABELS: dict[str, str] = {
+    "G": "geography",
+    "W": "water",
+    "S": "structural",
+}
+WATER_LOWLAND_COLORS: dict[str, tuple[int, int, int, int]] = {
+    "B": (12, 48, 122, 255),
+    "S": (52, 126, 190, 255),
+    "W": (70, 151, 145, 255),
+    "L": (122, 171, 124, 255),
+    "D": (101, 143, 82, 255),
+    "X": (136, 96, 164, 255),
+}
+WATER_LOWLAND_LABELS: dict[str, str] = {
+    "B": "deep water",
+    "S": "shallow water",
+    "W": "wet lowland",
+    "L": "dry lowland",
+    "D": "dry land",
+    "X": "structural",
+}
+WATER_ELEVATION_COLORS: dict[int, tuple[int, int, int, int]] = {
+    -5: (8, 25, 84, 255),
+    -4: (12, 43, 119, 255),
+    -3: (16, 66, 150, 255),
+    -2: (24, 91, 176, 255),
+    -1: (44, 124, 200, 255),
+    0: (68, 152, 207, 255),
+}
+STRUCTURAL_ELEVATION_COLORS: dict[int, tuple[int, int, int, int]] = {
+    -5: (52, 42, 79, 255),
+    -4: (70, 52, 98, 255),
+    -3: (89, 62, 118, 255),
+    -2: (110, 73, 140, 255),
+    -1: (134, 88, 164, 255),
+}
+
 TRANSITION_COLORS: dict[str, tuple[int, int, int, int]] = {
     "connector_edge": (120, 240, 120, 240),
     "bridge_edge": (120, 210, 255, 240),
@@ -185,6 +244,11 @@ def render_preview(
     draw_elevation_legend: bool = False,
     draw_elevation_only: bool = False,
     draw_elevation_contours: bool = False,
+    draw_moisture_only: bool = False,
+    draw_slope_only: bool = False,
+    draw_geography_only: bool = False,
+    draw_source_only: bool = False,
+    draw_water_lowlands_only: bool = False,
 ) -> PreviewSummary:
     """Render a simple PNG preview from public world package files.
 
@@ -204,6 +268,11 @@ def render_preview(
         draw_elevation_legend: Whether to append a right-side elevation legend panel.
         draw_elevation_only: Whether to render height_grid as the base map.
         draw_elevation_contours: Whether to draw contour lines on elevation boundaries.
+        draw_moisture_only: Whether to render the moisture field as the base map.
+        draw_slope_only: Whether to render slope categories as the base map.
+        draw_geography_only: Whether to render geographic masks as the base map.
+        draw_source_only: Whether to render elevation source classes as the base map.
+        draw_water_lowlands_only: Whether to render standing water and lowland classes.
 
     Returns:
         Preview summary.
@@ -262,6 +331,14 @@ def render_preview(
     goal = _optional_point(start_goal.get("goal"))
     level_counts = _elevation_level_counts(height_rows)
     elevation_report = _read_optional_output_object(root / "elevation_density_report.json")
+    geography_report = _read_generation_geography(root)
+    source_rows = _read_elevation_source_rows(geography_report, width=width, height=height)
+    geographic_height_rows = _read_geographic_height_rows(
+        geography_report,
+        height_rows=height_rows,
+        width=width,
+        height=height,
+    )
 
     map_width_px = width * cell_size_px
     map_height_px = height * cell_size_px
@@ -273,30 +350,86 @@ def render_preview(
     )
     draw = ImageDraw.Draw(image, "RGBA")
 
-    if draw_elevation_only:
+    geography_base_only = (
+        draw_elevation_only
+        or draw_moisture_only
+        or draw_slope_only
+        or draw_geography_only
+        or draw_source_only
+        or draw_water_lowlands_only
+    )
+    if draw_moisture_only:
+        _draw_moisture_base_map(
+            draw,
+            moisture_rows=_read_moisture_rows(geography_report, width=width, height=height),
+            height_rows=height_rows,
+            cell_size_px=cell_size_px,
+        )
+    elif draw_slope_only:
+        _draw_slope_base_map(
+            draw,
+            slope_rows=_read_slope_rows(geography_report, height_rows=height_rows, width=width, height=height),
+            cell_size_px=cell_size_px,
+        )
+    elif draw_geography_only:
+        _draw_geography_base_map(
+            draw,
+            mask_rows=_read_geography_mask_rows(
+                geography_report,
+                height_rows=geographic_height_rows,
+                width=width,
+                height=height,
+            ),
+            cell_size_px=cell_size_px,
+        )
+    elif draw_source_only:
+        _draw_elevation_source_base_map(
+            draw,
+            source_rows=source_rows,
+            cell_size_px=cell_size_px,
+        )
+    elif draw_water_lowlands_only:
+        _draw_water_lowland_base_map(
+            draw,
+            water_lowland_rows=_read_water_lowland_rows(
+                geography_report,
+                height_rows=geographic_height_rows,
+                source_rows=source_rows,
+                moisture_rows=_read_moisture_rows(geography_report, width=width, height=height),
+                width=width,
+                height=height,
+            ),
+            cell_size_px=cell_size_px,
+        )
+    elif draw_elevation_only:
         _draw_elevation_base_map(
             draw,
             height_rows=height_rows,
+            terrain_rows=terrain_rows,
+            source_rows=source_rows,
             cell_size_px=cell_size_px,
         )
     else:
         _draw_terrain(draw, terrain_rows=terrain_rows, cell_size_px=cell_size_px)
-    if draw_collision_overlay and not draw_elevation_only:
+    if draw_collision_overlay and not geography_base_only:
         _draw_collision_overlay(
             draw,
             collision_rows=collision_rows,
             cell_size_px=cell_size_px,
         )
-    if draw_elevation_overlay and not draw_elevation_only:
+    if draw_elevation_overlay and not geography_base_only:
         _draw_elevation_overlay(
             draw,
             height_rows=height_rows,
+            terrain_rows=terrain_rows,
+            source_rows=source_rows,
             cell_size_px=cell_size_px,
         )
-    if draw_elevation_contours or draw_elevation_only:
+    if draw_elevation_contours or draw_elevation_only or draw_slope_only or draw_geography_only:
+        contour_height_rows = geographic_height_rows if draw_geography_only or draw_slope_only else height_rows
         _draw_elevation_contours(
             draw,
-            height_rows=height_rows,
+            height_rows=contour_height_rows,
             cell_size_px=cell_size_px,
         )
     if draw_transition_overlay:
@@ -339,7 +472,7 @@ def render_preview(
             width=width,
             height=height,
         )
-    if draw_objects:
+    if draw_objects and not geography_base_only:
         _draw_runtime_objects(
             draw,
             objects=object_items,
@@ -358,6 +491,7 @@ def render_preview(
             panel_width=legend_width_px,
             panel_height=map_height_px,
             level_counts=level_counts,
+            source_counts=_elevation_source_counts(source_rows),
             total_tiles=width * height,
             report=elevation_report,
         )
@@ -479,12 +613,16 @@ def _draw_elevation_overlay(
     draw: ImageDraw.ImageDraw,
     *,
     height_rows: list[list[int]],
+    terrain_rows: list[list[str]],
+    source_rows: list[str],
     cell_size_px: int,
 ) -> None:
     font = ImageFont.load_default() if cell_size_px >= 8 else None
     for y, row in enumerate(height_rows):
         for x, level in enumerate(row):
-            color = _elevation_overlay_color(level)
+            terrain_type = _terrain_type_at(terrain_rows, x=x, y=y)
+            source = _source_at(source_rows, x=x, y=y)
+            color = _elevation_overlay_color(level, terrain_type=terrain_type, source=source)
             if color[3] > 0:
                 draw.rectangle(_cell_rect(x, y, cell_size_px), fill=color)
             if font is not None and level != 0:
@@ -498,20 +636,99 @@ def _draw_elevation_overlay(
 
 
 
+
+def _draw_moisture_base_map(
+    draw: ImageDraw.ImageDraw,
+    *,
+    moisture_rows: list[list[float]],
+    height_rows: list[list[int]],
+    cell_size_px: int,
+) -> None:
+    """Draw the generated moisture field as a standalone map."""
+    if not moisture_rows:
+        moisture_rows = _fallback_moisture_rows(height_rows)
+    for y, row in enumerate(moisture_rows):
+        for x, value in enumerate(row):
+            draw.rectangle(_cell_rect(x, y, cell_size_px), fill=_moisture_color(value))
+
+
+def _draw_slope_base_map(
+    draw: ImageDraw.ImageDraw,
+    *,
+    slope_rows: list[list[int]],
+    cell_size_px: int,
+) -> None:
+    """Draw slope categories as a standalone map."""
+    for y, row in enumerate(slope_rows):
+        for x, value in enumerate(row):
+            draw.rectangle(
+                _cell_rect(x, y, cell_size_px),
+                fill=SLOPE_COLORS.get(min(3, max(0, value)), SLOPE_COLORS[3]),
+            )
+
+
+def _draw_geography_base_map(
+    draw: ImageDraw.ImageDraw,
+    *,
+    mask_rows: list[str],
+    cell_size_px: int,
+) -> None:
+    """Draw geographic masks as a standalone map."""
+    for y, row in enumerate(mask_rows):
+        for x, code in enumerate(row):
+            draw.rectangle(
+                _cell_rect(x, y, cell_size_px),
+                fill=GEOGRAPHY_COLORS.get(code, GEOGRAPHY_FALLBACK_COLOR),
+            )
+
+
 def _draw_elevation_base_map(
     draw: ImageDraw.ImageDraw,
     *,
     height_rows: list[list[int]],
+    terrain_rows: list[list[str]],
+    source_rows: list[str],
     cell_size_px: int,
 ) -> None:
-    """Draw height_grid as a standalone hypsometric elevation map."""
+    """Draw height_grid as a source-aware hypsometric elevation map."""
     for y, row in enumerate(height_rows):
         for x, level in enumerate(row):
+            terrain_type = _terrain_type_at(terrain_rows, x=x, y=y)
+            source = _source_at(source_rows, x=x, y=y)
             draw.rectangle(
                 _cell_rect(x, y, cell_size_px),
-                fill=_elevation_opaque_color(level),
+                fill=_elevation_opaque_color(level, terrain_type=terrain_type, source=source),
             )
 
+
+def _draw_elevation_source_base_map(
+    draw: ImageDraw.ImageDraw,
+    *,
+    source_rows: list[str],
+    cell_size_px: int,
+) -> None:
+    """Draw elevation source classes as a standalone debug map."""
+    for y, row in enumerate(source_rows):
+        for x, source in enumerate(row):
+            draw.rectangle(
+                _cell_rect(x, y, cell_size_px),
+                fill=ELEVATION_SOURCE_COLORS.get(source, GEOGRAPHY_FALLBACK_COLOR),
+            )
+
+
+def _draw_water_lowland_base_map(
+    draw: ImageDraw.ImageDraw,
+    *,
+    water_lowland_rows: list[str],
+    cell_size_px: int,
+) -> None:
+    """Draw standing water and lowland classes as a standalone map."""
+    for y, row in enumerate(water_lowland_rows):
+        for x, code in enumerate(row):
+            draw.rectangle(
+                _cell_rect(x, y, cell_size_px),
+                fill=WATER_LOWLAND_COLORS.get(code, GEOGRAPHY_FALLBACK_COLOR),
+            )
 
 
 def _draw_elevation_contours(
@@ -545,6 +762,7 @@ def _draw_elevation_legend(
     panel_width: int,
     panel_height: int,
     level_counts: dict[int, int],
+    source_counts: dict[str, int],
     total_tiles: int,
     report: dict[str, Any],
 ) -> None:
@@ -598,6 +816,16 @@ def _draw_elevation_legend(
         font=font,
     )
     cursor_y += 7
+    cursor_y = _draw_elevation_source_summary(
+        draw,
+        x=x + padding,
+        y=cursor_y,
+        panel_width=panel_width - padding * 2,
+        total_tiles=total_tiles,
+        source_counts=source_counts,
+        font=font,
+    )
+    cursor_y += 7
 
     draw.text((x + padding, cursor_y), "Level       tiles       %", fill=ELEVATION_LEGEND_TEXT, font=font)
     cursor_y += line_height + 3
@@ -642,7 +870,7 @@ def _draw_elevation_band_summary(
     font: ImageFont.ImageFont,
 ) -> int:
     bands = (
-        ("underground -5..-1", range(-5, 0)),
+        ("low/depth -5..-1", range(-5, 0)),
         ("ground 0", range(0, 1)),
         ("raised 1..4", range(1, 5)),
         ("hills 5..10", range(5, 11)),
@@ -675,18 +903,275 @@ def _draw_elevation_band_summary(
     return y
 
 
+def _draw_elevation_source_summary(
+    draw: ImageDraw.ImageDraw,
+    *,
+    x: int,
+    y: int,
+    panel_width: int,
+    total_tiles: int,
+    source_counts: dict[str, int],
+    font: ImageFont.ImageFont,
+) -> int:
+    """Draw source split for runtime elevation values."""
+    line_height = 20
+    draw.text((x, y), "Sources", fill=ELEVATION_LEGEND_TEXT, font=font)
+    y += line_height + 2
+    max_count = max(source_counts.values(), default=1)
+    bar_x = x + 178
+    bar_width = max(50, panel_width - 178)
+    for code in ("G", "W", "S"):
+        count = source_counts.get(code, 0)
+        percent = _legend_percent(count, total_tiles)
+        label = ELEVATION_SOURCE_LABELS.get(code, code)
+        draw.rectangle((x, y + 3, x + 13, y + 14), fill=ELEVATION_SOURCE_COLORS.get(code, GEOGRAPHY_FALLBACK_COLOR))
+        draw.text(
+            (x + 19, y),
+            f"{label + ':':<14} {percent:>5.1f}%",
+            fill=ELEVATION_LEGEND_MUTED_TEXT,
+            font=font,
+        )
+        draw.rectangle((bar_x, y + 4, bar_x + bar_width, y + 10), fill=ELEVATION_LEGEND_BAR_BACKGROUND)
+        filled_width = int(round(bar_width * count / max_count)) if max_count else 0
+        if filled_width > 0:
+            draw.rectangle((bar_x, y + 4, bar_x + filled_width, y + 10), fill=ELEVATION_LEGEND_BAR)
+        y += line_height
+    return y
 
-def _elevation_opaque_color(level: int) -> tuple[int, int, int, int]:
-    return ELEVATION_OPAQUE_COLORS.get(
-        max(ELEVATION_FORMAT_MIN_LEVEL, min(ELEVATION_FORMAT_MAX_LEVEL, level)),
-        (255, 255, 255, 255),
+
+def _read_generation_geography(root: Path) -> dict[str, Any]:
+    tactical_map = _read_optional_output_object(root / "tactical_map.json")
+    generation_report = _optional_object(tactical_map.get("elevation_generation_report"))
+    return _optional_object(generation_report.get("geography"))
+
+
+def _read_moisture_rows(geography: dict[str, Any], *, width: int, height: int) -> list[list[float]]:
+    moisture_grid = _optional_object(_optional_object(geography.get("grids")).get("moisture_grid"))
+    scale = moisture_grid.get("scale", 1000)
+    if not isinstance(scale, int | float) or scale <= 0:
+        scale = 1000
+    rows = moisture_grid.get("rows")
+    if not isinstance(rows, list):
+        return []
+    output: list[list[float]] = []
+    for row in rows[:height]:
+        if not isinstance(row, list):
+            continue
+        values = [float(value) / float(scale) for value in row[:width] if isinstance(value, int | float)]
+        if len(values) == width:
+            output.append([max(0.0, min(1.0, value)) for value in values])
+    return output if len(output) == height else []
+
+
+def _read_slope_rows(
+    geography: dict[str, Any],
+    *,
+    height_rows: list[list[int]],
+    width: int,
+    height: int,
+) -> list[list[int]]:
+    slope_grid = _optional_object(_optional_object(geography.get("grids")).get("slope_grid"))
+    rows = slope_grid.get("rows")
+    if isinstance(rows, list):
+        output: list[list[int]] = []
+        for row in rows[:height]:
+            if not isinstance(row, list):
+                continue
+            values = [int(value) for value in row[:width] if isinstance(value, int | float)]
+            if len(values) == width:
+                output.append(values)
+        if len(output) == height:
+            return output
+    return _compute_slope_rows(height_rows)
+
+
+def _read_geography_mask_rows(
+    geography: dict[str, Any],
+    *,
+    height_rows: list[list[int]],
+    width: int,
+    height: int,
+) -> list[str]:
+    mask_grid = _optional_object(_optional_object(geography.get("grids")).get("mask_grid"))
+    rows = mask_grid.get("rows")
+    if isinstance(rows, list):
+        output = [row[:width] for row in rows[:height] if isinstance(row, str) and len(row) >= width]
+        if len(output) == height:
+            return output
+    return _fallback_geography_mask_rows(height_rows)
+
+
+def _read_elevation_source_rows(geography: dict[str, Any], *, width: int, height: int) -> list[str]:
+    source_grid = _optional_object(_optional_object(geography.get("grids")).get("source_grid"))
+    rows = source_grid.get("rows")
+    if isinstance(rows, list):
+        output = [row[:width] for row in rows[:height] if isinstance(row, str) and len(row) >= width]
+        if len(output) == height:
+            return output
+    return ["G" * width for _ in range(height)]
+
+
+def _read_geographic_height_rows(
+    geography: dict[str, Any],
+    *,
+    height_rows: list[list[int]],
+    width: int,
+    height: int,
+) -> list[list[int]]:
+    level_grid = _optional_object(_optional_object(geography.get("grids")).get("geographic_level_grid"))
+    rows = level_grid.get("rows")
+    if isinstance(rows, list):
+        output: list[list[int]] = []
+        for row in rows[:height]:
+            if not isinstance(row, list):
+                continue
+            values = [int(value) for value in row[:width] if isinstance(value, int | float)]
+            if len(values) == width:
+                output.append(values)
+        if len(output) == height:
+            return output
+    return height_rows
+
+
+def _read_water_lowland_rows(
+    geography: dict[str, Any],
+    *,
+    height_rows: list[list[int]],
+    source_rows: list[str],
+    moisture_rows: list[list[float]],
+    width: int,
+    height: int,
+) -> list[str]:
+    water_grid = _optional_object(_optional_object(geography.get("grids")).get("water_lowland_grid"))
+    rows = water_grid.get("rows")
+    if isinstance(rows, list):
+        output = [row[:width] for row in rows[:height] if isinstance(row, str) and len(row) >= width]
+        if len(output) == height:
+            return output
+    return _fallback_water_lowland_rows(
+        height_rows,
+        source_rows=source_rows,
+        moisture_rows=moisture_rows,
     )
 
 
+def _compute_slope_rows(height_rows: list[list[int]]) -> list[list[int]]:
+    height = len(height_rows)
+    width = len(height_rows[0]) if height_rows else 0
+    output = [[0 for _ in range(width)] for _ in range(height)]
+    for y, row in enumerate(height_rows):
+        for x, level in enumerate(row):
+            output[y][x] = max(
+                (
+                    abs(level - height_rows[ny][nx])
+                    for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))
+                    if 0 <= nx < width and 0 <= ny < height
+                ),
+                default=0,
+            )
+    return output
 
-def _elevation_overlay_color(level: int) -> tuple[int, int, int, int]:
-    red, green, blue, _alpha = _elevation_opaque_color(level)
-    alpha = ELEVATION_ZERO_OVERLAY_ALPHA if level == 0 else ELEVATION_OVERLAY_ALPHA
+
+def _fallback_moisture_rows(height_rows: list[list[int]]) -> list[list[float]]:
+    if not height_rows:
+        return []
+    levels = [level for row in height_rows for level in row]
+    minimum = min(levels)
+    maximum = max(levels)
+    span = max(1, maximum - minimum)
+    return [[1.0 - ((level - minimum) / span) for level in row] for row in height_rows]
+
+
+def _fallback_geography_mask_rows(height_rows: list[list[int]]) -> list[str]:
+    slope_rows = _compute_slope_rows(height_rows)
+    output: list[str] = []
+    for y, row in enumerate(height_rows):
+        chars: list[str] = []
+        for x, level in enumerate(row):
+            slope = slope_rows[y][x]
+            if level >= 17:
+                chars.append("K")
+            elif level >= 11:
+                chars.append("R" if slope >= 2 else "M")
+            elif level >= 7:
+                chars.append("R" if slope >= 2 else "T")
+            elif level >= 3:
+                chars.append("H")
+            elif level < -1:
+                chars.append("B")
+            elif level < 0:
+                chars.append("L")
+            else:
+                chars.append("P")
+        output.append("".join(chars))
+    return output
+
+
+def _fallback_water_lowland_rows(
+    height_rows: list[list[int]],
+    *,
+    source_rows: list[str],
+    moisture_rows: list[list[float]],
+) -> list[str]:
+    output: list[str] = []
+    for y, row in enumerate(height_rows):
+        chars: list[str] = []
+        for x, level in enumerate(row):
+            source = _source_at(source_rows, x=x, y=y) or "G"
+            moisture = moisture_rows[y][x] if y < len(moisture_rows) and x < len(moisture_rows[y]) else 0.5
+            if source == "S":
+                chars.append("X")
+            elif source == "W":
+                chars.append("B" if level <= -2 else "S")
+            elif level < 0:
+                chars.append("W" if moisture >= 0.68 else "L")
+            elif level <= 1 and moisture >= 0.82:
+                chars.append("W")
+            else:
+                chars.append("D")
+        output.append("".join(chars))
+    return output
+
+
+def _moisture_color(value: float) -> tuple[int, int, int, int]:
+    value = max(0.0, min(1.0, value))
+    if value < 0.5:
+        t = value / 0.5
+        return _interpolate_color((156, 124, 75, 255), (91, 142, 83, 255), t)
+    t = (value - 0.5) / 0.5
+    return _interpolate_color((91, 142, 83, 255), (67, 139, 181, 255), t)
+
+
+def _interpolate_color(
+    start: tuple[int, int, int, int],
+    end: tuple[int, int, int, int],
+    t: float,
+) -> tuple[int, int, int, int]:
+    return tuple(int(round(a + (b - a) * t)) for a, b in zip(start, end, strict=True))
+
+
+def _elevation_opaque_color(
+    level: int,
+    *,
+    terrain_type: str | None = None,
+    source: str | None = None,
+) -> tuple[int, int, int, int]:
+    level = max(ELEVATION_FORMAT_MIN_LEVEL, min(ELEVATION_FORMAT_MAX_LEVEL, level))
+    if terrain_type == "water_slow" or source == "W":
+        return WATER_ELEVATION_COLORS.get(min(0, level), WATER_ELEVATION_COLORS[0])
+    if source == "S" and level < 0:
+        return STRUCTURAL_ELEVATION_COLORS.get(level, STRUCTURAL_ELEVATION_COLORS[-5])
+    return ELEVATION_OPAQUE_COLORS.get(level, (255, 255, 255, 255))
+
+
+def _elevation_overlay_color(
+    level: int,
+    *,
+    terrain_type: str | None = None,
+    source: str | None = None,
+) -> tuple[int, int, int, int]:
+    red, green, blue, _alpha = _elevation_opaque_color(level, terrain_type=terrain_type, source=source)
+    alpha = ELEVATION_ZERO_OVERLAY_ALPHA if level == 0 and source != "W" else ELEVATION_OVERLAY_ALPHA
     return red, green, blue, alpha
 
 
@@ -698,6 +1183,26 @@ def _elevation_level_counts(height_rows: list[list[int]]) -> dict[int, int]:
             counts[level] = counts.get(level, 0) + 1
     return dict(sorted(counts.items()))
 
+
+
+def _elevation_source_counts(source_rows: list[str]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in source_rows:
+        for source in row:
+            counts[source] = counts.get(source, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _terrain_type_at(terrain_rows: list[list[str]], *, x: int, y: int) -> str | None:
+    if 0 <= y < len(terrain_rows) and 0 <= x < len(terrain_rows[y]):
+        return terrain_rows[y][x]
+    return None
+
+
+def _source_at(source_rows: list[str], *, x: int, y: int) -> str | None:
+    if 0 <= y < len(source_rows) and 0 <= x < len(source_rows[y]):
+        return source_rows[y][x]
+    return None
 
 
 def _legend_panel_width(map_width_px: int) -> int:
@@ -1585,6 +2090,31 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Draw contour-like lines between different height levels.",
     )
+    parser.add_argument(
+        "--moisture-only",
+        action="store_true",
+        help="Render the generated moisture field as a standalone map.",
+    )
+    parser.add_argument(
+        "--slope-only",
+        action="store_true",
+        help="Render slope categories as a standalone map.",
+    )
+    parser.add_argument(
+        "--geography-only",
+        action="store_true",
+        help="Render geographic masks as a standalone map.",
+    )
+    parser.add_argument(
+        "--source-only",
+        action="store_true",
+        help="Render geography/water/structural elevation source classes.",
+    )
+    parser.add_argument(
+        "--water-lowlands-only",
+        action="store_true",
+        help="Render standing water, wet lowlands, dry lowlands, and structural depth.",
+    )
     return parser.parse_args()
 
 
@@ -1609,6 +2139,11 @@ def main() -> int:
             draw_elevation_legend=args.elevation_legend,
             draw_elevation_only=args.elevation_only,
             draw_elevation_contours=args.elevation_contours,
+            draw_moisture_only=args.moisture_only,
+            draw_slope_only=args.slope_only,
+            draw_geography_only=args.geography_only,
+            draw_source_only=args.source_only,
+            draw_water_lowlands_only=args.water_lowlands_only,
         )
     except (FileNotFoundError, ValueError, json.JSONDecodeError, OSError) as exc:
         LOGGER.error("World preview: FAILED")

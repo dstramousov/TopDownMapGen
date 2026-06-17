@@ -180,9 +180,79 @@ def format_console_summary(summary: dict[str, Any]) -> str:
             f"    min level:        {summary_info.get('min_level', 0):>5}",
             f"    max level:        {summary_info.get('max_level', 0):>5}",
             "",
-            "  elevation transitions:",
+            "  geography:",
         ],
     )
+    geography = _dict(elevation.get("geography"))
+    macro_regions = _dict(geography.get("macro_regions"))
+    lines.append(f"    macro regions:     {int(macro_regions.get('count', 0)):>5}")
+    sources = _dict(geography.get("sources"))
+    if sources:
+        geography_source = float(_dict(sources.get("geography")).get("percent", 0.0))
+        water_source = float(_dict(sources.get("water")).get("percent", 0.0))
+        structural_source = float(_dict(sources.get("structural_depth")).get("percent", 0.0))
+        lines.append(
+            f"    sources: geography {geography_source:.1f}%, "
+            f"water {water_source:.1f}%, structural {structural_source:.1f}%",
+        )
+    masks = _dict(geography.get("masks"))
+    for key, label in (
+        ("basins", "basins"),
+        ("lowlands", "lowlands"),
+        ("plains", "plains"),
+        ("hills", "hills"),
+        ("plateaus", "plateaus"),
+        ("ridges", "ridges"),
+        ("mountains", "mountains"),
+        ("peaks", "peaks"),
+    ):
+        metric = _dict(masks.get(key))
+        if metric:
+            lines.append(_format_plain_metric(label, metric))
+    moisture = _dict(geography.get("moisture"))
+    if moisture:
+        lines.append(
+            f"    moisture avg:      {float(moisture.get('avg', 0.0)):>5.3f}"
+            f" [{float(moisture.get('min', 0.0)):>5.3f}..{float(moisture.get('max', 0.0)):>5.3f}]",
+        )
+    standing_water = _dict(geography.get("standing_water"))
+    if standing_water:
+        water_total = float(_dict(standing_water.get("water_total")).get("percent", 0.0))
+        wet_lowland = float(_dict(standing_water.get("wet_lowland_total")).get("percent", 0.0))
+        dry_lowland = float(_dict(standing_water.get("dry_lowland_total")).get("percent", 0.0))
+        structural = float(_dict(standing_water.get("structural_total")).get("percent", 0.0))
+        lines.append(
+            f"    standing water: water {water_total:.1f}%, "
+            f"wet lowland {wet_lowland:.1f}%, dry lowland {dry_lowland:.1f}%",
+        )
+        lines.append(f"    water model:       no rivers, structural depth {structural:.1f}%")
+    slope_bands = _dict(_dict(geography.get("slope")).get("bands"))
+    if slope_bands:
+        flat = float(_dict(slope_bands.get("flat")).get("percent", 0.0))
+        gentle = float(_dict(slope_bands.get("gentle")).get("percent", 0.0))
+        steep = float(_dict(slope_bands.get("steep")).get("percent", 0.0))
+        cliff = float(_dict(slope_bands.get("cliff")).get("percent", 0.0))
+        lines.append(f"    slope: flat {flat:.1f}%, gentle {gentle:.1f}%, steep {steep:.1f}%, cliff {cliff:.1f}%")
+    traversal_repair = _dict(elevation.get("traversal_repair"))
+    repair_summary = _dict(traversal_repair.get("summary"))
+    if repair_summary:
+        lines.append(
+            "    traversal repair: "
+            f"{int(repair_summary.get('unreachable_before', 0))} -> "
+            f"{int(repair_summary.get('unreachable_after', 0))} unreachable, "
+            f"adjusted {int(repair_summary.get('adjusted_tiles', 0))} tiles, "
+            f"goal {'ok' if repair_summary.get('goal_reachable_after') else 'blocked'}",
+        )
+    terrain_island_repair = _dict(elevation.get("terrain_island_repair"))
+    island_summary = _dict(terrain_island_repair.get("summary"))
+    if island_summary:
+        lines.append(
+            "    terrain islands:  "
+            f"removed {int(island_summary.get('small_islands_removed', 0))} small "
+            f"({int(island_summary.get('small_island_tiles_removed', 0))} tiles), "
+            f"preserved {int(island_summary.get('large_islands_preserved', 0))} large",
+        )
+    lines.extend(["", "  elevation transitions:"])
     transitions = _dict(elevation.get("transitions"))
     lines.append(_format_transition_metric("total", transitions.get("total", 0)))
     connector_counts = _dict(transitions.get("by_connector"))
@@ -216,7 +286,7 @@ def format_console_summary(summary: dict[str, Any]) -> str:
         ],
     )
     for label, path in debug_files.items():
-        lines.append(f"  {str(label).replace('_', ' ') + ':':<23}{_path_text(path)}")
+        lines.append(f"  {str(label).replace('_', ' ') + ':':<29}{_path_text(path)}")
     lines.extend(["", "Overall:", f"  status: {overall.get('status', 'unknown')}"])
     notes = overall.get("notes")
     if isinstance(notes, list) and notes:
@@ -329,6 +399,9 @@ def _build_elevation_density_report(
         "profile": profile,
         "bands": bands,
         "adjacent_delta": _dict(generation_report.get("adjacent_delta")),
+        "traversal_repair": _dict(generation_report.get("traversal_repair")),
+        "terrain_island_repair": _dict(runtime_data.get("terrain_island_repair")),
+        "geography": _geography_summary(_dict(generation_report.get("geography"))),
         "transitions": {
             "total": int(transitions.get("total", 0)),
             "by_type": _dict(transitions.get("by_type")),
@@ -338,6 +411,22 @@ def _build_elevation_density_report(
         },
     }
 
+
+
+def _geography_summary(geography: dict[str, Any]) -> dict[str, Any]:
+    output = dict(geography)
+    grids = output.pop("grids", None)
+    if isinstance(grids, dict):
+        output["debug_grids"] = {
+            "geographic_level_grid": "available" if "geographic_level_grid" in grids else "missing",
+            "runtime_level_grid": "available" if "runtime_level_grid" in grids else "missing",
+            "source_grid": "available" if "source_grid" in grids else "missing",
+            "mask_grid": "available" if "mask_grid" in grids else "missing",
+            "moisture_grid": "available" if "moisture_grid" in grids else "missing",
+            "slope_grid": "available" if "slope_grid" in grids else "missing",
+        "water_lowland_grid": "available" if "water_lowland_grid" in grids else "missing",
+        }
+    return output
 
 def _build_world_structure(*, outputs: OutputPaths, runtime_data: dict[str, Any]) -> dict[str, int]:
     routes = _read_json_or_empty(outputs.map_package_routes)
@@ -355,9 +444,29 @@ def _build_debug_files(*, outputs: OutputPaths, render_enabled: bool) -> dict[st
         "world_density": outputs.world_density_report,
         "elevation_density": outputs.elevation_density_report,
         "world_summary": outputs.world_summary_report,
+        "terrain_island_report": outputs.terrain_island_report,
         "generation_log": outputs.log_file,
         "full_world_preview": outputs.output_dir / "full_world_preview.png",
         "elevation_preview": outputs.output_dir / "elevation_preview.png",
+        "elevation_source_preview": outputs.output_dir / "elevation_source_preview.png",
+        "geography_preview": outputs.output_dir / "geography_preview.png",
+        "moisture_preview": outputs.output_dir / "moisture_preview.png",
+        "water_lowland_preview": outputs.output_dir / "water_lowland_preview.png",
+        "slope_preview": outputs.output_dir / "slope_preview.png",
+        "3d_preview_nw": outputs.output_dir / "geography_3d_preview" / "view_nw.png",
+        "3d_preview_ne": outputs.output_dir / "geography_3d_preview" / "view_ne.png",
+        "3d_preview_se": outputs.output_dir / "geography_3d_preview" / "view_se.png",
+        "3d_preview_sw": outputs.output_dir / "geography_3d_preview" / "view_sw.png",
+        "3d_walkability_nw": outputs.output_dir / "geography_3d_preview" / "walkability_nw.png",
+        "3d_walkability_ne": outputs.output_dir / "geography_3d_preview" / "walkability_ne.png",
+        "3d_walkability_se": outputs.output_dir / "geography_3d_preview" / "walkability_se.png",
+        "3d_walkability_sw": outputs.output_dir / "geography_3d_preview" / "walkability_sw.png",
+        "3d_walkability_report": outputs.output_dir / "geography_3d_preview" / "walkability_report.json",
+        "3d_traversal_nw": outputs.output_dir / "geography_3d_preview" / "traversal_nw.png",
+        "3d_traversal_ne": outputs.output_dir / "geography_3d_preview" / "traversal_ne.png",
+        "3d_traversal_se": outputs.output_dir / "geography_3d_preview" / "traversal_se.png",
+        "3d_traversal_sw": outputs.output_dir / "geography_3d_preview" / "traversal_sw.png",
+        "3d_traversal_report": outputs.output_dir / "geography_3d_preview" / "traversal_report.json",
         "validation_report": outputs.validation_report,
         "runtime_grids": outputs.map_package_runtime_grids,
         "elevation_model": outputs.map_package_elevation_model,
@@ -407,6 +516,13 @@ def _overall_notes(
             notes.append("elevation distribution is within next-gen targets")
     if _dict(elevation_report.get("summary")).get("level_zero_percent", 100.0) < 60.0:
         notes.append("level 0 is no longer the dominant 99% flat plane")
+    repair_summary = _dict(_dict(elevation_report.get("traversal_repair")).get("summary"))
+    if repair_summary and repair_summary.get("goal_reachable_after"):
+        notes.append("start to goal is 3D-reachable after traversal repair")
+    island_summary = _dict(_dict(elevation_report.get("terrain_island_repair")).get("summary"))
+    removed_tiles = int(island_summary.get("small_island_tiles_removed", 0)) if island_summary else 0
+    if removed_tiles > 0:
+        notes.append(f"removed {removed_tiles} tiny isolated walkable terrain tiles")
     warnings = validation_report.get("warnings")
     if isinstance(warnings, list) and warnings:
         notes.append(f"validation warnings: {len(warnings)}")
@@ -458,6 +574,12 @@ def _format_targeted_metric(label: str, metric: dict[str, Any]) -> str:
         suffix = f" [{str(metric.get('status', 'ok'))}, target {target[0]:g}–{target[1]:g}]"
     return f"    {label + ':':<22}{count:>7} tiles = {percent:>6.1f}%{suffix}"
 
+
+
+def _format_plain_metric(label: str, metric: dict[str, Any]) -> str:
+    count = int(metric.get("count", 0))
+    percent = float(metric.get("percent", 0.0))
+    return f"    {label + ':':<22}{count:>7} tiles = {percent:>6.1f}%"
 
 def _format_transition_metric(label: str, value: Any) -> str:
     count = int(value) if isinstance(value, int | float) else 0

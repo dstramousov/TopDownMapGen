@@ -36,6 +36,7 @@ from .manifest import (
     PLACES_SCHEMA_VERSION,
     WORLD_DENSITY_REPORT_SCHEMA_VERSION,
     WORLD_SUMMARY_REPORT_SCHEMA_VERSION,
+    TERRAIN_ISLAND_REPORT_SCHEMA_VERSION,
     PNG_LAYER_SCHEMA_VERSION,
     RAW_TACTICAL_MAP_SCHEMA_VERSION,
     TILE_RENDER_HINTS_SCHEMA_VERSION,
@@ -59,6 +60,7 @@ from .tactical.fallback import FallbackPositionBuilder
 from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
 from .tactical.runtime_objects import attach_runtime_layers
+from .tactical.terrain_islands import elevation_cell_points, repair_terrain_islands
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
 from .utils.json_io import read_json, write_json
@@ -213,6 +215,37 @@ class WorldgenPipeline:
                 seed=config.resolved_seed,
                 generation_tuning=config.generation_tuning.to_dict(),
             )
+            with timed_stage(
+                LOGGER,
+                "pipeline.terrain_island_repair",
+                report_path=outputs.terrain_island_report,
+            ) as island_metrics:
+                structural_points = elevation_cell_points(
+                    runtime_data,
+                    width=len(rows[0]) if rows else 0,
+                    height=len(rows),
+                )
+                terrain_island_repair = repair_terrain_islands(
+                    rows,
+                    blocked_points=structural_points,
+                )
+                rows = terrain_island_repair.rows
+                outputs.generated_map.write_text("\n".join(rows) + "\n", encoding="utf-8")
+                write_json(terrain_island_repair.report, outputs.terrain_island_report)
+                repair_summary = terrain_island_repair.report.get("summary", {})
+                island_metrics.update(
+                    {
+                        "small_islands_removed": repair_summary.get("small_islands_removed"),
+                        "small_island_tiles_removed": repair_summary.get("small_island_tiles_removed"),
+                        "large_islands_preserved": repair_summary.get("large_islands_preserved"),
+                        "components_before": repair_summary.get("components_before"),
+                        "components_after": repair_summary.get("components_after"),
+                        "structural_points": len(structural_points),
+                    },
+                )
+            runtime_data = attach_tile_grid(runtime_data, rows)
+            runtime_data["terrain_island_repair"] = terrain_island_repair.report
+            debug_data["terrain_island_repair"] = terrain_island_repair.report
             runtime_data = attach_next_gen_elevation(
                 runtime_data,
                 rows=rows,
@@ -343,6 +376,15 @@ class WorldgenPipeline:
             "connectivity_filled_components": connectivity_repair.get("filled_components"),
             "connectivity_connected_components": connectivity_repair.get("connected_components"),
             "connectivity_tiles_changed": connectivity_repair.get("tiles_changed"),
+            "terrain_small_islands_removed": runtime_data.get("terrain_island_repair", {})
+            .get("summary", {})
+            .get("small_islands_removed"),
+            "terrain_small_island_tiles_removed": runtime_data.get("terrain_island_repair", {})
+            .get("summary", {})
+            .get("small_island_tiles_removed"),
+            "terrain_large_islands_preserved": runtime_data.get("terrain_island_repair", {})
+            .get("summary", {})
+            .get("large_islands_preserved"),
         }
         with timed_stage(
             LOGGER,
@@ -545,6 +587,13 @@ class WorldgenPipeline:
                 True,
                 False,
                 WORLD_SUMMARY_REPORT_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.terrain_island_report,
+                "terrain_island_report",
+                False,
+                True,
+                TERRAIN_ISLAND_REPORT_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.object_catalog,
