@@ -102,6 +102,24 @@ class ElevationGenerationResult:
     report: dict[str, Any]
 
 
+
+
+@dataclass(frozen=True, slots=True)
+class RegionTransitionShapingResult:
+    """Result of macro-region boundary elevation shaping."""
+
+    rows: list[list[int]]
+    report: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class MainRouteAlignmentResult:
+    """Result of semantic main-route elevation alignment."""
+
+    rows: list[list[int]]
+    report: dict[str, Any]
+
+
 @dataclass(frozen=True, slots=True)
 class TraversalRepairResult:
     """Result of the geography-level 3D traversal repair pass."""
@@ -185,9 +203,25 @@ def generate_next_gen_elevation(
         locked_levels=locked_levels,
     )
     levels = _apply_terrain_bias(levels, rows)
+    explicit_cells = _explicit_elevation_cells(tactical_data or {})
+    transition_result = _shape_region_transition_belts(
+        levels,
+        region_rows=geographic_fields.dominant_region_rows,
+        terrain_rows=rows,
+        profile=profile,
+    )
+    levels = transition_result.rows
     locked_levels = _locked_terrain_levels(levels, rows)
     path = _find_walkable_path(rows)
-    levels = _apply_ground_corridor(levels, path=path, profile=profile)
+    route_result = _align_main_route_elevation(
+        levels,
+        terrain_rows=rows,
+        tactical_data=tactical_data or {},
+        explicit_cells=explicit_cells,
+        profile=profile,
+        fallback_path=path,
+    )
+    levels = route_result.rows
     locked_levels.update(_locked_terrain_levels(levels, rows))
     levels = _relax_level_deltas(
         levels,
@@ -195,7 +229,6 @@ def generate_next_gen_elevation(
         passes=max(1, profile.level_relax_passes // 2),
         locked_levels=locked_levels,
     )
-    explicit_cells = _explicit_elevation_cells(tactical_data or {})
     traversal_repair = _repair_traversal_consistency(
         levels,
         terrain_rows=rows,
@@ -208,6 +241,15 @@ def generate_next_gen_elevation(
         levels,
         explicit_cells=explicit_cells,
     )
+    runtime_route_result = _align_main_route_elevation(
+        levels,
+        terrain_rows=rows,
+        tactical_data=tactical_data or {},
+        explicit_cells=explicit_cells,
+        profile=profile,
+        fallback_path=path,
+    )
+    levels = runtime_route_result.rows
     report = _build_generation_report(
         levels,
         geographic_levels=geographic_levels,
@@ -217,6 +259,8 @@ def generate_next_gen_elevation(
         corridor_path=path,
         profile=profile,
         geographic_fields=geographic_fields,
+        transition_report=transition_result.report,
+        route_alignment_report=runtime_route_result.report,
         traversal_repair_report=traversal_repair.report,
     )
     return ElevationGenerationResult(rows=levels, report=report)
@@ -1192,6 +1236,524 @@ def _apply_ground_corridor(
     return rows
 
 
+
+def _shape_region_transition_belts(
+    levels: list[list[int]],
+    *,
+    region_rows: list[list[int]],
+    terrain_rows: list[str],
+    profile: ElevationScaleProfile,
+) -> RegionTransitionShapingResult:
+    """Soften walkable cliffs that appear exactly on macro-region borders."""
+    rows = [list(row) for row in levels]
+    height = len(rows)
+    width = len(rows[0]) if rows else 0
+    if width == 0 or height == 0 or not region_rows:
+        return RegionTransitionShapingResult(
+            rows=rows,
+            report=_region_transition_report(
+                status="skipped",
+                reason="missing_grid",
+                boundary_tiles=0,
+                cliff_edges_before=0,
+                cliff_edges_after=0,
+                adjusted_tiles=0,
+                passes=0,
+                max_delta=profile.max_natural_delta,
+            ),
+        )
+
+    boundary_tiles = _region_boundary_walkable_tiles(region_rows, terrain_rows)
+    cliff_edges_before = _region_boundary_cliff_edges(
+        rows,
+        region_rows=region_rows,
+        terrain_rows=terrain_rows,
+        max_delta=profile.max_natural_delta,
+    )
+    locked = _locked_terrain_levels(rows, terrain_rows)
+    adjusted: set[tuple[int, int]] = set()
+    passes = max(1, min(4, profile.level_relax_passes // 3))
+    for _ in range(passes):
+        changes: dict[tuple[int, int], int] = {}
+        for x, y in sorted(boundary_tiles, key=lambda point: (point[1], point[0])):
+            if (x, y) in locked:
+                continue
+            next_level = _boundary_smoothed_level(
+                rows,
+                region_rows=region_rows,
+                terrain_rows=terrain_rows,
+                x=x,
+                y=y,
+                max_delta=profile.max_natural_delta,
+            )
+            if next_level is None or next_level == rows[y][x]:
+                continue
+            changes[(x, y)] = next_level
+        if not changes:
+            break
+        for (x, y), level in changes.items():
+            rows[y][x] = level
+            adjusted.add((x, y))
+    cliff_edges_after = _region_boundary_cliff_edges(
+        rows,
+        region_rows=region_rows,
+        terrain_rows=terrain_rows,
+        max_delta=profile.max_natural_delta,
+    )
+    return RegionTransitionShapingResult(
+        rows=rows,
+        report=_region_transition_report(
+            status="ok",
+            reason=None,
+            boundary_tiles=len(boundary_tiles),
+            cliff_edges_before=cliff_edges_before,
+            cliff_edges_after=cliff_edges_after,
+            adjusted_tiles=len(adjusted),
+            passes=passes,
+            max_delta=profile.max_natural_delta,
+        ),
+    )
+
+
+def _region_boundary_walkable_tiles(
+    region_rows: list[list[int]],
+    terrain_rows: list[str],
+) -> set[tuple[int, int]]:
+    height = len(region_rows)
+    width = len(region_rows[0]) if height else 0
+    points: set[tuple[int, int]] = set()
+    for y in range(height):
+        for x in range(width):
+            if not _terrain_walkable(terrain_rows, x, y):
+                continue
+            region = region_rows[y][x]
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if 0 <= nx < width and 0 <= ny < height and region_rows[ny][nx] != region:
+                    points.add((x, y))
+                    break
+    return points
+
+
+def _region_boundary_cliff_edges(
+    levels: list[list[int]],
+    *,
+    region_rows: list[list[int]],
+    terrain_rows: list[str],
+    max_delta: int,
+) -> int:
+    height = len(levels)
+    width = len(levels[0]) if height else 0
+    count = 0
+    for y in range(height):
+        for x in range(width):
+            if not _terrain_walkable(terrain_rows, x, y):
+                continue
+            for nx, ny in ((x + 1, y), (x, y + 1)):
+                if not (0 <= nx < width and 0 <= ny < height):
+                    continue
+                if not _terrain_walkable(terrain_rows, nx, ny):
+                    continue
+                if region_rows[y][x] == region_rows[ny][nx]:
+                    continue
+                if abs(levels[y][x] - levels[ny][nx]) > max_delta:
+                    count += 1
+    return count
+
+
+def _boundary_smoothed_level(
+    levels: list[list[int]],
+    *,
+    region_rows: list[list[int]],
+    terrain_rows: list[str],
+    x: int,
+    y: int,
+    max_delta: int,
+) -> int | None:
+    current = levels[y][x]
+    height = len(levels)
+    width = len(levels[0]) if height else 0
+    neighbor_levels: list[int] = []
+    current_region = region_rows[y][x]
+    for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+        if not (0 <= nx < width and 0 <= ny < height):
+            continue
+        if not _terrain_walkable(terrain_rows, nx, ny):
+            continue
+        if region_rows[ny][nx] == current_region and abs(levels[ny][nx] - current) <= max_delta:
+            continue
+        neighbor_levels.append(levels[ny][nx])
+    if not neighbor_levels:
+        return None
+    target = _median_int(neighbor_levels)
+    return _clamp(current, target - max_delta, target + max_delta)
+
+
+def _region_transition_report(
+    *,
+    status: str,
+    reason: str | None,
+    boundary_tiles: int,
+    cliff_edges_before: int,
+    cliff_edges_after: int,
+    adjusted_tiles: int,
+    passes: int,
+    max_delta: int,
+) -> dict[str, Any]:
+    report: dict[str, Any] = {
+        "schema_version": "region-transition-shaping-report-v1",
+        "status": status,
+        "rules": {
+            "scope": "walkable_macro_region_boundaries",
+            "max_natural_delta": max_delta,
+            "moisture": "preserved",
+            "terrain_tiles": "not_reclassified",
+        },
+        "summary": {
+            "boundary_tiles": boundary_tiles,
+            "cliff_edges_before": cliff_edges_before,
+            "cliff_edges_after": cliff_edges_after,
+            "fixed_cliff_edges": max(0, cliff_edges_before - cliff_edges_after),
+            "adjusted_tiles": adjusted_tiles,
+            "passes": passes,
+        },
+    }
+    if reason:
+        report["reason"] = reason
+    return report
+
+
+def _align_main_route_elevation(
+    levels: list[list[int]],
+    *,
+    terrain_rows: list[str],
+    tactical_data: dict[str, Any],
+    explicit_cells: list[dict[str, int]],
+    profile: ElevationScaleProfile,
+    fallback_path: list[tuple[int, int]],
+) -> MainRouteAlignmentResult:
+    """Make the intended semantic main route traversable by natural deltas."""
+    rows = [list(row) for row in levels]
+    height = len(rows)
+    width = len(rows[0]) if height else 0
+    locked_points = _explicit_cell_points(explicit_cells, width=width, height=height)
+    blocked_points: set[tuple[int, int]] = set()
+    route_points = _semantic_main_route_points(terrain_rows, tactical_data)
+    segment_paths: list[list[tuple[int, int]]] = []
+    anchors: list[tuple[int, int]] = []
+    failed_segments = 0
+    if len(route_points) >= 2:
+        anchors = [
+            anchor
+            for point in route_points
+            if (anchor := _nearest_walkable_anchor(terrain_rows, point, blocked_points=blocked_points)) is not None
+        ]
+    if len(anchors) >= 2:
+        for source, target in zip(anchors, anchors[1:], strict=False):
+            path = _find_walkable_path_between(
+                terrain_rows,
+                start=source,
+                goal=target,
+                blocked_points=blocked_points,
+            )
+            if path:
+                segment_paths.append(path)
+            else:
+                failed_segments += 1
+    if not segment_paths and fallback_path:
+        segment_paths = [fallback_path]
+        anchors = [fallback_path[0], fallback_path[-1]] if len(fallback_path) >= 2 else []
+
+    route_path = _merged_route_path(segment_paths)
+    before_violations = _path_delta_violations(rows, route_path, max_delta=profile.max_natural_delta)
+    adjusted: set[tuple[int, int]] = set()
+    if route_path:
+        rows, adjusted = _apply_slope_corridor(
+            rows,
+            path=route_path,
+            radius=profile.ground_corridor_radius,
+            max_delta=profile.max_natural_delta,
+            locked_points=locked_points,
+        )
+    after_violations = _path_delta_violations(rows, route_path, max_delta=profile.max_natural_delta)
+    status = "ok" if route_path and after_violations == 0 else "partial" if route_path else "skipped"
+    return MainRouteAlignmentResult(
+        rows=rows,
+        report={
+            "schema_version": "main-route-elevation-alignment-report-v1",
+            "status": status,
+            "rules": {
+                "scope": "semantic_main_path_when_places_available_else_start_goal",
+                "max_natural_delta": profile.max_natural_delta,
+                "blocked_terrain": "preserved",
+                "moisture": "preserved",
+                "terrain_tiles": "not_reclassified",
+            },
+            "summary": {
+                "semantic_points": len(route_points),
+                "anchors": len(anchors),
+                "segments": len(segment_paths),
+                "failed_segments": failed_segments,
+                "route_tiles": len(route_path),
+                "delta_violations_before": before_violations,
+                "delta_violations_after": after_violations,
+                "adjusted_tiles": len(adjusted),
+            },
+            "anchors": [{"x": x, "y": y} for x, y in anchors],
+        },
+    )
+
+
+def _semantic_main_route_points(
+    terrain_rows: list[str],
+    tactical_data: dict[str, Any],
+) -> list[tuple[int, int]]:
+    start = _find_tile(terrain_rows, "S")
+    goal = _find_tile(terrain_rows, "G")
+    if start is None or goal is None:
+        return []
+    places: list[dict[str, Any]] = []
+    for item in tactical_data.get("places", []):
+        if not isinstance(item, dict):
+            continue
+        center = _mapping_point(item.get("center"))
+        if center is None:
+            continue
+        places.append(item)
+    if not places:
+        return [start, goal]
+    max_count = min(5, max(3, len(places) // 3))
+    selected = sorted(
+        places,
+        key=lambda place: (
+            _route_place_score(start=start, goal=goal, place=place),
+            -_safe_float(place.get("danger_level")),
+            -_safe_float(place.get("loot_level")),
+            str(place.get("id")),
+        ),
+    )[:max_count]
+    selected.sort(key=lambda place: _point_projection(start=start, goal=goal, point=_mapping_point(place.get("center")) or start))
+    points = [start]
+    for place in selected:
+        center = _mapping_point(place.get("center"))
+        if center is not None:
+            points.append(center)
+    points.append(goal)
+    return points
+
+
+def _route_place_score(
+    *,
+    start: tuple[int, int],
+    goal: tuple[int, int],
+    place: dict[str, Any],
+) -> float:
+    center = _mapping_point(place.get("center")) or start
+    direct = max(1, _manhattan(start, goal))
+    detour = _manhattan(start, center) + _manhattan(center, goal) - direct
+    projection = _point_projection(start=start, goal=goal, point=center)
+    corridor_penalty = 0.0 if 0.0 <= projection <= 1.0 else direct * 0.5
+    interest_bonus = (_safe_float(place.get("danger_level")) + _safe_float(place.get("loot_level"))) * 6.0
+    return float(detour) + corridor_penalty - interest_bonus
+
+
+def _point_projection(
+    *,
+    start: tuple[int, int],
+    goal: tuple[int, int],
+    point: tuple[int, int],
+) -> float:
+    dx = goal[0] - start[0]
+    dy = goal[1] - start[1]
+    denom = dx * dx + dy * dy
+    if denom <= 0:
+        return 0.0
+    return ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / denom
+
+
+def _nearest_walkable_anchor(
+    rows: list[str],
+    point: tuple[int, int],
+    *,
+    blocked_points: set[tuple[int, int]],
+    max_radius: int = 8,
+) -> tuple[int, int] | None:
+    x, y = point
+    if _terrain_walkable(rows, x, y) and (x, y) not in blocked_points:
+        return (x, y)
+    candidates: list[tuple[int, int, int]] = []
+    height = len(rows)
+    width = len(rows[0]) if height else 0
+    for radius in range(1, max_radius + 1):
+        for cy in range(y - radius, y + radius + 1):
+            for cx in range(x - radius, x + radius + 1):
+                if abs(cx - x) + abs(cy - y) > radius:
+                    continue
+                if not (0 <= cx < width and 0 <= cy < height):
+                    continue
+                if not _terrain_walkable(rows, cx, cy) or (cx, cy) in blocked_points:
+                    continue
+                candidates.append((abs(cx - x) + abs(cy - y), cx, cy))
+        if candidates:
+            _, best_x, best_y = min(candidates)
+            return (best_x, best_y)
+    return None
+
+
+def _find_walkable_path_between(
+    rows: list[str],
+    *,
+    start: tuple[int, int],
+    goal: tuple[int, int],
+    blocked_points: set[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    height = len(rows)
+    width = len(rows[0]) if height else 0
+    if start == goal:
+        return [start]
+    if not _terrain_walkable(rows, *start) or not _terrain_walkable(rows, *goal):
+        return []
+    if start in blocked_points or goal in blocked_points:
+        return []
+    queue = [start]
+    visited = {start}
+    parent: dict[tuple[int, int], tuple[int, int]] = {}
+    index = 0
+    while index < len(queue):
+        x, y = queue[index]
+        index += 1
+        if (x, y) == goal:
+            break
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if not (0 <= nx < width and 0 <= ny < height):
+                continue
+            if (nx, ny) in visited or (nx, ny) in blocked_points:
+                continue
+            if not _terrain_walkable(rows, nx, ny):
+                continue
+            visited.add((nx, ny))
+            parent[(nx, ny)] = (x, y)
+            queue.append((nx, ny))
+    if goal not in visited:
+        return []
+    path = [goal]
+    while path[-1] != start:
+        path.append(parent[path[-1]])
+    path.reverse()
+    return path
+
+
+def _merged_route_path(paths: list[list[tuple[int, int]]]) -> list[tuple[int, int]]:
+    merged: list[tuple[int, int]] = []
+    for path in paths:
+        if not path:
+            continue
+        if merged and merged[-1] == path[0]:
+            merged.extend(path[1:])
+        else:
+            merged.extend(path)
+    return merged
+
+
+def _path_delta_violations(
+    levels: list[list[int]],
+    path: list[tuple[int, int]],
+    *,
+    max_delta: int,
+) -> int:
+    violations = 0
+    for source, target in zip(path, path[1:], strict=False):
+        sx, sy = source
+        tx, ty = target
+        if abs(levels[sy][sx] - levels[ty][tx]) > max_delta:
+            violations += 1
+    return violations
+
+
+def _apply_slope_corridor(
+    levels: list[list[int]],
+    *,
+    path: list[tuple[int, int]],
+    radius: int,
+    max_delta: int,
+    locked_points: set[tuple[int, int]],
+) -> tuple[list[list[int]], set[tuple[int, int]]]:
+    rows = [list(row) for row in levels]
+    adjusted: set[tuple[int, int]] = set()
+    if not path:
+        return rows, adjusted
+    max_delta = max(1, max_delta)
+    reverse_path = list(reversed(path))
+    for _ in range(2):
+        for source, target in zip(path, path[1:], strict=False):
+            sx, sy = source
+            tx, ty = target
+            current = rows[sy][sx]
+            if (tx, ty) in locked_points:
+                continue
+            before = rows[ty][tx]
+            after = _clamp(before, current - max_delta, current + max_delta)
+            if after != before:
+                rows[ty][tx] = after
+                adjusted.add((tx, ty))
+        for source, target in zip(reverse_path, reverse_path[1:], strict=False):
+            sx, sy = source
+            tx, ty = target
+            current = rows[sy][sx]
+            if (tx, ty) in locked_points:
+                continue
+            before = rows[ty][tx]
+            after = _clamp(before, current - max_delta, current + max_delta)
+            if after != before:
+                rows[ty][tx] = after
+                adjusted.add((tx, ty))
+    height = len(rows)
+    width = len(rows[0]) if height else 0
+    radius = max(0, radius)
+    for x, y in path:
+        anchor_level = rows[y][x]
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                distance = abs(dx) + abs(dy)
+                if distance == 0 or distance > radius:
+                    continue
+                nx = x + dx
+                ny = y + dy
+                if not (0 <= nx < width and 0 <= ny < height):
+                    continue
+                if (nx, ny) in locked_points:
+                    continue
+                before = rows[ny][nx]
+                after = _clamp(before, anchor_level - distance * max_delta, anchor_level + distance * max_delta)
+                if after != before:
+                    rows[ny][nx] = after
+                    adjusted.add((nx, ny))
+    return rows, adjusted
+
+
+def _terrain_walkable(rows: list[str], x: int, y: int) -> bool:
+    return 0 <= y < len(rows) and 0 <= x < len(rows[y]) and rows[y][x] in _WALKABLE_SYMBOLS
+
+
+def _mapping_point(value: Any) -> tuple[int, int] | None:
+    if not isinstance(value, dict):
+        return None
+    x = value.get("x")
+    y = value.get("y")
+    if isinstance(x, int) and isinstance(y, int):
+        return (x, y)
+    return None
+
+
+def _safe_float(value: Any) -> float:
+    if isinstance(value, int | float):
+        return float(value)
+    return 0.0
+
+
+def _manhattan(first: tuple[int, int], second: tuple[int, int]) -> int:
+    return abs(first[0] - second[0]) + abs(first[1] - second[1])
+
+
 def _repair_traversal_consistency(
     levels: list[list[int]],
     *,
@@ -1516,6 +2078,8 @@ def _build_generation_report(
     corridor_path: list[tuple[int, int]],
     profile: ElevationScaleProfile,
     geographic_fields: GeographicFieldResult,
+    transition_report: dict[str, Any],
+    route_alignment_report: dict[str, Any],
     traversal_repair_report: dict[str, Any],
 ) -> dict[str, Any]:
     height = len(levels)
@@ -1538,6 +2102,8 @@ def _build_generation_report(
         },
         "bands": bands,
         "adjacent_delta": _adjacent_delta_report(levels),
+        "region_transition_shaping": transition_report,
+        "main_route_alignment": route_alignment_report,
         "traversal_repair": traversal_repair_report,
         "geography": _geography_report(
             geographic_levels,
@@ -1560,10 +2126,10 @@ def _build_generation_report(
 
 def _generator_info(*, seed: int, profile: ElevationScaleProfile) -> dict[str, Any]:
     return {
-        "name": "size_aware_polygonal_macro_geography_v1",
+        "name": "size_aware_polygonal_macro_geography_v2",
         "seed": seed,
         "range": [MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL],
-        "algorithm": "polygon_inspired_macro_region_graph_fbm_moisture_redistribution_terraces_stable_relax_traversal_repair",
+        "algorithm": "polygon_inspired_macro_region_graph_region_transition_belts_main_route_alignment_traversal_repair",
         "redistribution": "profile_weighted_percentile_quantization",
         "smoothing_passes": profile.score_smoothing_passes,
         "level_relax_passes": profile.level_relax_passes,

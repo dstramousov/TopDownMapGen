@@ -568,3 +568,11 @@
 - Имя elevation generator обновлено до `size_aware_polygonal_macro_geography_v1`.
 - Smoke-тест default config обновлён под текущий размер карты 192x192.
 - Версия проекта поднята до `0.0.67`.
+
+## v0.0.67 -> v0.0.68
+
+- Добавлен проход сглаживания walkable-стыков macro-регионов без изменения moisture/wet-lowland/water model.
+- Main route теперь выравнивается по 3D-рельефу до финального traversal repair: semantic places собираются до elevation pass, затем маршрут получает естественный slope corridor с `delta <= max_natural_delta`.
+- В elevation report и console summary добавлены `region_transition_shaping` и `main_route_alignment`.
+- Генератор переименован в `size_aware_polygonal_macro_geography_v2`.
+- Версия проекта поднята до `0.0.68`.

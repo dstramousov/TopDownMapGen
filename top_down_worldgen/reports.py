@@ -236,6 +236,24 @@ def format_console_summary(summary: dict[str, Any]) -> str:
         steep = float(_dict(slope_bands.get("steep")).get("percent", 0.0))
         cliff = float(_dict(slope_bands.get("cliff")).get("percent", 0.0))
         lines.append(f"    slope: flat {flat:.1f}%, gentle {gentle:.1f}%, steep {steep:.1f}%, cliff {cliff:.1f}%")
+    region_transition = _dict(elevation.get("region_transition_shaping"))
+    transition_summary = _dict(region_transition.get("summary"))
+    if transition_summary:
+        lines.append(
+            "    region transitions: "
+            f"{int(transition_summary.get('cliff_edges_before', 0))} -> "
+            f"{int(transition_summary.get('cliff_edges_after', 0))} boundary cliffs, "
+            f"adjusted {int(transition_summary.get('adjusted_tiles', 0))} tiles"
+        )
+    route_alignment = _dict(elevation.get("main_route_alignment"))
+    route_summary = _dict(route_alignment.get("summary"))
+    if route_summary:
+        lines.append(
+            "    main route align: "
+            f"{int(route_summary.get('delta_violations_before', 0))} -> "
+            f"{int(route_summary.get('delta_violations_after', 0))} delta violations, "
+            f"adjusted {int(route_summary.get('adjusted_tiles', 0))} tiles"
+        )
     traversal_repair = _dict(elevation.get("traversal_repair"))
     repair_summary = _dict(traversal_repair.get("summary"))
     if repair_summary:
@@ -402,6 +420,8 @@ def _build_elevation_density_report(
         "profile": profile,
         "bands": bands,
         "adjacent_delta": _dict(generation_report.get("adjacent_delta")),
+        "region_transition_shaping": _dict(generation_report.get("region_transition_shaping")),
+        "main_route_alignment": _dict(generation_report.get("main_route_alignment")),
         "traversal_repair": _dict(generation_report.get("traversal_repair")),
         "terrain_island_repair": _dict(runtime_data.get("terrain_island_repair")),
         "geography": _geography_summary(_dict(generation_report.get("geography"))),

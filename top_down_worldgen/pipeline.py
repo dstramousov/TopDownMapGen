@@ -246,12 +246,12 @@ class WorldgenPipeline:
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data["terrain_island_repair"] = terrain_island_repair.report
             debug_data["terrain_island_repair"] = terrain_island_repair.report
+            runtime_data = attach_places(runtime_data)
             runtime_data = attach_next_gen_elevation(
                 runtime_data,
                 rows=rows,
                 seed=config.resolved_seed,
             )
-            runtime_data = attach_places(runtime_data)
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"
 
