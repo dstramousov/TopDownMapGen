@@ -33,9 +33,27 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Deprecated no-op; debug PNG layers are disabled by default.",
     )
-    parser.add_argument("--log-file", type=Path, default=None)
+    parser.add_argument(
+        "--log-file",
+        type=Path,
+        default=None,
+        help=(
+            "Detailed generation log path. Defaults to generation.log inside "
+            "the selected output directory."
+        ),
+    )
+    parser.add_argument(
+        "--summary-file",
+        type=Path,
+        default=None,
+        help="Write the human-readable summary to a file instead of stdout.",
+    )
     parser.add_argument("--profile-performance", action="store_true")
-    parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Also mirror detailed pipeline logs to the console.",
+    )
     return parser.parse_args()
 
 
@@ -44,25 +62,44 @@ def configure_logging(log_file: Path | None, verbose: bool = False) -> None:
 
     Args:
         log_file: Optional log file path.
-        verbose: Whether to enable debug-level logging.
+        verbose: Whether to also mirror detailed logs to stderr.
     """
-    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    handlers: list[logging.Handler] = []
     if log_file is not None:
         log_file.parent.mkdir(parents=True, exist_ok=True)
         handlers.append(logging.FileHandler(log_file, encoding="utf-8"))
-    level = logging.DEBUG if verbose else logging.INFO
+    if verbose:
+        handlers.append(logging.StreamHandler())
+    if not handlers:
+        handlers.append(logging.NullHandler())
+
     logging.basicConfig(
-        level=level,
+        level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
         handlers=handlers,
+        force=True,
     )
     logging.getLogger("PIL").setLevel(logging.WARNING)
+
+
+def default_log_file(output_target: Path) -> Path:
+    """Return the default detailed log file for an output target.
+
+    Args:
+        output_target: CLI output directory or generated map file path.
+
+    Returns:
+        Path to the default generation log file.
+    """
+    output_dir = output_target.parent if output_target.suffix == ".txt" else output_target
+    return output_dir / "generation.log"
 
 
 def main() -> int:
     """Run CLI entrypoint."""
     args = parse_args()
-    configure_logging(args.log_file, args.verbose)
+    log_file = args.log_file or default_log_file(args.out)
+    configure_logging(log_file, args.verbose)
     try:
         project_root = Path(__file__).resolve().parent.parent
         debug_layers = bool(args.include_debug_layers)
@@ -73,13 +110,14 @@ def main() -> int:
             )
         LOGGER.info(
             "CLI args config=%s out=%s render=%s debug_layers=%s tile_size_px=%s "
-            "log_file=%s verbose=%s",
+            "log_file=%s summary_file=%s verbose=%s",
             args.config,
             args.out,
             not args.no_render,
             debug_layers,
             args.render_tile_size,
-            args.log_file,
+            log_file,
+            args.summary_file,
             args.verbose,
         )
         with timed_stage(LOGGER, "cli.main"):
@@ -89,13 +127,20 @@ def main() -> int:
                 tile_size_px=args.render_tile_size,
                 render=not args.no_render,
                 debug_images=debug_layers,
-                log_file=args.log_file,
+                log_file=log_file,
             )
         LOGGER.info("Output root: %s", result.outputs.output_dir)
         LOGGER.info("Generated map: %s", result.outputs.generated_map)
         LOGGER.info("Runtime tactical map: %s", result.outputs.tactical_map)
         LOGGER.info("Debug tactical map: %s", result.outputs.tactical_map_debug)
         LOGGER.info("Generation manifest: %s", result.outputs.manifest)
+        if result.console_summary:
+            if args.summary_file is not None:
+                args.summary_file.parent.mkdir(parents=True, exist_ok=True)
+                args.summary_file.write_text(result.console_summary + "\n", encoding="utf-8")
+                LOGGER.info("Console summary: %s", args.summary_file)
+            else:
+                print(result.console_summary)
         if not args.no_render:
             LOGGER.info("Rendered base PNG layer in: %s", result.outputs.output_dir)
             if debug_layers:
@@ -110,4 +155,7 @@ def main() -> int:
         return 0
     except Exception as exc:
         LOGGER.error("%s", exc)
+        if not args.verbose:
+            print(f"Generation failed: {exc}")
+            print(f"Detailed log: {log_file}")
         return 1

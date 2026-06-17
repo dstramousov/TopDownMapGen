@@ -30,6 +30,9 @@ class OutputPaths:
     layer_all_debug: Path
     manifest: Path
     validation_report: Path
+    world_density_report: Path
+    elevation_density_report: Path
+    world_summary_report: Path
     object_catalog: Path
     map_package_dir: Path
     map_package_map: Path
@@ -115,6 +118,9 @@ class OutputPaths:
             layer_all_debug=output_dir / "layer_all_debug.png",
             manifest=output_dir / "_manifest.json",
             validation_report=output_dir / "validation_report.json",
+            world_density_report=output_dir / "world_density_report.json",
+            elevation_density_report=output_dir / "elevation_density_report.json",
+            world_summary_report=output_dir / "world_summary_report.json",
             object_catalog=output_dir / "object_catalog.md",
             map_package_dir=map_package_dir,
             map_package_map=map_package_dir / "map.json",

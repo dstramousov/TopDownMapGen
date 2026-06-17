@@ -435,3 +435,40 @@
 - Object catalogs и render hints экспортируют новые поля для внешнего движка и top-down renderer-а.
 - Документация обновлена object interaction/sort model.
 - Версия проекта поднята до `0.0.52`.
+
+## v0.0.52 -> v0.0.53
+
+- Добавлен next-generation elevation MVP на базе FBM/value noise, domain warp, ridged component и террасирования уровней.
+- Диапазон высот расширен до `-5..20`, а `height_grid` теперь заполняется как полноценный слой карты, а не только редкими object-derived cells.
+- Terrain-aware коррекция удерживает дороги около уровня земли, воду в низинах, а start/goal на базовом уровне `0`.
+- Экспорт `elevation_model.json` теперь описывает все уровни `-5..20`, а natural slope-переходы с delta=1 считаются допустимыми для движения.
+- Добавлены JSON-отчёты `world_density_report.json`, `elevation_density_report.json` и `world_summary_report.json`.
+- CLI выводит итоговую человекочитаемую summary-сводку после генерации.
+- Helper `./r` получил явные стадии `cleanup output`, `world generation` и `world preview`.
+- Версия проекта поднята до `0.0.53`.
+
+## v0.0.53 -> v0.0.54
+
+- Обычный CLI-запуск больше не печатает подробные INFO-логи в консоль; детальный лог пишется в `output/generation.log`.
+- Добавлен CLI-флаг `--summary-file`, чтобы helper `./r` мог вывести summary последним блоком после preview.
+- Helper `./r` теперь показывает только стадии, world preview и финальную summary-сводку; технический cleanup-вывод скрыт.
+- В summary исправлено выравнивание блока Debug files и добавлен путь к `generation.log`.
+- Версия проекта поднята до `0.0.54`.
+
+## v0.0.54 -> v0.0.55
+
+- Elevation generator переведён на size-aware Red Blob-подход: сначала выбирается профиль размера карты, потом строится FBM/redistribution/terraced heightmap.
+- Формат высот остаётся `-5..20`, но активный диапазон, редкие уровни, размер террас, smoothing и max natural delta теперь зависят от размера карты.
+- Для маленьких карт генератор автоматически сужает диапазон высот, чтобы не создавать резкие скачки и микротеррасы в один-два тайла.
+- Ground corridor вокруг маршрута `start -> goal` теперь сглаживается радиусом профиля, а не просто прорезает одиночную линию уровня `0`.
+- В elevation reports и console summary добавлен блок `elevation profile` с map class, active/rare range, terrace target, smoothing passes и max natural delta.
+- Версия проекта поднята до `0.0.55`.
+
+## v0.0.55 -> v0.0.56
+
+- Preview renderer получил географическую hypsometric-палитру высот для всего диапазона `-5..20`.
+- `full_world_preview.png` теперь может выводить правую legend-панель с профилем elevation, bands, counts и процентами по каждому уровню.
+- Добавлен отдельный `output/elevation_preview.png`: чистая карта высот без terrain/object overlays, с контурами и легендой.
+- Helper `./r` теперь строит оба preview-файла перед финальной summary.
+- В Debug files summary добавлены пути к `full_world_preview.png` и `elevation_preview.png`.
+- Версия проекта поднята до `0.0.56`.

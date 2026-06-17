@@ -43,13 +43,44 @@ FIRING_PORT_COLOR = (255, 235, 70, 255)
 START_COLOR = (70, 230, 100, 255)
 GOAL_COLOR = (240, 80, 70, 255)
 GRID_COLOR = (0, 0, 0, 35)
-ELEVATION_COLORS: dict[int, tuple[int, int, int, int]] = {
-    -1: (30, 55, 130, 140),
-    0: (0, 0, 0, 0),
-    1: (190, 170, 80, 120),
-    2: (220, 160, 70, 140),
-    3: (215, 110, 190, 155),
-    4: (245, 245, 100, 175),
+ELEVATION_FORMAT_MIN_LEVEL = -5
+ELEVATION_FORMAT_MAX_LEVEL = 20
+ELEVATION_LEGEND_PANEL_WIDTH_PX = 380
+ELEVATION_LEGEND_BACKGROUND = (30, 31, 28, 255)
+ELEVATION_LEGEND_TEXT = (232, 230, 216, 255)
+ELEVATION_LEGEND_MUTED_TEXT = (174, 170, 151, 255)
+ELEVATION_LEGEND_BAR = (220, 216, 190, 255)
+ELEVATION_LEGEND_BAR_BACKGROUND = (66, 64, 56, 255)
+ELEVATION_CONTOUR_COLOR = (35, 35, 30, 105)
+ELEVATION_ZERO_OVERLAY_ALPHA = 0
+ELEVATION_OVERLAY_ALPHA = 145
+ELEVATION_OPAQUE_COLORS: dict[int, tuple[int, int, int, int]] = {
+    -5: (13, 27, 84, 255),
+    -4: (18, 47, 120, 255),
+    -3: (25, 77, 156, 255),
+    -2: (45, 113, 180, 255),
+    -1: (86, 156, 202, 255),
+    0: (76, 132, 72, 255),
+    1: (96, 153, 77, 255),
+    2: (126, 174, 83, 255),
+    3: (160, 190, 89, 255),
+    4: (194, 204, 96, 255),
+    5: (215, 198, 94, 255),
+    6: (222, 181, 84, 255),
+    7: (217, 160, 74, 255),
+    8: (203, 137, 66, 255),
+    9: (184, 117, 59, 255),
+    10: (161, 99, 54, 255),
+    11: (143, 88, 58, 255),
+    12: (127, 80, 62, 255),
+    13: (111, 74, 66, 255),
+    14: (99, 73, 70, 255),
+    15: (118, 100, 91, 255),
+    16: (140, 129, 118, 255),
+    17: (164, 160, 148, 255),
+    18: (191, 190, 178, 255),
+    19: (219, 219, 209, 255),
+    20: (246, 246, 238, 255),
 }
 TRANSITION_COLORS: dict[str, tuple[int, int, int, int]] = {
     "connector_edge": (120, 240, 120, 240),
@@ -104,6 +135,8 @@ class PreviewSummary:
         runtime_objects: Number of runtime objects drawn or read.
         multi_tile_objects: Number of runtime objects with multi-cell footprints.
         elevation_levels: Elevation levels observed in height_grid.
+        elevation_level_counts: Number of tiles per elevation level.
+        elevation_total_tiles: Number of tiles included in elevation statistics.
         elevation_transitions: Number of elevation transitions read.
         places: Number of semantic places read.
         gameplay_zones: Number of gameplay zones read.
@@ -124,6 +157,8 @@ class PreviewSummary:
     runtime_objects: int
     multi_tile_objects: int
     elevation_levels: list[int]
+    elevation_level_counts: dict[int, int]
+    elevation_total_tiles: int
     elevation_transitions: int
     places: int
     gameplay_zones: int
@@ -147,6 +182,9 @@ def render_preview(
     draw_routes_overlay: bool = False,
     draw_world_graph_overlay: bool = False,
     draw_grid: bool = False,
+    draw_elevation_legend: bool = False,
+    draw_elevation_only: bool = False,
+    draw_elevation_contours: bool = False,
 ) -> PreviewSummary:
     """Render a simple PNG preview from public world package files.
 
@@ -163,6 +201,9 @@ def render_preview(
         draw_routes_overlay: Whether to draw semantic routes.
         draw_world_graph_overlay: Whether to draw world graph nodes and edges.
         draw_grid: Whether to draw a light tile grid.
+        draw_elevation_legend: Whether to append a right-side elevation legend panel.
+        draw_elevation_only: Whether to render height_grid as the base map.
+        draw_elevation_contours: Whether to draw contour lines on elevation boundaries.
 
     Returns:
         Preview summary.
@@ -219,23 +260,41 @@ def render_preview(
     world_graph_edges = _optional_list(world_graph.get("edges"))
     start = _optional_point(start_goal.get("start"))
     goal = _optional_point(start_goal.get("goal"))
+    level_counts = _elevation_level_counts(height_rows)
+    elevation_report = _read_optional_output_object(root / "elevation_density_report.json")
 
+    map_width_px = width * cell_size_px
+    map_height_px = height * cell_size_px
+    legend_width_px = _legend_panel_width(map_width_px) if draw_elevation_legend else 0
     image = Image.new(
         "RGBA",
-        (width * cell_size_px, height * cell_size_px),
+        (map_width_px + legend_width_px, map_height_px),
         FALLBACK_TERRAIN_COLOR,
     )
     draw = ImageDraw.Draw(image, "RGBA")
 
-    _draw_terrain(draw, terrain_rows=terrain_rows, cell_size_px=cell_size_px)
-    if draw_collision_overlay:
+    if draw_elevation_only:
+        _draw_elevation_base_map(
+            draw,
+            height_rows=height_rows,
+            cell_size_px=cell_size_px,
+        )
+    else:
+        _draw_terrain(draw, terrain_rows=terrain_rows, cell_size_px=cell_size_px)
+    if draw_collision_overlay and not draw_elevation_only:
         _draw_collision_overlay(
             draw,
             collision_rows=collision_rows,
             cell_size_px=cell_size_px,
         )
-    if draw_elevation_overlay:
+    if draw_elevation_overlay and not draw_elevation_only:
         _draw_elevation_overlay(
+            draw,
+            height_rows=height_rows,
+            cell_size_px=cell_size_px,
+        )
+    if draw_elevation_contours or draw_elevation_only:
+        _draw_elevation_contours(
             draw,
             height_rows=height_rows,
             cell_size_px=cell_size_px,
@@ -292,6 +351,16 @@ def render_preview(
     _draw_point(draw, goal, cell_size_px=cell_size_px, color=GOAL_COLOR)
     if draw_grid:
         _draw_grid(draw, width=width, height=height, cell_size_px=cell_size_px)
+    if draw_elevation_legend:
+        _draw_elevation_legend(
+            draw,
+            panel_x=map_width_px,
+            panel_width=legend_width_px,
+            panel_height=map_height_px,
+            level_counts=level_counts,
+            total_tiles=width * height,
+            report=elevation_report,
+        )
 
     final_output_path = output_path or root / DEFAULT_PREVIEW_NAME
     final_output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -308,7 +377,9 @@ def render_preview(
         blocked_tiles=sum(cell == "1" for row in collision_rows for cell in row),
         runtime_objects=len(object_items),
         multi_tile_objects=sum(_has_multi_tile_footprint(item) for item in object_items),
-        elevation_levels=sorted({level for row in height_rows for level in row}),
+        elevation_levels=sorted(level_counts),
+        elevation_level_counts=level_counts,
+        elevation_total_tiles=width * height,
         elevation_transitions=len(transition_items),
         places=len(place_items),
         gameplay_zones=len(gameplay_zone_items),
@@ -413,7 +484,7 @@ def _draw_elevation_overlay(
     font = ImageFont.load_default() if cell_size_px >= 8 else None
     for y, row in enumerate(height_rows):
         for x, level in enumerate(row):
-            color = ELEVATION_COLORS.get(level, (255, 255, 255, 140))
+            color = _elevation_overlay_color(level)
             if color[3] > 0:
                 draw.rectangle(_cell_rect(x, y, cell_size_px), fill=color)
             if font is not None and level != 0:
@@ -424,6 +495,240 @@ def _draw_elevation_overlay(
                     fill=TRANSITION_TEXT_COLOR,
                     font=font,
                 )
+
+
+
+def _draw_elevation_base_map(
+    draw: ImageDraw.ImageDraw,
+    *,
+    height_rows: list[list[int]],
+    cell_size_px: int,
+) -> None:
+    """Draw height_grid as a standalone hypsometric elevation map."""
+    for y, row in enumerate(height_rows):
+        for x, level in enumerate(row):
+            draw.rectangle(
+                _cell_rect(x, y, cell_size_px),
+                fill=_elevation_opaque_color(level),
+            )
+
+
+
+def _draw_elevation_contours(
+    draw: ImageDraw.ImageDraw,
+    *,
+    height_rows: list[list[int]],
+    cell_size_px: int,
+) -> None:
+    """Draw thin boundary lines where neighboring elevation levels differ."""
+    height = len(height_rows)
+    width = len(height_rows[0]) if height_rows else 0
+    if width <= 0 or height <= 0:
+        return
+    for y, row in enumerate(height_rows):
+        for x, level in enumerate(row):
+            left = x * cell_size_px
+            top = y * cell_size_px
+            right = (x + 1) * cell_size_px - 1
+            bottom = (y + 1) * cell_size_px - 1
+            if x + 1 < width and height_rows[y][x + 1] != level:
+                draw.line((right, top, right, bottom), fill=ELEVATION_CONTOUR_COLOR)
+            if y + 1 < height and height_rows[y + 1][x] != level:
+                draw.line((left, bottom, right, bottom), fill=ELEVATION_CONTOUR_COLOR)
+
+
+
+def _draw_elevation_legend(
+    draw: ImageDraw.ImageDraw,
+    *,
+    panel_x: int,
+    panel_width: int,
+    panel_height: int,
+    level_counts: dict[int, int],
+    total_tiles: int,
+    report: dict[str, Any],
+) -> None:
+    """Draw a right-side elevation legend with counts and percentages."""
+    font = _load_legend_font(16)
+    padding = 14
+    line_height = 20
+    x = panel_x
+    draw.rectangle(
+        (x, 0, x + panel_width - 1, panel_height - 1),
+        fill=ELEVATION_LEGEND_BACKGROUND,
+    )
+    cursor_y = padding
+    draw.text((x + padding, cursor_y), "Elevation legend", fill=ELEVATION_LEGEND_TEXT, font=font)
+    cursor_y += line_height + 6
+
+    profile = _optional_object(report.get("profile"))
+    summary = _optional_object(report.get("summary"))
+    if profile:
+        draw.text(
+            (x + padding, cursor_y),
+            f"profile: {_legend_text(profile.get('map_class'))}",
+            fill=ELEVATION_LEGEND_MUTED_TEXT,
+            font=font,
+        )
+        cursor_y += line_height
+        draw.text(
+            (x + padding, cursor_y),
+            f"active: {_range_text(profile.get('active_range'))}",
+            fill=ELEVATION_LEGEND_MUTED_TEXT,
+            font=font,
+        )
+        cursor_y += line_height
+    min_level = summary.get("min_level", min(level_counts) if level_counts else 0)
+    max_level = summary.get("max_level", max(level_counts) if level_counts else 0)
+    draw.text(
+        (x + padding, cursor_y),
+        f"levels: {min_level}..{max_level} / tiles: {total_tiles}",
+        fill=ELEVATION_LEGEND_MUTED_TEXT,
+        font=font,
+    )
+    cursor_y += line_height + 8
+
+    cursor_y = _draw_elevation_band_summary(
+        draw,
+        x=x + padding,
+        y=cursor_y,
+        panel_width=panel_width - padding * 2,
+        total_tiles=total_tiles,
+        level_counts=level_counts,
+        font=font,
+    )
+    cursor_y += 7
+
+    draw.text((x + padding, cursor_y), "Level       tiles       %", fill=ELEVATION_LEGEND_TEXT, font=font)
+    cursor_y += line_height + 3
+    max_count = max(level_counts.values()) if level_counts else 1
+    bar_x = x + padding + 198
+    bar_width = max(50, panel_width - padding * 2 - 198)
+    for level in range(ELEVATION_FORMAT_MIN_LEVEL, ELEVATION_FORMAT_MAX_LEVEL + 1):
+        if cursor_y + line_height > panel_height - padding:
+            break
+        count = level_counts.get(level, 0)
+        percent = _legend_percent(count, total_tiles)
+        color = _elevation_opaque_color(level)
+        draw.rectangle((x + padding, cursor_y + 2, x + padding + 13, cursor_y + 13), fill=color)
+        draw.text(
+            (x + padding + 19, cursor_y),
+            f"{level:>3} {count:>10} {percent:>6.1f}%",
+            fill=ELEVATION_LEGEND_TEXT if count else ELEVATION_LEGEND_MUTED_TEXT,
+            font=font,
+        )
+        draw.rectangle(
+            (bar_x, cursor_y + 4, bar_x + bar_width, cursor_y + 10),
+            fill=ELEVATION_LEGEND_BAR_BACKGROUND,
+        )
+        filled_width = int(round(bar_width * count / max_count)) if max_count else 0
+        if filled_width > 0:
+            draw.rectangle(
+                (bar_x, cursor_y + 4, bar_x + filled_width, cursor_y + 10),
+                fill=ELEVATION_LEGEND_BAR,
+            )
+        cursor_y += line_height
+
+
+
+def _draw_elevation_band_summary(
+    draw: ImageDraw.ImageDraw,
+    *,
+    x: int,
+    y: int,
+    panel_width: int,
+    total_tiles: int,
+    level_counts: dict[int, int],
+    font: ImageFont.ImageFont,
+) -> int:
+    bands = (
+        ("underground -5..-1", range(-5, 0)),
+        ("ground 0", range(0, 1)),
+        ("raised 1..4", range(1, 5)),
+        ("hills 5..10", range(5, 11)),
+        ("highlands 11..16", range(11, 17)),
+        ("landmarks 17..20", range(17, 21)),
+    )
+    line_height = 20
+    draw.text((x, y), "Bands", fill=ELEVATION_LEGEND_TEXT, font=font)
+    y += line_height + 2
+    max_count = max(
+        (sum(level_counts.get(level, 0) for level in levels) for _, levels in bands),
+        default=1,
+    )
+    bar_x = x + 178
+    bar_width = max(50, panel_width - 178)
+    for label, levels in bands:
+        count = sum(level_counts.get(level, 0) for level in levels)
+        percent = _legend_percent(count, total_tiles)
+        draw.text(
+            (x, y),
+            f"{label:<18} {percent:>5.1f}%",
+            fill=ELEVATION_LEGEND_MUTED_TEXT,
+            font=font,
+        )
+        draw.rectangle((bar_x, y + 4, bar_x + bar_width, y + 10), fill=ELEVATION_LEGEND_BAR_BACKGROUND)
+        filled_width = int(round(bar_width * count / max_count)) if max_count else 0
+        if filled_width > 0:
+            draw.rectangle((bar_x, y + 4, bar_x + filled_width, y + 10), fill=ELEVATION_LEGEND_BAR)
+        y += line_height
+    return y
+
+
+
+def _elevation_opaque_color(level: int) -> tuple[int, int, int, int]:
+    return ELEVATION_OPAQUE_COLORS.get(
+        max(ELEVATION_FORMAT_MIN_LEVEL, min(ELEVATION_FORMAT_MAX_LEVEL, level)),
+        (255, 255, 255, 255),
+    )
+
+
+
+def _elevation_overlay_color(level: int) -> tuple[int, int, int, int]:
+    red, green, blue, _alpha = _elevation_opaque_color(level)
+    alpha = ELEVATION_ZERO_OVERLAY_ALPHA if level == 0 else ELEVATION_OVERLAY_ALPHA
+    return red, green, blue, alpha
+
+
+
+def _elevation_level_counts(height_rows: list[list[int]]) -> dict[int, int]:
+    counts: dict[int, int] = {}
+    for row in height_rows:
+        for level in row:
+            counts[level] = counts.get(level, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+
+def _legend_panel_width(map_width_px: int) -> int:
+    return max(ELEVATION_LEGEND_PANEL_WIDTH_PX, min(560, map_width_px // 4))
+
+
+
+def _load_legend_font(size: int) -> ImageFont.ImageFont:
+    try:
+        return ImageFont.truetype("DejaVuSans.ttf", size=size)
+    except OSError:
+        return ImageFont.load_default()
+
+
+
+def _legend_percent(count: int, total: int) -> float:
+    if total <= 0:
+        return 0.0
+    return count * 100.0 / total
+
+
+
+def _legend_text(value: Any) -> str:
+    return str(value) if value is not None else "unknown"
+
+
+
+def _range_text(value: Any) -> str:
+    if isinstance(value, list | tuple) and len(value) == 2:
+        return f"{value[0]}..{value[1]}"
+    return "unknown"
 
 
 def _draw_transition_overlay(
@@ -1041,6 +1346,13 @@ def _read_optional_package_object(package_dir: Path, relative_path: Any) -> dict
     return _read_object(package_dir / relative_path)
 
 
+
+def _read_optional_output_object(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {}
+    return _read_object(path)
+
+
 def _read_object(path: Path) -> dict[str, Any]:
     with _require_file(path).open("r", encoding="utf-8") as file_obj:
         data = json.load(file_obj)
@@ -1258,6 +1570,21 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Draw a light tile grid. Useful for small maps.",
     )
+    parser.add_argument(
+        "--elevation-legend",
+        action="store_true",
+        help="Append a right-side elevation legend with per-level counts.",
+    )
+    parser.add_argument(
+        "--elevation-only",
+        action="store_true",
+        help="Render height_grid as a standalone hypsometric elevation map.",
+    )
+    parser.add_argument(
+        "--elevation-contours",
+        action="store_true",
+        help="Draw contour-like lines between different height levels.",
+    )
     return parser.parse_args()
 
 
@@ -1279,6 +1606,9 @@ def main() -> int:
             draw_routes_overlay=args.routes_overlay or args.semantic_overlays,
             draw_world_graph_overlay=args.world_graph_overlay or args.semantic_overlays,
             draw_grid=args.grid,
+            draw_elevation_legend=args.elevation_legend,
+            draw_elevation_only=args.elevation_only,
+            draw_elevation_contours=args.elevation_contours,
         )
     except (FileNotFoundError, ValueError, json.JSONDecodeError, OSError) as exc:
         LOGGER.error("World preview: FAILED")

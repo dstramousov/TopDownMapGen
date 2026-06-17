@@ -1857,63 +1857,14 @@ def _build_elevation_model(
     feature_types = _count_by_key(features, "type")
     transition_connectors = _count_by_key(transitions, "suggested_connector")
     required_feature_types = _required_elevation_feature_types()
-    required_levels = {-1, 0, 1, 2, 3, 4}
+    required_levels = set(range(-5, 21))
     return {
         "schema_version": ELEVATION_MODEL_SCHEMA_VERSION,
         "kind": "elevation_model",
         "coordinate_space": "tile",
         "width": width,
         "height": height,
-        "levels": {
-            "-1": {
-                "name": "below_ground",
-                "meaning": "Trenches, pits, bunker interiors, and other low ground.",
-                "movement": "walkable_if_connected",
-                "visibility": "reduced_against_surface",
-                "projectiles": "requires_line_of_sight_transition",
-                "render_role": "below_floor_overlay",
-            },
-            "0": {
-                "name": "ground",
-                "meaning": "Default outdoor ground level.",
-                "movement": "normal",
-                "visibility": "baseline",
-                "projectiles": "baseline",
-                "render_role": "terrain_base",
-            },
-            "1": {
-                "name": "raised_ground",
-                "meaning": "Hills, berms, raised earth, and shallow platforms.",
-                "movement": "normal_or_ramp_required",
-                "visibility": "minor_high_ground_advantage",
-                "projectiles": "minor_high_ground_advantage",
-                "render_role": "raised_terrain_overlay",
-            },
-            "2": {
-                "name": "platform",
-                "meaning": "Bridges, ruin decks, ledges, and constructed platforms.",
-                "movement": "explicit_transition_required",
-                "visibility": "high_ground",
-                "projectiles": "high_ground",
-                "render_role": "platform_layer",
-            },
-            "3": {
-                "name": "high_platform",
-                "meaning": "Towers, roofs, and strong high vantage points.",
-                "movement": "explicit_transition_required",
-                "visibility": "strong_high_ground",
-                "projectiles": "strong_high_ground",
-                "render_role": "high_object_layer",
-            },
-            "4": {
-                "name": "special_high_landmark",
-                "meaning": "Reserved for exceptional vertical landmarks.",
-                "movement": "usually_blocked_or_scripted",
-                "visibility": "special_case",
-                "projectiles": "special_case",
-                "render_role": "landmark_layer",
-            },
-        },
+        "levels": _elevation_level_definitions(),
         "transition_types": {
             "ramp": "Smooth walkable elevation transition.",
             "stairs": "Discrete walkable constructed transition.",
@@ -1942,7 +1893,7 @@ def _build_elevation_model(
         "rules": {
             "movement": {
                 "same_level": "allowed_if_collision_grid_allows",
-                "level_delta_1": "requires_ramp_stairs_or_object_transition",
+                "level_delta_1": "natural_slope_allowed_unless_collision_grid_blocks",
                 "level_delta_gt_1": "requires_ladder_bridge_script_or_is_blocked",
             },
             "line_of_sight": {
@@ -1983,6 +1934,76 @@ def _build_elevation_model(
     }
 
 
+
+
+def _elevation_level_definitions() -> dict[str, dict[str, str]]:
+    definitions: dict[str, dict[str, str]] = {}
+    for level in range(-5, 21):
+        if level < -1:
+            item = {
+                "name": "deep_lowland",
+                "meaning": "Deep cuts, basins, ravines, underground approaches, and flooded depressions.",
+                "movement": "explicit_transition_or_path_required",
+                "visibility": "low_ground_disadvantage",
+                "projectiles": "requires_line_of_sight_transition",
+                "render_role": "deep_below_floor_or_lowland_overlay",
+            }
+        elif level == -1:
+            item = {
+                "name": "below_ground",
+                "meaning": "Trenches, pits, bunker interiors, and shallow low ground.",
+                "movement": "walkable_if_connected",
+                "visibility": "reduced_against_surface",
+                "projectiles": "requires_line_of_sight_transition",
+                "render_role": "below_floor_overlay",
+            }
+        elif level == 0:
+            item = {
+                "name": "ground",
+                "meaning": "Baseline outdoor ground level.",
+                "movement": "normal",
+                "visibility": "baseline",
+                "projectiles": "baseline",
+                "render_role": "terrain_base",
+            }
+        elif level <= 4:
+            item = {
+                "name": "raised_ground",
+                "meaning": "Low hills, berms, raised earth, and shallow terraces.",
+                "movement": "natural_slope_or_connector",
+                "visibility": "minor_high_ground_advantage",
+                "projectiles": "minor_high_ground_advantage",
+                "render_role": "raised_terrain_overlay",
+            }
+        elif level <= 10:
+            item = {
+                "name": "hills",
+                "meaning": "Hills, ridges, terraces, and tactical high-ground areas.",
+                "movement": "slope_ramp_stairs_or_blocked_edge",
+                "visibility": "high_ground",
+                "projectiles": "high_ground",
+                "render_role": "hillside_or_plateau_layer",
+            }
+        elif level <= 16:
+            item = {
+                "name": "highlands",
+                "meaning": "Tall ridges, upper ruins, cliffs, and strong vantage regions.",
+                "movement": "explicit_connector_or_path_required",
+                "visibility": "strong_high_ground",
+                "projectiles": "strong_high_ground",
+                "render_role": "highland_layer",
+            }
+        else:
+            item = {
+                "name": "landmark_height",
+                "meaning": "Rare extreme landmarks, towers, cliffs, and scripted vertical points.",
+                "movement": "usually_blocked_or_scripted",
+                "visibility": "special_case",
+                "projectiles": "special_case",
+                "render_role": "landmark_layer",
+            }
+        definitions[str(level)] = item
+    return definitions
 
 def _required_elevation_feature_types() -> set[str]:
     return {
@@ -2331,7 +2352,7 @@ def _elevation_transitions(
                         ),
                     },
                 )
-    return transitions[:256]
+    return transitions
 
 
 def _elevation_features_by_point(
@@ -2367,6 +2388,8 @@ def _elevation_transition_connector(
         return "slope"
     if abs(delta) > 1:
         return "ladder_or_scripted"
+    if abs(delta) == 1:
+        return "slope"
     return "none"
 
 

@@ -1078,8 +1078,7 @@ def _package_height_grid_levels_valid(package: dict[str, Any]) -> bool:
     rows = _package_height_grid_rows(package)
     if not rows:
         return False
-    allowed_levels = {-1, 0, 1, 2, 3, 4}
-    return all(value in allowed_levels for row in rows for value in row)
+    return all(MIN_ELEVATION_LEVEL <= value <= MAX_ELEVATION_LEVEL for row in rows for value in row)
 
 
 def _package_elevation_transitions_match_height_grid(package: dict[str, Any]) -> bool:
@@ -1575,9 +1574,9 @@ def _elevation_cells_match_trench_footprints(runtime_data: dict[str, Any]) -> bo
     negative_elevation_points = {
         point
         for point, level in _elevation_level_by_point(runtime_data).items()
-        if level == TRENCH_ELEVATION_LEVEL
+        if level < 0
     }
-    return negative_object_points == negative_elevation_points
+    return negative_object_points.issubset(negative_elevation_points)
 
 
 

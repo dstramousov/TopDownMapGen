@@ -17,6 +17,7 @@ from .manifest import (
     ELEVATION_MODEL_SCHEMA_VERSION,
     ELEVATION_FEATURES_SCHEMA_VERSION,
     ELEVATION_TRANSITIONS_SCHEMA_VERSION,
+    ELEVATION_DENSITY_REPORT_SCHEMA_VERSION,
     ENGINE_CONFIG_SCHEMA_VERSION,
     GAMEPLAY_LAYER_SCHEMA_VERSION,
     GAMEPLAY_ZONES_SCHEMA_VERSION,
@@ -33,6 +34,8 @@ from .manifest import (
     WORLD_GRAPH_SCHEMA_VERSION,
     ROUTES_SCHEMA_VERSION,
     PLACES_SCHEMA_VERSION,
+    WORLD_DENSITY_REPORT_SCHEMA_VERSION,
+    WORLD_SUMMARY_REPORT_SCHEMA_VERSION,
     PNG_LAYER_SCHEMA_VERSION,
     RAW_TACTICAL_MAP_SCHEMA_VERSION,
     TILE_RENDER_HINTS_SCHEMA_VERSION,
@@ -50,6 +53,8 @@ from .manifest import (
 from .object_catalog import write_object_catalog
 from .paths import OutputPaths
 from .render.layers import LayerRenderer
+from .reports import build_world_reports, format_console_summary
+from .tactical.elevation import attach_next_gen_elevation
 from .tactical.fallback import FallbackPositionBuilder
 from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
@@ -73,6 +78,8 @@ class PipelineResult:
 
     metrics: dict[str, Any]
     outputs: OutputPaths
+    summary: dict[str, Any]
+    console_summary: str
 
 
 class WorldgenPipeline:
@@ -206,6 +213,11 @@ class WorldgenPipeline:
                 seed=config.resolved_seed,
                 generation_tuning=config.generation_tuning.to_dict(),
             )
+            runtime_data = attach_next_gen_elevation(
+                runtime_data,
+                rows=rows,
+                seed=config.resolved_seed,
+            )
             runtime_data = attach_places(runtime_data)
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"
@@ -243,6 +255,7 @@ class WorldgenPipeline:
                     "elevation_cells": len(
                         runtime_data.get("elevation", {}).get("cells", []),
                     ),
+                    "elevation_generator": runtime_data.get("elevation", {}).get("generator", {}).get("name"),
                 },
             )
         tactical_time_ms = (perf_counter() - tactical_started) * 1000.0
@@ -384,6 +397,33 @@ class WorldgenPipeline:
                 },
             )
 
+        world_density_report, elevation_density_report, world_summary_report = build_world_reports(
+            outputs=outputs,
+            rows=rows,
+            runtime_data=runtime_data,
+            resolved_seed=config.resolved_seed,
+            render_enabled=render,
+            rendered_layers=rendered_layers,
+            validation_report=validation_report,
+        )
+        with timed_stage(
+            LOGGER,
+            "pipeline.write_world_reports",
+            world_density_report=outputs.world_density_report,
+            elevation_density_report=outputs.elevation_density_report,
+            world_summary_report=outputs.world_summary_report,
+        ) as log_metrics:
+            write_json(world_density_report, outputs.world_density_report)
+            write_json(elevation_density_report, outputs.elevation_density_report)
+            write_json(world_summary_report, outputs.world_summary_report)
+            log_metrics.update(
+                {
+                    "status": world_summary_report.get("status"),
+                    "world_density_sections": len(world_density_report),
+                    "elevation_bands": len(elevation_density_report.get("bands", {})),
+                },
+            )
+
         artifacts = self._build_artifacts(
             outputs,
             render=render,
@@ -426,8 +466,14 @@ class WorldgenPipeline:
                 },
             )
 
+        console_summary = format_console_summary(world_summary_report)
         LOGGER.info("Pipeline completed total_time_ms=%.2f", total_time_ms)
-        return PipelineResult(metrics=metrics, outputs=outputs)
+        return PipelineResult(
+            metrics=metrics,
+            outputs=outputs,
+            summary=world_summary_report,
+            console_summary=console_summary,
+        )
 
     @staticmethod
     def _build_artifacts(
@@ -478,6 +524,27 @@ class WorldgenPipeline:
                 True,
                 False,
                 VALIDATION_REPORT_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.world_density_report,
+                "world_density_report",
+                True,
+                False,
+                WORLD_DENSITY_REPORT_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.elevation_density_report,
+                "elevation_density_report",
+                True,
+                False,
+                ELEVATION_DENSITY_REPORT_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.world_summary_report,
+                "world_summary_report",
+                True,
+                False,
+                WORLD_SUMMARY_REPORT_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.object_catalog,
