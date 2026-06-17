@@ -558,3 +558,13 @@
 - Добавлен отсутствующий модуль `top_down_worldgen.tactical.terrain_islands`, который был подключён в pipeline в `v0.0.65`.
 - Реализованы `elevation_cell_points()` и `repair_terrain_islands()` для удаления мелких 2D walkable-островов и отчёта `terrain_island_report.json`.
 - Версия проекта поднята до `0.0.66`.
+
+## v0.0.66 -> v0.0.67
+
+- Elevation pipeline переведён на polygon-inspired macro geography: высота теперь строится от мягкой карты крупных регионов, а не только от FBM-шумов.
+- Macro regions получили базовую высоту, влажность, roughness, priority и граф соседства регионов для диагностики формы мира.
+- В `elevation_generation_report` добавлен `region_grid` и serializable region graph, чтобы видеть, какой регион управляет каждым тайлом.
+- Консольный summary теперь показывает количество macro region graph edges.
+- Имя elevation generator обновлено до `size_aware_polygonal_macro_geography_v1`.
+- Smoke-тест default config обновлён под текущий размер карты 192x192.
+- Версия проекта поднята до `0.0.67`.

@@ -186,6 +186,9 @@ def format_console_summary(summary: dict[str, Any]) -> str:
     geography = _dict(elevation.get("geography"))
     macro_regions = _dict(geography.get("macro_regions"))
     lines.append(f"    macro regions:     {int(macro_regions.get('count', 0)):>5}")
+    macro_graph = _dict(macro_regions.get("graph"))
+    if macro_graph:
+        lines.append(f"    region graph edges:{int(macro_graph.get('edge_count', 0)):>5}")
     sources = _dict(geography.get("sources"))
     if sources:
         geography_source = float(_dict(sources.get("geography")).get("percent", 0.0))
@@ -424,7 +427,8 @@ def _geography_summary(geography: dict[str, Any]) -> dict[str, Any]:
             "mask_grid": "available" if "mask_grid" in grids else "missing",
             "moisture_grid": "available" if "moisture_grid" in grids else "missing",
             "slope_grid": "available" if "slope_grid" in grids else "missing",
-        "water_lowland_grid": "available" if "water_lowland_grid" in grids else "missing",
+            "water_lowland_grid": "available" if "water_lowland_grid" in grids else "missing",
+            "region_grid": "available" if "region_grid" in grids else "missing",
         }
     return output
 

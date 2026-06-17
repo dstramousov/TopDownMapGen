@@ -63,6 +63,10 @@ class GeographicMacroRegion:
     radius_tiles: float
     strength: float
     angle_degrees: float
+    base_elevation_score: float
+    moisture_bias: float
+    roughness: float
+    priority: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +76,22 @@ class GeographicFieldResult:
     elevation_scores: list[list[float]]
     moisture_scores: list[list[float]]
     macro_regions: tuple[GeographicMacroRegion, ...]
+    dominant_region_rows: list[list[int]]
+    region_edges: tuple[tuple[int, int], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class PolygonalRegionSample:
+    """Soft sample from polygon-inspired macro region control map."""
+
+    dominant_index: int
+    secondary_index: int | None
+    dominant_kind: str
+    elevation_score: float
+    moisture_bias: float
+    roughness: float
+    basin_mask: float
+    boundary_softness: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -434,6 +454,7 @@ def _build_geographic_fields(
     raw_elevation: list[list[float]] = []
     raw_moisture: list[list[float]] = []
     basin_mask: list[list[float]] = []
+    dominant_region_rows: list[list[int]] = []
     min_value = float("inf")
     max_value = float("-inf")
     moisture_min = float("inf")
@@ -442,6 +463,7 @@ def _build_geographic_fields(
         elevation_row: list[float] = []
         moisture_row: list[float] = []
         basin_row: list[float] = []
+        dominant_row: list[int] = []
         for x in range(width):
             nx = x / max(1, width - 1)
             ny = y / max(1, height - 1)
@@ -461,12 +483,19 @@ def _build_geographic_fields(
             )
             wx = nx + warp_x * profile.warp_strength
             wy = ny + warp_y * profile.warp_strength
+            sx = _clamp_float(wx, 0.0, 1.0) * max(1, width - 1)
+            sy = _clamp_float(wy, 0.0, 1.0) * max(1, height - 1)
+            region_sample = _polygonal_region_sample(
+                x=sx,
+                y=sy,
+                regions=macro_regions,
+            )
             macro = _fbm(
                 wx,
                 wy,
                 seed=seed ^ 0x5310,
                 base_frequency=profile.macro_frequency,
-                octaves=4,
+                octaves=3,
             )
             detail = _fbm(
                 wx,
@@ -483,16 +512,13 @@ def _build_geographic_fields(
                 octaves=4,
             )
             ridged = 1.0 - abs(ridge_source)
-            region_bias, region_basin = _macro_region_bias(
-                x=float(x),
-                y=float(y),
-                regions=macro_regions,
-            )
+            ridge_affinity = _macro_region_ridge_affinity(region_sample.dominant_kind)
             value = (
-                macro * profile.macro_weight
-                + detail * profile.detail_weight
-                + ridged * profile.ridge_weight
-                + region_bias
+                region_sample.elevation_score
+                + macro * profile.macro_weight * 0.16
+                + detail * profile.detail_weight * region_sample.roughness
+                + ridged * profile.ridge_weight * ridge_affinity
+                + region_sample.boundary_softness * 0.018
             )
             moisture_value = _fbm(
                 wx + 19.7,
@@ -501,9 +527,11 @@ def _build_geographic_fields(
                 base_frequency=_moisture_frequency(profile),
                 octaves=4,
             )
+            moisture_value = moisture_value + region_sample.moisture_bias
             elevation_row.append(value)
             moisture_row.append(moisture_value)
-            basin_row.append(region_basin)
+            basin_row.append(region_sample.basin_mask)
+            dominant_row.append(region_sample.dominant_index)
             min_value = min(min_value, value)
             max_value = max(max_value, value)
             moisture_min = min(moisture_min, moisture_value)
@@ -511,6 +539,7 @@ def _build_geographic_fields(
         raw_elevation.append(elevation_row)
         raw_moisture.append(moisture_row)
         basin_mask.append(basin_row)
+        dominant_region_rows.append(dominant_row)
 
     elevation_scores = _normalize_grid(
         raw_elevation,
@@ -533,8 +562,9 @@ def _build_geographic_fields(
         elevation_scores=elevation_scores,
         moisture_scores=moisture_scores,
         macro_regions=macro_regions,
+        dominant_region_rows=dominant_region_rows,
+        region_edges=_region_edges(dominant_region_rows),
     )
-
 
 def _build_macro_regions(
     *,
@@ -556,6 +586,7 @@ def _build_macro_regions(
     for index in range(count):
         kind = kinds[index % len(kinds)]
         radius = rng.uniform(min_radius, max_radius)
+        base_score, moisture_bias, roughness = _macro_region_config(kind=kind, rng=rng)
         regions.append(
             GeographicMacroRegion(
                 region_id=f"geo_region_{index:03d}",
@@ -565,10 +596,202 @@ def _build_macro_regions(
                 radius_tiles=radius,
                 strength=rng.uniform(0.75, 1.15),
                 angle_degrees=rng.uniform(0.0, 180.0),
+                base_elevation_score=base_score,
+                moisture_bias=moisture_bias,
+                roughness=roughness,
+                priority=rng.uniform(0.88, 1.12),
             ),
         )
     return tuple(regions)
 
+
+
+def _macro_region_config(*, kind: str, rng: Random) -> tuple[float, float, float]:
+    """Return base elevation, moisture bias, and roughness for region kind."""
+    base = {
+        "basin": 0.13,
+        "plain": 0.41,
+        "hill": 0.60,
+        "plateau": 0.70,
+        "ridge": 0.76,
+        "mountain": 0.86,
+        "peak": 0.95,
+    }.get(kind, 0.45)
+    moisture = {
+        "basin": 0.24,
+        "plain": 0.04,
+        "hill": -0.02,
+        "plateau": -0.05,
+        "ridge": -0.08,
+        "mountain": -0.10,
+        "peak": -0.12,
+    }.get(kind, 0.0)
+    roughness = {
+        "basin": 0.22,
+        "plain": 0.24,
+        "hill": 0.46,
+        "plateau": 0.32,
+        "ridge": 0.74,
+        "mountain": 0.82,
+        "peak": 0.92,
+    }.get(kind, 0.40)
+    return (
+        _clamp_float(base + rng.uniform(-0.035, 0.035), 0.02, 0.98),
+        moisture + rng.uniform(-0.035, 0.035),
+        _clamp_float(roughness + rng.uniform(-0.04, 0.04), 0.10, 1.0),
+    )
+
+
+def _polygonal_region_sample(
+    *,
+    x: float,
+    y: float,
+    regions: tuple[GeographicMacroRegion, ...],
+) -> PolygonalRegionSample:
+    """Sample a soft Voronoi-like macro region control map."""
+    if not regions:
+        return PolygonalRegionSample(
+            dominant_index=0,
+            secondary_index=None,
+            dominant_kind="plain",
+            elevation_score=0.5,
+            moisture_bias=0.0,
+            roughness=0.3,
+            basin_mask=0.0,
+            boundary_softness=0.0,
+        )
+    ordered = sorted(
+        (
+            _macro_region_distance(x=x, y=y, region=region) / max(0.1, region.priority),
+            index,
+            region,
+        )
+        for index, region in enumerate(regions)
+    )
+    selected = ordered[: min(3, len(ordered))]
+    weight_total = 0.0
+    elevation_score = 0.0
+    moisture_bias = 0.0
+    roughness = 0.0
+    basin_mask = 0.0
+    for distance, _, region in selected:
+        weight = 1.0 / ((distance + 0.18) ** 2.0)
+        weight_total += weight
+        elevation_score += region.base_elevation_score * region.strength * weight
+        moisture_bias += region.moisture_bias * weight
+        roughness += region.roughness * weight
+        if region.kind == "basin":
+            basin_mask = max(basin_mask, _macro_region_local_influence(x=x, y=y, region=region) * region.strength)
+    if weight_total <= 0.0:
+        dominant = ordered[0][2]
+        return PolygonalRegionSample(
+            dominant_index=ordered[0][1],
+            secondary_index=ordered[1][1] if len(ordered) > 1 else None,
+            dominant_kind=dominant.kind,
+            elevation_score=dominant.base_elevation_score,
+            moisture_bias=dominant.moisture_bias,
+            roughness=dominant.roughness,
+            basin_mask=1.0 if dominant.kind == "basin" else 0.0,
+            boundary_softness=0.0,
+        )
+    dominant_distance, dominant_index, dominant = ordered[0]
+    secondary_index = ordered[1][1] if len(ordered) > 1 else None
+    distance_gap = (ordered[1][0] - dominant_distance) if len(ordered) > 1 else 1.0
+    boundary_softness = 1.0 - _clamp_float(distance_gap / 0.34, 0.0, 1.0)
+    return PolygonalRegionSample(
+        dominant_index=dominant_index,
+        secondary_index=secondary_index,
+        dominant_kind=dominant.kind,
+        elevation_score=elevation_score / weight_total,
+        moisture_bias=moisture_bias / weight_total,
+        roughness=roughness / weight_total,
+        basin_mask=_clamp_float(basin_mask, 0.0, 1.0),
+        boundary_softness=boundary_softness,
+    )
+
+
+def _macro_region_distance(*, x: float, y: float, region: GeographicMacroRegion) -> float:
+    """Return normalized distance to a macro region site."""
+    dx = x - region.center_x
+    dy = y - region.center_y
+    if region.kind == "ridge":
+        angle = region.angle_degrees * pi / 180.0
+        along = dx * cos(angle) + dy * sin(angle)
+        across = -dx * sin(angle) + dy * cos(angle)
+        return hypot(
+            along / max(1.0, region.radius_tiles * 1.75),
+            across / max(1.0, region.radius_tiles * 0.36),
+        )
+    if region.kind == "plateau":
+        angle = region.angle_degrees * pi / 180.0
+        along = dx * cos(angle) + dy * sin(angle)
+        across = -dx * sin(angle) + dy * cos(angle)
+        return hypot(
+            along / max(1.0, region.radius_tiles * 1.18),
+            across / max(1.0, region.radius_tiles * 0.84),
+        )
+    return hypot(dx, dy) / max(1.0, region.radius_tiles)
+
+
+def _macro_region_local_influence(*, x: float, y: float, region: GeographicMacroRegion) -> float:
+    """Return local influence inside a macro region footprint."""
+    distance = _macro_region_distance(x=x, y=y, region=region)
+    if distance >= 1.0:
+        return 0.0
+    if region.kind == "plateau" and distance <= 0.46:
+        return 1.0
+    return (1.0 - distance) ** 2.0
+
+
+def _macro_region_ridge_affinity(kind: str) -> float:
+    return {
+        "basin": 0.0,
+        "plain": 0.05,
+        "hill": 0.22,
+        "plateau": 0.12,
+        "ridge": 1.0,
+        "mountain": 0.62,
+        "peak": 0.74,
+    }.get(kind, 0.0)
+
+
+def _region_edges(rows: list[list[int]]) -> tuple[tuple[int, int], ...]:
+    """Build adjacency edges between dominant macro regions."""
+    edges: set[tuple[int, int]] = set()
+    height = len(rows)
+    width = len(rows[0]) if rows else 0
+    for y, row in enumerate(rows):
+        for x, region_index in enumerate(row):
+            for nx, ny in ((x + 1, y), (x, y + 1)):
+                if not (0 <= nx < width and 0 <= ny < height):
+                    continue
+                other = rows[ny][nx]
+                if other == region_index:
+                    continue
+                edges.add(tuple(sorted((region_index, other))))
+    return tuple(sorted(edges))
+
+
+def _region_edge_items(
+    edges: tuple[tuple[int, int], ...],
+    regions: tuple[GeographicMacroRegion, ...],
+) -> list[dict[str, str]]:
+    """Serialize macro region graph edges."""
+    items: list[dict[str, str]] = []
+    for first, second in edges:
+        if not (0 <= first < len(regions) and 0 <= second < len(regions)):
+            continue
+        items.append(
+            {
+                "from": regions[first].region_id,
+                "to": regions[second].region_id,
+            },
+        )
+    return items
+
+
+def _clamp_float(value: float, minimum: float, maximum: float) -> float:
+    return max(minimum, min(maximum, value))
 
 def _macro_region_count(profile: ElevationScaleProfile) -> int:
     return {
@@ -1337,10 +1560,10 @@ def _build_generation_report(
 
 def _generator_info(*, seed: int, profile: ElevationScaleProfile) -> dict[str, Any]:
     return {
-        "name": "size_aware_red_blob_geography_v3",
+        "name": "size_aware_polygonal_macro_geography_v1",
         "seed": seed,
         "range": [MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL],
-        "algorithm": "size_aware_macro_regions_fbm_moisture_redistribution_terraces_stable_relax_traversal_repair",
+        "algorithm": "polygon_inspired_macro_region_graph_fbm_moisture_redistribution_terraces_stable_relax_traversal_repair",
         "redistribution": "profile_weighted_percentile_quantization",
         "smoothing_passes": profile.score_smoothing_passes,
         "level_relax_passes": profile.level_relax_passes,
@@ -1444,6 +1667,13 @@ def _geography_report(
         "schema_version": "geography-report-v1",
         "macro_regions": {
             "count": len(geographic_fields.macro_regions),
+            "graph": {
+                "edge_count": len(geographic_fields.region_edges),
+                "edges": _region_edge_items(
+                    geographic_fields.region_edges,
+                    geographic_fields.macro_regions,
+                ),
+            },
             "items": [
                 {
                     "id": region.region_id,
@@ -1455,6 +1685,10 @@ def _geography_report(
                     "radius_tiles": round(region.radius_tiles, 3),
                     "strength": round(region.strength, 3),
                     "angle_degrees": round(region.angle_degrees, 3),
+                    "base_elevation_score": round(region.base_elevation_score, 4),
+                    "moisture_bias": round(region.moisture_bias, 4),
+                    "roughness": round(region.roughness, 4),
+                    "priority": round(region.priority, 4),
                 }
                 for region in geographic_fields.macro_regions
             ],
@@ -1492,6 +1726,10 @@ def _geography_report(
             "water_lowland_grid": {
                 "legend": _water_lowland_legend(),
                 "rows": ["".join(row) for row in water_lowland_rows],
+            },
+            "region_grid": {
+                "region_ids": [region.region_id for region in geographic_fields.macro_regions],
+                "rows": geographic_fields.dominant_region_rows,
             },
         },
     }
