@@ -592,3 +592,10 @@
 - Добавлены `docs/map_package_v1.md`, `docs/game_consumer_guide.md`, `docs/world_building_algorithm.md`, `docs/world_package_file_map.md`.
 - Документация фиксирует текущую elevation-модель `-5..20`, отличие low ground от actual water, runtime grids, semantic world graph, routes и порядок чтения пакета внешней игрой.
 - Версия проекта поднята до `0.0.70`.
+
+## v0.0.70 -> v0.0.71
+
+- Добавлен инструмент `tools/render_elevation_style_gallery.py` для сравнения elevation style presets на одном seed.
+- Gallery-режим генерирует отдельные output-папки для `flatland`, `rolling_hills`, `normal`, `rugged`, `mountainous`, `plateau` без изменения алгоритма генерации.
+- Для каждого стиля создаются `geography_preview.png`, `elevation_preview.png`, `slope_preview.png`, а также общий `style_gallery.png`, `style_comparison_report.json` и `style_comparison_summary.md`.
+- Версия проекта поднята до `0.0.71`.
