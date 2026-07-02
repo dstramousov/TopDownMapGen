@@ -313,76 +313,76 @@ def _apply_elevation_style(profile: ElevationScaleProfile, *, style: str) -> Ele
         return replace(
             profile,
             style_name=style_name,
-            active_min_level=-1,
+            active_min_level=MIN_ELEVATION_LEVEL,
             active_max_level=4,
-            rare_min_level=-2,
-            rare_max_level=6,
-            terrace_min_size_tiles=max(profile.terrace_min_size_tiles, 32),
-            terrace_max_size_tiles=max(profile.terrace_max_size_tiles, 72),
-            macro_frequency=max(0.50, profile.macro_frequency * 0.72),
-            detail_frequency=max(1.0, profile.detail_frequency * 0.60),
-            ridge_frequency=max(1.0, profile.ridge_frequency * 0.45),
-            warp_strength=profile.warp_strength * 0.45,
-            macro_weight=profile.macro_weight + 0.08,
-            detail_weight=profile.detail_weight * 0.45,
-            ridge_weight=profile.ridge_weight * 0.20,
-            redistribution_power=max(1.0, profile.redistribution_power * 0.92),
-            score_smoothing_passes=profile.score_smoothing_passes + 3,
-            level_relax_passes=profile.level_relax_passes + 6,
+            rare_min_level=MIN_ELEVATION_LEVEL,
+            rare_max_level=4,
+            terrace_min_size_tiles=8,
+            terrace_max_size_tiles=22,
+            macro_frequency=profile.macro_frequency * 1.18,
+            detail_frequency=profile.detail_frequency * 1.38,
+            ridge_frequency=profile.ridge_frequency * 0.58,
+            warp_strength=profile.warp_strength * 0.62,
+            macro_weight=max(0.56, profile.macro_weight - 0.08),
+            detail_weight=profile.detail_weight * 0.82,
+            ridge_weight=profile.ridge_weight * 0.18,
+            redistribution_power=max(0.82, profile.redistribution_power * 0.78),
+            score_smoothing_passes=profile.score_smoothing_passes + 1,
+            level_relax_passes=profile.level_relax_passes + 5,
             ground_corridor_radius=profile.ground_corridor_radius + 2,
             band_weights={
-                "underground_-5_-1": 0.03,
-                "ground_0": 0.54,
-                "low_raised_1_4": 0.33,
-                "hills_5_10": 0.09,
-                "highlands_11_16": 0.01,
+                "underground_-5_-1": 0.28,
+                "ground_0": 0.34,
+                "low_raised_1_4": 0.38,
+                "hills_5_10": 0.0,
+                "highlands_11_16": 0.0,
                 "landmarks_17_20": 0.0,
             },
             band_targets={
-                "underground_-5_-1": (0.0, 6.0),
-                "ground_0": (38.0, 70.0),
-                "low_raised_1_4": (20.0, 45.0),
-                "hills_5_10": (0.0, 14.0),
-                "highlands_11_16": (0.0, 3.0),
-                "landmarks_17_20": (0.0, 1.0),
+                "underground_-5_-1": (14.0, 36.0),
+                "ground_0": (22.0, 48.0),
+                "low_raised_1_4": (22.0, 48.0),
+                "hills_5_10": (0.0, 0.0),
+                "highlands_11_16": (0.0, 0.0),
+                "landmarks_17_20": (0.0, 0.0),
             },
         )
     if style_name == "rolling_hills":
         return replace(
             profile,
             style_name=style_name,
-            active_min_level=-2,
-            active_max_level=8,
-            rare_min_level=-3,
+            active_min_level=MIN_ELEVATION_LEVEL,
+            active_max_level=10,
+            rare_min_level=MIN_ELEVATION_LEVEL,
             rare_max_level=10,
-            terrace_min_size_tiles=max(profile.terrace_min_size_tiles, 24),
-            terrace_max_size_tiles=max(profile.terrace_max_size_tiles, 56),
-            macro_frequency=max(0.60, profile.macro_frequency * 0.86),
-            detail_frequency=max(1.0, profile.detail_frequency * 0.72),
-            ridge_frequency=max(1.0, profile.ridge_frequency * 0.60),
-            warp_strength=profile.warp_strength * 0.65,
-            macro_weight=profile.macro_weight + 0.04,
-            detail_weight=profile.detail_weight * 0.70,
-            ridge_weight=profile.ridge_weight * 0.50,
-            redistribution_power=max(1.0, profile.redistribution_power * 0.97),
+            terrace_min_size_tiles=max(profile.terrace_min_size_tiles, 18),
+            terrace_max_size_tiles=max(profile.terrace_max_size_tiles, 44),
+            macro_frequency=profile.macro_frequency * 0.96,
+            detail_frequency=profile.detail_frequency * 0.92,
+            ridge_frequency=profile.ridge_frequency * 0.72,
+            warp_strength=profile.warp_strength * 0.82,
+            macro_weight=profile.macro_weight + 0.02,
+            detail_weight=profile.detail_weight * 0.86,
+            ridge_weight=profile.ridge_weight * 0.58,
+            redistribution_power=max(0.95, profile.redistribution_power * 0.94),
             score_smoothing_passes=profile.score_smoothing_passes + 1,
             level_relax_passes=profile.level_relax_passes + 3,
             ground_corridor_radius=profile.ground_corridor_radius + 1,
             band_weights={
-                "underground_-5_-1": 0.05,
-                "ground_0": 0.45,
-                "low_raised_1_4": 0.34,
-                "hills_5_10": 0.14,
-                "highlands_11_16": 0.02,
+                "underground_-5_-1": 0.12,
+                "ground_0": 0.30,
+                "low_raised_1_4": 0.33,
+                "hills_5_10": 0.25,
+                "highlands_11_16": 0.0,
                 "landmarks_17_20": 0.0,
             },
             band_targets={
-                "underground_-5_-1": (1.0, 8.0),
-                "ground_0": (30.0, 62.0),
-                "low_raised_1_4": (22.0, 48.0),
-                "hills_5_10": (4.0, 20.0),
-                "highlands_11_16": (0.0, 5.0),
-                "landmarks_17_20": (0.0, 1.0),
+                "underground_-5_-1": (4.0, 16.0),
+                "ground_0": (20.0, 44.0),
+                "low_raised_1_4": (22.0, 46.0),
+                "hills_5_10": (12.0, 32.0),
+                "highlands_11_16": (0.0, 0.0),
+                "landmarks_17_20": (0.0, 0.0),
             },
         )
     if style_name == "rugged":
@@ -430,73 +430,95 @@ def _apply_elevation_style(profile: ElevationScaleProfile, *, style: str) -> Ele
             active_max_level=MAX_ELEVATION_LEVEL,
             rare_min_level=MIN_ELEVATION_LEVEL,
             rare_max_level=MAX_ELEVATION_LEVEL,
-            terrace_min_size_tiles=max(10, min(profile.terrace_min_size_tiles, 16)),
-            terrace_max_size_tiles=max(24, min(profile.terrace_max_size_tiles, 36)),
-            macro_frequency=profile.macro_frequency * 1.16,
-            detail_frequency=profile.detail_frequency * 1.10,
-            ridge_frequency=profile.ridge_frequency * 1.42,
-            warp_strength=profile.warp_strength * 1.10,
-            macro_weight=profile.macro_weight,
-            detail_weight=profile.detail_weight * 1.05,
-            ridge_weight=profile.ridge_weight * 1.85,
-            redistribution_power=profile.redistribution_power * 1.10,
+            terrace_min_size_tiles=8,
+            terrace_max_size_tiles=26,
+            macro_frequency=profile.macro_frequency * 1.20,
+            detail_frequency=profile.detail_frequency * 1.36,
+            ridge_frequency=profile.ridge_frequency * 1.62,
+            warp_strength=profile.warp_strength * 1.16,
+            macro_weight=max(0.58, profile.macro_weight - 0.05),
+            detail_weight=profile.detail_weight * 1.22,
+            ridge_weight=profile.ridge_weight * 1.88,
+            redistribution_power=profile.redistribution_power * 1.08,
             score_smoothing_passes=max(1, profile.score_smoothing_passes - 1),
-            level_relax_passes=max(4, profile.level_relax_passes - 3),
+            level_relax_passes=profile.level_relax_passes + 2,
+            ground_corridor_radius=profile.ground_corridor_radius + 1,
             band_weights={
-                "underground_-5_-1": 0.08,
-                "ground_0": 0.21,
-                "low_raised_1_4": 0.22,
-                "hills_5_10": 0.25,
-                "highlands_11_16": 0.18,
-                "landmarks_17_20": 0.06,
+                "underground_-5_-1": 0.09,
+                "ground_0": 0.16,
+                "low_raised_1_4": 0.18,
+                "hills_5_10": 0.26,
+                "highlands_11_16": 0.22,
+                "landmarks_17_20": 0.09,
             },
             band_targets={
-                "underground_-5_-1": (3.0, 14.0),
-                "ground_0": (10.0, 35.0),
-                "low_raised_1_4": (12.0, 35.0),
-                "hills_5_10": (14.0, 36.0),
-                "highlands_11_16": (6.0, 24.0),
-                "landmarks_17_20": (1.0, 10.0),
+                "underground_-5_-1": (3.0, 15.0),
+                "ground_0": (8.0, 30.0),
+                "low_raised_1_4": (10.0, 32.0),
+                "hills_5_10": (14.0, 38.0),
+                "highlands_11_16": (8.0, 28.0),
+                "landmarks_17_20": (2.0, 14.0),
             },
         )
     return replace(
         profile,
         style_name=style_name,
-        active_min_level=-4,
-        active_max_level=16,
+        active_min_level=MIN_ELEVATION_LEVEL,
+        active_max_level=MAX_ELEVATION_LEVEL,
         rare_min_level=MIN_ELEVATION_LEVEL,
         rare_max_level=MAX_ELEVATION_LEVEL,
-        terrace_min_size_tiles=max(profile.terrace_min_size_tiles, 28),
-        terrace_max_size_tiles=max(profile.terrace_max_size_tiles, 76),
-        macro_frequency=profile.macro_frequency * 0.92,
-        detail_frequency=profile.detail_frequency * 0.70,
-        ridge_frequency=profile.ridge_frequency * 0.82,
-        warp_strength=profile.warp_strength * 0.80,
-        macro_weight=profile.macro_weight + 0.06,
-        detail_weight=profile.detail_weight * 0.58,
-        ridge_weight=profile.ridge_weight * 0.70,
-        redistribution_power=profile.redistribution_power * 1.04,
-        score_smoothing_passes=profile.score_smoothing_passes + 1,
-        level_relax_passes=profile.level_relax_passes + 2,
-        ground_corridor_radius=profile.ground_corridor_radius + 1,
+        terrace_min_size_tiles=max(profile.terrace_max_size_tiles, 44),
+        terrace_max_size_tiles=max(profile.terrace_max_size_tiles * 2, 96),
+        macro_frequency=max(0.45, profile.macro_frequency * 0.56),
+        detail_frequency=max(0.90, profile.detail_frequency * 0.42),
+        ridge_frequency=max(0.85, profile.ridge_frequency * 0.52),
+        warp_strength=profile.warp_strength * 0.58,
+        macro_weight=profile.macro_weight + 0.12,
+        detail_weight=profile.detail_weight * 0.36,
+        ridge_weight=profile.ridge_weight * 0.62,
+        redistribution_power=profile.redistribution_power * 1.02,
+        score_smoothing_passes=profile.score_smoothing_passes + 3,
+        level_relax_passes=profile.level_relax_passes + 4,
+        ground_corridor_radius=profile.ground_corridor_radius + 2,
         band_weights={
             "underground_-5_-1": 0.08,
-            "ground_0": 0.30,
-            "low_raised_1_4": 0.28,
-            "hills_5_10": 0.17,
-            "highlands_11_16": 0.12,
-            "landmarks_17_20": 0.05,
+            "ground_0": 0.20,
+            "low_raised_1_4": 0.21,
+            "hills_5_10": 0.20,
+            "highlands_11_16": 0.20,
+            "landmarks_17_20": 0.11,
         },
         band_targets={
-            "underground_-5_-1": (3.0, 12.0),
-            "ground_0": (18.0, 45.0),
-            "low_raised_1_4": (16.0, 40.0),
-            "hills_5_10": (8.0, 26.0),
-            "highlands_11_16": (4.0, 18.0),
-            "landmarks_17_20": (0.5, 7.0),
+            "underground_-5_-1": (3.0, 13.0),
+            "ground_0": (12.0, 34.0),
+            "low_raised_1_4": (12.0, 34.0),
+            "hills_5_10": (10.0, 32.0),
+            "highlands_11_16": (8.0, 28.0),
+            "landmarks_17_20": (2.0, 14.0),
         },
     )
 
+
+def _style_wave_frequency(profile: ElevationScaleProfile) -> str:
+    """Return a user-facing style wave frequency class."""
+    return {
+        "flatland": "frequent",
+        "rolling_hills": "medium",
+        "rugged": "frequent",
+        "mountainous": "frequent",
+        "plateau": "rare",
+    }.get(profile.style_name, "medium")
+
+
+def _style_character(profile: ElevationScaleProfile) -> str:
+    """Return a short user-facing style character string."""
+    return {
+        "flatland": "low soft frequent undulation",
+        "rolling_hills": "main playable medium hills",
+        "rugged": "rough broken terrain",
+        "mountainous": "frequent playable mountains",
+        "plateau": "large plateaus and long slopes",
+    }.get(profile.style_name, "balanced terrain")
 
 def _sanitize_elevation_style(style: str) -> str:
     """Return a supported elevation style name."""
@@ -1069,25 +1091,27 @@ def _macro_region_count(profile: ElevationScaleProfile) -> int:
         "huge": 14,
     }.get(profile.name, 6)
     if profile.style_name == "flatland":
-        return max(2, base_count - 2)
-    if profile.style_name in {"rolling_hills", "plateau"}:
-        return base_count + 1
-    if profile.style_name in {"rugged", "mountainous"}:
         return base_count + 2
+    if profile.style_name == "rolling_hills":
+        return base_count + 1
+    if profile.style_name == "plateau":
+        return max(3, base_count - 2)
+    if profile.style_name in {"rugged", "mountainous"}:
+        return base_count + 3
     return base_count
 
 
 def _macro_region_kinds(profile: ElevationScaleProfile) -> tuple[str, ...]:
     if profile.style_name == "flatland":
-        return ("plain", "plain", "basin", "hill")
+        return ("basin", "plain", "plain", "basin", "hill", "plain")
     if profile.style_name == "rolling_hills":
-        return ("plain", "basin", "hill", "hill", "plateau")
+        return ("plain", "basin", "hill", "hill", "plateau", "plain")
     if profile.style_name == "rugged":
         return ("plain", "basin", "hill", "plateau", "ridge", "mountain", "hill")
     if profile.style_name == "mountainous":
-        return ("plain", "hill", "ridge", "mountain", "plateau", "mountain", "peak", "basin")
+        return ("plain", "hill", "ridge", "mountain", "plateau", "mountain", "peak", "ridge", "basin")
     if profile.style_name == "plateau":
-        return ("plain", "plateau", "basin", "hill", "plateau", "ridge")
+        return ("plateau", "plain", "plateau", "basin", "ridge", "plateau")
     if profile.name == "tiny":
         return ("plain", "hill")
     if profile.name == "small":
@@ -2366,7 +2390,7 @@ def _build_generation_report(
 
 def _generator_info(*, seed: int, profile: ElevationScaleProfile) -> dict[str, Any]:
     return {
-        "name": "size_aware_polygonal_macro_geography_v3",
+        "name": "size_aware_polygonal_macro_geography_v4",
         "seed": seed,
         "range": [MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL],
         "algorithm": "elevation_style_presets_polygon_inspired_macro_region_graph_region_transition_belts_main_route_alignment_traversal_repair",
@@ -2376,6 +2400,7 @@ def _generator_info(*, seed: int, profile: ElevationScaleProfile) -> dict[str, A
         "max_natural_delta": profile.max_natural_delta,
         "profile": profile.name,
         "style": profile.style_name,
+        "wave_frequency": _style_wave_frequency(profile),
     }
 
 
@@ -2383,6 +2408,8 @@ def _profile_report(profile: ElevationScaleProfile) -> dict[str, Any]:
     return {
         "map_class": profile.name,
         "style": profile.style_name,
+        "wave_frequency": _style_wave_frequency(profile),
+        "character": _style_character(profile),
         "format_range": [MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL],
         "active_range": [profile.active_min_level, profile.active_max_level],
         "rare_range": [profile.rare_min_level, profile.rare_max_level],

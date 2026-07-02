@@ -78,15 +78,30 @@ def test_invalid_elevation_style_falls_back_to_normal(tmp_path: Path) -> None:
 
 
 def test_elevation_style_changes_profile_report() -> None:
-    """Ensure style presets change the reported elevation profile."""
+    """Ensure style presets expose requested level ranges and wave classes."""
     rows = ["S" + "+" * 14 + "G"] + ["+" * 16 for _ in range(15)]
 
     flatland = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="flatland")
+    rolling = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="rolling_hills")
     mountainous = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="mountainous")
+    plateau = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="plateau")
 
     assert flatland.report["profile"]["style"] == "flatland"
-    assert flatland.report["profile"]["active_range"] == [-1, 4]
-    assert flatland.report["profile"]["rare_range"] == [-2, 6]
+    assert flatland.report["profile"]["active_range"] == [-5, 4]
+    assert flatland.report["profile"]["rare_range"] == [-5, 4]
+    assert flatland.report["profile"]["wave_frequency"] == "frequent"
+
+    assert rolling.report["profile"]["style"] == "rolling_hills"
+    assert rolling.report["profile"]["active_range"] == [-5, 10]
+    assert rolling.report["profile"]["rare_range"] == [-5, 10]
+    assert rolling.report["profile"]["wave_frequency"] == "medium"
+
     assert mountainous.report["profile"]["style"] == "mountainous"
     assert mountainous.report["profile"]["active_range"] == [-5, 20]
     assert mountainous.report["profile"]["rare_range"] == [-5, 20]
+    assert mountainous.report["profile"]["wave_frequency"] == "frequent"
+
+    assert plateau.report["profile"]["style"] == "plateau"
+    assert plateau.report["profile"]["active_range"] == [-5, 20]
+    assert plateau.report["profile"]["rare_range"] == [-5, 20]
+    assert plateau.report["profile"]["wave_frequency"] == "rare"

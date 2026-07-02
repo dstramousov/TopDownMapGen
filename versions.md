@@ -599,3 +599,13 @@
 - Gallery-режим генерирует отдельные output-папки для `flatland`, `rolling_hills`, `normal`, `rugged`, `mountainous`, `plateau` без изменения алгоритма генерации.
 - Для каждого стиля создаются `geography_preview.png`, `elevation_preview.png`, `slope_preview.png`, а также общий `style_gallery.png`, `style_comparison_report.json` и `style_comparison_summary.md`.
 - Версия проекта поднята до `0.0.71`.
+
+## v0.0.71 -> v0.0.72
+
+- Подкручены elevation style presets по новой пользовательской спецификации диапазонов и частоты уровня.
+- `flatland` теперь использует диапазон `-5..4`, частую мягкую волну и больше нижних уровней.
+- `rolling_hills` теперь использует диапазон `-5..10`, среднюю волну и настроен как основной игровой кандидат.
+- `mountainous` и `plateau` используют полный диапазон `-5..20`, но различаются частотой: частые горные изменения против редких крупных плато.
+- В профиль elevation добавлены `wave_frequency` и `character`, summary теперь печатает эти поля.
+- Генератор переименован в `size_aware_polygonal_macro_geography_v4`.
+- Версия проекта поднята до `0.0.72`.
