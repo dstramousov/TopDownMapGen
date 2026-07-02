@@ -585,3 +585,10 @@
 - Pipeline передаёт выбранный стиль в elevation generator; summary/report теперь показывают активный стиль рельефа.
 - Генератор переименован в `size_aware_polygonal_macro_geography_v3`.
 - Версия проекта поднята до `0.0.69`.
+
+## v0.0.69 -> v0.0.70
+
+- Восстановлены документы публичного контракта `map_package/`, которые уже указаны в README и проверяются тестом документации.
+- Добавлены `docs/map_package_v1.md`, `docs/game_consumer_guide.md`, `docs/world_building_algorithm.md`, `docs/world_package_file_map.md`.
+- Документация фиксирует текущую elevation-модель `-5..20`, отличие low ground от actual water, runtime grids, semantic world graph, routes и порядок чтения пакета внешней игрой.
+- Версия проекта поднята до `0.0.70`.
