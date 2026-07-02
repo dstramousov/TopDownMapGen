@@ -155,6 +155,7 @@ def format_console_summary(summary: dict[str, Any]) -> str:
     lines.extend(
         [
             f"    map class:        {_path_text(profile.get('map_class', 'unknown'))}",
+            f"    style:            {_path_text(profile.get('style', 'normal'))}",
             f"    format range:     {_range_text(profile.get('format_range'))}",
             f"    active range:     {_range_text(profile.get('active_range'))}",
             f"    rare range:       {_range_text(profile.get('rare_range'))}",

@@ -143,6 +143,7 @@ class WorldgenPipeline:
                     "chunk_height_tiles": config.chunk_height_tiles,
                     "biome_profile": config.biome_profile,
                     "objective_profile": config.objective_profile,
+                    "elevation_style": config.elevation_style,
                     "generation_tuning": config.generation_tuning.to_dict(),
                 },
             )
@@ -251,6 +252,7 @@ class WorldgenPipeline:
                 runtime_data,
                 rows=rows,
                 seed=config.resolved_seed,
+                elevation_style=config.elevation_style,
             )
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"
@@ -353,6 +355,7 @@ class WorldgenPipeline:
             "debug_images_enabled": debug_images and render,
             "rendered_layers": rendered_layers,
             "objective_profile": config.objective_profile,
+            "elevation_style": config.elevation_style,
             "generation_tuning": config.generation_tuning.to_dict(),
             "spawn_selection_policy": objective.get("spawn_selection_policy"),
             "candidate_spawn_count": objective.get("candidate_spawn_count"),

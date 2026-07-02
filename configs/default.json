@@ -18,5 +18,8 @@
     "water_patch_count_scale": 1.0,
     "water_patch_size_scale": 2.0,
     "water_patch_density": 0.62
+  },
+  "elevation": {
+    "style": "normal"
   }
 }

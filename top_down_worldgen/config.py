@@ -15,6 +15,10 @@ LOGGER = logging.getLogger(__name__)
 UINT64_MAX = (1 << 64) - 1
 MIN_TUNING_SCALE = 0.0
 MAX_TUNING_SCALE = 10.0
+DEFAULT_ELEVATION_STYLE = "normal"
+SUPPORTED_ELEVATION_STYLES = frozenset(
+    {"flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +124,7 @@ class PublicConfig:
     chunk_height_tiles: int
     biome_profile: str
     objective_profile: str = "clear_map"
+    elevation_style: str = DEFAULT_ELEVATION_STYLE
     generation_tuning: GenerationTuning = field(default_factory=GenerationTuning)
 
     @classmethod
@@ -153,6 +158,7 @@ class PublicConfig:
                 chunk_height_tiles=int(data["chunk_height_tiles"]),
                 biome_profile=str(data["biome_profile"]),
                 objective_profile=objective_profile,
+                elevation_style=_sanitize_elevation_style(data),
                 generation_tuning=GenerationTuning.from_raw(data.get("generation_tuning")),
             )
             metrics.update(
@@ -165,6 +171,7 @@ class PublicConfig:
                     "chunk_height_tiles": config.chunk_height_tiles,
                     "biome_profile": config.biome_profile,
                     "objective_profile": config.objective_profile,
+                    "elevation_style": config.elevation_style,
                     "generation_tuning": config.generation_tuning.to_dict(),
                 },
             )
@@ -199,6 +206,30 @@ class PublicConfig:
             engine_config = self.to_engine_dict()
             write_json(engine_config, path)
             metrics.update({"field_count": len(engine_config)})
+
+
+def _sanitize_elevation_style(data: dict[str, Any]) -> str:
+    """Return a supported elevation style from public config data.
+
+    Args:
+        data: Raw public config dictionary.
+
+    Returns:
+        Supported elevation style name.
+    """
+    raw_value: Any = data.get("elevation_style")
+    elevation_block = data.get("elevation")
+    if raw_value is None and isinstance(elevation_block, dict):
+        raw_value = elevation_block.get("style")
+    style = str(raw_value or DEFAULT_ELEVATION_STYLE).strip().lower()
+    if style not in SUPPORTED_ELEVATION_STYLES:
+        LOGGER.warning(
+            "Unknown elevation style=%s; falling back to %s",
+            style,
+            DEFAULT_ELEVATION_STYLE,
+        )
+        return DEFAULT_ELEVATION_STYLE
+    return style
 
 
 def resolve_seed(seed: Any) -> int:

@@ -576,3 +576,12 @@
 - В elevation report и console summary добавлены `region_transition_shaping` и `main_route_alignment`.
 - Генератор переименован в `size_aware_polygonal_macro_geography_v2`.
 - Версия проекта поднята до `0.0.68`.
+
+## v0.0.68 -> v0.0.69
+
+- Добавлены пользовательские elevation style presets для управления характером рельефа из public config.
+- Поддержаны стили `flatland`, `rolling_hills`, `normal`, `rugged`, `mountainous`, `plateau`.
+- `configs/default.json` получил блок `elevation.style`, по умолчанию `normal`.
+- Pipeline передаёт выбранный стиль в elevation generator; summary/report теперь показывают активный стиль рельефа.
+- Генератор переименован в `size_aware_polygonal_macro_geography_v3`.
+- Версия проекта поднята до `0.0.69`.
