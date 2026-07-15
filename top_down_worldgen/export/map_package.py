@@ -1736,6 +1736,22 @@ def _runtime_marker_type(item: dict[str, Any]) -> str | None:
     return None
 
 
+
+def _runtime_height_grid_level_range(elevation: dict[str, Any]) -> tuple[int, int]:
+    """Return runtime height-grid clamp for strict elevation styles."""
+    profile = _dict(elevation.get("profile"))
+    if profile.get("style") == "super_flatland":
+        active_range = profile.get("active_range")
+        if (
+            isinstance(active_range, list)
+            and len(active_range) == 2
+            and isinstance(active_range[0], int)
+            and isinstance(active_range[1], int)
+        ):
+            return active_range[0], active_range[1]
+    return -5, 20
+
+
 def _build_runtime_grids(
     *,
     tile_grid: list[str],
@@ -1758,6 +1774,7 @@ def _build_runtime_grids(
     cover_grid = [[0.0 for _ in range(width)] for _ in range(height)]
     concealment_grid = [[0.0 for _ in range(width)] for _ in range(height)]
     height_grid = _height_grid_rows(elevation=elevation, width=width, height=height)
+    runtime_level_min, runtime_level_max = _runtime_height_grid_level_range(elevation)
 
     for item in runtime_objects:
         if not isinstance(item, dict):
@@ -1783,7 +1800,7 @@ def _build_runtime_grids(
             )
             elevation_level = item.get("interior_elevation", item.get("elevation"))
             if isinstance(elevation_level, int):
-                height_grid[y][x] = elevation_level
+                height_grid[y][x] = max(runtime_level_min, min(elevation_level, runtime_level_max))
     return {
         "schema_version": RUNTIME_GRIDS_SCHEMA_VERSION,
         "kind": "runtime_grids",

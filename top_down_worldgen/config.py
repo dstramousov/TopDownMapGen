@@ -17,7 +17,7 @@ MIN_TUNING_SCALE = 0.0
 MAX_TUNING_SCALE = 10.0
 DEFAULT_ELEVATION_STYLE = "normal"
 SUPPORTED_ELEVATION_STYLES = frozenset(
-    {"flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
+    {"super_flatland", "flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
 )
 
 

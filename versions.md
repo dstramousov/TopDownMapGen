@@ -609,3 +609,12 @@
 - В профиль elevation добавлены `wave_frequency` и `character`, summary теперь печатает эти поля.
 - Генератор переименован в `size_aware_polygonal_macro_geography_v4`.
 - Версия проекта поднята до `0.0.72`.
+
+## v0.0.72 -> v0.0.73
+
+- Добавлен стиль elevation `super_flatland`.
+- Стиль `super_flatland` ограничивает активный и редкий диапазон высот до `-1..1`.
+- `super_flatland` добавлен в публичный config validation и в elevation style gallery.
+- В отчёте профиля стиль отображается как `nearly flat -1..1 micro relief` с частотой `soft`.
+- Обновлена документация `docs/map_package_v1.md`.
+- Версия проекта поднята до `0.0.73`.

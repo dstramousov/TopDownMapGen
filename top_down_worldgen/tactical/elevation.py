@@ -260,6 +260,7 @@ def generate_next_gen_elevation(
         fallback_path=path,
     )
     levels = runtime_route_result.rows
+    levels = _clamp_levels_to_profile_range(levels, profile=profile)
     report = _build_generation_report(
         levels,
         geographic_levels=geographic_levels,
@@ -309,6 +310,44 @@ def _apply_elevation_style(profile: ElevationScaleProfile, *, style: str) -> Ele
     style_name = _sanitize_elevation_style(style)
     if style_name == "normal":
         return replace(profile, style_name=style_name)
+    if style_name == "super_flatland":
+        return replace(
+            profile,
+            style_name=style_name,
+            active_min_level=-1,
+            active_max_level=1,
+            rare_min_level=-1,
+            rare_max_level=1,
+            terrace_min_size_tiles=10,
+            terrace_max_size_tiles=24,
+            macro_frequency=profile.macro_frequency * 0.98,
+            detail_frequency=profile.detail_frequency * 0.74,
+            ridge_frequency=profile.ridge_frequency * 0.20,
+            warp_strength=profile.warp_strength * 0.28,
+            macro_weight=max(0.64, profile.macro_weight + 0.02),
+            detail_weight=profile.detail_weight * 0.42,
+            ridge_weight=profile.ridge_weight * 0.04,
+            redistribution_power=max(0.82, profile.redistribution_power * 0.70),
+            score_smoothing_passes=profile.score_smoothing_passes + 3,
+            level_relax_passes=profile.level_relax_passes + 8,
+            ground_corridor_radius=profile.ground_corridor_radius + 3,
+            band_weights={
+                "underground_-5_-1": 0.30,
+                "ground_0": 0.46,
+                "low_raised_1_4": 0.24,
+                "hills_5_10": 0.0,
+                "highlands_11_16": 0.0,
+                "landmarks_17_20": 0.0,
+            },
+            band_targets={
+                "underground_-5_-1": (20.0, 42.0),
+                "ground_0": (34.0, 58.0),
+                "low_raised_1_4": (12.0, 32.0),
+                "hills_5_10": (0.0, 0.0),
+                "highlands_11_16": (0.0, 0.0),
+                "landmarks_17_20": (0.0, 0.0),
+            },
+        )
     if style_name == "flatland":
         return replace(
             profile,
@@ -502,6 +541,7 @@ def _apply_elevation_style(profile: ElevationScaleProfile, *, style: str) -> Ele
 def _style_wave_frequency(profile: ElevationScaleProfile) -> str:
     """Return a user-facing style wave frequency class."""
     return {
+        "super_flatland": "soft",
         "flatland": "frequent",
         "rolling_hills": "medium",
         "rugged": "frequent",
@@ -513,6 +553,7 @@ def _style_wave_frequency(profile: ElevationScaleProfile) -> str:
 def _style_character(profile: ElevationScaleProfile) -> str:
     """Return a short user-facing style character string."""
     return {
+        "super_flatland": "nearly flat -1..1 micro relief",
         "flatland": "low soft frequent undulation",
         "rolling_hills": "main playable medium hills",
         "rugged": "rough broken terrain",
@@ -523,7 +564,7 @@ def _style_character(profile: ElevationScaleProfile) -> str:
 def _sanitize_elevation_style(style: str) -> str:
     """Return a supported elevation style name."""
     value = str(style or "normal").strip().lower()
-    if value in {"flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"}:
+    if value in {"super_flatland", "flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"}:
         return value
     return "normal"
 
@@ -1090,6 +1131,8 @@ def _macro_region_count(profile: ElevationScaleProfile) -> int:
         "large": 10,
         "huge": 14,
     }.get(profile.name, 6)
+    if profile.style_name == "super_flatland":
+        return base_count + 1
     if profile.style_name == "flatland":
         return base_count + 2
     if profile.style_name == "rolling_hills":
@@ -1102,6 +1145,8 @@ def _macro_region_count(profile: ElevationScaleProfile) -> int:
 
 
 def _macro_region_kinds(profile: ElevationScaleProfile) -> tuple[str, ...]:
+    if profile.style_name == "super_flatland":
+        return ("plain", "basin", "plain", "plain", "basin")
     if profile.style_name == "flatland":
         return ("basin", "plain", "plain", "basin", "hill", "plain")
     if profile.style_name == "rolling_hills":
@@ -1406,6 +1451,20 @@ def _relax_level_deltas(
         if not changed:
             break
     return relaxed
+
+
+def _clamp_levels_to_profile_range(
+    levels: list[list[int]],
+    *,
+    profile: ElevationScaleProfile,
+) -> list[list[int]]:
+    """Clamp final runtime levels for styles with a strict public range."""
+    if profile.style_name != "super_flatland":
+        return levels
+    return [
+        [_clamp(level, profile.active_min_level, profile.active_max_level) for level in row]
+        for row in levels
+    ]
 
 
 def _median_int(values: list[int]) -> int:
@@ -2390,7 +2449,7 @@ def _build_generation_report(
 
 def _generator_info(*, seed: int, profile: ElevationScaleProfile) -> dict[str, Any]:
     return {
-        "name": "size_aware_polygonal_macro_geography_v4",
+        "name": "size_aware_polygonal_macro_geography_v5",
         "seed": seed,
         "range": [MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL],
         "algorithm": "elevation_style_presets_polygon_inspired_macro_region_graph_region_transition_belts_main_route_alignment_traversal_repair",

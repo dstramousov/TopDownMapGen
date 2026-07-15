@@ -20,6 +20,6 @@
     "water_patch_density": 0.62
   },
   "elevation": {
-    "style": "mountainous"
+    "style": "super_flatland"
   }
 }

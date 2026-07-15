@@ -32,6 +32,7 @@ from top_down_worldgen.utils.json_io import read_json, write_json
 LOGGER = logging.getLogger(__name__)
 
 DEFAULT_STYLES = (
+    "super_flatland",
     "flatland",
     "rolling_hills",
     "normal",

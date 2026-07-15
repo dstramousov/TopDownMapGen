@@ -43,7 +43,7 @@ def test_public_config_reads_nested_elevation_style(tmp_path: Path) -> None:
                 "chunk_width_tiles": 16,
                 "chunk_height_tiles": 16,
                 "biome_profile": "forest_ruins",
-                "elevation": {"style": "rolling_hills"},
+                "elevation": {"style": "super_flatland"},
             },
         ),
         encoding="utf-8",
@@ -51,7 +51,7 @@ def test_public_config_reads_nested_elevation_style(tmp_path: Path) -> None:
 
     config = PublicConfig.from_file(config_path)
 
-    assert config.elevation_style == "rolling_hills"
+    assert config.elevation_style == "super_flatland"
 
 
 def test_invalid_elevation_style_falls_back_to_normal(tmp_path: Path) -> None:
@@ -81,10 +81,17 @@ def test_elevation_style_changes_profile_report() -> None:
     """Ensure style presets expose requested level ranges and wave classes."""
     rows = ["S" + "+" * 14 + "G"] + ["+" * 16 for _ in range(15)]
 
+    super_flatland = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="super_flatland")
     flatland = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="flatland")
     rolling = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="rolling_hills")
     mountainous = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="mountainous")
     plateau = generate_next_gen_elevation(rows=rows, seed=7, elevation_style="plateau")
+
+    assert super_flatland.report["profile"]["style"] == "super_flatland"
+    assert super_flatland.report["profile"]["active_range"] == [-1, 1]
+    assert super_flatland.report["profile"]["rare_range"] == [-1, 1]
+    assert super_flatland.report["profile"]["wave_frequency"] == "soft"
+    assert set(super_flatland.report["summary"]["levels_present"]).issubset({"-1", "0", "1"})
 
     assert flatland.report["profile"]["style"] == "flatland"
     assert flatland.report["profile"]["active_range"] == [-5, 4]
