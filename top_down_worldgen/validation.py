@@ -2007,11 +2007,12 @@ def _runtime_objects_avoid_blocked_tiles(
     if not tile_grid:
         return False
     for item in _runtime_objects(runtime_data):
+        flooded = item.get("flooded") is True
         for point in _runtime_object_points(item):
             x, y = point
             if y < 0 or y >= len(tile_grid) or x < 0 or x >= len(tile_grid[y]):
                 return False
-            if tile_grid[y][x] not in PASSABLE_OBJECT_TILES:
+            if tile_grid[y][x] not in PASSABLE_OBJECT_TILES and not flooded:
                 return False
     return True
 

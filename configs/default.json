@@ -21,5 +21,14 @@
   },
   "elevation": {
     "style": "super_flatland"
+  },
+  "river": {
+    "enabled": true,
+    "channel_width_min": 3,
+    "channel_width_max": 9,
+    "allow_basin_flooding": true,
+    "max_flood_area_ratio": 0.08,
+    "max_flood_distance": 24,
+    "require_map_exit": true
   }
 }
