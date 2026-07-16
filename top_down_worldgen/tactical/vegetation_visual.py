@@ -23,6 +23,14 @@ class VegetationVisualResult:
     report: dict[str, Any]
 
 
+@dataclass(frozen=True, slots=True)
+class VegetationCollisionResult:
+    """Terrain rows reconciled with the final visual tree mask."""
+
+    rows: list[str]
+    report: dict[str, Any]
+
+
 def build_visual_vegetation(
     *,
     terrain_rows: list[list[str]],
@@ -105,7 +113,7 @@ def build_visual_vegetation(
         output_rows.append("".join(output_row))
 
     report = {
-        "schema_version": "vegetation-visual-report-v3",
+        "schema_version": "vegetation-visual-report-v4",
         "kind": "vegetation_visual",
         "rules": {
             "tree_terrain": TREE_TERRAIN,
@@ -151,6 +159,65 @@ def build_visual_vegetation(
     }
     return VegetationVisualResult(rows=output_rows, report=report)
 
+
+
+def reconcile_tree_collision(
+    *,
+    rows: list[str],
+    visual_rows: list[str],
+) -> VegetationCollisionResult:
+    """Open tiles where the final visual mask removed the only blocker.
+
+    Args:
+        rows: Final semantic ASCII terrain after hydrology.
+        visual_rows: Visual vegetation mask generated from the same terrain.
+
+    Returns:
+        Reconciled terrain rows and diagnostics.
+
+    Raises:
+        ValueError: If terrain and visual mask dimensions differ.
+    """
+    if len(rows) != len(visual_rows):
+        raise ValueError("terrain and vegetation rows must have equal height")
+
+    output: list[str] = []
+    opened_tree_tiles = 0
+    retained_visible_tree_tiles = 0
+    retained_non_tree_tiles = 0
+
+    for y, row in enumerate(rows):
+        visual_row = visual_rows[y]
+        if len(row) != len(visual_row):
+            raise ValueError("terrain and vegetation rows must have equal width")
+        chars = list(row)
+        for x, symbol in enumerate(chars):
+            if symbol != "T":
+                retained_non_tree_tiles += 1
+                continue
+            if visual_row[x] == TREE_VISIBLE_CODE:
+                retained_visible_tree_tiles += 1
+                continue
+            chars[x] = "+"
+            opened_tree_tiles += 1
+        output.append("".join(chars))
+
+    report = {
+        "schema_version": "vegetation-collision-reconciliation-v1",
+        "kind": "vegetation_collision_reconciliation",
+        "policy": {
+            "hidden_tree_tile_becomes": "grass",
+            "visible_tree_tile_remains_blocked": True,
+            "non_tree_blockers_unchanged": True,
+            "elevation_traversal_rules_unchanged": True,
+        },
+        "summary": {
+            "opened_tree_tiles": opened_tree_tiles,
+            "retained_visible_tree_tiles": retained_visible_tree_tiles,
+            "retained_non_tree_tiles": retained_non_tree_tiles,
+        },
+    }
+    return VegetationCollisionResult(rows=output, report=report)
 
 
 def _forest_edge_depths(terrain_rows: list[list[str]]) -> list[list[int]]:

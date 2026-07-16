@@ -75,7 +75,10 @@ from .tactical.start_goal import (
     relocate_start_goal,
     runtime_object_points,
 )
-from .tactical.vegetation_visual import build_visual_vegetation
+from .tactical.vegetation_visual import (
+    build_visual_vegetation,
+    reconcile_tree_collision,
+)
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
 from .utils.json_io import read_json, write_json
@@ -321,6 +324,27 @@ class WorldgenPipeline:
             runtime_data["movement_costs"] = movement_costs
             runtime_data["elevation_hydrology"] = hydrology.report
             debug_data["elevation_hydrology"] = hydrology.report
+            terrain_rows = [
+                [tile_legend.get(tile, "unknown") for tile in row]
+                for row in rows
+            ]
+            vegetation_visual = build_visual_vegetation(
+                terrain_rows=terrain_rows,
+                elevation_rows=elevation_rows,
+                slope_rows=geography_grids.get("slope_grid", {}).get("rows", []),
+                seed=config.resolved_seed,
+                reed_density=config.reed_density,
+            )
+            vegetation_collision = reconcile_tree_collision(
+                rows=rows,
+                visual_rows=vegetation_visual.rows,
+            )
+            rows = vegetation_collision.rows
+            runtime_data = attach_tile_grid(runtime_data, rows)
+            runtime_data["vegetation_visual"] = vegetation_visual.report
+            runtime_data["vegetation_collision_reconciliation"] = vegetation_collision.report
+            debug_data["vegetation_collision_reconciliation"] = vegetation_collision.report
+
             retained_objects, object_pruning = finalize_runtime_objects_for_final_terrain(
                 runtime_data.get("runtime_objects"),
                 rows=rows,
@@ -339,18 +363,6 @@ class WorldgenPipeline:
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data["late_start_goal"] = late_start_goal.report
             debug_data["late_start_goal"] = late_start_goal.report
-            terrain_rows = [
-                [tile_legend.get(tile, "unknown") for tile in row]
-                for row in rows
-            ]
-            vegetation_visual = build_visual_vegetation(
-                terrain_rows=terrain_rows,
-                elevation_rows=elevation_rows,
-                slope_rows=geography_grids.get("slope_grid", {}).get("rows", []),
-                seed=config.resolved_seed,
-                reed_density=config.reed_density,
-            )
-            runtime_data["vegetation_visual"] = vegetation_visual.report
             outputs.generated_map.write_text("\n".join(rows) + "\n", encoding="utf-8")
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"

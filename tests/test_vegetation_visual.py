@@ -1,4 +1,7 @@
-from top_down_worldgen.tactical.vegetation_visual import build_visual_vegetation
+from top_down_worldgen.tactical.vegetation_visual import (
+    build_visual_vegetation,
+    reconcile_tree_collision,
+)
 
 
 def test_visual_vegetation_removes_trees_from_peaks_without_changing_input() -> None:
@@ -102,3 +105,21 @@ def test_visual_vegetation_forest_edge_is_deterministic() -> None:
     )
 
     assert first.rows == second.rows
+
+
+def test_reconcile_tree_collision_opens_only_hidden_tree_tiles() -> None:
+    result = reconcile_tree_collision(
+        rows=["TT+#~"],
+        visual_rows=[".T..."],
+    )
+
+    assert result.rows == ["+T+#~"]
+    assert result.report["summary"]["opened_tree_tiles"] == 1
+    assert result.report["summary"]["retained_visible_tree_tiles"] == 1
+
+
+def test_reconcile_tree_collision_validates_dimensions() -> None:
+    import pytest
+
+    with pytest.raises(ValueError):
+        reconcile_tree_collision(rows=["TT"], visual_rows=["."])
