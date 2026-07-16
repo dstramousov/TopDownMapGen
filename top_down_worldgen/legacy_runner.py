@@ -3,6 +3,9 @@ from __future__ import annotations
 import logging
 import subprocess
 import sys
+import re
+
+from .performance import active_profiler
 from pathlib import Path
 
 from .logging_utils import timed_stage
@@ -74,11 +77,22 @@ class LegacyEngineRunner:
                 text=True,
                 check=False,
             )
+            legacy_stage_count = 0
+            profiler = active_profiler()
+            if profiler is not None:
+                for match in re.finditer(r"PERF_STAGE\s+([^\s]+)\s+([0-9.]+)", result.stderr):
+                    profiler.record_external(
+                        f"legacy.{match.group(1)}",
+                        float(match.group(2)),
+                        depth=2,
+                    )
+                    legacy_stage_count += 1
             metrics.update(
                 {
                     "returncode": result.returncode,
                     "stdout_chars": len(result.stdout),
                     "stderr_chars": len(result.stderr),
+                    "legacy_stage_count": legacy_stage_count,
                 },
             )
             if result.stdout:

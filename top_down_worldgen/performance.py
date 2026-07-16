@@ -64,22 +64,56 @@ class PerformanceProfiler:
                 )
             )
 
-    def record(self, name: str, duration_ms: float, metrics: dict[str, Any]) -> None:
-        """Record a stage measured by ``timed_stage``."""
+    def stage_started(self) -> int:
+        """Enter a ``timed_stage`` and return its nesting depth."""
+        depth = self._depth
+        self._depth += 1
+        return depth
+
+    def stage_finished(
+        self,
+        name: str,
+        duration_ms: float,
+        metrics: dict[str, Any],
+        *,
+        depth: int,
+    ) -> None:
+        """Leave and record a ``timed_stage``."""
+        self._depth = max(0, self._depth - 1)
         self._samples.append(
             StageSample(
                 name=name,
                 duration_ms=duration_ms,
-                depth=self._depth,
+                depth=depth,
                 metrics=dict(metrics),
             )
+        )
+
+
+    def record_external(
+        self,
+        name: str,
+        duration_ms: float,
+        metrics: dict[str, Any] | None = None,
+        *,
+        depth: int = 1,
+    ) -> None:
+        """Record a measurement produced by a child process."""
+        self._samples.append(
+            StageSample(name=name, duration_ms=duration_ms, depth=depth, metrics=dict(metrics or {}))
         )
 
     def build_report(self, *, width: int, height: int) -> dict[str, Any]:
         total_ms = (perf_counter() - self._started) * 1000.0
         total_tiles = width * height
-        top_level = [sample for sample in self._samples if sample.name != "cli.main"]
-        ordered = sorted(top_level, key=lambda item: item.duration_ms, reverse=True)
+        samples = [sample for sample in self._samples if sample.name != "cli.main"]
+        ordered = sorted(samples, key=lambda item: item.duration_ms, reverse=True)
+        top_depth = min((sample.depth for sample in samples), default=0)
+        top_level_ordered = sorted(
+            (sample for sample in samples if sample.depth == top_depth),
+            key=lambda item: item.duration_ms,
+            reverse=True,
+        )
         million_tile_factor = 1_000_000 / total_tiles if total_tiles > 0 else 0.0
         return {
             "schema_version": "performance-profile-v1",
@@ -93,6 +127,18 @@ class PerformanceProfiler:
             if million_tile_factor
             else 0.0,
             "peak_rss_mib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 2),
+            "top_level_stages": [
+                {
+                    "name": sample.name,
+                    "duration_ms": round(sample.duration_ms, 2),
+                    "percent": round(sample.duration_ms * 100.0 / total_ms, 2)
+                    if total_ms > 0
+                    else 0.0,
+                    "depth": sample.depth,
+                    "metrics": sample.metrics,
+                }
+                for sample in top_level_ordered
+            ],
             "stages": [
                 {
                     "name": sample.name,
@@ -114,7 +160,7 @@ class PerformanceProfiler:
 
     @staticmethod
     def format_report(report: dict[str, Any], *, limit: int = 20) -> str:
-        stages = report.get("stages", [])
+        stages = report.get("top_level_stages", report.get("stages", []))
         lines = [
             "",
             "Performance profile:",

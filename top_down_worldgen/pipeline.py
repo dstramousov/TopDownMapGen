@@ -236,7 +236,8 @@ class WorldgenPipeline:
 
         tactical_started = perf_counter()
         with timed_stage(LOGGER, "pipeline.tactical_processing") as metrics:
-            raw_data = read_json(outputs.raw_tactical_map)
+            with timed_stage(LOGGER, "tactical.load_raw_data"):
+                raw_data = read_json(outputs.raw_tactical_map)
             raw_data["schema_version"] = RAW_TACTICAL_MAP_SCHEMA_VERSION
             raw_data["generator_version"] = self._project_version()
             raw_data["pipeline_version"] = "pipeline-v1"
@@ -253,23 +254,25 @@ class WorldgenPipeline:
                 len(raw_data.get("flank_routes", [])),
                 len(raw_data.get("enemy_spawn_zones", [])),
             )
-            runtime_data, debug_data = TacticalOptimizer().optimize(raw_data)
-            runtime_data, debug_data = FallbackPositionBuilder().add(
-                runtime_data,
-                debug_data,
-            )
-            runtime_data, debug_data = ObjectiveProfileSelector(
-                config.objective_profile,
-            ).apply(
-                runtime_data,
-                debug_data,
-            )
-            runtime_data = attach_tile_grid(runtime_data, rows)
-            runtime_data = attach_runtime_layers(
-                runtime_data,
-                seed=config.resolved_seed,
-                generation_tuning=config.generation_tuning.to_dict(),
-            )
+            with timed_stage(LOGGER, "tactical.optimize_and_select"):
+                runtime_data, debug_data = TacticalOptimizer().optimize(raw_data)
+                runtime_data, debug_data = FallbackPositionBuilder().add(
+                    runtime_data,
+                    debug_data,
+                )
+                runtime_data, debug_data = ObjectiveProfileSelector(
+                    config.objective_profile,
+                ).apply(
+                    runtime_data,
+                    debug_data,
+                )
+            with timed_stage(LOGGER, "tactical.attach_runtime_layers"):
+                runtime_data = attach_tile_grid(runtime_data, rows)
+                runtime_data = attach_runtime_layers(
+                    runtime_data,
+                    seed=config.resolved_seed,
+                    generation_tuning=config.generation_tuning.to_dict(),
+                )
             with timed_stage(
                 LOGGER,
                 "pipeline.terrain_island_repair",
@@ -301,19 +304,21 @@ class WorldgenPipeline:
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data["terrain_island_repair"] = terrain_island_repair.report
             debug_data["terrain_island_repair"] = terrain_island_repair.report
-            runtime_data = attach_places(runtime_data)
-            runtime_data = attach_next_gen_elevation(
-                runtime_data,
-                rows=rows,
-                seed=config.resolved_seed,
-                elevation_style=config.elevation_style,
-                geography_draft=geography_draft,
-                natural_geography=natural_geography,
-            )
+            with timed_stage(LOGGER, "tactical.attach_places_and_elevation"):
+                runtime_data = attach_places(runtime_data)
+                runtime_data = attach_next_gen_elevation(
+                    runtime_data,
+                    rows=rows,
+                    seed=config.resolved_seed,
+                    elevation_style=config.elevation_style,
+                    geography_draft=geography_draft,
+                    natural_geography=natural_geography,
+                )
             geography_grids = runtime_data.get("elevation_generation_report", {}).get("geography", {}).get("grids", {})
             elevation_rows = geography_grids.get("geographic_level_grid", {}).get("rows", [])
-            hydrology = apply_elevation_hydrology(rows=rows, elevation_rows=elevation_rows)
-            rows = hydrology.rows
+            with timed_stage(LOGGER, "tactical.apply_hydrology"):
+                hydrology = apply_elevation_hydrology(rows=rows, elevation_rows=elevation_rows)
+                rows = hydrology.rows
             runtime_data = attach_tile_grid(runtime_data, rows)
             map_info = dict(runtime_data.get("map", {}))
             tile_legend = dict(map_info.get("tile_legend", {}))
@@ -329,7 +334,8 @@ class WorldgenPipeline:
                 [tile_legend.get(tile, "unknown") for tile in row]
                 for row in rows
             ]
-            vegetation_visual = build_visual_vegetation(
+            with timed_stage(LOGGER, "tactical.build_vegetation"):
+                vegetation_visual = build_visual_vegetation(
                 terrain_rows=terrain_rows,
                 elevation_rows=elevation_rows,
                 slope_rows=geography_grids.get("slope_grid", {}).get("rows", []),
@@ -338,13 +344,14 @@ class WorldgenPipeline:
                 puddle_reed_density=config.puddle_reed_density,
                 reclaimed_edge_bush_density=config.generation_tuning.reclaimed_edge_bush_density,
                 reclaimed_altitude_bush_density=config.generation_tuning.reclaimed_altitude_bush_density,
-                reclaimed_bush_max_elevation=config.generation_tuning.reclaimed_bush_max_elevation,
-            )
-            vegetation_collision = reconcile_tree_collision(
+                    reclaimed_bush_max_elevation=config.generation_tuning.reclaimed_bush_max_elevation,
+                )
+            with timed_stage(LOGGER, "tactical.reconcile_vegetation_collision"):
+                vegetation_collision = reconcile_tree_collision(
                 rows=rows,
                 visual_rows=vegetation_visual.rows,
-                elevation_rows=elevation_rows,
-            )
+                    elevation_rows=elevation_rows,
+                )
             rows = vegetation_collision.rows
             vegetation_visual.report["rows"] = vegetation_collision.visual_rows
             runtime_data = attach_tile_grid(runtime_data, rows)
@@ -360,19 +367,20 @@ class WorldgenPipeline:
             runtime_data["runtime_objects_summary"] = summarize_runtime_objects(retained_objects)
             runtime_data["final_runtime_object_pruning"] = object_pruning
             debug_data["final_runtime_object_pruning"] = object_pruning
-            late_start_goal = relocate_start_goal(
+            with timed_stage(LOGGER, "tactical.final_traversal_cleanup"):
+                late_start_goal = relocate_start_goal(
                 rows=rows,
                 elevation_rows=elevation_rows,
                 seed=config.resolved_seed,
-                excluded_points=runtime_object_points(runtime_data.get("runtime_objects")),
-            )
-            rows = late_start_goal.rows
-            final_traversal_cleanup = cleanup_unreachable_walkable(
+                    excluded_points=runtime_object_points(runtime_data.get("runtime_objects")),
+                )
+                rows = late_start_goal.rows
+                final_traversal_cleanup = cleanup_unreachable_walkable(
                 rows=rows,
                 elevation_rows=elevation_rows,
-                source_rows=geography_grids.get("source_grid", {}).get("rows", []),
-            )
-            rows = final_traversal_cleanup.rows
+                    source_rows=geography_grids.get("source_grid", {}).get("rows", []),
+                )
+                rows = final_traversal_cleanup.rows
             retained_objects, object_pruning = finalize_runtime_objects_for_final_terrain(
                 runtime_data.get("runtime_objects"),
                 rows=rows,
@@ -390,9 +398,10 @@ class WorldgenPipeline:
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"
 
-            write_json(runtime_data, outputs.tactical_map)
-            write_json(debug_data, outputs.tactical_map_debug)
-            write_map_package(
+            with timed_stage(LOGGER, "tactical.serialize_outputs"):
+                write_json(runtime_data, outputs.tactical_map)
+                write_json(debug_data, outputs.tactical_map_debug)
+                write_map_package(
                 outputs=outputs,
                 runtime_data=runtime_data,
                 rows=rows,
@@ -402,8 +411,8 @@ class WorldgenPipeline:
                 seed=config.seed,
                 resolved_seed=config.resolved_seed,
                 profile=config.objective_profile,
-                generation_tuning=config.generation_tuning.to_dict(),
-            )
+                    generation_tuning=config.generation_tuning.to_dict(),
+                )
             metrics.update(
                 {
                     "runtime_combat_zones": len(runtime_data.get("combat_zones", [])),

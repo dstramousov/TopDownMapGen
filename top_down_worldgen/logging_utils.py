@@ -78,6 +78,8 @@ def timed_stage(
     else:
         logger.log(level, "START %s", name)
 
+    profiler = active_profiler()
+    profiler_depth = profiler.stage_started() if profiler is not None else 0
     started = perf_counter()
     end_metrics: dict[str, Any] = {}
     try:
@@ -87,9 +89,13 @@ def timed_stage(
         logger.exception("FAIL %s duration_ms=%.2f", name, duration_ms)
         raise
     duration_ms = (perf_counter() - started) * 1000.0
-    profiler = active_profiler()
     if profiler is not None:
-        profiler.record(name, duration_ms, {**start_metrics, **end_metrics})
+        profiler.stage_finished(
+            name,
+            duration_ms,
+            {**start_metrics, **end_metrics},
+            depth=profiler_depth,
+        )
     if end_metrics:
         logger.log(level, "DONE %s duration_ms=%.2f %s", name, duration_ms, format_kv(end_metrics))
     else:

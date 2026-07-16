@@ -3,8 +3,14 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass, replace
 from math import cos, floor, hypot, pi, sin
+from time import perf_counter
 from random import Random
 from typing import Any, Iterable
+
+from top_down_worldgen.logging_utils import timed_stage
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 from .geography_draft import (
     GeographyDraft,
@@ -934,12 +940,15 @@ def _build_geographic_fields(
     profile: ElevationScaleProfile,
 ) -> GeographyDraft:
     """Build continuous geographic fields before integer terracing."""
-    macro_regions = _build_macro_regions(
-        width=width,
-        height=height,
-        seed=seed,
-        profile=profile,
-    )
+    with timed_stage(LOGGER, "geography.build_macro_regions") as metrics:
+        macro_regions = _build_macro_regions(
+            width=width,
+            height=height,
+            seed=seed,
+            profile=profile,
+        )
+        metrics["macro_regions"] = len(macro_regions)
+    raster_started = perf_counter()
     raw_elevation: list[list[float]] = []
     raw_moisture: list[list[float]] = []
     basin_mask: list[list[float]] = []
@@ -1034,23 +1043,36 @@ def _build_geographic_fields(
         basin_mask.append(basin_row)
         dominant_region_rows.append(dominant_row)
 
-    elevation_scores = _normalize_grid(
-        raw_elevation,
-        minimum=min_value,
-        maximum=max_value,
-        power=profile.redistribution_power,
-    )
-    moisture_base = _normalize_grid(
-        raw_moisture,
-        minimum=moisture_min,
-        maximum=moisture_max,
-        power=1.0,
-    )
-    moisture_scores = _blend_moisture_field(
-        moisture_base,
-        elevation_scores=elevation_scores,
-        basin_mask=basin_mask,
-    )
+    raster_ms = (perf_counter() - raster_started) * 1000.0
+    profiler = __import__("top_down_worldgen.performance", fromlist=["active_profiler"]).active_profiler()
+    if profiler is not None:
+        profiler.stage_finished(
+            "geography.rasterize_fields",
+            raster_ms,
+            {"width": width, "height": height, "tiles": width * height},
+            depth=profiler.stage_started(),
+        )
+
+    with timed_stage(LOGGER, "geography.normalize_elevation"):
+        elevation_scores = _normalize_grid(
+            raw_elevation,
+            minimum=min_value,
+            maximum=max_value,
+            power=profile.redistribution_power,
+        )
+    with timed_stage(LOGGER, "geography.normalize_moisture"):
+        moisture_base = _normalize_grid(
+            raw_moisture,
+            minimum=moisture_min,
+            maximum=moisture_max,
+            power=1.0,
+        )
+    with timed_stage(LOGGER, "geography.blend_moisture"):
+        moisture_scores = _blend_moisture_field(
+            moisture_base,
+            elevation_scores=elevation_scores,
+            basin_mask=basin_mask,
+        )
     return GeographyDraft(
         width=width,
         height=height,

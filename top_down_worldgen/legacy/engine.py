@@ -6,6 +6,7 @@ import logging
 import math
 import random
 import secrets
+from time import perf_counter
 from collections import deque
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -797,27 +798,37 @@ class MapGenerator:
         LOGGER.info("Generation tuning: %s", self._public.generation_tuning.to_dict())
         LOGGER.info("Derived config: %s", self._derived)
 
-        self._fill_forest()
-        self._place_regions_evenly()
-        self._assign_region_kinds()
-        self._relocate_ruin_regions_to_flat_ground()
-        self._build_region_graph()
-        self._carve_regions()
-        self._carve_graph_roads()
-        self._add_connected_pockets()
-        self._add_cracked_ground_patches()
-        self._add_water_patches()
-        self._add_tree_clusters_with_bushes()
-        self._add_scattered_bushes()
-        self._add_flower_patches()
-        self._add_mushroom_patches()
-        self._cleanup_small_components()
-        self._place_start_goal()
-        self._open_dead_forest_masses()
-        self._repair_critical_connectivity()
-        self._repair_walkable_connectivity()
-        self._place_start_goal()
-        self._validate()
+        stages = (
+            ("fill_forest", self._fill_forest),
+            ("place_regions", self._place_regions_evenly),
+            ("assign_region_kinds", self._assign_region_kinds),
+            ("relocate_ruins", self._relocate_ruin_regions_to_flat_ground),
+            ("build_region_graph", self._build_region_graph),
+            ("carve_regions", self._carve_regions),
+            ("carve_roads", self._carve_graph_roads),
+            ("connected_pockets", self._add_connected_pockets),
+            ("cracked_ground", self._add_cracked_ground_patches),
+            ("water_patches", self._add_water_patches),
+            ("tree_clusters", self._add_tree_clusters_with_bushes),
+            ("scattered_bushes", self._add_scattered_bushes),
+            ("flower_patches", self._add_flower_patches),
+            ("mushroom_patches", self._add_mushroom_patches),
+            ("cleanup_components", self._cleanup_small_components),
+            ("place_start_goal_1", self._place_start_goal),
+            ("open_dead_forest", self._open_dead_forest_masses),
+            ("repair_critical", self._repair_critical_connectivity),
+            ("repair_walkable", self._repair_walkable_connectivity),
+            ("place_start_goal_2", self._place_start_goal),
+            ("validate", self._validate),
+        )
+        for stage_name, stage_function in stages:
+            stage_started = perf_counter()
+            stage_function()
+            LOGGER.warning(
+                "PERF_STAGE %s %.2f",
+                stage_name,
+                (perf_counter() - stage_started) * 1000.0,
+            )
 
         LOGGER.info("GENERATION FINISHED")
         return self._grid
