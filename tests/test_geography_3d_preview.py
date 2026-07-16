@@ -156,7 +156,6 @@ def test_geography_preview_draws_translucent_water_volume(tmp_path: Path) -> Non
 
     # Turn the existing water cell into deep water so the volume is rendered.
     height_map.rows[1][1] = -3
-    height_map.water_rows[1][1] = "B"
     output_path = tmp_path / "geography_water.png"
     renderer.render_view(
         height_map,
@@ -168,4 +167,23 @@ def test_geography_preview_draws_translucent_water_volume(tmp_path: Path) -> Non
 
     assert output_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
     assert renderer.WATER_SURFACE_LEVEL == -1
-    assert renderer.WATER_VOLUME_COLOR[3] < 96
+    assert 55 <= renderer.WATER_VOLUME_COLOR[3] <= 80
+
+
+def test_water_volume_is_rendered_for_all_overlay_types(tmp_path: Path) -> None:
+    """Every 3D preview family should include the same height-based water layer."""
+    output_dir = _write_minimal_output(tmp_path)
+    renderer = _load_renderer_module()
+
+    for overlay in ("geography", "walkability", "traversal", "terrain_traversal"):
+        height_map = renderer.load_height_map(output_dir, overlay=overlay)
+        height_map.rows[1][1] = -3
+        output_path = tmp_path / f"{overlay}_water.png"
+        renderer.render_view(
+            height_map,
+            view="nw",
+            output_path=output_path,
+            output_size=(640, 480),
+            draw_grid=True,
+        )
+        assert output_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")

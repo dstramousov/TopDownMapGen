@@ -31,8 +31,8 @@ MUTED_TEXT_COLOR = (180, 174, 150, 255)
 GRID_LINE_COLOR = (38, 38, 34, 85)
 SHADOW_COLOR = (0, 0, 0, 42)
 WATER_SURFACE_LEVEL = -1
-WATER_VOLUME_COLOR = (35, 132, 214, 52)
-WATER_VOLUME_SIDE_COLOR = (23, 101, 178, 64)
+WATER_VOLUME_COLOR = (35, 132, 214, 72)
+WATER_VOLUME_SIDE_COLOR = (23, 101, 178, 52)
 ELEVATION_FORMAT_MIN_LEVEL = -5
 ELEVATION_FORMAT_MAX_LEVEL = 20
 
@@ -364,17 +364,15 @@ def render_view(
         scale=scale,
         draw_grid=draw_grid,
     )
-    if height_map.overlay_name == "geography":
-        water_layer = Image.new("RGBA", output_size, (0, 0, 0, 0))
-        water_draw = ImageDraw.Draw(water_layer, "RGBA")
-        _draw_water_volume(
-            water_draw,
-            oriented_rows=oriented_rows,
-            oriented_water=oriented_water,
-            scale=scale,
-        )
-        image.alpha_composite(water_layer)
-        draw = ImageDraw.Draw(image, "RGBA")
+    water_layer = Image.new("RGBA", output_size, (0, 0, 0, 0))
+    water_draw = ImageDraw.Draw(water_layer, "RGBA")
+    _draw_water_volume(
+        water_draw,
+        oriented_rows=oriented_rows,
+        scale=scale,
+    )
+    image.alpha_composite(water_layer)
+    draw = ImageDraw.Draw(image, "RGBA")
     _draw_title(draw, height_map=height_map, view=view, output_size=output_size)
     if height_map.overlay_name != "geography":
         _draw_overlay_legend(draw, height_map=height_map, output_size=output_size)
@@ -438,28 +436,24 @@ def _draw_water_volume(
     draw: ImageDraw.ImageDraw,
     *,
     oriented_rows: list[list[int]],
-    oriented_water: list[list[str]],
     scale: RenderScale,
 ) -> None:
-    """Draw translucent lake volumes above deep negative terrain."""
+    """Draw translucent lake volumes for every terrain cell at levels -5..-2."""
     height = len(oriented_rows)
     width = len(oriented_rows[0]) if height else 0
     min_level = min((level for row in oriented_rows for level in row), default=0)
     for y in range(height):
         for x in range(width):
             level = oriented_rows[y][x]
-            water_code = oriented_water[y][x] if y < len(oriented_water) and x < len(oriented_water[y]) else "D"
-            if level > -2 or water_code not in {"B", "S"}:
+            if not ELEVATION_FORMAT_MIN_LEVEL <= level <= -2:
                 continue
             east_is_water = (
                 x + 1 < width
-                and oriented_rows[y][x + 1] <= -2
-                and oriented_water[y][x + 1] in {"B", "S"}
+                and ELEVATION_FORMAT_MIN_LEVEL <= oriented_rows[y][x + 1] <= -2
             )
             south_is_water = (
                 y + 1 < height
-                and oriented_rows[y + 1][x] <= -2
-                and oriented_water[y + 1][x] in {"B", "S"}
+                and ELEVATION_FORMAT_MIN_LEVEL <= oriented_rows[y + 1][x] <= -2
             )
             top = _tile_top_polygon(
                 x, y, WATER_SURFACE_LEVEL, min_level=min_level, scale=scale
