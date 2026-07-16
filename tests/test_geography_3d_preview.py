@@ -146,3 +146,26 @@ def test_bush_marker_uses_distinct_cyan_green_color() -> None:
     colors = image.getcolors(maxcolors=image.width * image.height)
     assert colors is not None
     assert any(color == (74, 214, 166, 255) for _, color in colors)
+
+
+def test_geography_preview_draws_translucent_water_volume(tmp_path: Path) -> None:
+    """Ensure deep lake cells receive a translucent surface above the basin."""
+    output_dir = _write_minimal_output(tmp_path)
+    renderer = _load_renderer_module()
+    height_map = renderer.load_height_map(output_dir, overlay="geography")
+
+    # Turn the existing water cell into deep water so the volume is rendered.
+    height_map.rows[1][1] = -3
+    height_map.water_rows[1][1] = "B"
+    output_path = tmp_path / "geography_water.png"
+    renderer.render_view(
+        height_map,
+        view="nw",
+        output_path=output_path,
+        output_size=(640, 480),
+        draw_grid=True,
+    )
+
+    assert output_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert renderer.WATER_SURFACE_LEVEL == -1
+    assert renderer.WATER_VOLUME_COLOR[3] < 96

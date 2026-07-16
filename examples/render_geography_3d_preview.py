@@ -30,6 +30,9 @@ TITLE_COLOR = (235, 232, 215, 255)
 MUTED_TEXT_COLOR = (180, 174, 150, 255)
 GRID_LINE_COLOR = (38, 38, 34, 85)
 SHADOW_COLOR = (0, 0, 0, 42)
+WATER_SURFACE_LEVEL = -1
+WATER_VOLUME_COLOR = (35, 132, 214, 52)
+WATER_VOLUME_SIDE_COLOR = (23, 101, 178, 64)
 ELEVATION_FORMAT_MIN_LEVEL = -5
 ELEVATION_FORMAT_MAX_LEVEL = 20
 
@@ -187,6 +190,7 @@ class HeightMap:
     overlay_rows: list[list[str]] | None
     terrain_rows: list[list[str]] | None
     overlay_counts: dict[str, int]
+    water_rows: list[list[str]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -273,6 +277,7 @@ def load_height_map(path: Path, *, overlay: str) -> HeightMap:
     overlay_rows: list[list[str]] | None = None
     terrain_rows: list[list[str]] | None = None
     overlay_counts: dict[str, int] = {}
+    water_rows = [list(row) for row in _read_water_rows(geography, width=width, height=height)]
     if overlay == "walkability":
         overlay_data = _read_walkability_data(
             output_root=output_root,
@@ -321,6 +326,7 @@ def load_height_map(path: Path, *, overlay: str) -> HeightMap:
         overlay_rows=overlay_rows,
         terrain_rows=terrain_rows,
         overlay_counts=overlay_counts,
+        water_rows=water_rows,
     )
 
 
@@ -346,6 +352,7 @@ def render_view(
     oriented_rows = _orient_grid(height_map.rows, view)
     oriented_overlay = _orient_grid(height_map.overlay_rows, view) if height_map.overlay_rows else None
     oriented_terrain = _orient_grid(height_map.terrain_rows, view) if height_map.terrain_rows else None
+    oriented_water = _orient_grid(height_map.water_rows, view)
     scale = _compute_scale(oriented_rows, output_size)
     _draw_soft_shadow(draw, oriented_rows=oriented_rows, scale=scale)
     _draw_isometric_map(
@@ -357,6 +364,17 @@ def render_view(
         scale=scale,
         draw_grid=draw_grid,
     )
+    if height_map.overlay_name == "geography":
+        water_layer = Image.new("RGBA", output_size, (0, 0, 0, 0))
+        water_draw = ImageDraw.Draw(water_layer, "RGBA")
+        _draw_water_volume(
+            water_draw,
+            oriented_rows=oriented_rows,
+            oriented_water=oriented_water,
+            scale=scale,
+        )
+        image.alpha_composite(water_layer)
+        draw = ImageDraw.Draw(image, "RGBA")
     _draw_title(draw, height_map=height_map, view=view, output_size=output_size)
     if height_map.overlay_name != "geography":
         _draw_overlay_legend(draw, height_map=height_map, output_size=output_size)
@@ -414,6 +432,63 @@ def _draw_isometric_map(
             if overlay_code in MARKER_OVERLAY_CODES:
                 _draw_overlay_marker(draw, top=top, overlay_code=overlay_code, overlay_name=overlay_name)
 
+
+
+def _draw_water_volume(
+    draw: ImageDraw.ImageDraw,
+    *,
+    oriented_rows: list[list[int]],
+    oriented_water: list[list[str]],
+    scale: RenderScale,
+) -> None:
+    """Draw translucent lake volumes above deep negative terrain."""
+    height = len(oriented_rows)
+    width = len(oriented_rows[0]) if height else 0
+    min_level = min((level for row in oriented_rows for level in row), default=0)
+    for y in range(height):
+        for x in range(width):
+            level = oriented_rows[y][x]
+            water_code = oriented_water[y][x] if y < len(oriented_water) and x < len(oriented_water[y]) else "D"
+            if level > -2 or water_code not in {"B", "S"}:
+                continue
+            east_is_water = (
+                x + 1 < width
+                and oriented_rows[y][x + 1] <= -2
+                and oriented_water[y][x + 1] in {"B", "S"}
+            )
+            south_is_water = (
+                y + 1 < height
+                and oriented_rows[y + 1][x] <= -2
+                and oriented_water[y + 1][x] in {"B", "S"}
+            )
+            top = _tile_top_polygon(
+                x, y, WATER_SURFACE_LEVEL, min_level=min_level, scale=scale
+            )
+            if not east_is_water:
+                draw.polygon(
+                    _east_face_polygon(
+                        x,
+                        y,
+                        WATER_SURFACE_LEVEL,
+                        level,
+                        min_level=min_level,
+                        scale=scale,
+                    ),
+                    fill=WATER_VOLUME_SIDE_COLOR,
+                )
+            if not south_is_water:
+                draw.polygon(
+                    _south_face_polygon(
+                        x,
+                        y,
+                        WATER_SURFACE_LEVEL,
+                        level,
+                        min_level=min_level,
+                        scale=scale,
+                    ),
+                    fill=WATER_VOLUME_SIDE_COLOR,
+                )
+            draw.polygon(top, fill=WATER_VOLUME_COLOR)
 
 def _draw_soft_shadow(
     draw: ImageDraw.ImageDraw,
