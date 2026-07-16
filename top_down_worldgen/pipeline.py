@@ -55,7 +55,7 @@ from .object_catalog import write_object_catalog
 from .paths import OutputPaths
 from .render.layers import LayerRenderer
 from .reports import build_world_reports, format_console_summary
-from .tactical.elevation import attach_next_gen_elevation
+from .tactical.elevation import attach_next_gen_elevation, build_geography_draft
 from .tactical.fallback import FallbackPositionBuilder
 from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
@@ -164,6 +164,21 @@ class WorldgenPipeline:
                 },
             )
 
+        with timed_stage(LOGGER, "pipeline.build_geography_draft") as metrics:
+            geography_draft = build_geography_draft(
+                width=config.map_width_tiles,
+                height=config.map_height_tiles,
+                seed=config.resolved_seed,
+                elevation_style=config.elevation_style,
+            )
+            metrics.update(
+                {
+                    "macro_regions": len(geography_draft.macro_regions),
+                    "region_edges": len(geography_draft.region_edges),
+                    "elevation_style": geography_draft.elevation_style,
+                },
+            )
+
         engine_started = perf_counter()
         with timed_stage(LOGGER, "pipeline.legacy_engine") as metrics:
             engine_path = self._project_root / "top_down_worldgen" / "legacy" / "engine.py"
@@ -253,6 +268,7 @@ class WorldgenPipeline:
                 rows=rows,
                 seed=config.resolved_seed,
                 elevation_style=config.elevation_style,
+                geography_draft=geography_draft,
             )
             outputs.generated_map.write_text("\n".join(rows) + "\n", encoding="utf-8")
             runtime_data["version"] = "0.31-runtime"

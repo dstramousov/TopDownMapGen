@@ -6,6 +6,8 @@ from math import cos, floor, hypot, pi, sin
 from random import Random
 from typing import Any, Iterable
 
+from .geography_draft import GeographyDraft, GeographyDraftRegion
+
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -5
 MAX_ELEVATION_LEVEL = 20
@@ -51,34 +53,6 @@ class ElevationScaleProfile:
     band_weights: dict[str, float]
     band_targets: dict[str, tuple[float, float]]
     style_name: str = "normal"
-
-
-@dataclass(frozen=True, slots=True)
-class GeographicMacroRegion:
-    """Large deterministic landform region used before noise detail."""
-
-    region_id: str
-    kind: str
-    center_x: float
-    center_y: float
-    radius_tiles: float
-    strength: float
-    angle_degrees: float
-    base_elevation_score: float
-    moisture_bias: float
-    roughness: float
-    priority: float
-
-
-@dataclass(frozen=True, slots=True)
-class GeographicFieldResult:
-    """Continuous geographic fields built before integer terracing."""
-
-    elevation_scores: list[list[float]]
-    moisture_scores: list[list[float]]
-    macro_regions: tuple[GeographicMacroRegion, ...]
-    dominant_region_rows: list[list[int]]
-    region_edges: tuple[tuple[int, int], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,12 +103,61 @@ class TraversalRepairResult:
     report: dict[str, Any]
 
 
+def build_geography_draft(
+    *,
+    width: int,
+    height: int,
+    seed: int,
+    elevation_style: str = "normal",
+) -> GeographyDraft:
+    """Build deterministic geography context before terrain generation.
+
+    Args:
+        width: Map width in tiles.
+        height: Map height in tiles.
+        seed: Resolved deterministic world seed.
+        elevation_style: User-facing elevation style preset name.
+
+    Returns:
+        Continuous elevation, moisture, and macro-region fields.
+
+    Raises:
+        ValueError: If either map dimension is negative.
+    """
+    if width < 0 or height < 0:
+        raise ValueError("Map dimensions must be non-negative")
+    profile = _profile_for_size(
+        width=width,
+        height=height,
+        elevation_style=elevation_style,
+    )
+    if width == 0 or height == 0:
+        return GeographyDraft(
+            width=width,
+            height=height,
+            seed=seed,
+            elevation_style=profile.style_name,
+            elevation_scores=[],
+            moisture_scores=[],
+            macro_regions=(),
+            dominant_region_rows=[],
+            region_edges=(),
+        )
+    return _build_geographic_fields(
+        width=width,
+        height=height,
+        seed=seed,
+        profile=profile,
+    )
+
+
 def attach_next_gen_elevation(
     tactical_data: dict[str, Any],
     *,
     rows: list[str],
     seed: int,
     elevation_style: str = "normal",
+    geography_draft: GeographyDraft | None = None,
 ) -> dict[str, Any]:
     """Attach a full-map procedural elevation layer to tactical data.
 
@@ -143,6 +166,7 @@ def attach_next_gen_elevation(
         rows: ASCII terrain rows.
         seed: Resolved deterministic world seed.
         elevation_style: User-facing elevation style preset name.
+        geography_draft: Optional prebuilt geography context for this map.
 
     Returns:
         Copy of tactical data with a sparse elevation cell list representing
@@ -153,6 +177,7 @@ def attach_next_gen_elevation(
         seed=seed,
         tactical_data=tactical_data,
         elevation_style=elevation_style,
+        geography_draft=geography_draft,
     )
     enriched = dict(tactical_data)
     cells: list[dict[str, int]] = []
@@ -178,6 +203,7 @@ def generate_next_gen_elevation(
     seed: int,
     tactical_data: dict[str, Any] | None = None,
     elevation_style: str = "normal",
+    geography_draft: GeographyDraft | None = None,
 ) -> ElevationGenerationResult:
     """Generate a size-aware Red Blob style terraced height map.
 
@@ -186,6 +212,7 @@ def generate_next_gen_elevation(
         seed: Resolved deterministic world seed.
         tactical_data: Optional runtime tactical data with object-derived elevation cells.
         elevation_style: User-facing elevation style preset name.
+        geography_draft: Optional prebuilt geography context for this map.
 
     Returns:
         Generated integer height rows and a JSON-serializable report.
@@ -198,7 +225,21 @@ def generate_next_gen_elevation(
         return ElevationGenerationResult(rows=[], report=report)
 
     profile = _profile_for_size(width=width, height=height, elevation_style=elevation_style)
-    geographic_fields = _build_geographic_fields(width=width, height=height, seed=seed, profile=profile)
+    if geography_draft is None:
+        geographic_fields = _build_geographic_fields(
+            width=width,
+            height=height,
+            seed=seed,
+            profile=profile,
+        )
+    else:
+        geography_draft.validate_for(
+            width=width,
+            height=height,
+            seed=seed,
+            elevation_style=profile.style_name,
+        )
+        geographic_fields = geography_draft
     scores = _smooth_score_grid(
         geographic_fields.elevation_scores,
         passes=profile.score_smoothing_passes,
@@ -773,7 +814,7 @@ def _build_geographic_fields(
     height: int,
     seed: int,
     profile: ElevationScaleProfile,
-) -> GeographicFieldResult:
+) -> GeographyDraft:
     """Build continuous geographic fields before integer terracing."""
     macro_regions = _build_macro_regions(
         width=width,
@@ -888,7 +929,11 @@ def _build_geographic_fields(
         elevation_scores=elevation_scores,
         basin_mask=basin_mask,
     )
-    return GeographicFieldResult(
+    return GeographyDraft(
+        width=width,
+        height=height,
+        seed=seed,
+        elevation_style=profile.style_name,
         elevation_scores=elevation_scores,
         moisture_scores=moisture_scores,
         macro_regions=macro_regions,
@@ -902,11 +947,11 @@ def _build_macro_regions(
     height: int,
     seed: int,
     profile: ElevationScaleProfile,
-) -> tuple[GeographicMacroRegion, ...]:
+) -> tuple[GeographyDraftRegion, ...]:
     """Create deterministic large landform regions for this map size."""
     short_side = max(1, min(width, height))
     rng = Random((seed ^ 0x6E06_1A9E) & 0xFFFF_FFFF_FFFF_FFFF)
-    regions: list[GeographicMacroRegion] = []
+    regions: list[GeographyDraftRegion] = []
     kinds = _macro_region_kinds(profile)
     count = _macro_region_count(profile)
     min_radius = max(profile.terrace_min_size_tiles * 1.6, short_side * 0.10)
@@ -918,7 +963,7 @@ def _build_macro_regions(
         radius = rng.uniform(min_radius, max_radius)
         base_score, moisture_bias, roughness = _macro_region_config(kind=kind, rng=rng)
         regions.append(
-            GeographicMacroRegion(
+            GeographyDraftRegion(
                 region_id=f"geo_region_{index:03d}",
                 kind=kind,
                 center_x=rng.uniform(margin_x, max(margin_x, width - 1 - margin_x)),
@@ -976,7 +1021,7 @@ def _polygonal_region_sample(
     *,
     x: float,
     y: float,
-    regions: tuple[GeographicMacroRegion, ...],
+    regions: tuple[GeographyDraftRegion, ...],
 ) -> PolygonalRegionSample:
     """Sample a soft Voronoi-like macro region control map."""
     if not regions:
@@ -1040,7 +1085,7 @@ def _polygonal_region_sample(
     )
 
 
-def _macro_region_distance(*, x: float, y: float, region: GeographicMacroRegion) -> float:
+def _macro_region_distance(*, x: float, y: float, region: GeographyDraftRegion) -> float:
     """Return normalized distance to a macro region site."""
     dx = x - region.center_x
     dy = y - region.center_y
@@ -1063,7 +1108,7 @@ def _macro_region_distance(*, x: float, y: float, region: GeographicMacroRegion)
     return hypot(dx, dy) / max(1.0, region.radius_tiles)
 
 
-def _macro_region_local_influence(*, x: float, y: float, region: GeographicMacroRegion) -> float:
+def _macro_region_local_influence(*, x: float, y: float, region: GeographyDraftRegion) -> float:
     """Return local influence inside a macro region footprint."""
     distance = _macro_region_distance(x=x, y=y, region=region)
     if distance >= 1.0:
@@ -1104,7 +1149,7 @@ def _region_edges(rows: list[list[int]]) -> tuple[tuple[int, int], ...]:
 
 def _region_edge_items(
     edges: tuple[tuple[int, int], ...],
-    regions: tuple[GeographicMacroRegion, ...],
+    regions: tuple[GeographyDraftRegion, ...],
 ) -> list[dict[str, str]]:
     """Serialize macro region graph edges."""
     items: list[dict[str, str]] = []
@@ -1172,7 +1217,7 @@ def _macro_region_bias(
     *,
     x: float,
     y: float,
-    regions: tuple[GeographicMacroRegion, ...],
+    regions: tuple[GeographyDraftRegion, ...],
 ) -> tuple[float, float]:
     elevation_bias = 0.0
     basin_mask = 0.0
@@ -1187,7 +1232,7 @@ def _macro_region_bias(
     return elevation_bias, min(1.0, basin_mask)
 
 
-def _macro_region_influence(*, x: float, y: float, region: GeographicMacroRegion) -> float:
+def _macro_region_influence(*, x: float, y: float, region: GeographyDraftRegion) -> float:
     dx = x - region.center_x
     dy = y - region.center_y
     if region.kind == "ridge":
@@ -2400,7 +2445,7 @@ def _build_generation_report(
     seed: int,
     corridor_path: list[tuple[int, int]],
     profile: ElevationScaleProfile,
-    geographic_fields: GeographicFieldResult,
+    geographic_fields: GeographyDraft,
     transition_report: dict[str, Any],
     route_alignment_report: dict[str, Any],
     traversal_repair_report: dict[str, Any],
@@ -2532,7 +2577,7 @@ def _geography_report(
     runtime_levels: list[list[int]],
     terrain_rows: list[str],
     explicit_cells: list[dict[str, int]],
-    geographic_fields: GeographicFieldResult,
+    geographic_fields: GeographyDraft,
 ) -> dict[str, Any]:
     slope_rows = _slope_rows(levels)
     source_rows = _elevation_source_rows(
