@@ -114,6 +114,7 @@ def test_reconcile_tree_collision_opens_only_hidden_tree_tiles() -> None:
     )
 
     assert result.rows == ["+T+#~"]
+    assert result.visual_rows == [".T..."]
     assert result.report["summary"]["opened_tree_tiles"] == 1
     assert result.report["summary"]["retained_visible_tree_tiles"] == 1
 
@@ -123,3 +124,49 @@ def test_reconcile_tree_collision_validates_dimensions() -> None:
 
     with pytest.raises(ValueError):
         reconcile_tree_collision(rows=["TT"], visual_rows=["."])
+
+
+def test_reconcile_tree_collision_rejects_isolated_opened_pockets() -> None:
+    rows = [
+        "TTTTT",
+        "T...T",
+        "TTTTT",
+        "TTTTT",
+        "TTTTT",
+    ]
+    visual_rows = [
+        "TTTTT",
+        "T...T",
+        "TTTTT",
+        "T.TTT",
+        "TTTTT",
+    ]
+    elevation = [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+    ]
+
+    result = reconcile_tree_collision(
+        rows=rows,
+        visual_rows=visual_rows,
+        elevation_rows=elevation,
+    )
+
+    assert result.rows[3][1] == "T"
+    assert result.visual_rows[3][1] == "T"
+    assert result.report["summary"]["rejected_isolated_tiles"] == 1
+
+
+def test_reconcile_tree_collision_marks_isolated_highland_as_rock() -> None:
+    result = reconcile_tree_collision(
+        rows=["T#..", "####"],
+        visual_rows=["....", "...."],
+        elevation_rows=[[18, 0, 0, 0], [0, 0, 0, 0]],
+    )
+
+    assert result.rows[0][0] == "#"
+    assert result.visual_rows[0][0] == "."
+    assert result.report["summary"]["rejected_as_rock"] == 1

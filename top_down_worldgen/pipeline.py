@@ -338,8 +338,10 @@ class WorldgenPipeline:
             vegetation_collision = reconcile_tree_collision(
                 rows=rows,
                 visual_rows=vegetation_visual.rows,
+                elevation_rows=elevation_rows,
             )
             rows = vegetation_collision.rows
+            vegetation_visual.report["rows"] = vegetation_collision.visual_rows
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data["vegetation_visual"] = vegetation_visual.report
             runtime_data["vegetation_collision_reconciliation"] = vegetation_collision.report

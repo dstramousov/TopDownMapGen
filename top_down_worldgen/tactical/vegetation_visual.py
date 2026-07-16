@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import blake2b
+from collections import deque
 from typing import Any
+
+from .traversal import DEFAULT_TRAVERSAL_RULES
 
 
 TREE_TERRAIN = "tree_blocker"
@@ -25,9 +28,10 @@ class VegetationVisualResult:
 
 @dataclass(frozen=True, slots=True)
 class VegetationCollisionResult:
-    """Terrain rows reconciled with the final visual tree mask."""
+    """Terrain and visual rows reconciled with final connectivity."""
 
     rows: list[str]
+    visual_rows: list[str]
     report: dict[str, Any]
 
 
@@ -165,59 +169,166 @@ def reconcile_tree_collision(
     *,
     rows: list[str],
     visual_rows: list[str],
+    elevation_rows: list[list[int]] | None = None,
 ) -> VegetationCollisionResult:
-    """Open tiles where the final visual mask removed the only blocker.
+    """Open visible clearings and reject isolated gameplay pockets.
 
     Args:
         rows: Final semantic ASCII terrain after hydrology.
         visual_rows: Visual vegetation mask generated from the same terrain.
+        elevation_rows: Final elevation grid. When supplied, opened tree tiles
+            outside the largest 3D-traversable component are blocked again.
 
     Returns:
-        Reconciled terrain rows and diagnostics.
+        Reconciled terrain rows, visual rows, and diagnostics.
 
     Raises:
-        ValueError: If terrain and visual mask dimensions differ.
+        ValueError: If terrain, visual, or elevation dimensions differ.
     """
-    if len(rows) != len(visual_rows):
-        raise ValueError("terrain and vegetation rows must have equal height")
+    width, height = _validate_matching_rows(rows, visual_rows)
+    if elevation_rows is not None:
+        _validate_elevation_rows(elevation_rows, width=width, height=height)
 
-    output: list[str] = []
-    opened_tree_tiles = 0
+    opened_rows = [list(row) for row in rows]
+    output_visual = [list(row) for row in visual_rows]
+    opened_points: set[tuple[int, int]] = set()
     retained_visible_tree_tiles = 0
     retained_non_tree_tiles = 0
 
-    for y, row in enumerate(rows):
-        visual_row = visual_rows[y]
-        if len(row) != len(visual_row):
-            raise ValueError("terrain and vegetation rows must have equal width")
-        chars = list(row)
+    for y, chars in enumerate(opened_rows):
         for x, symbol in enumerate(chars):
             if symbol != "T":
                 retained_non_tree_tiles += 1
                 continue
-            if visual_row[x] == TREE_VISIBLE_CODE:
+            if output_visual[y][x] == TREE_VISIBLE_CODE:
                 retained_visible_tree_tiles += 1
                 continue
             chars[x] = "+"
-            opened_tree_tiles += 1
-        output.append("".join(chars))
+            opened_points.add((x, y))
 
+    reopened_points = set(opened_points)
+    rejected_points: set[tuple[int, int]] = set()
+    rejected_as_tree = 0
+    rejected_as_rock = 0
+    component_count = 0
+    primary_component_tiles = 0
+
+    if elevation_rows is not None and opened_points:
+        components = _walkable_components(opened_rows, elevation_rows)
+        component_count = len(components)
+        primary = components[0] if components else set()
+        primary_component_tiles = len(primary)
+        rejected_points = opened_points - primary
+        reopened_points -= rejected_points
+
+        for x, y in rejected_points:
+            if elevation_rows[y][x] >= THINNING_START_LEVEL:
+                opened_rows[y][x] = "#"
+                output_visual[y][x] = TREE_HIDDEN_CODE
+                rejected_as_rock += 1
+            else:
+                opened_rows[y][x] = "T"
+                output_visual[y][x] = TREE_VISIBLE_CODE
+                rejected_as_tree += 1
+
+    output_rows = ["".join(row) for row in opened_rows]
+    final_visual_rows = ["".join(row) for row in output_visual]
     report = {
-        "schema_version": "vegetation-collision-reconciliation-v1",
+        "schema_version": "vegetation-collision-reconciliation-v2",
         "kind": "vegetation_collision_reconciliation",
         "policy": {
-            "hidden_tree_tile_becomes": "grass",
+            "hidden_tree_tile_becomes": "grass_when_connected",
+            "isolated_lowland_tile_becomes": "visible_tree_blocker",
+            "isolated_highland_tile_becomes": "rock_blocker",
+            "primary_component": "largest_final_3d_traversable_component",
             "visible_tree_tile_remains_blocked": True,
             "non_tree_blockers_unchanged": True,
             "elevation_traversal_rules_unchanged": True,
         },
         "summary": {
-            "opened_tree_tiles": opened_tree_tiles,
+            "candidate_opened_tree_tiles": len(opened_points),
+            "opened_tree_tiles": len(reopened_points),
+            "rejected_isolated_tiles": len(rejected_points),
+            "rejected_as_visible_tree": rejected_as_tree,
+            "rejected_as_rock": rejected_as_rock,
             "retained_visible_tree_tiles": retained_visible_tree_tiles,
             "retained_non_tree_tiles": retained_non_tree_tiles,
+            "component_count_after_candidate_opening": component_count,
+            "primary_component_tiles": primary_component_tiles,
         },
     }
-    return VegetationCollisionResult(rows=output, report=report)
+    return VegetationCollisionResult(
+        rows=output_rows,
+        visual_rows=final_visual_rows,
+        report=report,
+    )
+
+
+def _validate_matching_rows(rows: list[str], visual_rows: list[str]) -> tuple[int, int]:
+    if len(rows) != len(visual_rows):
+        raise ValueError("terrain and vegetation rows must have equal height")
+    width = len(rows[0]) if rows else 0
+    for row, visual_row in zip(rows, visual_rows, strict=True):
+        if len(row) != width or len(visual_row) != width:
+            raise ValueError("terrain and vegetation rows must have equal width")
+    return width, len(rows)
+
+
+def _validate_elevation_rows(
+    elevation_rows: list[list[int]],
+    *,
+    width: int,
+    height: int,
+) -> None:
+    if len(elevation_rows) != height or any(
+        len(row) != width for row in elevation_rows
+    ):
+        raise ValueError("elevation rows must match terrain dimensions")
+
+
+def _walkable_components(
+    rows: list[list[str]],
+    elevation_rows: list[list[int]],
+) -> list[set[tuple[int, int]]]:
+    walkable_symbols = frozenset("+.bfmwcRSG")
+    eligible = {
+        (x, y)
+        for y, row in enumerate(rows)
+        for x, symbol in enumerate(row)
+        if symbol in walkable_symbols
+    }
+    seen: set[tuple[int, int]] = set()
+    components: list[set[tuple[int, int]]] = []
+
+    for start in sorted(eligible, key=lambda point: (point[1], point[0])):
+        if start in seen:
+            continue
+        component = {start}
+        queue: deque[tuple[int, int]] = deque([start])
+        seen.add(start)
+        while queue:
+            x, y = queue.popleft()
+            for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                point = (nx, ny)
+                if point in seen or point not in eligible:
+                    continue
+                if not DEFAULT_TRAVERSAL_RULES.allows_step(
+                    int(elevation_rows[y][x]),
+                    int(elevation_rows[ny][nx]),
+                ):
+                    continue
+                seen.add(point)
+                component.add(point)
+                queue.append(point)
+        components.append(component)
+
+    components.sort(
+        key=lambda component: (
+            -len(component),
+            min((y, x) for x, y in component),
+        )
+    )
+    return components
 
 
 def _forest_edge_depths(terrain_rows: list[list[str]]) -> list[list[int]]:
