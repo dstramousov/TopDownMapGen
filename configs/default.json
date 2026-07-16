@@ -25,7 +25,7 @@
     "reclaimed_bush_max_elevation": 17
   },
   "elevation": {
-    "style": "plateau"
+    "style": "rolling_hills"
   },
   "hydrology": {
     "shore_reed_density": 0.45,

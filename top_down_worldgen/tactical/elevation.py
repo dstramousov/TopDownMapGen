@@ -682,9 +682,9 @@ def _apply_elevation_style(profile: ElevationScaleProfile, *, style: str) -> Ele
             "underground_-5_-1": 0.08,
             "ground_0": 0.20,
             "low_raised_1_4": 0.21,
-            "hills_5_10": 0.20,
-            "highlands_11_16": 0.20,
-            "landmarks_17_20": 0.11,
+            "hills_5_10": 0.22,
+            "highlands_11_16": 0.24,
+            "landmarks_17_20": 0.05,
         },
         band_targets={
             "underground_-5_-1": (3.0, 13.0),
@@ -1009,6 +1009,10 @@ def _build_geographic_fields(
                 + ridged * profile.ridge_weight * ridge_affinity
                 + region_sample.boundary_softness * 0.018
             )
+            if profile.style_name == "plateau" and region_sample.dominant_kind == "plateau":
+                # Keep the tabletop broad, but give it a few large shelves and
+                # shallow internal depressions instead of one white billiard table.
+                value += macro * 0.032 + detail * 0.012
             moisture_value = _fbm(
                 wx + 19.7,
                 wy - 5.4,
@@ -1372,10 +1376,18 @@ def _macro_region_distance(*, x: float, y: float, region: GeographyDraftRegion) 
         angle = region.angle_degrees * pi / 180.0
         along = dx * cos(angle) + dy * sin(angle)
         across = -dx * sin(angle) + dy * cos(angle)
-        return hypot(
-            along / max(1.0, region.radius_tiles * max(1.22, region.elongation)),
-            across / max(1.0, region.radius_tiles * 0.92),
+        along_scale = max(1.0, region.radius_tiles * max(1.22, region.elongation))
+        across_scale = max(1.0, region.radius_tiles * 0.92)
+        base_distance = hypot(along / along_scale, across / across_scale)
+        # Large deterministic edge lobes break the artificial oval without
+        # turning the plateau rim into high-frequency noise.
+        phase = region.center_x * 0.071 + region.center_y * 0.053
+        edge_warp = (
+            sin(along / max(1.0, region.radius_tiles) * 2.7 + phase) * 0.075
+            + sin(across / max(1.0, region.radius_tiles) * 3.4 - phase * 0.7) * 0.055
+            + sin((along + across) / max(1.0, region.radius_tiles) * 1.8 + phase * 1.3) * 0.045
         )
+        return max(0.0, base_distance * (1.0 + edge_warp))
     return hypot(dx, dy) / max(1.0, region.radius_tiles)
 
 
@@ -1384,7 +1396,7 @@ def _macro_region_local_influence(*, x: float, y: float, region: GeographyDraftR
     distance = _macro_region_distance(x=x, y=y, region=region)
     if distance >= 1.0:
         return 0.0
-    if region.kind == "plateau" and distance <= 0.58:
+    if region.kind == "plateau" and distance <= 0.46:
         return 1.0
     return (1.0 - distance) ** 2.0
 
@@ -1509,7 +1521,7 @@ def _macro_region_influence(*, x: float, y: float, region: GeographyDraftRegion)
     distance = _macro_region_distance(x=x, y=y, region=region)
     if distance >= 1.0:
         return 0.0
-    if region.kind == "plateau" and distance <= 0.58:
+    if region.kind == "plateau" and distance <= 0.46:
         return 1.0
     return (1.0 - distance) ** 2.0
 

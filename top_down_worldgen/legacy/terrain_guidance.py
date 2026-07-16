@@ -265,7 +265,15 @@ class TerrainGuidance:
                     continue
                 nx, ny = self._node_center(neighbor, step)
                 slope = self.slope_at(nx, ny)
+                natural_delta = self.natural_delta_at(nx, ny)
                 if slope > maximum_slope and neighbor not in {start, end}:
+                    continue
+                if (
+                    self.elevation_style == "plateau"
+                    and natural_delta > 2
+                    and maximum_slope <= self.CLIFF_SLOPE
+                    and neighbor not in {start, end}
+                ):
                     continue
                 elevation = self.elevation_at(nx, ny)
                 distance = math.sqrt(2.0) if dx and dy else 1.0
@@ -276,6 +284,7 @@ class TerrainGuidance:
                     + abs(elevation - current_elevation) * 15.0
                     + uphill * 7.0
                     + elevation * 0.25
+                    + natural_delta * natural_delta * (18.0 if self.elevation_style == "plateau" else 8.0)
                 )
                 new_cost = costs[current] + move_cost
                 if new_cost >= costs.get(neighbor, float("inf")):
