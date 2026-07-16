@@ -88,6 +88,11 @@ run_stage "уклоны" \
     --slope-only --grid --cell-size 16 \
     --output output/slope_preview.png
 
+run_stage "изменения traversal repair" \
+  python3 examples/render_traversal_repair_preview.py output \
+    --cell-size 4 \
+    --output output/traversal_repair_preview.png
+
 run_stage "3D-география" \
   python3 examples/render_geography_3d_preview.py output \
     --overlay geography --width 2560 --height 1440 --views nw ne se sw
@@ -102,6 +107,6 @@ run_stage "3D-связность" \
 
 print_summary
 printf '  общее время: %d с\n' "$((SECONDS - TOTAL_STARTED))"
-printf '  preview: 19 файлов в output/ и output/geography_3d_preview/\n'
+printf '  preview: 20 файлов в output/ и output/geography_3d_preview/\n'
 
 open output/

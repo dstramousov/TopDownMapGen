@@ -1553,11 +1553,7 @@ def _apply_terrain_bias(levels: list[list[int]], rows: list[str]) -> list[list[i
     for y, terrain_row in enumerate(rows):
         for x, tile in enumerate(terrain_row):
             level = biased[y][x]
-            if tile in {"S", "G"}:
-                biased[y][x] = DEFAULT_ELEVATION_LEVEL
-            elif tile == ".":
-                biased[y][x] = DEFAULT_ELEVATION_LEVEL
-            elif tile == "w":
+            if tile == "w":
                 biased[y][x] = min(WATER_MAX_LEVEL, level)
     return biased
 
@@ -2511,8 +2507,22 @@ def _repair_change_diagnostics(
         magnitude_histogram[str(magnitude)] += 1
 
     adjusted = len(adjustments)
+    change_tiles = [
+        {
+            "x": x,
+            "y": y,
+            "before": before,
+            "after": after,
+            "terrain": _repair_terrain_category(terrain_rows[y][x]),
+        }
+        for (x, y), (before, after) in sorted(
+            adjustments.items(),
+            key=lambda item: (item[0][1], item[0][0]),
+        )
+    ]
     return {
         "adjusted_by_terrain": dict(sorted(by_terrain.items())),
+        "tiles": change_tiles,
         "direction": {
             "raised": raised,
             "lowered": lowered,
@@ -2536,6 +2546,7 @@ def _empty_repair_change_diagnostics() -> dict[str, Any]:
     """Return an empty traversal repair change summary."""
     return {
         "adjusted_by_terrain": {},
+        "tiles": [],
         "direction": {"raised": 0, "lowered": 0},
         "magnitude": {
             "average_abs_delta": 0.0,
