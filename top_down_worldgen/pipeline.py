@@ -71,6 +71,7 @@ from .tactical.runtime_objects import attach_runtime_layers, summarize_runtime_o
 from .tactical.terrain_islands import elevation_cell_points, repair_terrain_islands
 from .tactical.hydrology import apply_elevation_hydrology
 from .tactical.start_goal import (
+    cleanup_unreachable_walkable,
     finalize_runtime_objects_for_final_terrain,
     relocate_start_goal,
     runtime_object_points,
@@ -362,9 +363,17 @@ class WorldgenPipeline:
                 excluded_points=runtime_object_points(runtime_data.get("runtime_objects")),
             )
             rows = late_start_goal.rows
+            final_traversal_cleanup = cleanup_unreachable_walkable(
+                rows=rows,
+                elevation_rows=elevation_rows,
+                source_rows=geography_grids.get("source_grid", {}).get("rows", []),
+            )
+            rows = final_traversal_cleanup.rows
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data["late_start_goal"] = late_start_goal.report
+            runtime_data["final_3d_traversal_cleanup"] = final_traversal_cleanup.report
             debug_data["late_start_goal"] = late_start_goal.report
+            debug_data["final_3d_traversal_cleanup"] = final_traversal_cleanup.report
             outputs.generated_map.write_text("\n".join(rows) + "\n", encoding="utf-8")
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"

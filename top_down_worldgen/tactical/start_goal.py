@@ -21,6 +21,14 @@ class StartGoalResult:
     report: dict[str, Any]
 
 
+@dataclass(frozen=True, slots=True)
+class FinalTraversalCleanupResult:
+    """Final cleanup result for unreachable walkable tiles."""
+
+    rows: list[str]
+    report: dict[str, Any]
+
+
 def runtime_object_points(objects: Any) -> set[tuple[int, int]]:
     """Return all occupied runtime-object points.
 
@@ -99,6 +107,8 @@ def relocate_start_goal(
     Args:
         rows: Final terrain rows after hydrology.
         elevation_rows: Final elevation grid.
+        source_rows: Optional elevation-source grid. Structural source tiles are
+            excluded from final traversal exactly as in the 3D preview.
         seed: Deterministic generation seed.
         excluded_points: Coordinates occupied by runtime objects.
 
@@ -183,6 +193,99 @@ def relocate_start_goal(
     )
 
 
+
+def cleanup_unreachable_walkable(
+    *,
+    rows: list[str],
+    elevation_rows: list[list[int]],
+    source_rows: list[str] | None = None,
+) -> FinalTraversalCleanupResult:
+    """Block walkable tiles unreachable from the final START marker.
+
+    Args:
+        rows: Final terrain rows containing exactly one START marker.
+        elevation_rows: Final elevation grid.
+
+    Returns:
+        Cleaned rows and diagnostics.
+
+    Raises:
+        ValueError: If terrain dimensions are invalid or START is missing.
+    """
+    width, height = _validate_rows(rows)
+    _validate_elevation_rows(elevation_rows, width=width, height=height)
+    if source_rows is not None:
+        _validate_source_rows(source_rows, width=width, height=height)
+    starts = [
+        (x, y)
+        for y, row in enumerate(rows)
+        for x, symbol in enumerate(row)
+        if symbol == "S"
+    ]
+    if len(starts) != 1:
+        raise ValueError("final traversal cleanup requires exactly one START marker")
+
+    eligible = {
+        (x, y)
+        for y, row in enumerate(rows)
+        for x, symbol in enumerate(row)
+        if symbol in WALKABLE_SYMBOLS
+        and not _is_structural_source(source_rows, x=x, y=y)
+    }
+    reachable = set(_distances_from(
+        starts[0],
+        allowed=eligible,
+        rows=rows,
+        elevation_rows=elevation_rows,
+    ))
+    unreachable = eligible - reachable
+    goal = next((
+        (x, y)
+        for y, row in enumerate(rows)
+        for x, symbol in enumerate(row)
+        if symbol == "G"
+    ), None)
+    if goal is None or goal not in reachable:
+        raise ValueError("final GOAL is not reachable from START")
+
+    output = [list(row) for row in rows]
+    blocked_as_water = 0
+    blocked_as_rock = 0
+    for x, y in unreachable:
+        symbol = output[y][x]
+        if symbol in {"S", "G"}:
+            continue
+        if symbol == WET_SHORE_TILE or int(elevation_rows[y][x]) < 0:
+            output[y][x] = DEEP_WATER_TILE
+            blocked_as_water += 1
+        else:
+            output[y][x] = "#"
+            blocked_as_rock += 1
+
+    return FinalTraversalCleanupResult(
+        rows=["".join(row) for row in output],
+        report={
+            "schema_version": "final-3d-traversal-cleanup-v1",
+            "kind": "final_3d_traversal_cleanup",
+            "policy": {
+                "reference": "final_start_reachability_with_source_grid",
+                "unreachable_negative_tile_becomes": "deep_water_blocker",
+                "unreachable_nonnegative_tile_becomes": "rock_blocker",
+                "structural_source_tiles_excluded": source_rows is not None,
+                "elevation_unchanged": True,
+            },
+            "summary": {
+                "walkable_tiles_before": len(eligible),
+                "reachable_tiles": len(reachable),
+                "unreachable_walkable_tiles_before": len(unreachable),
+                "blocked_as_water": blocked_as_water,
+                "blocked_as_rock": blocked_as_rock,
+                "unreachable_walkable_tiles_after": 0,
+                "goal_reachable_before_cleanup": True,
+            },
+        },
+    )
+
 def _validate_rows(rows: list[str]) -> tuple[int, int]:
     if not rows or not rows[0]:
         raise ValueError("terrain rows must not be empty")
@@ -190,6 +293,27 @@ def _validate_rows(rows: list[str]) -> tuple[int, int]:
     if any(len(row) != width for row in rows):
         raise ValueError("terrain rows must be rectangular")
     return width, len(rows)
+
+
+def _validate_source_rows(
+    rows: list[str],
+    *,
+    width: int,
+    height: int,
+) -> None:
+    """Validate elevation-source grid dimensions."""
+    if len(rows) != height or any(len(row) != width for row in rows):
+        raise ValueError("source rows must match terrain dimensions")
+
+
+def _is_structural_source(
+    source_rows: list[str] | None,
+    *,
+    x: int,
+    y: int,
+) -> bool:
+    """Return whether a tile is a structural traversal marker."""
+    return source_rows is not None and source_rows[y][x] == "S"
 
 
 def _validate_elevation_rows(
