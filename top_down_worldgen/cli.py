@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from .logging_utils import timed_stage
+from .performance import PerformanceProfiler
 from .pipeline import WorldgenPipeline
 
 
@@ -120,15 +121,28 @@ def main() -> int:
             args.summary_file,
             args.verbose,
         )
-        with timed_stage(LOGGER, "cli.main"):
-            result = WorldgenPipeline(project_root).run(
-                config_path=args.config,
-                output_map=args.out,
-                tile_size_px=args.render_tile_size,
-                render=not args.no_render,
-                debug_images=debug_layers,
-                log_file=log_file,
-            )
+        profiler = PerformanceProfiler() if args.profile_performance else None
+        if profiler is not None:
+            with profiler:
+                with timed_stage(LOGGER, "cli.main"):
+                    result = WorldgenPipeline(project_root).run(
+                        config_path=args.config,
+                        output_map=args.out,
+                        tile_size_px=args.render_tile_size,
+                        render=not args.no_render,
+                        debug_images=debug_layers,
+                        log_file=log_file,
+                    )
+        else:
+            with timed_stage(LOGGER, "cli.main"):
+                result = WorldgenPipeline(project_root).run(
+                    config_path=args.config,
+                    output_map=args.out,
+                    tile_size_px=args.render_tile_size,
+                    render=not args.no_render,
+                    debug_images=debug_layers,
+                    log_file=log_file,
+                )
         LOGGER.info("Output root: %s", result.outputs.output_dir)
         LOGGER.info("Generated map: %s", result.outputs.generated_map)
         LOGGER.info("Runtime tactical map: %s", result.outputs.tactical_map)
@@ -147,11 +161,15 @@ def main() -> int:
                 LOGGER.info("Rendered PNG debug layers in: %s", result.outputs.output_dir)
             else:
                 LOGGER.info("PNG debug layers were skipped by default")
-        if args.profile_performance:
-            LOGGER.info("engine_time_ms=%.2f", result.metrics["engine_time_ms"])
-            LOGGER.info("tactical_time_ms=%.2f", result.metrics["tactical_time_ms"])
-            LOGGER.info("render_time_ms=%.2f", result.metrics["render_time_ms"])
-            LOGGER.info("total_time_ms=%.2f", result.metrics["total_time_ms"])
+        if profiler is not None:
+            width = int(result.metrics.get("map_width_tiles", 0))
+            height = int(result.metrics.get("map_height_tiles", 0))
+            report = profiler.build_report(width=width, height=height)
+            profile_path = result.outputs.output_dir / "performance_profile.json"
+            profiler.write_report(report, profile_path)
+            print(profiler.format_report(report))
+            print(f"  report: {profile_path}")
+            LOGGER.info("Performance profile: %s", profile_path)
         return 0
     except Exception as exc:
         LOGGER.error("%s", exc)

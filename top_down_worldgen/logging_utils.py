@@ -6,6 +6,8 @@ from contextlib import contextmanager
 from time import perf_counter
 from typing import Any
 
+from .performance import active_profiler
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,6 +87,9 @@ def timed_stage(
         logger.exception("FAIL %s duration_ms=%.2f", name, duration_ms)
         raise
     duration_ms = (perf_counter() - started) * 1000.0
+    profiler = active_profiler()
+    if profiler is not None:
+        profiler.record(name, duration_ms, {**start_metrics, **end_metrics})
     if end_metrics:
         logger.log(level, "DONE %s duration_ms=%.2f %s", name, duration_ms, format_kv(end_metrics))
     else:

@@ -3,6 +3,10 @@ set -euo pipefail
 
 SUMMARY_FILE="output/_console_summary.txt"
 TOTAL_STARTED=$SECONDS
+PROFILE_ARGS=()
+if [[ "${PROFILE_PERFORMANCE:-0}" == "1" ]]; then
+  PROFILE_ARGS+=(--profile-performance)
+fi
 
 run_stage() {
   local title="$1"
@@ -42,6 +46,7 @@ run_stage "генерация мира" \
     --config configs/default.json \
     -o output \
     --include-debug-layers \
+    "${PROFILE_ARGS[@]}" \
     --summary-file "$SUMMARY_FILE"
 
 run_stage "основная карта" \
