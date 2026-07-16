@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from top_down_worldgen.legacy.engine import MapGenerator, PublicConfig
 from top_down_worldgen.legacy.terrain_guidance import TerrainGuidance
-from top_down_worldgen.tactical.elevation import build_geography_draft
+from top_down_worldgen.tactical.elevation import (
+    build_geography_draft,
+    build_natural_geography_model,
+)
 from top_down_worldgen.tactical.geography_guidance import write_geography_guidance
 
 
@@ -13,8 +16,15 @@ def test_geography_guidance_round_trip(tmp_path) -> None:
         seed=12345,
         elevation_style="rolling_hills",
     )
+    model = build_natural_geography_model(
+        width=32,
+        height=24,
+        seed=12345,
+        elevation_style="rolling_hills",
+        geography_draft=draft,
+    )
     path = tmp_path / "guidance.json"
-    write_geography_guidance(draft, path)
+    write_geography_guidance(model, path)
 
     guidance = TerrainGuidance.from_json_file(
         path,
@@ -27,6 +37,8 @@ def test_geography_guidance_round_trip(tmp_path) -> None:
     assert 0.0 <= guidance.elevation_at(10, 10) <= 1.0
     assert 0.0 <= guidance.moisture_at(10, 10) <= 1.0
     assert guidance.slope_at(10, 10) >= 0.0
+    assert guidance.natural_level_at(10, 10) == model.elevation_rows[10][10]
+    assert guidance.natural_slope_at(10, 10) == model.slope_rows[10][10]
 
 
 def test_guided_road_path_avoids_coarse_cliff_barrier() -> None:

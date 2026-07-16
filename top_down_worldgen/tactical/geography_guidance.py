@@ -4,44 +4,59 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .geography_draft import GeographyDraft
+from .geography_draft import NaturalGeographyModel
 
-GUIDANCE_SCHEMA_VERSION = "terrain-guidance-v1"
+GUIDANCE_SCHEMA_VERSION = "terrain-guidance-v2"
 GUIDANCE_SCALE = 10_000
 
 
-def build_geography_guidance_payload(draft: GeographyDraft) -> dict[str, Any]:
+def build_geography_guidance_payload(model: NaturalGeographyModel) -> dict[str, Any]:
     """Build a compact JSON payload for the legacy terrain generator.
 
     Args:
-        draft: Prebuilt continuous geography context.
+        model: Final natural geography built before terrain generation.
 
     Returns:
         Quantized elevation, moisture, and local slope grids.
     """
-    slope_rows = _local_slope_rows(draft.elevation_scores)
+    profile_min = min((min(row) for row in model.elevation_rows), default=0)
+    profile_max = max((max(row) for row in model.elevation_rows), default=0)
+    span = max(1, profile_max - profile_min)
+    normalized_levels = [
+        [(level - profile_min) / span for level in row]
+        for row in model.elevation_rows
+    ]
+    max_slope = max((max(row) for row in model.slope_rows), default=0)
+    normalized_slopes = [
+        [delta / max(1, max_slope) for delta in row]
+        for row in model.slope_rows
+    ]
     return {
         "schema_version": GUIDANCE_SCHEMA_VERSION,
-        "width": draft.width,
-        "height": draft.height,
-        "seed": draft.seed,
-        "elevation_style": draft.elevation_style,
+        "width": model.width,
+        "height": model.height,
+        "seed": model.seed,
+        "elevation_style": model.elevation_style,
         "scale": GUIDANCE_SCALE,
-        "elevation_rows": _quantize_rows(draft.elevation_scores),
-        "moisture_rows": _quantize_rows(draft.moisture_scores),
-        "slope_rows": _quantize_rows(slope_rows),
+        "natural_min_level": profile_min,
+        "natural_max_level": profile_max,
+        "natural_level_rows": model.elevation_rows,
+        "natural_slope_rows": model.slope_rows,
+        "elevation_rows": _quantize_rows(normalized_levels),
+        "moisture_rows": _quantize_rows(model.draft.moisture_scores),
+        "slope_rows": _quantize_rows(normalized_slopes),
     }
 
 
-def write_geography_guidance(draft: GeographyDraft, path: Path) -> None:
+def write_geography_guidance(model: NaturalGeographyModel, path: Path) -> None:
     """Write geography guidance without pretty-printing large grids.
 
     Args:
-        draft: Prebuilt continuous geography context.
+        model: Final natural geography built before terrain generation.
         path: Internal guidance JSON path.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = build_geography_guidance_payload(draft)
+    payload = build_geography_guidance_payload(model)
     path.write_text(
         json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
         encoding="utf-8",
@@ -53,20 +68,3 @@ def _quantize_rows(rows: list[list[float]]) -> list[list[int]]:
         [max(0, min(GUIDANCE_SCALE, round(value * GUIDANCE_SCALE))) for value in row]
         for row in rows
     ]
-
-
-def _local_slope_rows(rows: list[list[float]]) -> list[list[float]]:
-    height = len(rows)
-    width = len(rows[0]) if rows else 0
-    output = [[0.0 for _ in range(width)] for _ in range(height)]
-    for y in range(height):
-        for x in range(width):
-            current = rows[y][x]
-            maximum = 0.0
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                nx = x + dx
-                ny = y + dy
-                if 0 <= nx < width and 0 <= ny < height:
-                    maximum = max(maximum, abs(current - rows[ny][nx]))
-            output[y][x] = maximum
-    return output

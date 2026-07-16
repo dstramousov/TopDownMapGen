@@ -2,6 +2,7 @@ import pytest
 
 from top_down_worldgen.tactical.elevation import (
     build_geography_draft,
+    build_natural_geography_model,
     generate_next_gen_elevation,
 )
 
@@ -73,3 +74,43 @@ def test_geography_draft_rejects_another_generation_request() -> None:
             elevation_style="normal",
             geography_draft=draft,
         )
+
+
+def test_early_natural_geography_preserves_late_elevation_output() -> None:
+    """Ensure the pre-terrain natural model preserves final generation."""
+    rows = ["S" + "+" * 22 + "G"] + ["+" * 24 for _ in range(19)]
+    draft = build_geography_draft(
+        width=24,
+        height=20,
+        seed=777,
+        elevation_style="plateau",
+    )
+    model = build_natural_geography_model(
+        width=24,
+        height=20,
+        seed=777,
+        elevation_style="plateau",
+        geography_draft=draft,
+    )
+
+    direct = generate_next_gen_elevation(
+        rows=rows,
+        seed=777,
+        elevation_style="plateau",
+        geography_draft=draft,
+    )
+    early = generate_next_gen_elevation(
+        rows=rows,
+        seed=777,
+        elevation_style="plateau",
+        geography_draft=draft,
+        natural_geography=model,
+    )
+
+    assert early.rows == direct.rows
+    assert early.report["summary"] == direct.report["summary"]
+    assert early.report["early_geography_verification"] == {
+        "enabled": True,
+        "matched": True,
+        "tiles_checked": 480,
+    }

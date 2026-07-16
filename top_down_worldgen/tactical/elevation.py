@@ -6,7 +6,11 @@ from math import cos, floor, hypot, pi, sin
 from random import Random
 from typing import Any, Iterable
 
-from .geography_draft import GeographyDraft, GeographyDraftRegion
+from .geography_draft import (
+    GeographyDraft,
+    GeographyDraftRegion,
+    NaturalGeographyModel,
+)
 
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -5
@@ -151,6 +155,57 @@ def build_geography_draft(
     )
 
 
+def build_natural_geography_model(
+    *,
+    width: int,
+    height: int,
+    seed: int,
+    elevation_style: str = "normal",
+    geography_draft: GeographyDraft | None = None,
+) -> NaturalGeographyModel:
+    """Build final natural elevation before terrain generation.
+
+    Args:
+        width: Map width in tiles.
+        height: Map height in tiles.
+        seed: Resolved deterministic world seed.
+        elevation_style: User-facing elevation style preset name.
+        geography_draft: Optional prebuilt continuous geography context.
+
+    Returns:
+        Natural integer elevation and slope grids for terrain consumers.
+    """
+    if width < 0 or height < 0:
+        raise ValueError("Map dimensions must be non-negative")
+    profile = _profile_for_size(
+        width=width,
+        height=height,
+        elevation_style=elevation_style,
+    )
+    draft = geography_draft or build_geography_draft(
+        width=width,
+        height=height,
+        seed=seed,
+        elevation_style=profile.style_name,
+    )
+    draft.validate_for(
+        width=width,
+        height=height,
+        seed=seed,
+        elevation_style=profile.style_name,
+    )
+    levels = _build_natural_level_rows(draft, profile=profile)
+    return NaturalGeographyModel(
+        width=width,
+        height=height,
+        seed=seed,
+        elevation_style=profile.style_name,
+        elevation_rows=levels,
+        slope_rows=_integer_slope_rows(levels),
+        draft=draft,
+    )
+
+
 def attach_next_gen_elevation(
     tactical_data: dict[str, Any],
     *,
@@ -158,6 +213,7 @@ def attach_next_gen_elevation(
     seed: int,
     elevation_style: str = "normal",
     geography_draft: GeographyDraft | None = None,
+    natural_geography: NaturalGeographyModel | None = None,
 ) -> dict[str, Any]:
     """Attach a full-map procedural elevation layer to tactical data.
 
@@ -167,6 +223,7 @@ def attach_next_gen_elevation(
         seed: Resolved deterministic world seed.
         elevation_style: User-facing elevation style preset name.
         geography_draft: Optional prebuilt geography context for this map.
+        natural_geography: Optional final natural geography built before terrain.
 
     Returns:
         Copy of tactical data with a sparse elevation cell list representing
@@ -178,6 +235,7 @@ def attach_next_gen_elevation(
         tactical_data=tactical_data,
         elevation_style=elevation_style,
         geography_draft=geography_draft,
+        natural_geography=natural_geography,
     )
     enriched = dict(tactical_data)
     cells: list[dict[str, int]] = []
@@ -204,6 +262,7 @@ def generate_next_gen_elevation(
     tactical_data: dict[str, Any] | None = None,
     elevation_style: str = "normal",
     geography_draft: GeographyDraft | None = None,
+    natural_geography: NaturalGeographyModel | None = None,
 ) -> ElevationGenerationResult:
     """Generate a size-aware Red Blob style terraced height map.
 
@@ -213,6 +272,7 @@ def generate_next_gen_elevation(
         tactical_data: Optional runtime tactical data with object-derived elevation cells.
         elevation_style: User-facing elevation style preset name.
         geography_draft: Optional prebuilt geography context for this map.
+        natural_geography: Optional final natural geography built before terrain.
 
     Returns:
         Generated integer height rows and a JSON-serializable report.
@@ -225,26 +285,45 @@ def generate_next_gen_elevation(
         return ElevationGenerationResult(rows=[], report=report)
 
     profile = _profile_for_size(width=width, height=height, elevation_style=elevation_style)
-    if geography_draft is None:
-        geographic_fields = _build_geographic_fields(
-            width=width,
-            height=height,
-            seed=seed,
-            profile=profile,
-        )
-    else:
-        geography_draft.validate_for(
+    if natural_geography is not None:
+        natural_geography.validate_for(
             width=width,
             height=height,
             seed=seed,
             elevation_style=profile.style_name,
         )
-        geographic_fields = geography_draft
-    scores = _smooth_score_grid(
-        geographic_fields.elevation_scores,
-        passes=profile.score_smoothing_passes,
-    )
-    levels = _quantize_scores_to_levels(scores, profile=profile)
+        geographic_fields = natural_geography.draft
+        levels = [list(row) for row in natural_geography.elevation_rows]
+        verification_rows = _build_natural_level_rows(geographic_fields, profile=profile)
+        if verification_rows != levels:
+            raise RuntimeError("Early natural geography verification failed")
+        early_geography_verification = {
+            "enabled": True,
+            "matched": True,
+            "tiles_checked": width * height,
+        }
+    else:
+        if geography_draft is None:
+            geographic_fields = _build_geographic_fields(
+                width=width,
+                height=height,
+                seed=seed,
+                profile=profile,
+            )
+        else:
+            geography_draft.validate_for(
+                width=width,
+                height=height,
+                seed=seed,
+                elevation_style=profile.style_name,
+            )
+            geographic_fields = geography_draft
+        levels = _build_natural_level_rows(geographic_fields, profile=profile)
+        early_geography_verification = {
+            "enabled": False,
+            "matched": None,
+            "tiles_checked": 0,
+        }
     levels = _apply_terrain_bias(levels, rows)
     locked_levels = _locked_terrain_levels(levels, rows)
     levels = _relax_level_deltas(
@@ -315,7 +394,45 @@ def generate_next_gen_elevation(
         route_alignment_report=runtime_route_result.report,
         traversal_repair_report=traversal_repair.report,
     )
+    report["early_geography_verification"] = early_geography_verification
     return ElevationGenerationResult(rows=levels, report=report)
+
+
+def _build_natural_level_rows(
+    geography: GeographyDraft,
+    *,
+    profile: ElevationScaleProfile,
+) -> list[list[int]]:
+    """Build terrain-independent integer natural elevation rows."""
+    scores = _smooth_score_grid(
+        geography.elevation_scores,
+        passes=profile.score_smoothing_passes,
+    )
+    levels = _quantize_scores_to_levels(scores, profile=profile)
+    return _relax_level_deltas(
+        levels,
+        max_delta=profile.max_natural_delta,
+        passes=profile.level_relax_passes,
+        locked_levels={},
+    )
+
+
+def _integer_slope_rows(rows: list[list[int]]) -> list[list[int]]:
+    """Return maximum cardinal elevation delta for each tile."""
+    height = len(rows)
+    width = len(rows[0]) if rows else 0
+    output = [[0 for _ in range(width)] for _ in range(height)]
+    for y in range(height):
+        for x in range(width):
+            current = rows[y][x]
+            maximum = 0
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx = x + dx
+                ny = y + dy
+                if 0 <= nx < width and 0 <= ny < height:
+                    maximum = max(maximum, abs(current - rows[ny][nx]))
+            output[y][x] = maximum
+    return output
 
 
 def _empty_report(*, width: int, height: int, seed: int, profile: ElevationScaleProfile) -> dict[str, Any]:

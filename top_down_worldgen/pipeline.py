@@ -57,7 +57,11 @@ from .object_catalog import write_object_catalog
 from .paths import OutputPaths
 from .render.layers import LayerRenderer
 from .reports import build_world_reports, format_console_summary
-from .tactical.elevation import attach_next_gen_elevation, build_geography_draft
+from .tactical.elevation import (
+    attach_next_gen_elevation,
+    build_geography_draft,
+    build_natural_geography_model,
+)
 from .tactical.fallback import FallbackPositionBuilder
 from .tactical.geography_guidance import write_geography_guidance
 from .tactical.grid import attach_tile_grid
@@ -174,12 +178,26 @@ class WorldgenPipeline:
                 seed=config.resolved_seed,
                 elevation_style=config.elevation_style,
             )
-            write_geography_guidance(geography_draft, outputs.geography_guidance)
+            natural_geography = build_natural_geography_model(
+                width=config.map_width_tiles,
+                height=config.map_height_tiles,
+                seed=config.resolved_seed,
+                elevation_style=config.elevation_style,
+                geography_draft=geography_draft,
+            )
+            write_geography_guidance(natural_geography, outputs.geography_guidance)
+            natural_levels = [
+                level
+                for row in natural_geography.elevation_rows
+                for level in row
+            ]
             metrics.update(
                 {
                     "macro_regions": len(geography_draft.macro_regions),
                     "region_edges": len(geography_draft.region_edges),
                     "elevation_style": geography_draft.elevation_style,
+                    "natural_min_level": min(natural_levels, default=0),
+                    "natural_max_level": max(natural_levels, default=0),
                     "guidance_path": outputs.geography_guidance,
                 },
             )
@@ -278,6 +296,7 @@ class WorldgenPipeline:
                 seed=config.resolved_seed,
                 elevation_style=config.elevation_style,
                 geography_draft=geography_draft,
+                natural_geography=natural_geography,
             )
             outputs.generated_map.write_text("\n".join(rows) + "\n", encoding="utf-8")
             runtime_data["version"] = "0.31-runtime"

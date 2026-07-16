@@ -23,6 +23,8 @@ class TerrainGuidance:
     elevation_rows: tuple[tuple[float, ...], ...]
     moisture_rows: tuple[tuple[float, ...], ...]
     slope_rows: tuple[tuple[float, ...], ...]
+    natural_level_rows: tuple[tuple[int, ...], ...] | None = None
+    natural_slope_rows: tuple[tuple[int, ...], ...] | None = None
 
     STEEP_SLOPE = 0.085
     CLIFF_SLOPE = 0.18
@@ -58,7 +60,7 @@ class TerrainGuidance:
             raise TerrainGuidanceError(f"Invalid terrain guidance JSON: {path}") from exc
         if not isinstance(raw, dict):
             raise TerrainGuidanceError("Terrain guidance root must be an object")
-        if raw.get("schema_version") != "terrain-guidance-v1":
+        if raw.get("schema_version") not in {"terrain-guidance-v1", "terrain-guidance-v2"}:
             raise TerrainGuidanceError("Unsupported terrain guidance schema")
 
         width = _required_int(raw, "width")
@@ -82,6 +84,12 @@ class TerrainGuidance:
             elevation_rows=_decode_rows(raw.get("elevation_rows"), width, height, scale, "elevation_rows"),
             moisture_rows=_decode_rows(raw.get("moisture_rows"), width, height, scale, "moisture_rows"),
             slope_rows=_decode_rows(raw.get("slope_rows"), width, height, scale, "slope_rows"),
+            natural_level_rows=_decode_integer_rows_optional(
+                raw.get("natural_level_rows"), width, height, "natural_level_rows"
+            ),
+            natural_slope_rows=_decode_integer_rows_optional(
+                raw.get("natural_slope_rows"), width, height, "natural_slope_rows"
+            ),
         )
 
     def elevation_at(self, x: int, y: int) -> float:
@@ -95,6 +103,18 @@ class TerrainGuidance:
     def slope_at(self, x: int, y: int) -> float:
         """Return local draft slope magnitude at one tile."""
         return self.slope_rows[y][x]
+
+    def natural_level_at(self, x: int, y: int) -> int | None:
+        """Return final natural integer elevation when available."""
+        if self.natural_level_rows is None:
+            return None
+        return self.natural_level_rows[y][x]
+
+    def natural_slope_at(self, x: int, y: int) -> int | None:
+        """Return final natural cardinal slope delta when available."""
+        if self.natural_slope_rows is None:
+            return None
+        return self.natural_slope_rows[y][x]
 
     def footprint_score(self, x: int, y: int, radius: int) -> float:
         """Return a placement score for a circular terrain footprint.
@@ -250,6 +270,29 @@ def _decode_rows(
             if not isinstance(item, int):
                 raise TerrainGuidanceError(f"Terrain guidance {field_name} must contain integers")
             decoded.append(item / scale)
+        output.append(tuple(decoded))
+    return tuple(output)
+
+
+def _decode_integer_rows_optional(
+    value: object,
+    width: int,
+    height: int,
+    field_name: str,
+) -> tuple[tuple[int, ...], ...] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list) or len(value) != height:
+        raise TerrainGuidanceError(f"Terrain guidance {field_name} height mismatch")
+    output: list[tuple[int, ...]] = []
+    for row in value:
+        if not isinstance(row, list) or len(row) != width:
+            raise TerrainGuidanceError(f"Terrain guidance {field_name} width mismatch")
+        decoded: list[int] = []
+        for item in row:
+            if not isinstance(item, int):
+                raise TerrainGuidanceError(f"Terrain guidance {field_name} must contain integers")
+            decoded.append(item)
         output.append(tuple(decoded))
     return tuple(output)
 

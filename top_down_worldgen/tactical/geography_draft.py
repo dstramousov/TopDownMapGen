@@ -65,3 +65,54 @@ class GeographyDraft:
                 "GeographyDraft does not match generation request: "
                 f"expected={expected!r}, actual={actual!r}"
             )
+
+
+@dataclass(frozen=True, slots=True)
+class NaturalGeographyModel:
+    """Final natural geography generated before terrain placement.
+
+    The model contains the integer natural elevation grid and its local slope
+    grid before terrain-specific bias, route alignment, structural elevation,
+    and traversal repair are applied.
+    """
+
+    width: int
+    height: int
+    seed: int
+    elevation_style: str
+    elevation_rows: list[list[int]]
+    slope_rows: list[list[int]]
+    draft: GeographyDraft
+
+    def validate_for(
+        self,
+        *,
+        width: int,
+        height: int,
+        seed: int,
+        elevation_style: str,
+    ) -> None:
+        """Validate that the model matches a requested generation run.
+
+        Args:
+            width: Requested map width in tiles.
+            height: Requested map height in tiles.
+            seed: Resolved deterministic world seed.
+            elevation_style: Sanitized elevation style name.
+
+        Raises:
+            ValueError: If the model was built for another map or profile.
+        """
+        expected = (width, height, seed, elevation_style)
+        actual = (self.width, self.height, self.seed, self.elevation_style)
+        if actual != expected:
+            raise ValueError(
+                "NaturalGeographyModel does not match generation request: "
+                f"expected={expected!r}, actual={actual!r}"
+            )
+        self.draft.validate_for(
+            width=width,
+            height=height,
+            seed=seed,
+            elevation_style=elevation_style,
+        )
