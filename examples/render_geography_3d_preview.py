@@ -86,6 +86,30 @@ TRAVERSAL_COLORS: dict[str, tuple[int, int, int, int]] = {
     "goal": (255, 204, 80, 255),
 }
 
+TERRAIN_TRAVERSAL_COLORS: dict[str, tuple[int, int, int, int]] = {
+    "reachable": (82, 150, 77, 255),
+    "slow": (214, 177, 70, 255),
+    "blocked": (79, 42, 39, 255),
+    "water": (45, 119, 184, 255),
+    "structural": (136, 80, 167, 255),
+    "unreachable": (211, 61, 57, 255),
+    "tree": (35, 91, 39, 255),
+    "start": (246, 246, 238, 255),
+    "goal": (255, 204, 80, 255),
+}
+
+TERRAIN_TINTS: dict[str, tuple[tuple[int, int, int, int], float]] = {
+    "old_overgrown_road": ((205, 184, 127, 255), 0.52),
+    "water_slow": ((42, 118, 182, 255), 0.64),
+    "ruin_wall_blocker": ((112, 109, 103, 255), 0.56),
+    "ruin_floor": ((153, 143, 120, 255), 0.42),
+    "cracked_ground": ((151, 111, 72, 255), 0.34),
+    "bush_slow_concealment": ((52, 106, 53, 255), 0.34),
+    "flower_decor": ((176, 160, 93, 255), 0.16),
+    "mushroom_decor": ((155, 125, 101, 255), 0.18),
+    "tree_blocker": ((48, 103, 50, 255), 0.42),
+}
+
 WALKABILITY_LABELS: dict[str, str] = {
     "reachable": "reachable walkable",
     "slow": "slow / difficult",
@@ -106,6 +130,18 @@ TRAVERSAL_LABELS: dict[str, str] = {
     "too_steep": "2D walkable, too steep",
     "unreachable": "2D walkable, unreachable",
     "terrain_island": "2D terrain island",
+    "start": "start",
+    "goal": "goal",
+}
+
+TERRAIN_TRAVERSAL_LABELS: dict[str, str] = {
+    "reachable": "walkable ground",
+    "slow": "walkable, slow",
+    "blocked": "blocked terrain",
+    "water": "water / wet terrain",
+    "structural": "structural depth",
+    "unreachable": "unreachable walkable",
+    "tree": "tree blocker",
     "start": "start",
     "goal": "goal",
 }
@@ -135,6 +171,7 @@ class HeightMap:
         active_range: Active generator range.
         overlay_name: Optional diagnostic overlay name.
         overlay_rows: Optional overlay classes per tile.
+        terrain_rows: Optional semantic terrain types per tile.
         overlay_counts: Optional overlay category counts.
     """
 
@@ -148,6 +185,7 @@ class HeightMap:
     active_range: tuple[int, int] | None
     overlay_name: str
     overlay_rows: list[list[str]] | None
+    terrain_rows: list[list[str]] | None
     overlay_counts: dict[str, int]
 
 
@@ -168,6 +206,7 @@ class OverlayData:
 
     overlay_rows: list[list[str]]
     counts: dict[str, int]
+    terrain_rows: list[list[str]] | None = None
 
 
 def main() -> int:
@@ -232,6 +271,7 @@ def load_height_map(path: Path, *, overlay: str) -> HeightMap:
     active_range = _read_int_range(profile.get("active_range"))
     seed = _read_seed(output_root)
     overlay_rows: list[list[str]] | None = None
+    terrain_rows: list[list[str]] | None = None
     overlay_counts: dict[str, int] = {}
     if overlay == "walkability":
         overlay_data = _read_walkability_data(
@@ -256,6 +296,18 @@ def load_height_map(path: Path, *, overlay: str) -> HeightMap:
         )
         overlay_rows = overlay_data.overlay_rows
         overlay_counts = overlay_data.counts
+    elif overlay == "terrain_traversal":
+        overlay_data = _read_terrain_traversal_data(
+            output_root=output_root,
+            package_dir=map_json_path.parent,
+            map_index=map_index,
+            geography=geography,
+            width=width,
+            height=height,
+        )
+        overlay_rows = overlay_data.overlay_rows
+        terrain_rows = overlay_data.terrain_rows
+        overlay_counts = overlay_data.counts
     return HeightMap(
         rows=geographic_rows,
         width=width,
@@ -267,6 +319,7 @@ def load_height_map(path: Path, *, overlay: str) -> HeightMap:
         active_range=active_range,
         overlay_name=overlay,
         overlay_rows=overlay_rows,
+        terrain_rows=terrain_rows,
         overlay_counts=overlay_counts,
     )
 
@@ -292,6 +345,7 @@ def render_view(
     draw = ImageDraw.Draw(image, "RGBA")
     oriented_rows = _orient_grid(height_map.rows, view)
     oriented_overlay = _orient_grid(height_map.overlay_rows, view) if height_map.overlay_rows else None
+    oriented_terrain = _orient_grid(height_map.terrain_rows, view) if height_map.terrain_rows else None
     scale = _compute_scale(oriented_rows, output_size)
     _draw_soft_shadow(draw, oriented_rows=oriented_rows, scale=scale)
     _draw_isometric_map(
@@ -299,6 +353,7 @@ def render_view(
         overlay_name=height_map.overlay_name,
         oriented_rows=oriented_rows,
         oriented_overlay=oriented_overlay,
+        oriented_terrain=oriented_terrain,
         scale=scale,
         draw_grid=draw_grid,
     )
@@ -315,6 +370,7 @@ def _draw_isometric_map(
     overlay_name: str,
     oriented_rows: list[list[int]],
     oriented_overlay: list[list[str]] | None,
+    oriented_terrain: list[list[str]] | None,
     scale: RenderScale,
     draw_grid: bool,
 ) -> None:
@@ -327,7 +383,10 @@ def _draw_isometric_map(
             overlay_code = None
             if oriented_overlay and y < len(oriented_overlay) and x < len(oriented_overlay[y]):
                 overlay_code = oriented_overlay[y][x]
-            color = _tile_color(level, overlay_name, overlay_code)
+            terrain = None
+            if oriented_terrain and y < len(oriented_terrain) and x < len(oriented_terrain[y]):
+                terrain = oriented_terrain[y][x]
+            color = _tile_color(level, overlay_name, overlay_code, terrain)
             top = _tile_top_polygon(x, y, level, min_level=min_level, scale=scale)
             east_level = oriented_rows[y][x + 1] if x + 1 < width else min_level
             south_level = oriented_rows[y + 1][x] if y + 1 < height else min_level
@@ -344,6 +403,14 @@ def _draw_isometric_map(
             draw.polygon(top, fill=color)
             if draw_grid:
                 draw.line(top + [top[0]], fill=GRID_LINE_COLOR, width=1)
+            if overlay_name == "terrain_traversal":
+                _draw_terrain_feature(
+                    draw,
+                    top=top,
+                    terrain=terrain,
+                    overlay_code=overlay_code,
+                    scale=scale,
+                )
             if overlay_code in MARKER_OVERLAY_CODES:
                 _draw_overlay_marker(draw, top=top, overlay_code=overlay_code, overlay_name=overlay_name)
 
@@ -382,6 +449,7 @@ def _draw_title(
         "geography": "Geographic",
         "walkability": "Walkability",
         "traversal": "Traversal",
+        "terrain_traversal": "Terrain + traversal",
     }
     overlay_title = overlay_title_by_name.get(height_map.overlay_name, height_map.overlay_name.title())
     title = f"{overlay_title} 3D preview — {VIEW_LABELS.get(view, view.upper())}"
@@ -413,10 +481,14 @@ def _draw_overlay_legend(
     colors = _overlay_colors(height_map.overlay_name)
     keys = tuple(labels.keys())
     height = 52 + line_h * len(keys)
-    title = "Traversal overlay" if height_map.overlay_name == "traversal" else "Walkability overlay"
+    title_by_name = {
+        "traversal": "Traversal overlay",
+        "terrain_traversal": "Terrain + traversal overlay",
+    }
+    title = title_by_name.get(height_map.overlay_name, "Walkability overlay")
     draw.rectangle((x0 - 16, y0 - 16, output_size[0] - 18, y0 + height), fill=(20, 21, 19, 195))
     draw.text((x0, y0 - 6), title, fill=TITLE_COLOR, font=font)
-    total = sum(height_map.overlay_counts.values()) or 1
+    total = max(1, height_map.width * height_map.height)
     for index, key in enumerate(keys):
         y = y0 + 34 + index * line_h
         color = colors[key]
@@ -535,24 +607,60 @@ def _orient_grid(rows: list[list[Any]] | None, view: str) -> list[list[Any]]:
     raise ValueError(f"Unsupported view: {view}")
 
 
-def _tile_color(level: int, overlay_name: str, overlay_code: str | None) -> tuple[int, int, int, int]:
-    if not overlay_code:
-        return _level_color(level)
-    if overlay_code in MARKER_OVERLAY_CODES:
-        return _level_color(level)
+def _tile_color(
+    level: int,
+    overlay_name: str,
+    overlay_code: str | None,
+    terrain: str | None = None,
+) -> tuple[int, int, int, int]:
+    base = _level_color(level)
+    if overlay_name == "terrain_traversal":
+        return _terrain_traversal_tile_color(base, terrain=terrain, overlay_code=overlay_code)
+    if not overlay_code or overlay_code in MARKER_OVERLAY_CODES:
+        return base
     colors = _overlay_colors(overlay_name)
-    return colors.get(overlay_code, colors.get("reachable", _level_color(level)))
+    return colors.get(overlay_code, colors.get("reachable", base))
+
+
+def _terrain_traversal_tile_color(
+    base: tuple[int, int, int, int],
+    *,
+    terrain: str | None,
+    overlay_code: str | None,
+) -> tuple[int, int, int, int]:
+    color = base
+    tint = TERRAIN_TINTS.get(terrain or "")
+    if tint is not None:
+        color = _blend_color(color, tint[0], tint[1])
+    if overlay_code == "blocked":
+        weight = 0.30 if terrain == "tree_blocker" else 0.48
+        color = _blend_color(color, TERRAIN_TRAVERSAL_COLORS["blocked"], weight)
+    elif overlay_code == "slow":
+        color = _blend_color(color, TERRAIN_TRAVERSAL_COLORS["slow"], 0.28)
+    elif overlay_code == "water":
+        color = _blend_color(color, TERRAIN_TRAVERSAL_COLORS["water"], 0.40)
+    elif overlay_code == "structural":
+        color = _blend_color(color, TERRAIN_TRAVERSAL_COLORS["structural"], 0.48)
+    elif overlay_code == "unreachable":
+        color = _blend_color(color, TERRAIN_TRAVERSAL_COLORS["unreachable"], 0.60)
+    elif overlay_code == "reachable":
+        color = _blend_color(color, TERRAIN_TRAVERSAL_COLORS["reachable"], 0.10)
+    return color
 
 
 def _overlay_colors(overlay_name: str) -> dict[str, tuple[int, int, int, int]]:
     if overlay_name == "traversal":
         return TRAVERSAL_COLORS
+    if overlay_name == "terrain_traversal":
+        return TERRAIN_TRAVERSAL_COLORS
     return WALKABILITY_COLORS
 
 
 def _overlay_labels(overlay_name: str) -> dict[str, str]:
     if overlay_name == "traversal":
         return TRAVERSAL_LABELS
+    if overlay_name == "terrain_traversal":
+        return TERRAIN_TRAVERSAL_LABELS
     return WALKABILITY_LABELS
 
 
@@ -586,6 +694,94 @@ def _draw_overlay_marker(
     )
 
 
+def _draw_terrain_feature(
+    draw: ImageDraw.ImageDraw,
+    *,
+    top: list[tuple[float, float]],
+    terrain: str | None,
+    overlay_code: str | None,
+    scale: RenderScale,
+) -> None:
+    """Draw a compact semantic feature above one terrain tile.
+
+    Args:
+        draw: PIL drawing context.
+        top: Projected top polygon of the tile.
+        terrain: Semantic terrain type.
+        overlay_code: Walkability classification.
+        scale: Current isometric render scale.
+    """
+    center_x = sum(point[0] for point in top) / 4.0
+    center_y = sum(point[1] for point in top) / 4.0
+    if terrain == "tree_blocker":
+        _draw_tree_marker(draw, center=(center_x, center_y), scale=scale)
+        return
+    if terrain == "ruin_wall_blocker":
+        _draw_blocked_marker(draw, top=top, color=(64, 58, 54, 225))
+        return
+    if overlay_code == "blocked":
+        _draw_blocked_marker(draw, top=top, color=(89, 42, 38, 220))
+        return
+    if overlay_code == "slow":
+        radius = max(1.0, scale.tile_width * 0.10)
+        draw.ellipse(
+            (center_x - radius, center_y - radius, center_x + radius, center_y + radius),
+            fill=(236, 195, 74, 225),
+        )
+
+
+def _draw_tree_marker(
+    draw: ImageDraw.ImageDraw,
+    *,
+    center: tuple[float, float],
+    scale: RenderScale,
+) -> None:
+    """Draw a small tree rooted on a projected terrain tile."""
+    center_x, center_y = center
+    tree_height = max(4.0, scale.tile_width * 0.95)
+    crown_width = max(2.5, scale.tile_width * 0.34)
+    trunk_width = max(1, round(scale.tile_width * 0.08))
+    trunk_top = center_y - tree_height * 0.52
+    draw.line(
+        (center_x, center_y, center_x, trunk_top),
+        fill=(91, 61, 36, 245),
+        width=trunk_width,
+    )
+    lower_y = center_y - tree_height * 0.38
+    middle_y = center_y - tree_height * 0.64
+    top_y = center_y - tree_height
+    outline = (18, 47, 22, 235)
+    draw.polygon(
+        [
+            (center_x, top_y),
+            (center_x + crown_width * 0.72, middle_y),
+            (center_x - crown_width * 0.72, middle_y),
+        ],
+        fill=(43, 112, 48, 245),
+        outline=outline,
+    )
+    draw.polygon(
+        [
+            (center_x, middle_y - tree_height * 0.18),
+            (center_x + crown_width, lower_y),
+            (center_x - crown_width, lower_y),
+        ],
+        fill=TERRAIN_TRAVERSAL_COLORS["tree"],
+        outline=outline,
+    )
+
+
+def _draw_blocked_marker(
+    draw: ImageDraw.ImageDraw,
+    *,
+    top: list[tuple[float, float]],
+    color: tuple[int, int, int, int],
+) -> None:
+    """Draw a compact cross on a blocked non-tree tile."""
+    draw.line((top[0], top[2]), fill=color, width=1)
+    draw.line((top[1], top[3]), fill=color, width=1)
+
+
 def _level_color(level: int) -> tuple[int, int, int, int]:
     clamped = max(ELEVATION_FORMAT_MIN_LEVEL, min(ELEVATION_FORMAT_MAX_LEVEL, level))
     return ELEVATION_COLORS.get(clamped, ELEVATION_COLORS[0])
@@ -598,6 +794,21 @@ def _shade_color(color: tuple[int, int, int, int], factor: float) -> tuple[int, 
         max(0, min(255, int(green * factor))),
         max(0, min(255, int(blue * factor))),
         alpha,
+    )
+
+
+def _blend_color(
+    base: tuple[int, int, int, int],
+    tint: tuple[int, int, int, int],
+    weight: float,
+) -> tuple[int, int, int, int]:
+    """Blend a diagnostic tint while preserving the elevation color signal."""
+    clamped = max(0.0, min(1.0, weight))
+    return (
+        round(base[0] * (1.0 - clamped) + tint[0] * clamped),
+        round(base[1] * (1.0 - clamped) + tint[1] * clamped),
+        round(base[2] * (1.0 - clamped) + tint[2] * clamped),
+        base[3],
     )
 
 
@@ -654,6 +865,70 @@ def _read_walkability_data(
         total=width * height,
     )
     return OverlayData(overlay_rows=rows, counts=dict(counts))
+
+
+def _read_terrain_traversal_data(
+    *,
+    output_root: Path,
+    package_dir: Path,
+    map_index: dict[str, Any],
+    geography: dict[str, Any],
+    width: int,
+    height: int,
+) -> OverlayData:
+    """Load semantic terrain and 2D walkability for the combined preview."""
+    runtime_grids = _read_object(_package_ref_path(package_dir, map_index.get("runtime_grids")))
+    terrain_layer = _read_object(
+        _package_ref_path(package_dir, _require_object(map_index, "layers").get("terrain"))
+    )
+    collision_rows = _read_collision_rows(runtime_grids, width=width, height=height)
+    movement_rows = _read_movement_rows(runtime_grids, width=width, height=height)
+    terrain_rows = _read_terrain_rows(terrain_layer, width=width, height=height)
+    source_rows = _read_source_rows(geography, width=width, height=height)
+    water_rows = _read_water_rows(geography, width=width, height=height)
+    start = _read_point(_optional_object(map_index.get("points")).get("start"))
+    goal = _read_point(_optional_object(map_index.get("points")).get("goal"))
+    reachable = _reachable_points(
+        start,
+        collision_rows=collision_rows,
+        movement_rows=movement_rows,
+        width=width,
+        height=height,
+    )
+    rows: list[list[str]] = []
+    counts: Counter[str] = Counter()
+    for y in range(height):
+        output_row: list[str] = []
+        for x in range(width):
+            key = _walkability_code(
+                x,
+                y,
+                collision_rows=collision_rows,
+                movement_rows=movement_rows,
+                terrain_rows=terrain_rows,
+                source_rows=source_rows,
+                water_rows=water_rows,
+                reachable=reachable,
+                start=start,
+                goal=goal,
+            )
+            output_row.append(key)
+            counts[key] += 1
+            if terrain_rows[y][x] == "tree_blocker":
+                counts["tree"] += 1
+        rows.append(output_row)
+    _write_terrain_traversal_report(
+        output_root / "geography_3d_preview" / "terrain_traversal_report.json",
+        counts=counts,
+        start=start,
+        goal=goal,
+        total=width * height,
+    )
+    return OverlayData(
+        overlay_rows=rows,
+        counts=dict(counts),
+        terrain_rows=terrain_rows,
+    )
 
 
 def _walkability_code(
@@ -1076,6 +1351,33 @@ def _write_traversal_report(
         },
     )
 
+def _write_terrain_traversal_report(
+    path: Path,
+    *,
+    counts: Counter[str],
+    start: tuple[int, int] | None,
+    goal: tuple[int, int] | None,
+    total: int,
+) -> None:
+    """Write category counts for the combined terrain/traversal preview."""
+    _write_overlay_report(
+        path,
+        schema_version="3d-terrain-traversal-preview-report-v1",
+        labels=TERRAIN_TRAVERSAL_LABELS,
+        counts=counts,
+        start=start,
+        goal=goal,
+        total=total,
+        extra={
+            "rendering": {
+                "elevation_color_preserved": True,
+                "semantic_terrain_tints": True,
+                "tree_blockers_rendered_as_objects": True,
+            }
+        },
+    )
+
+
 def _write_walkability_report(
     path: Path,
     *,
@@ -1392,7 +1694,7 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--overlay",
-        choices=("geography", "walkability", "traversal"),
+        choices=("geography", "walkability", "traversal", "terrain_traversal"),
         default="geography",
         help="Diagnostic overlay to render. Default: geography.",
     )

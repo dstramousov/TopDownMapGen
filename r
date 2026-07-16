@@ -105,8 +105,12 @@ run_stage "3D-связность" \
   python3 examples/render_geography_3d_preview.py output \
     --overlay traversal --width 2560 --height 1440 --views nw ne se sw
 
+run_stage "3D-местность и проходимость" \
+  python3 examples/render_geography_3d_preview.py output \
+    --overlay terrain_traversal --width 2560 --height 1440 --views nw ne se sw
+
 print_summary
 printf '  общее время: %d с\n' "$((SECONDS - TOTAL_STARTED))"
-printf '  preview: 20 файлов в output/ и output/geography_3d_preview/\n'
+printf '  preview: 24 файла в output/ и output/geography_3d_preview/\n'
 
 open output/
