@@ -193,3 +193,47 @@ def test_visual_vegetation_distinguishes_shore_and_puddle_reeds() -> None:
     assert result.report["summary"]["puddle_reeds_visible"] == 1
     assert result.report["legend"]["R"] == "shore_reed"
     assert result.report["legend"]["P"] == "puddle_reed"
+
+
+def test_reclaimed_edge_bushes_are_deterministic_and_walkable_slow() -> None:
+    size = 9
+    terrain = [["tree_blocker" for _ in range(size)] for _ in range(size)]
+    elevation = [[0 for _ in range(size)] for _ in range(size)]
+    slopes = [[0 for _ in range(size)] for _ in range(size)]
+
+    visual = build_visual_vegetation(
+        terrain_rows=terrain,
+        elevation_rows=elevation,
+        slope_rows=slopes,
+        seed=1234,
+        reclaimed_edge_bush_density=1.0,
+        reclaimed_altitude_bush_density=0.0,
+    )
+    collision = reconcile_tree_collision(
+        rows=["T" * size for _ in range(size)],
+        visual_rows=visual.rows,
+        elevation_rows=elevation,
+    )
+
+    assert "B" in "".join(visual.rows)
+    assert "b" in "".join(collision.rows)
+    assert collision.report["summary"]["opened_as_reclaimed_bush"] > 0
+    assert visual.report["legend"]["B"] == "reclaimed_bush"
+
+
+def test_reclaimed_bushes_do_not_grow_above_limit_or_on_cliffs() -> None:
+    terrain = [["tree_blocker", "tree_blocker"]]
+    elevation = [[17, 18]]
+    slopes = [[2, 0]]
+
+    visual = build_visual_vegetation(
+        terrain_rows=terrain,
+        elevation_rows=elevation,
+        slope_rows=slopes,
+        seed=1,
+        reclaimed_edge_bush_density=1.0,
+        reclaimed_altitude_bush_density=1.0,
+        reclaimed_bush_max_elevation=17,
+    )
+
+    assert "B" not in visual.rows[0]

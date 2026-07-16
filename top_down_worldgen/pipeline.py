@@ -336,6 +336,9 @@ class WorldgenPipeline:
                 seed=config.resolved_seed,
                 shore_reed_density=config.shore_reed_density,
                 puddle_reed_density=config.puddle_reed_density,
+                reclaimed_edge_bush_density=config.generation_tuning.reclaimed_edge_bush_density,
+                reclaimed_altitude_bush_density=config.generation_tuning.reclaimed_altitude_bush_density,
+                reclaimed_bush_max_elevation=config.generation_tuning.reclaimed_bush_max_elevation,
             )
             vegetation_collision = reconcile_tree_collision(
                 rows=rows,

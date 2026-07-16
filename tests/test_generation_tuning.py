@@ -16,6 +16,9 @@ def test_water_tuning_fields_are_loaded_and_clamped() -> None:
             "bunker_scale": 12.0,
             "bush_density": 1.4,
             "bush_thicket_count": 30,
+            "reclaimed_edge_bush_density": 1.4,
+            "reclaimed_altitude_bush_density": -0.2,
+            "reclaimed_bush_max_elevation": 16,
         },
     )
 
@@ -26,6 +29,9 @@ def test_water_tuning_fields_are_loaded_and_clamped() -> None:
     assert tuning.bunker_scale == 10.0
     assert tuning.bush_density == 1.0
     assert tuning.bush_thicket_count == 30
+    assert tuning.reclaimed_edge_bush_density == 1.0
+    assert tuning.reclaimed_altitude_bush_density == 0.0
+    assert tuning.reclaimed_bush_max_elevation == 16
 
 
 def test_water_patch_density_is_a_ratio() -> None:

@@ -19,7 +19,10 @@
     "water_patch_size_scale": 2.0,
     "water_patch_density": 0.62,
     "bush_density": 0.3,
-    "bush_thicket_count": 30
+    "bush_thicket_count": 30,
+    "reclaimed_edge_bush_density": 0.55,
+    "reclaimed_altitude_bush_density": 0.3,
+    "reclaimed_bush_max_elevation": 17
   },
   "elevation": {
     "style": "mountainous"

@@ -20,6 +20,9 @@ DEFAULT_SHORE_REED_DENSITY = 0.45
 DEFAULT_PUDDLE_REED_DENSITY = 0.20
 DEFAULT_BUSH_DENSITY = 0.30
 DEFAULT_BUSH_THICKET_COUNT = 14
+DEFAULT_RECLAIMED_EDGE_BUSH_DENSITY = 0.55
+DEFAULT_RECLAIMED_ALTITUDE_BUSH_DENSITY = 0.30
+DEFAULT_RECLAIMED_BUSH_MAX_ELEVATION = 17
 SUPPORTED_ELEVATION_STYLES = frozenset(
     {"super_flatland", "flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
 )
@@ -42,6 +45,9 @@ class GenerationTuning:
     bunker_scale: float = 1.0
     bush_density: float = DEFAULT_BUSH_DENSITY
     bush_thicket_count: int = DEFAULT_BUSH_THICKET_COUNT
+    reclaimed_edge_bush_density: float = DEFAULT_RECLAIMED_EDGE_BUSH_DENSITY
+    reclaimed_altitude_bush_density: float = DEFAULT_RECLAIMED_ALTITUDE_BUSH_DENSITY
+    reclaimed_bush_max_elevation: int = DEFAULT_RECLAIMED_BUSH_MAX_ELEVATION
 
     @classmethod
     def from_raw(cls, value: Any) -> "GenerationTuning":
@@ -66,6 +72,10 @@ class GenerationTuning:
                 sanitized[key] = _sanitize_ratio(raw_value, key=key)
             elif key == "bush_thicket_count":
                 sanitized[key] = _sanitize_nonnegative_int(raw_value, key=key, default=DEFAULT_BUSH_THICKET_COUNT)
+            elif key in {"reclaimed_edge_bush_density", "reclaimed_altitude_bush_density"}:
+                sanitized[key] = _sanitize_ratio(raw_value, key=key)
+            elif key == "reclaimed_bush_max_elevation":
+                sanitized[key] = _sanitize_int(raw_value, key=key, default=DEFAULT_RECLAIMED_BUSH_MAX_ELEVATION)
             else:
                 sanitized[key] = _sanitize_scale(raw_value, key=key)
         return cls(**sanitized)
@@ -86,6 +96,9 @@ class GenerationTuning:
             "bunker_scale": self.bunker_scale,
             "bush_density": self.bush_density,
             "bush_thicket_count": self.bush_thicket_count,
+            "reclaimed_edge_bush_density": self.reclaimed_edge_bush_density,
+            "reclaimed_altitude_bush_density": self.reclaimed_altitude_bush_density,
+            "reclaimed_bush_max_elevation": self.reclaimed_bush_max_elevation,
         }
 
 
@@ -95,6 +108,15 @@ def _sanitize_float(value: Any, *, key: str, default: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         LOGGER.warning("Invalid generation_tuning.%s=%r; using %.2f", key, value, default)
+        return default
+
+
+def _sanitize_int(value: Any, *, key: str, default: int) -> int:
+    """Convert a user-provided tuning value to int."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid generation_tuning.%s=%r; using %s", key, value, default)
         return default
 
 

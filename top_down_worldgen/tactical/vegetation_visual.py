@@ -13,6 +13,7 @@ TREE_VISIBLE_CODE = "T"
 TREE_HIDDEN_CODE = "."
 SHORE_REED_VISIBLE_CODE = "R"
 PUDDLE_REED_VISIBLE_CODE = "P"
+RECLAIMED_BUSH_VISIBLE_CODE = "B"
 THINNING_START_LEVEL = 9
 TREELESS_LEVEL = 18
 FOREST_EDGE_DEPTH = 4
@@ -44,6 +45,9 @@ def build_visual_vegetation(
     seed: int,
     shore_reed_density: float = 0.45,
     puddle_reed_density: float = 0.20,
+    reclaimed_edge_bush_density: float = 0.55,
+    reclaimed_altitude_bush_density: float = 0.30,
+    reclaimed_bush_max_elevation: int = 17,
 ) -> VegetationVisualResult:
     """Build a visual tree mask without changing gameplay blocking.
 
@@ -54,6 +58,9 @@ def build_visual_vegetation(
         seed: Resolved deterministic world seed.
         shore_reed_density: Base probability for shore reeds on level -1.
         puddle_reed_density: Base probability for reeds in legacy puddles.
+        reclaimed_edge_bush_density: Probability of bushes on cleared forest edges.
+        reclaimed_altitude_bush_density: Probability of bushes after altitude thinning.
+        reclaimed_bush_max_elevation: Highest elevation that may contain reclaimed bushes.
 
     Returns:
         Visual tree mask and thinning diagnostics.
@@ -69,6 +76,8 @@ def build_visual_vegetation(
     removed_by_forest_edge = 0
     shore_reeds_visible = 0
     puddle_reeds_visible = 0
+    reclaimed_edge_bushes = 0
+    reclaimed_altitude_bushes = 0
     by_level: dict[int, dict[str, int]] = {}
     forest_edge_depths = _forest_edge_depths(terrain_rows)
 
@@ -118,20 +127,42 @@ def build_visual_vegetation(
                 tree_after += 1
                 level_stats["after"] += 1
             else:
-                output_row.append(TREE_HIDDEN_CODE)
                 level_stats["removed"] += 1
-                if level < 0:
+                removal_reason = _tree_removal_reason(
+                    level=level,
+                    slope=slope,
+                    altitude_probability=altitude_probability,
+                    edge_probability=edge_probability,
+                )
+                bush_probability = _reclaimed_bush_probability(
+                    removal_reason=removal_reason,
+                    level=level,
+                    slope=slope,
+                    edge_density=reclaimed_edge_bush_density,
+                    altitude_density=reclaimed_altitude_bush_density,
+                    max_elevation=reclaimed_bush_max_elevation,
+                )
+                if _stable_unit(seed=seed, x=x, y=y, salt="reclaimed_bush") < bush_probability:
+                    output_row.append(RECLAIMED_BUSH_VISIBLE_CODE)
+                    if removal_reason == "forest_edge":
+                        reclaimed_edge_bushes += 1
+                    else:
+                        reclaimed_altitude_bushes += 1
+                else:
+                    output_row.append(TREE_HIDDEN_CODE)
+
+                if removal_reason == "lowland":
                     removed_by_lowland += 1
-                elif edge_probability < altitude_probability:
+                elif removal_reason == "forest_edge":
                     removed_by_forest_edge += 1
-                elif level >= TREELESS_LEVEL or level > THINNING_START_LEVEL:
+                elif removal_reason == "altitude":
                     removed_by_altitude += 1
-                elif slope > 1:
+                elif removal_reason == "slope":
                     removed_by_slope += 1
         output_rows.append("".join(output_row))
 
     report = {
-        "schema_version": "vegetation-visual-report-v5",
+        "schema_version": "vegetation-visual-report-v6",
         "kind": "vegetation_visual",
         "rules": {
             "tree_terrain": TREE_TERRAIN,
@@ -143,6 +174,9 @@ def build_visual_vegetation(
             "shore_reed_level": -1,
             "shore_reed_density": shore_reed_density,
             "puddle_reed_density": puddle_reed_density,
+            "reclaimed_edge_bush_density": reclaimed_edge_bush_density,
+            "reclaimed_altitude_bush_density": reclaimed_altitude_bush_density,
+            "reclaimed_bush_max_elevation": reclaimed_bush_max_elevation,
             "deterministic_by_seed_and_coordinate": True,
             "forest_edge_depth_tiles": FOREST_EDGE_DEPTH,
             "forest_edge_keep_probability": {
@@ -162,6 +196,9 @@ def build_visual_vegetation(
             "shore_reeds_visible": shore_reeds_visible,
             "puddle_reeds_visible": puddle_reeds_visible,
             "reeds_visible": shore_reeds_visible + puddle_reeds_visible,
+            "reclaimed_edge_bushes_visible": reclaimed_edge_bushes,
+            "reclaimed_altitude_bushes_visible": reclaimed_altitude_bushes,
+            "reclaimed_bushes_visible": reclaimed_edge_bushes + reclaimed_altitude_bushes,
             "trees_at_or_above_treeless_level": 0,
         },
         "by_level": {
@@ -176,6 +213,7 @@ def build_visual_vegetation(
             TREE_HIDDEN_CODE: "no_visual_tree",
             SHORE_REED_VISIBLE_CODE: "shore_reed",
             PUDDLE_REED_VISIBLE_CODE: "puddle_reed",
+            RECLAIMED_BUSH_VISIBLE_CODE: "reclaimed_bush",
         },
         "rows": output_rows,
     }
@@ -212,6 +250,8 @@ def reconcile_tree_collision(
     opened_points: set[tuple[int, int]] = set()
     retained_visible_tree_tiles = 0
     retained_non_tree_tiles = 0
+    opened_as_grass = 0
+    opened_as_reclaimed_bush = 0
 
     for y, chars in enumerate(opened_rows):
         for x, symbol in enumerate(chars):
@@ -221,7 +261,12 @@ def reconcile_tree_collision(
             if output_visual[y][x] == TREE_VISIBLE_CODE:
                 retained_visible_tree_tiles += 1
                 continue
-            chars[x] = "+"
+            if output_visual[y][x] == RECLAIMED_BUSH_VISIBLE_CODE:
+                chars[x] = "b"
+                opened_as_reclaimed_bush += 1
+            else:
+                chars[x] = "+"
+                opened_as_grass += 1
             opened_points.add((x, y))
 
     reopened_points = set(opened_points)
@@ -249,13 +294,19 @@ def reconcile_tree_collision(
                 output_visual[y][x] = TREE_VISIBLE_CODE
                 rejected_as_tree += 1
 
+    opened_as_reclaimed_bush = sum(
+        output_visual[y][x] == RECLAIMED_BUSH_VISIBLE_CODE
+        for x, y in reopened_points
+    )
+    opened_as_grass = len(reopened_points) - opened_as_reclaimed_bush
     output_rows = ["".join(row) for row in opened_rows]
     final_visual_rows = ["".join(row) for row in output_visual]
     report = {
         "schema_version": "vegetation-collision-reconciliation-v2",
         "kind": "vegetation_collision_reconciliation",
         "policy": {
-            "hidden_tree_tile_becomes": "grass_when_connected",
+            "hidden_tree_tile_becomes": "grass_or_reclaimed_bush_when_connected",
+            "reclaimed_bush_gameplay": "walkable_slow_concealment",
             "isolated_lowland_tile_becomes": "visible_tree_blocker",
             "isolated_highland_tile_becomes": "rock_blocker",
             "primary_component": "largest_final_3d_traversable_component",
@@ -266,6 +317,8 @@ def reconcile_tree_collision(
         "summary": {
             "candidate_opened_tree_tiles": len(opened_points),
             "opened_tree_tiles": len(reopened_points),
+            "opened_as_grass": opened_as_grass,
+            "opened_as_reclaimed_bush": opened_as_reclaimed_bush,
             "rejected_isolated_tiles": len(rejected_points),
             "rejected_as_visible_tree": rejected_as_tree,
             "rejected_as_rock": rejected_as_rock,
@@ -280,6 +333,44 @@ def reconcile_tree_collision(
         visual_rows=final_visual_rows,
         report=report,
     )
+
+
+def _tree_removal_reason(
+    *,
+    level: int,
+    slope: int,
+    altitude_probability: float,
+    edge_probability: float,
+) -> str:
+    """Return the dominant reason why one visual tree was removed."""
+    if level < 0:
+        return "lowland"
+    if edge_probability < altitude_probability:
+        return "forest_edge"
+    if level >= TREELESS_LEVEL or level > THINNING_START_LEVEL:
+        return "altitude"
+    if slope > 1:
+        return "slope"
+    return "forest_edge"
+
+
+def _reclaimed_bush_probability(
+    *,
+    removal_reason: str,
+    level: int,
+    slope: int,
+    edge_density: float,
+    altitude_density: float,
+    max_elevation: int,
+) -> float:
+    """Return bush probability for one cleared tree tile."""
+    if level < 0 or level > max_elevation or slope > 1:
+        return 0.0
+    if removal_reason == "forest_edge":
+        return max(0.0, min(edge_density, 1.0))
+    if removal_reason == "altitude":
+        return max(0.0, min(altitude_density, 1.0))
+    return 0.0
 
 
 def _validate_matching_rows(rows: list[str], visual_rows: list[str]) -> tuple[int, int]:

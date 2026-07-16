@@ -722,7 +722,7 @@ def _draw_terrain_feature(
     if terrain == "puddle_reed_visual":
         _draw_reed_marker(draw, center=(center_x, center_y), scale=scale, kind="puddle")
         return
-    if terrain == "bush_slow_concealment":
+    if terrain in {"bush_slow_concealment", "reclaimed_bush_visual"}:
         _draw_bush_marker(draw, center=(center_x, center_y), scale=scale)
         return
     if terrain == "ruin_wall_blocker":
@@ -986,6 +986,8 @@ def _read_terrain_traversal_data(
                 counts["tree_logical"] += 1
                 if visual_vegetation_rows[y][x] == "T":
                     counts["tree"] += 1
+                elif visual_vegetation_rows[y][x] == "B":
+                    counts["reclaimed_bush"] += 1
                 else:
                     counts["tree_hidden_by_altitude"] += 1
         rows.append(output_row)
@@ -1003,6 +1005,8 @@ def _read_terrain_traversal_data(
                 if visual_vegetation_rows[y][x] == "R"
                 else "puddle_reed_visual"
                 if visual_vegetation_rows[y][x] == "P"
+                else "reclaimed_bush_visual"
+                if visual_vegetation_rows[y][x] == "B"
                 else terrain
                 if terrain != "tree_blocker" or visual_vegetation_rows[y][x] == "T"
                 else "tree_blocker_hidden"
