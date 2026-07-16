@@ -711,7 +711,7 @@ class MapGenerator:
     def terrain_guidance_metrics(self) -> dict[str, int | float | bool | str]:
         """Return terrain adaptation diagnostics."""
         metrics = dict(self._terrain_guidance_metrics)
-        metrics["schema_version"] = "terrain-guidance-report-v2"
+        metrics["schema_version"] = "terrain-guidance-report-v3"
         sample_tiles = int(metrics.pop("road_sample_tiles", 0))
         slope_sum = float(metrics.pop("road_slope_sum", 0.0))
         metrics["road_tiles_sampled"] = sample_tiles
@@ -1343,11 +1343,12 @@ class MapGenerator:
             self._terrain_guidance_metrics["road_slope_sum"] = (
                 float(self._terrain_guidance_metrics["road_slope_sum"]) + slope
             )
-            if slope >= self._guidance.STEEP_SLOPE:
+            natural_delta = self._guidance.natural_delta_at(point.x, point.y)
+            if natural_delta == 2:
                 self._terrain_guidance_metrics["road_steep_tiles"] = (
                     int(self._terrain_guidance_metrics["road_steep_tiles"]) + 1
                 )
-            if slope >= self._guidance.CLIFF_SLOPE:
+            elif natural_delta > 2:
                 self._terrain_guidance_metrics["road_cliff_tiles"] = (
                     int(self._terrain_guidance_metrics["road_cliff_tiles"]) + 1
                 )

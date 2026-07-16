@@ -135,7 +135,9 @@ def format_console_summary(summary: dict[str, Any]) -> str:
     slope_bands = _dict(_dict(geography.get("slope")).get("bands"))
     profile = _dict(elevation.get("profile"))
     elevation_summary = _dict(elevation.get("summary"))
-    traversal = _dict(_dict(elevation.get("traversal_repair")).get("summary"))
+    traversal_report = _dict(elevation.get("traversal_repair"))
+    traversal = _dict(traversal_report.get("summary"))
+    traversal_changes = _dict(traversal_report.get("changes"))
     islands = _dict(_dict(elevation.get("terrain_island_repair")).get("summary"))
 
     warnings = validation.get("warnings")
@@ -224,7 +226,21 @@ def format_console_summary(summary: dict[str, Any]) -> str:
             f"  недостижимые тайлы: {unreachable_before} -> "
             f"{unreachable_after} {_status_tag_ru(unreachable_after == 0)}"
         )
-        lines.append(f"  traversal repair: изменено {adjusted} тайлов")
+        coverage = _dict(traversal_changes.get("coverage"))
+        by_terrain = _dict(traversal_changes.get("adjusted_by_terrain"))
+        lines.append(
+            "  traversal repair: изменено "
+            f"{adjusted} тайлов = {float(coverage.get('percent_of_map', 0.0)):.2f}% карты"
+        )
+        if by_terrain:
+            lines.append(
+                "  причины repair: "
+                f"открытая земля {int(by_terrain.get('open_ground', 0))}, "
+                f"дороги {int(by_terrain.get('road', 0))}, "
+                f"растительность {int(by_terrain.get('vegetation_slow', 0))}, "
+                f"руины {int(by_terrain.get('ruin_floor', 0))}, "
+                f"вода {int(by_terrain.get('water', 0))}"
+            )
     if islands:
         removed = int(islands.get("small_island_tiles_removed", 0))
         preserved = int(islands.get("large_islands_preserved", 0))

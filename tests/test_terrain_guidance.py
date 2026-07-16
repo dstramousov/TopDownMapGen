@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from top_down_worldgen.legacy.engine import MapGenerator, PublicConfig
+from top_down_worldgen.legacy.engine import MapGenerator, Point, PublicConfig
 from top_down_worldgen.legacy.terrain_guidance import TerrainGuidance
 from top_down_worldgen.tactical.elevation import (
     build_geography_draft,
@@ -155,3 +155,42 @@ def test_footprint_level_delta_uses_natural_levels() -> None:
 
     assert guidance.footprint_level_delta(2, 3, 1) == 0
     assert guidance.footprint_level_delta(3, 3, 2) == 3
+
+
+def test_road_metrics_distinguish_steep_from_cliff() -> None:
+    width = 5
+    height = 3
+    flat_rows = tuple(tuple(0.5 for _ in range(width)) for _ in range(height))
+    zero_slope = tuple(tuple(0.0 for _ in range(width)) for _ in range(height))
+    natural_slopes = (
+        (0, 0, 0, 0, 0),
+        (0, 1, 2, 3, 0),
+        (0, 0, 0, 0, 0),
+    )
+    guidance = TerrainGuidance(
+        width=width,
+        height=height,
+        seed=7,
+        elevation_style="plateau",
+        elevation_rows=flat_rows,
+        moisture_rows=flat_rows,
+        slope_rows=zero_slope,
+        natural_slope_rows=natural_slopes,
+    )
+    config = PublicConfig(
+        seed=7,
+        map_width_tiles=width,
+        map_height_tiles=height,
+        chunk_width_tiles=1,
+        chunk_height_tiles=1,
+        biome_profile="forest_ruins",
+    )
+    generator = MapGenerator(config, terrain_guidance=guidance)
+
+    generator._record_road_guidance_metrics(  # noqa: SLF001
+        [Point(1, 1), Point(2, 1), Point(3, 1)]
+    )
+    metrics = generator.terrain_guidance_metrics()
+
+    assert metrics["road_steep_tiles"] == 1
+    assert metrics["road_cliff_tiles"] == 1

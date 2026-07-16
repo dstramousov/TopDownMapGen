@@ -2287,6 +2287,7 @@ def _repair_traversal_consistency(
     )
     before_missing = two_d_reachable - reachable_before
     adjusted_points: set[tuple[int, int]] = set()
+    adjustment_history: dict[tuple[int, int], tuple[int, int]] = {}
     passes = 0
     max_passes = max(1, min(width + height, profile.terrace_max_size_tiles * 4, 1024))
     status = "ok"
@@ -2317,7 +2318,9 @@ def _repair_traversal_consistency(
             status = "partial"
             break
         for (x, y), level in changes.items():
+            original_level = adjustment_history.get((x, y), (rows[y][x], rows[y][x]))[0]
             rows[y][x] = level
+            adjustment_history[(x, y)] = (original_level, level)
             adjusted_points.add((x, y))
     else:
         status = "partial"
@@ -2342,6 +2345,12 @@ def _repair_traversal_consistency(
             max_delta=profile.max_natural_delta,
             unreachable_before_components=_component_sizes(before_missing),
             unreachable_after_components=_component_sizes(two_d_reachable - reachable_after),
+            change_diagnostics=_repair_change_diagnostics(
+                adjustment_history,
+                terrain_rows=terrain_rows,
+                total_tiles=width * height,
+                two_d_reachable_tiles=len(two_d_reachable),
+            ),
         ),
     )
 
@@ -2474,6 +2483,89 @@ def _component_sizes(points: set[tuple[int, int]]) -> list[int]:
     return sizes
 
 
+def _repair_change_diagnostics(
+    adjustments: dict[tuple[int, int], tuple[int, int]],
+    *,
+    terrain_rows: list[str],
+    total_tiles: int,
+    two_d_reachable_tiles: int,
+) -> dict[str, Any]:
+    """Summarize why and how traversal repair changed elevation tiles."""
+    by_terrain: Counter[str] = Counter()
+    magnitude_histogram: Counter[str] = Counter()
+    raised = 0
+    lowered = 0
+    total_abs_delta = 0
+    maximum_abs_delta = 0
+
+    for (x, y), (before, after) in adjustments.items():
+        by_terrain[_repair_terrain_category(terrain_rows[y][x])] += 1
+        delta = after - before
+        if delta > 0:
+            raised += 1
+        elif delta < 0:
+            lowered += 1
+        magnitude = abs(delta)
+        total_abs_delta += magnitude
+        maximum_abs_delta = max(maximum_abs_delta, magnitude)
+        magnitude_histogram[str(magnitude)] += 1
+
+    adjusted = len(adjustments)
+    return {
+        "adjusted_by_terrain": dict(sorted(by_terrain.items())),
+        "direction": {
+            "raised": raised,
+            "lowered": lowered,
+        },
+        "magnitude": {
+            "average_abs_delta": round(total_abs_delta / max(1, adjusted), 3),
+            "maximum_abs_delta": maximum_abs_delta,
+            "histogram": dict(sorted(magnitude_histogram.items(), key=lambda item: int(item[0]))),
+        },
+        "coverage": {
+            "percent_of_map": round(adjusted * 100.0 / max(1, total_tiles), 3),
+            "percent_of_2d_reachable": round(
+                adjusted * 100.0 / max(1, two_d_reachable_tiles),
+                3,
+            ),
+        },
+    }
+
+
+def _empty_repair_change_diagnostics() -> dict[str, Any]:
+    """Return an empty traversal repair change summary."""
+    return {
+        "adjusted_by_terrain": {},
+        "direction": {"raised": 0, "lowered": 0},
+        "magnitude": {
+            "average_abs_delta": 0.0,
+            "maximum_abs_delta": 0,
+            "histogram": {},
+        },
+        "coverage": {
+            "percent_of_map": 0.0,
+            "percent_of_2d_reachable": 0.0,
+        },
+    }
+
+
+def _repair_terrain_category(symbol: str) -> str:
+    """Return a stable terrain category for traversal repair diagnostics."""
+    if symbol == ".":
+        return "road"
+    if symbol == "R":
+        return "ruin_floor"
+    if symbol == "w":
+        return "water"
+    if symbol in {"b", "f", "m"}:
+        return "vegetation_slow"
+    if symbol in {"+", "c"}:
+        return "open_ground"
+    if symbol in {"S", "G"}:
+        return "scenario_marker"
+    return "other"
+
+
 def _traversal_repair_report(
     *,
     status: str,
@@ -2487,11 +2579,12 @@ def _traversal_repair_report(
     max_delta: int,
     unreachable_before_components: list[int] | None = None,
     unreachable_after_components: list[int] | None = None,
+    change_diagnostics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     unreachable_before = max(0, len(two_d_reachable) - len(reachable_before))
     unreachable_after = max(0, len(two_d_reachable) - len(reachable_after))
     report: dict[str, Any] = {
-        "schema_version": "traversal-repair-report-v1",
+        "schema_version": "traversal-repair-report-v2",
         "status": status,
         "rules": {
             "scope": "start_connected_2d_walkable_component_only",
@@ -2515,6 +2608,7 @@ def _traversal_repair_report(
             "unreachable_before": unreachable_before_components or [],
             "unreachable_after": unreachable_after_components or [],
         },
+        "changes": change_diagnostics or _empty_repair_change_diagnostics(),
     }
     if reason:
         report["reason"] = reason

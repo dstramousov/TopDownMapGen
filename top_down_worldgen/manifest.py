@@ -50,7 +50,7 @@ ELEVATION_DENSITY_REPORT_SCHEMA_VERSION = "elevation-density-report-v1"
 WORLD_SUMMARY_REPORT_SCHEMA_VERSION = "world-summary-report-v1"
 TERRAIN_ISLAND_REPORT_SCHEMA_VERSION = "terrain-island-repair-report-v1"
 GEOGRAPHY_GUIDANCE_SCHEMA_VERSION = "terrain-guidance-v2"
-TERRAIN_GUIDANCE_REPORT_SCHEMA_VERSION = "terrain-guidance-report-v2"
+TERRAIN_GUIDANCE_REPORT_SCHEMA_VERSION = "terrain-guidance-report-v3"
 
 
 @dataclass(frozen=True, slots=True)
