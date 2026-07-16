@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, replace
+from functools import lru_cache
 from math import cos, floor, hypot, pi, sin
 from time import perf_counter
 from random import Random
@@ -957,14 +958,20 @@ def _build_geographic_fields(
     max_value = float("-inf")
     moisture_min = float("inf")
     moisture_max = float("-inf")
+    width_scale = max(1, width - 1)
+    height_scale = max(1, height - 1)
+    normalized_x = [x / width_scale for x in range(width)]
+    normalized_y = [y / height_scale for y in range(height)]
+    region_x_scale = width_scale
+    region_y_scale = height_scale
     for y in range(height):
         elevation_row: list[float] = []
         moisture_row: list[float] = []
         basin_row: list[float] = []
         dominant_row: list[int] = []
+        ny = normalized_y[y]
         for x in range(width):
-            nx = x / max(1, width - 1)
-            ny = y / max(1, height - 1)
+            nx = normalized_x[x]
             warp_x = _fbm(
                 nx + 31.7,
                 ny - 17.3,
@@ -981,8 +988,8 @@ def _build_geographic_fields(
             )
             wx = nx + warp_x * profile.warp_strength
             wy = ny + warp_y * profile.warp_strength
-            sx = _clamp_float(wx, 0.0, 1.0) * max(1, width - 1)
-            sy = _clamp_float(wy, 0.0, 1.0) * max(1, height - 1)
+            sx = _clamp_float(wx, 0.0, 1.0) * region_x_scale
+            sy = _clamp_float(wy, 0.0, 1.0) * region_y_scale
             region_sample = _polygonal_region_sample(
                 x=sx,
                 y=sy,
@@ -1655,6 +1662,7 @@ def _value_noise(x: float, y: float, *, seed: int) -> float:
     return _lerp(ix0, ix1, sy)
 
 
+@lru_cache(maxsize=65536)
 def _lattice_noise(x: int, y: int, seed: int) -> float:
     value = (seed & 0xFFFF_FFFF_FFFF_FFFF) ^ ((x * 0x9E37_79B1_85EB_CA87) & 0xFFFF_FFFF_FFFF_FFFF)
     value ^= (y * 0xC2B2_AE3D_27D4_EB4F) & 0xFFFF_FFFF_FFFF_FFFF

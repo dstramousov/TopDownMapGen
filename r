@@ -4,8 +4,12 @@ set -euo pipefail
 SUMMARY_FILE="output/_console_summary.txt"
 TOTAL_STARTED=$SECONDS
 PROFILE_ARGS=()
+DEBUG_LAYER_ARGS=()
 if [[ "${PROFILE_PERFORMANCE:-0}" == "1" ]]; then
   PROFILE_ARGS+=(--profile-performance)
+fi
+if [[ "${RENDER_DEBUG_LAYERS:-0}" == "1" ]]; then
+  DEBUG_LAYER_ARGS+=(--include-debug-layers)
 fi
 
 run_stage() {
@@ -45,7 +49,7 @@ run_stage "генерация мира" \
   env PYTHONPATH=. python3 top_down_generator.py \
     --config configs/default.json \
     -o output \
-    --include-debug-layers \
+    "${DEBUG_LAYER_ARGS[@]}" \
     "${PROFILE_ARGS[@]}" \
     --summary-file "$SUMMARY_FILE"
 
