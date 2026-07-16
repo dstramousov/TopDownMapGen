@@ -59,12 +59,6 @@ from .tactical.elevation import attach_next_gen_elevation
 from .tactical.fallback import FallbackPositionBuilder
 from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
-from .tactical.river import (
-    RiverGenerator,
-    elevation_grid_from_tactical_data,
-    mark_flooded_runtime_objects,
-    write_river_preview,
-)
 from .tactical.runtime_objects import attach_runtime_layers
 from .tactical.terrain_islands import elevation_cell_points, repair_terrain_islands
 from .tactical.objectives import ObjectiveProfileSelector
@@ -260,33 +254,6 @@ class WorldgenPipeline:
                 seed=config.resolved_seed,
                 elevation_style=config.elevation_style,
             )
-            elevation_grid = elevation_grid_from_tactical_data(
-                runtime_data,
-                width=len(rows[0]) if rows else 0,
-                height=len(rows),
-            )
-            river_result = RiverGenerator().generate(
-                rows=rows,
-                elevation_grid=elevation_grid,
-                seed=config.resolved_seed,
-                config=config.river,
-            )
-            rows = river_result.terrain_rows
-            runtime_data = mark_flooded_runtime_objects(
-                runtime_data,
-                river_mask=river_result.river_mask,
-                water_depth_grid=river_result.water_depth_grid,
-            )
-            runtime_data = attach_tile_grid(runtime_data, rows)
-            runtime_data["river"] = {
-                "centerline": [
-                    {"x": point.x, "y": point.y}
-                    for point in river_result.centerline
-                ],
-                "report": river_result.report,
-            }
-            write_json(river_result.report, outputs.output_dir / "river_report.json")
-            write_river_preview(river_result, outputs.output_dir / "river_preview.png")
             outputs.generated_map.write_text("\n".join(rows) + "\n", encoding="utf-8")
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"

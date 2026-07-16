@@ -8,7 +8,6 @@ from typing import Any
 
 from .constants import ENGINE_CONFIG_FIELDS, OBJECTIVE_PROFILES
 from .logging_utils import timed_stage
-from .tactical.river import RiverConfig
 from .utils.json_io import read_json, write_json
 
 
@@ -126,7 +125,6 @@ class PublicConfig:
     biome_profile: str
     objective_profile: str = "clear_map"
     elevation_style: str = DEFAULT_ELEVATION_STYLE
-    river: RiverConfig = field(default_factory=RiverConfig)
     generation_tuning: GenerationTuning = field(default_factory=GenerationTuning)
 
     @classmethod
@@ -161,7 +159,6 @@ class PublicConfig:
                 biome_profile=str(data["biome_profile"]),
                 objective_profile=objective_profile,
                 elevation_style=_sanitize_elevation_style(data),
-                river=RiverConfig.from_raw(data.get("river")),
                 generation_tuning=GenerationTuning.from_raw(data.get("generation_tuning")),
             )
             metrics.update(
@@ -175,7 +172,6 @@ class PublicConfig:
                     "biome_profile": config.biome_profile,
                     "objective_profile": config.objective_profile,
                     "elevation_style": config.elevation_style,
-                    "river": config.river.to_dict(),
                     "generation_tuning": config.generation_tuning.to_dict(),
                 },
             )

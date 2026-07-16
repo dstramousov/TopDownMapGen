@@ -1,7 +1,7 @@
 {
   "seed": "random",
-  "map_width_tiles": 208,
-  "map_height_tiles": 208,
+  "map_width_tiles": 352,
+  "map_height_tiles": 352,
   "chunk_width_tiles": 16,
   "chunk_height_tiles": 16,
   "biome_profile": "forest_ruins",
@@ -20,15 +20,6 @@
     "water_patch_density": 0.62
   },
   "elevation": {
-    "style": "mountainous"
-  },
-  "river": {
-    "enabled": true,
-    "channel_width_min": 3,
-    "channel_width_max": 9,
-    "allow_basin_flooding": true,
-    "max_flood_area_ratio": 0.08,
-    "max_flood_distance": 24,
-    "require_map_exit": true
+    "style": "rugged"
   }
 }
