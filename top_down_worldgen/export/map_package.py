@@ -66,6 +66,7 @@ def write_map_package(
         rows: ASCII map rows.
         width: Map width in tiles.
         height: Map height in tiles.
+        main_path_reachable_points: Final points reachable from START.
         tile_size_px: Tile size in pixels.
         seed: Raw seed value from public config.
         resolved_seed: Concrete uint64 seed used for the run.
@@ -174,12 +175,19 @@ def write_map_package(
     write_json(runtime_grids, outputs.map_package_runtime_grids)
 
     places_items = _list(runtime_data.get("places"))
+    start_point = _mapping_point(points.get("start"))
+    final_reachable_points = _reachable_final_points(
+        collision_rows=_string_rows(collision.get("rows"), []),
+        height_rows=_integer_rows(_dict(_dict(runtime_grids.get("grids")).get("height_grid")).get("rows")),
+        start=start_point,
+    )
     world_graph = _build_world_graph(
         points=points,
         markers=markers,
         places=places_items,
         width=width,
         height=height,
+        main_path_reachable_points=final_reachable_points,
     )
     write_json(world_graph, outputs.map_package_world_graph)
     routes = _build_routes(world_graph)
@@ -385,6 +393,7 @@ def _build_world_graph(
     places: list[Any],
     width: int,
     height: int,
+    main_path_reachable_points: set[tuple[int, int]] | None = None,
 ) -> dict[str, Any]:
     """Build a semantic world graph from places and markers.
 
@@ -464,6 +473,7 @@ def _build_world_graph(
         marker_nodes=marker_nodes,
         edges=edges,
         edge_keys=edge_keys,
+        reachable_points=main_path_reachable_points,
     )
     main_path_nodes = set(_string_list(main_path.get("node_ids")))
     side_paths = _build_side_paths(
@@ -1344,6 +1354,7 @@ def _build_main_path(
     marker_nodes: dict[str, dict[str, Any]],
     edges: list[dict[str, Any]],
     edge_keys: set[tuple[str, str, str]],
+    reachable_points: set[tuple[int, int]] | None = None,
 ) -> dict[str, Any]:
     """Build a complete semantic main path and ensure its edges exist."""
     nodes_by_id = {**place_nodes, **marker_nodes}
@@ -1356,6 +1367,7 @@ def _build_main_path(
         start_node=start_node,
         goal_node=goal_node,
         place_nodes=place_nodes,
+        reachable_points=reachable_points,
     )
     node_ids = [start_id, *[node["id"] for node in main_places], goal_id]
 
@@ -1389,9 +1401,16 @@ def _main_path_place_nodes(
     start_node: dict[str, Any],
     goal_node: dict[str, Any],
     place_nodes: dict[str, dict[str, Any]],
+    reachable_points: set[tuple[int, int]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Select meaningful places ordered along the start-goal corridor."""
+    """Select reachable meaningful places along the start-goal corridor."""
     places = list(place_nodes.values())
+    if reachable_points is not None:
+        places = [
+            node
+            for node in places
+            if _node_has_reachable_anchor(node, reachable_points=reachable_points)
+        ]
     if not places:
         return []
     max_count = min(5, max(3, len(places) // 3))
@@ -1410,6 +1429,52 @@ def _main_path_place_nodes(
         key=lambda node: _node_projection(start_node=start_node, goal_node=goal_node, node=node),
     )
 
+
+
+def _node_has_reachable_anchor(
+    node: dict[str, Any],
+    *,
+    reachable_points: set[tuple[int, int]],
+) -> bool:
+    point = _mapping_point(node.get("position"))
+    if point is None:
+        return False
+    return point in reachable_points
+
+
+def _reachable_final_points(
+    *,
+    collision_rows: list[str],
+    height_rows: list[list[int]],
+    start: tuple[int, int] | None,
+) -> set[tuple[int, int]]:
+    if start is None or not collision_rows or not height_rows:
+        return set()
+    width = len(height_rows[0])
+    height = len(height_rows)
+    sx, sy = start
+    if not (0 <= sx < width and 0 <= sy < height):
+        return set()
+    if collision_rows[sy][sx] == "1":
+        return set()
+    visited = {start}
+    queue = [start]
+    index = 0
+    while index < len(queue):
+        x, y = queue[index]
+        index += 1
+        current_level = height_rows[y][x]
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if not (0 <= nx < width and 0 <= ny < height):
+                continue
+            point = (nx, ny)
+            if point in visited or collision_rows[ny][nx] == "1":
+                continue
+            if not DEFAULT_TRAVERSAL_RULES.allows_step(current_level, height_rows[ny][nx]):
+                continue
+            visited.add(point)
+            queue.append(point)
+    return visited
 
 def _main_path_place_score(
     *,
@@ -2970,6 +3035,17 @@ def _string_rows(value: Any, fallback: list[str]) -> list[str]:
         return list(value)
     return list(fallback)
 
+
+
+def _integer_rows(value: Any) -> list[list[int]]:
+    if not isinstance(value, list):
+        return []
+    rows: list[list[int]] = []
+    for row in value:
+        if not isinstance(row, list) or not all(isinstance(item, int) for item in row):
+            return []
+        rows.append(list(row))
+    return rows
 
 def _extract_points(rows: list[str]) -> dict[str, dict[str, int] | None]:
     points: dict[str, dict[str, int] | None] = {"start": None, "goal": None}

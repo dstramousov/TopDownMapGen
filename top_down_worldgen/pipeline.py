@@ -67,9 +67,14 @@ from .tactical.fallback import FallbackPositionBuilder
 from .tactical.geography_guidance import write_geography_guidance
 from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
-from .tactical.runtime_objects import attach_runtime_layers
+from .tactical.runtime_objects import attach_runtime_layers, summarize_runtime_objects
 from .tactical.terrain_islands import elevation_cell_points, repair_terrain_islands
 from .tactical.hydrology import apply_elevation_hydrology
+from .tactical.start_goal import (
+    finalize_runtime_objects_for_final_terrain,
+    relocate_start_goal,
+    runtime_object_points,
+)
 from .tactical.vegetation_visual import build_visual_vegetation
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
@@ -316,6 +321,24 @@ class WorldgenPipeline:
             runtime_data["movement_costs"] = movement_costs
             runtime_data["elevation_hydrology"] = hydrology.report
             debug_data["elevation_hydrology"] = hydrology.report
+            retained_objects, object_pruning = finalize_runtime_objects_for_final_terrain(
+                runtime_data.get("runtime_objects"),
+                rows=rows,
+            )
+            runtime_data["runtime_objects"] = retained_objects
+            runtime_data["runtime_objects_summary"] = summarize_runtime_objects(retained_objects)
+            runtime_data["final_runtime_object_pruning"] = object_pruning
+            debug_data["final_runtime_object_pruning"] = object_pruning
+            late_start_goal = relocate_start_goal(
+                rows=rows,
+                elevation_rows=elevation_rows,
+                seed=config.resolved_seed,
+                excluded_points=runtime_object_points(runtime_data.get("runtime_objects")),
+            )
+            rows = late_start_goal.rows
+            runtime_data = attach_tile_grid(runtime_data, rows)
+            runtime_data["late_start_goal"] = late_start_goal.report
+            debug_data["late_start_goal"] = late_start_goal.report
             terrain_rows = [
                 [tile_legend.get(tile, "unknown") for tile in row]
                 for row in rows

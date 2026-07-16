@@ -740,16 +740,21 @@ def _draw_reed_marker(
     center: tuple[float, float],
     scale: RenderScale,
 ) -> None:
-    """Draw a compact reed cluster rooted on a wet-shore tile."""
+    """Draw one high-contrast orange reed diagnostic point."""
     center_x, center_y = center
-    height = max(3.0, scale.tile_width * 0.46)
-    spread = max(1.0, scale.tile_width * 0.16)
-    for offset in (-spread, 0.0, spread):
-        draw.line(
-            (center_x + offset, center_y, center_x + offset * 0.72, center_y - height),
-            fill=(91, 126, 48, 235),
-            width=max(1, round(scale.tile_width * 0.05)),
-        )
+    radius = max(1.5, scale.tile_width * 0.13)
+    lift = max(1.0, scale.tile_width * 0.08)
+    draw.ellipse(
+        (
+            center_x - radius,
+            center_y - lift - radius,
+            center_x + radius,
+            center_y - lift + radius,
+        ),
+        fill=(255, 132, 24, 255),
+        outline=(118, 52, 4, 255),
+        width=max(1, round(scale.tile_width * 0.04)),
+    )
 
 def _draw_tree_marker(
     draw: ImageDraw.ImageDraw,
