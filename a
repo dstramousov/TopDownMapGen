@@ -26,16 +26,20 @@ echo "Creating archive: ${archive}"
 
 zip -r "${archive}" . \
   -x ".git/*" \
-     "__pycache__/*" \
+     "*/__pycache__/*" \
      "*.pyc" \
      ".venv/*" \
      "venv/*" \
      ".mypy_cache/*" \
      ".pytest_cache/*" \
      ".ruff_cache/*" \
+     "output/*" \
+     "out/*" \
      "dist/*" \
      "build/*" \
-     "*.egg-info/*"
+     "*.egg-info/*" \
+     "TopDownMapGen_v*_current.zip" \
+     "TopDownMapGen_v*_to_v*.patch"
 
 echo
 echo "Done:"

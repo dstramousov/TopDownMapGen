@@ -1,87 +1,40 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-set -u
+# Remove only project-generated data and known disposable caches.
+# Never scan the whole repository by extension: source assets or tools may
+# legitimately use formats such as HTML or JavaScript in the future.
 
-# Comma-separated extensions to delete.
-# Example: "tmp,log,bak"
-EXTENSIONS_RAW="tmp,pyc,bak,html,js"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
 
-rm -Rf ./out/*
-rm -Rf ./output/*
-
-# Set to true to only print matching files without deleting them.
-DRY_RUN=false
-
-parse_extensions() {
-    local raw="$1"
-    local -n result_ref="$2"
-    local item
-    local ext
-
-    IFS=',' read -r -a items <<< "$raw"
-
-    for item in "${items[@]}"; do
-        ext="$(echo "$item" | xargs)"
-        ext="${ext#.}"
-        ext="${ext,,}"
-
-        if [[ -n "$ext" ]]; then
-            result_ref["$ext"]=1
-        fi
-    done
-}
-
-
-main() {
-    local -A extensions_map=()
-    local file_ext=""
-    local deleted_count=0
-    local matched_count=0
-
-    parse_extensions "$EXTENSIONS_RAW" extensions_map
-
-    if [[ "${#extensions_map[@]}" -eq 0 ]]; then
-        echo "No extensions provided. Nothing to do."
-        exit 0
-    fi
-
-    echo "Current directory: $(pwd)"
-    echo "Extensions to delete: $EXTENSIONS_RAW"
-    echo "Dry run: $DRY_RUN"
-    echo
-
-    while IFS= read -r -d '' file; do
-        filename="$(basename "$file")"
-
-        if [[ "$filename" != *.* ]]; then
-            continue
-        fi
-
-        file_ext="${filename##*.}"
-        file_ext="${file_ext,,}"
-
-        if [[ -n "${extensions_map[$file_ext]:-}" ]]; then
-            ((matched_count++))
-
-            if [[ "$DRY_RUN" == "true" ]]; then
-                echo "Would delete: $file"
-            else
-                if rm -f -- "$file"; then
-                    echo "Deleted: $file"
-                    ((deleted_count++))
-                else
-                    echo "Failed to delete: $file" >&2
-                fi
-            fi
-        fi
-    done < <(find . -type f -print0)
-
-    echo
-    if [[ "$DRY_RUN" == "true" ]]; then
-        echo "Done. Matched files: $matched_count"
-    else
-        echo "Done. Deleted files: $deleted_count"
+remove_dir() {
+    local path="$1"
+    if [[ -e "$path" ]]; then
+        rm -rf -- "$path"
+        echo "Removed: $path"
     fi
 }
 
-main "$@"
+remove_dir output
+remove_dir out
+remove_dir .pytest_cache
+remove_dir .mypy_cache
+remove_dir .ruff_cache
+remove_dir build
+remove_dir dist
+
+while IFS= read -r -d '' cache_dir; do
+    rm -rf -- "$cache_dir"
+done < <(find . -type d -name '__pycache__' -print0)
+
+while IFS= read -r -d '' junk_file; do
+    rm -f -- "$junk_file"
+done < <(
+    find . -type f \
+        \( -name '*.pyc' -o -name '*.pyo' -o -name '*.tmp' \
+           -o -name '*.bak' -o -name '*.orig' -o -name '*.rej' \) \
+        -print0
+)
+
+echo "Cleanup complete."
