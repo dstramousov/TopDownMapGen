@@ -12,6 +12,7 @@ from .tactical.places import (
     MIN_PLACE_DISTANCE_TILES,
     PLACE_TYPE_NAMES,
 )
+from .tactical.traversal import DEFAULT_TRAVERSAL_RULES
 from .tactical.runtime_objects import (
     BUNKER_TYPES,
     COLLISION_MOVEMENT_VALUES,
@@ -1055,6 +1056,9 @@ def _package_elevation_model_valid(package: dict[str, Any]) -> bool:
     rules = _json_object(elevation_model.get("rules"))
     if not {"movement", "line_of_sight", "projectiles", "render_order"}.issubset(rules):
         return False
+    movement_rules = _json_object(rules.get("movement"))
+    if movement_rules.get("max_natural_delta") != DEFAULT_TRAVERSAL_RULES.max_natural_delta:
+        return False
     summary = _json_object(elevation_model.get("summary"))
     present_levels = set(_string_list(summary.get("levels_present")))
     height_grid = _json_object(_json_object(_json_object(package.get("runtime_grids")).get("grids")).get("height_grid"))
@@ -1078,8 +1082,7 @@ def _package_height_grid_levels_valid(package: dict[str, Any]) -> bool:
     rows = _package_height_grid_rows(package)
     if not rows:
         return False
-    allowed_levels = {-1, 0, 1, 2, 3, 4}
-    return all(value in allowed_levels for row in rows for value in row)
+    return all(MIN_ELEVATION_LEVEL <= value <= MAX_ELEVATION_LEVEL for row in rows for value in row)
 
 
 def _package_elevation_transitions_match_height_grid(package: dict[str, Any]) -> bool:
@@ -1225,10 +1228,13 @@ def _package_points_elevation_reachable(
                 continue
             current_level = height_rows[y][x]
             next_level = height_rows[ny][nx]
-            if current_level != next_level:
-                edge = frozenset({(x, y), (nx, ny)})
-                if edge not in transition_pairs:
-                    continue
+            edge = frozenset({(x, y), (nx, ny)})
+            if not DEFAULT_TRAVERSAL_RULES.allows_step(
+                current_level,
+                next_level,
+                transition_allowed=edge in transition_pairs,
+            ):
+                continue
             visited.add((nx, ny))
             queue.append((nx, ny))
     return False
@@ -1575,9 +1581,9 @@ def _elevation_cells_match_trench_footprints(runtime_data: dict[str, Any]) -> bo
     negative_elevation_points = {
         point
         for point, level in _elevation_level_by_point(runtime_data).items()
-        if level == TRENCH_ELEVATION_LEVEL
+        if level < 0
     }
-    return negative_object_points == negative_elevation_points
+    return negative_object_points.issubset(negative_elevation_points)
 
 
 
@@ -2008,11 +2014,12 @@ def _runtime_objects_avoid_blocked_tiles(
     if not tile_grid:
         return False
     for item in _runtime_objects(runtime_data):
+        flooded = item.get("flooded") is True
         for point in _runtime_object_points(item):
             x, y = point
             if y < 0 or y >= len(tile_grid) or x < 0 or x >= len(tile_grid[y]):
                 return False
-            if tile_grid[y][x] not in PASSABLE_OBJECT_TILES:
+            if tile_grid[y][x] not in PASSABLE_OBJECT_TILES and not flooded:
                 return False
     return True
 

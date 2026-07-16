@@ -438,238 +438,459 @@
 
 ## v0.0.52 -> v0.0.53
 
-- Добавлен отдельный пакет `top_down_visualgen` как независимый consumer публичного `map_package`, без импорта внутренних модулей world generator-а.
-- Добавлен `visual_profiles/default` с контрактными visual rules: tilesets, terrain mapping, road/water/forest autotile rules, object sprite mapping, decoration/prefab placeholders.
-- Добавлен CLI visual pipeline, который создаёт `output/visual_map/visual_map.json`, `visual_layers.json`, `visual_objects.json`, `visual_chunks.json` и `preview.png`.
-- `./r` переведён на команды `all`, `world`, `preview`, `visual`, `inspect`, `test`; дефолтный запуск теперь делает world package, world preview и visual map.
+- Добавлен next-generation elevation MVP на базе FBM/value noise, domain warp, ridged component и террасирования уровней.
+- Диапазон высот расширен до `-5..20`, а `height_grid` теперь заполняется как полноценный слой карты, а не только редкими object-derived cells.
+- Terrain-aware коррекция удерживает дороги около уровня земли, воду в низинах, а start/goal на базовом уровне `0`.
+- Экспорт `elevation_model.json` теперь описывает все уровни `-5..20`, а natural slope-переходы с delta=1 считаются допустимыми для движения.
+- Добавлены JSON-отчёты `world_density_report.json`, `elevation_density_report.json` и `world_summary_report.json`.
+- CLI выводит итоговую человекочитаемую summary-сводку после генерации.
+- Helper `./r` получил явные стадии `cleanup output`, `world generation` и `world preview`.
 - Версия проекта поднята до `0.0.53`.
 
 ## v0.0.53 -> v0.0.54
 
-- Visual profile `default` переименован в `dark_forest` и перенесён внутрь пакета `top_down_visualgen/profiles/dark_forest`, чтобы visual rules жили рядом с visual pipeline, но отдельно от кода.
-- CLI visual pipeline и helper `./r` теперь по умолчанию используют `top_down_visualgen/profiles/dark_forest`.
-- Добавлена dev-утилита `bin/render_visual_pipeline_steps.py`, которая рендерит пошаговые PNG visual pipeline в `output/visual_map/debug/steps/`.
-- `./r` получил команду `visual-debug`, а дефолтный `./r all` теперь строит world preview, visual map и step debug previews.
+- Обычный CLI-запуск больше не печатает подробные INFO-логи в консоль; детальный лог пишется в `output/generation.log`.
+- Добавлен CLI-флаг `--summary-file`, чтобы helper `./r` мог вывести summary последним блоком после preview.
+- Helper `./r` теперь показывает только стадии, world preview и финальную summary-сводку; технический cleanup-вывод скрыт.
+- В summary исправлено выравнивание блока Debug files и добавлен путь к `generation.log`.
 - Версия проекта поднята до `0.0.54`.
-
 
 ## v0.0.54 -> v0.0.55
 
-- Autotiling core получил режимы `cardinal_4` и `blob_8`, чтобы дороги оставались сетевыми, а вода/лес получали edge/corner/fill-варианты.
-- `dark_forest` profile поднят до `autotile-rules-v2` и теперь использует семантические variants: `road.turn_*`, `water.edge_*`, `forest.outer_corner_*`, `inner_corner_*` и fallback tiles.
-- Visual pipeline теперь пишет `debug/autotile_report.json` со сводкой по группам, variants и fallback-использованию.
-- Step renderer получил отдельный слой `05_autotile_fallbacks.png`, чтобы сразу видеть дырки в visual rules.
+- Elevation generator переведён на size-aware Red Blob-подход: сначала выбирается профиль размера карты, потом строится FBM/redistribution/terraced heightmap.
+- Формат высот остаётся `-5..20`, но активный диапазон, редкие уровни, размер террас, smoothing и max natural delta теперь зависят от размера карты.
+- Для маленьких карт генератор автоматически сужает диапазон высот, чтобы не создавать резкие скачки и микротеррасы в один-два тайла.
+- Ground corridor вокруг маршрута `start -> goal` теперь сглаживается радиусом профиля, а не просто прорезает одиночную линию уровня `0`.
+- В elevation reports и console summary добавлен блок `elevation profile` с map class, active/rare range, terrace target, smoothing passes и max natural delta.
 - Версия проекта поднята до `0.0.55`.
-
 
 ## v0.0.55 -> v0.0.56
 
-- `dark_forest` profile получил aliases для реальных terrain-типов генератора: `old_overgrown_road`, `water_slow`, `cracked_ground`, `bush_slow_concealment`, `ruin_wall_blocker`, `ruin_floor`, marker/decor terrain.
-- Road/water/forest autotiling теперь покрывает реальные terrain-типы из `map_package`, поэтому дороги и вода попадают в debug steps, а не теряются на базовом mapping.
-- Visual pipeline пишет `debug/unmapped_terrain_report.json`, чтобы сразу видеть terrain-типы, которые ушли в default tile.
-- Visual map contract получил ссылку на unmapped terrain report, а tests покрывают aliases и нулевой unmapped status.
+- Preview renderer получил географическую hypsometric-палитру высот для всего диапазона `-5..20`.
+- `full_world_preview.png` теперь может выводить правую legend-панель с профилем elevation, bands, counts и процентами по каждому уровню.
+- Добавлен отдельный `output/elevation_preview.png`: чистая карта высот без terrain/object overlays, с контурами и легендой.
+- Helper `./r` теперь строит оба preview-файла перед финальной summary.
+- В Debug files summary добавлены пути к `full_world_preview.png` и `elevation_preview.png`.
 - Версия проекта поднята до `0.0.56`.
 
 ## v0.0.56 -> v0.0.57
 
-- `water_slow` в `dark_forest` profile переосмыслен как `swamp` — болотистая проходимая местность, а не открытая вода.
-- Добавлена autotile-группа `swamp` с собственными `swamp.*` tile ids, чтобы болото визуально отделялось от настоящей воды.
-- Добавлен первый decoration pass для болота: камыш, мокрая трава, грязевые пятна и сухие ветки как небоевые visual decorations.
-- Visual pipeline теперь пишет `debug/decoration_report.json`, а step renderer создаёт `08_decoration.png` и финальный `09_final_preview.png`.
+- Elevation generator получил отдельный geographic pass: macro regions, moisture field и geographic masks перед финальным террасированием.
+- Red Blob-подход уточнён как geography-first: крупные формы мира строятся до visual/object placement и не зависят от руин, бункеров, дорог или других gameplay-фич.
+- В elevation reports добавлены macro regions, moisture stats, slope bands и маски `basins`, `lowlands`, `plains`, `hills`, `plateaus`, `ridges`, `mountains`, `peaks`.
+- Preview renderer получил standalone-режимы `--geography-only`, `--moisture-only` и `--slope-only`.
+- Helper `./r` теперь дополнительно создаёт `geography_preview.png`, `moisture_preview.png` и `slope_preview.png`.
 - Версия проекта поднята до `0.0.57`.
 
 ## v0.0.57 -> v0.0.58
 
-- Decoration rules for `dark_forest` получили swamp influence pass: мокрая трава, грязевые края, редкий камыш и сухие ветки теперь могут появляться на проходимой земле рядом с болотом.
-- `DecorationMapper` научился матчить правила по соседним autotile-группам через `nearby_autotile_groups` и `nearby_radius`, не меняя terrain, collision или movement grids.
-- Decoration rule selection теперь продолжает проверять следующие правила после deterministic chance miss, чтобы низкоприоритетные контекстные правила могли сработать на той же клетке.
-- В debug tileset добавлены placeholder sprites для новых swamp influence decorations.
+- Разделён preview смыслов высоты: география, вода и структурная глубина больше не смешиваются в один "синий низ".
+- `elevation_preview.png` теперь красит воду только по terrain/hydrology source, а bunker/trench/pit depth показывает отдельной структурной палитрой.
+- `geography_preview.png` теперь использует чистую географическую высоту до object-derived elevation overrides.
+- Добавлен `output/elevation_source_preview.png` для контроля источников высоты: geography/water/structural.
+- В geography/elevation reports добавлены `source_grid`, `geographic_level_grid`, `runtime_level_grid` и source summary.
 - Версия проекта поднята до `0.0.58`.
 
 ## v0.0.58 -> v0.0.59
 
-- `dark_forest` decoration rules получили pass для старых заросших дорог: редкие травяные пучки, грязевой noise, мелкие камни и сломанные доски.
-- Декор теперь может появляться как на `road` autotile-группе, так и на соседней проходимой земле рядом с дорогой, не меняя collision, movement или terrain grids.
-- В debug tileset добавлены placeholder sprites для road decorations, чтобы `visual-debug` показывал заросшие дороги на пошаговом preview.
+- Добавлен standing-water / lowland слой диагностики без рек и flow-map.
+- География теперь отдельно классифицирует deep/shallow water, wet lowlands, dry lowlands, dry land и structural depth.
+- В отчёты добавлены standing-water summary и `water_lowland_grid`.
+- Добавлен debug preview `output/water_lowland_preview.png` и CLI-режим `--water-lowlands-only`.
+- Summary теперь показывает, что water model работает без рек и не смешивает структурную глубину с водой.
 - Версия проекта поднята до `0.0.59`.
 
 
 ## v0.0.59 -> v0.0.60
 
-- `dark_forest` decoration rules получили MVP pass для руин: rubble, cracked stones, fallen bricks, broken blocks и mossy stones.
-- `DecorationMapper` научился матчить контекстные правила по соседним terrain-типам через `nearby_terrain_types` и `nearby_radius`, чтобы декорировать землю рядом со стенами/полами руин без изменения gameplay.
-- В debug tileset добавлены placeholder sprites для ruin decorations, чтобы `visual-debug` показывал руины менее техническими серыми зонами.
+- Исправлен источник шахматных elevation-артефактов: старый simultaneous min/max relax мог заставлять соседние клетки обмениваться высокими/низкими уровнями и создавать checkerboard-террасы.
+- Relax высот переведён на stable median-envelope pass с in-place обновлением, чтобы резкие перепады сходились к локальной форме вместо ping-pong oscillation.
+- Имя elevation generator обновлено до `size_aware_red_blob_geography_v2`.
+- Географические preview должны давать плавные террасы без ряби из чередующихся уровней.
 - Версия проекта поднята до `0.0.60`.
-
 
 ## v0.0.60 -> v0.0.61
 
-- Добавлен MVP place visual treatment: visual pipeline теперь читает semantic places и добавляет небольшие небоевые scene accents по типам мест.
-- `dark_forest` profile получил `place_visual_rules.json` для `ruined_camp`, `swamp_crossing`, `blocked_road`, `small_loot_pocket`, bunker areas, lowlands, defensive positions, forest obstructions и small ruin sites.
-- Visual pipeline теперь пишет `debug/place_treatment_report.json`, а `visual-debug` добавляет шаг `09_place_treatment.png` перед финальным preview.
-- В debug tileset добавлены placeholder sprites для лагерей, завалов, переходов через болото, bunker debris, defensive remnants и скрытых cache markers.
+- Добавлен pseudo-3D preview чистой географической высоты из четырёх углов карты: NW, NE, SE, SW.
+- Новый renderer `examples/render_geography_3d_preview.py` строит PNG 2560×1440 в `output/geography_3d_preview/`.
+- `./r` теперь добавляет стадию `3d geography preview` и генерирует четыре 3D diagnostic PNG после обычных 2D geography/slope preview.
+- Summary/debug files теперь перечисляет новые 3D preview-файлы.
 - Версия проекта поднята до `0.0.61`.
 
 ## v0.0.61 -> v0.0.62
 
-- Добавлен `world_density_report.json` с плотностной сводкой terrain, collision, movement, elevation, transitions и world structure после генерации карты.
-- Visual pipeline получил `debug/visual_density_report.json` с плотностью visual objects, breakdown по source/category и top sprites.
-- CLI world/visual теперь выводят компактные density summaries с target intervals и статусами `low/ok/high/critical`.
-- В `dark_forest` profile добавлен `visual_density_rules.json`, чтобы нормы плотности visual layer жили в профиле, а не в коде.
-- Helper `./r world` явно удаляет старые `generation.log` и `world_density_report.json` перед новым запуском.
+- 3D preview renderer получил режим `--overlay walkability`, который накладывает проходимость поверх чистой географической высоты.
+- Добавлены четыре PNG `walkability_nw/ne/se/sw.png` в `output/geography_3d_preview/` с разрешением 2560×1440.
+- Walkability overlay показывает reachable, slow terrain, blocked, water, structural depth, unreachable walkable, start и goal.
+- Renderer дополнительно пишет `output/geography_3d_preview/walkability_report.json` с количеством тайлов по категориям.
+- Helper `./r` теперь добавляет стадию `3d walkability preview` после чистой 3D-географии.
+- Summary/debug files теперь перечисляет новые 3D walkability preview-файлы и отчёт.
 - Версия проекта поднята до `0.0.62`.
 
 
 ## v0.0.62 -> v0.0.63
 
-- Helper `./r all` переведён в quiet-mode: внутренние логи world/preview/visual/debug stage-ов пишутся в `output/logs/`, а в консоль выводится только итоговая приборная панель.
-- Добавлен `bin/print_pipeline_summary.py`, который собирает world/visual density, autotiling, unmapped terrain, visual elevation и debug-файлы в единый читаемый summary.
-- Добавлена команда `./r summary` для повторной печати итоговой сводки по существующему `output/` без повторной генерации.
-- При падении stage helper показывает имя упавшего этапа и путь к соответствующему log-файлу, не печатая ложный `Overall: ok`.
+- Добавлен 3D traversal overlay, который проверяет проходимость с учётом географической высоты и запрещает естественные переходы с перепадом больше одного уровня.
+- В `geography_3d_preview` добавлены четыре PNG `traversal_nw/ne/se/sw.png` и `traversal_report.json` с 2D/3D reachability, слишком крутыми тайлами и passable cliff edges.
+- Structural depth в 3D overlay больше не красит всю колонну в фиолетовый: бункеры/ямы/траншеи показываются маркером на поверхности географии.
+- Helper `./r` теперь добавляет стадию `3d traversal preview`, а summary/debug files перечисляет новые traversal-артефакты.
 - Версия проекта поднята до `0.0.63`.
 
 ## v0.0.63 -> v0.0.64
 
-- Добавлен документ `docs/visual_micro_scenes_dark_forest.md` с утверждённым стилем `dark_forest_post_soviet_ruins`, списком микросцен и bilingual catalog для предметов.
-- `dark_forest/place_visual_rules.json` поднят до `place-visual-rules-v2` и получил metadata для будущих вариативных микросцен: world style, role distribution, scene catalog и weighted scene variants.
-- В `visual_tilesets.json` добавлены placeholder sprite ids для будущих human traces, roadblocks, ruins, swamp, defensive и forest micro-scene objects.
-- Интерактивность не реализуется: роли `visual`, `inspectable_candidate`, `loot_candidate`, `story_candidate` и `cover_hint` сохранены только как metadata на будущее.
+- Добавлен repair-pass 3D traversal consistency для start-connected walkable области.
+- Географические уровни теперь мягко чинятся там, где 2D-проходимость ломалась перепадом высоты больше допустимого `max_natural_delta`.
+- `traversal_report.json` теперь различает 3D-недостижимые тайлы и отдельные 2D terrain islands.
+- Summary расширен строкой `traversal repair` с количеством исправленных недостижимых тайлов.
 - Версия проекта поднята до `0.0.64`.
-
 
 ## v0.0.64 -> v0.0.65
 
-- Реализована вариативная раскладка микросцен через `scene_variants` и `weighted_pool`.
-- `place_treatment` теперь выбирает компактные anchor-cluster композиции, роли объектов и редкость без добавления gameplay-интерактивности.
-- Расширен `place_treatment_report.json`: варианты сцен, роли, редкость, обработанные места и причины пропуска.
+- Добавлена policy-очистка tiny 2D terrain islands перед построением runtime layers.
+- Малые isolated walkable-компоненты, не связанные со стартовой областью, теперь переводятся в ближайший blocker terrain и перестают выглядеть как ложные playable-острова.
+- Крупные isolated-регионы не соединяются и не удаляются: они сохраняются, но явно попадают в `terrain_island_report.json`.
+- Summary и `elevation_density_report.json` теперь показывают, сколько малых островов удалено и сколько крупных сохранено.
 - Версия проекта поднята до `0.0.65`.
+
 
 ## v0.0.65 -> v0.0.66
 
-- Добавлен документ `docs/visual_elevation_dark_forest.md` с каталогом visual elevation для уровней `-1..4`, переходов, edge markers и будущего boundary treatment.
-- В `dark_forest` profile добавлен `elevation_visual_rules.json` как контракт будущего `elevation visual pass`; `Level 4` зафиксирован как `visual_only_landmark`, не traversable high-ground.
-- В `visual_tilesets.json` добавлены placeholder sprite/tile ids для elevation overlays, lowland/raised/platform/high-point markers, transitions и будущего map boundary treatment.
-- Boundary treatment зафиксирован как отдельная будущая система визуального края карты, не смешанная с внутренними `Level 4` landmark-объектами.
+- Добавлен отсутствующий модуль `top_down_worldgen.tactical.terrain_islands`, который был подключён в pipeline в `v0.0.65`.
+- Реализованы `elevation_cell_points()` и `repair_terrain_islands()` для удаления мелких 2D walkable-островов и отчёта `terrain_island_report.json`.
 - Версия проекта поднята до `0.0.66`.
 
 ## v0.0.66 -> v0.0.67
 
-- Добавлен MVP `elevation visual pass` для визуального отображения высот и низин.
-- Добавлен `elevation_visual_report.json` и debug-шаг `10_elevation_visual.png`.
-- Visual pipeline теперь добавляет non-gameplay elevation markers без изменения collision/movement/height_grid.
-- Summary/visual density используют фактический elevation visual report.
+- Elevation pipeline переведён на polygon-inspired macro geography: высота теперь строится от мягкой карты крупных регионов, а не только от FBM-шумов.
+- Macro regions получили базовую высоту, влажность, roughness, priority и граф соседства регионов для диагностики формы мира.
+- В `elevation_generation_report` добавлен `region_grid` и serializable region graph, чтобы видеть, какой регион управляет каждым тайлом.
+- Консольный summary теперь показывает количество macro region graph edges.
+- Имя elevation generator обновлено до `size_aware_polygonal_macro_geography_v1`.
+- Smoke-тест default config обновлён под текущий размер карты 192x192.
 - Версия проекта поднята до `0.0.67`.
+
 ## v0.0.67 -> v0.0.68
 
-- Настроен elevation visual pass, чтобы меньше шуметь transition-маркерами на плотных цепочках краёв.
-- `elevation_visual_rules.json` поднят до `elevation-visual-rules-v2` и получил `transition_marker_stride`.
-- Непроходимые elevation transitions теперь отображаются как danger/edge hints, а не как проходимые лестницы/ступени.
-- `elevation_visual_report.json` теперь показывает разбивку transition markers по типам и sprite id.
+- Добавлен проход сглаживания walkable-стыков macro-регионов без изменения moisture/wet-lowland/water model.
+- Main route теперь выравнивается по 3D-рельефу до финального traversal repair: semantic places собираются до elevation pass, затем маршрут получает естественный slope corridor с `delta <= max_natural_delta`.
+- В elevation report и console summary добавлены `region_transition_shaping` и `main_route_alignment`.
+- Генератор переименован в `size_aware_polygonal_macro_geography_v2`.
 - Версия проекта поднята до `0.0.68`.
 
 ## v0.0.68 -> v0.0.69
 
-- Добавлен visual-only `map boundary visual treatment` для красивого непроходимого края карты.
-- Добавлены `boundary_visual_rules.json`, `BoundaryVisualMapper`, `boundary_visual_report.json` и debug-step `11_boundary_visual.png`.
-- `visual_density_report` и `./r summary` теперь показывают boundary-слой отдельно от декора/elevation.
+- Добавлены пользовательские elevation style presets для управления характером рельефа из public config.
+- Поддержаны стили `flatland`, `rolling_hills`, `normal`, `rugged`, `mountainous`, `plateau`.
+- `configs/default.json` получил блок `elevation.style`, по умолчанию `normal`.
+- Pipeline передаёт выбранный стиль в elevation generator; summary/report теперь показывают активный стиль рельефа.
+- Генератор переименован в `size_aware_polygonal_macro_geography_v3`.
 - Версия проекта поднята до `0.0.69`.
 
 ## v0.0.69 -> v0.0.70
 
-- Добавлен `assets_manifest.json` для `dark_forest` profile как контракт будущих PNG-ассетов для всех `tile_id` и `sprite_id`.
-- Добавлен документ `docs/visual_assets_manifest_dark_forest.md` с правилами asset manifest contract.
-- Добавлен валидатор `bin/validate_assets_manifest.py`, который сверяет `visual_tilesets.json` с `assets_manifest.json` без требования реальных PNG-файлов.
-- `VisualProfileLoader` теперь загружает `assets_manifest.json` как обязательную часть visual profile.
-- `./r assets` и `./r test` теперь проверяют assets manifest contract.
+- Восстановлены документы публичного контракта `map_package/`, которые уже указаны в README и проверяются тестом документации.
+- Добавлены `docs/map_package_v1.md`, `docs/game_consumer_guide.md`, `docs/world_building_algorithm.md`, `docs/world_package_file_map.md`.
+- Документация фиксирует текущую elevation-модель `-5..20`, отличие low ground от actual water, runtime grids, semantic world graph, routes и порядок чтения пакета внешней игрой.
 - Версия проекта поднята до `0.0.70`.
 
 ## v0.0.70 -> v0.0.71
 
-- Немного снижена плотность мелкого decoration layer, чтобы visual density возвращался в целевой диапазон без расширения лимитов.
-- `decoration_rules.json` поднят до `decoration-rules-v6`: уменьшены шансы для swamp/road/ruins мелкого декора.
-- `boundary_visual_rules.json` поднят до `boundary-visual-rules-v2`: добавлены weighted boundary type variants для более разнообразного края карты.
-- `BoundaryVisualMapper` теперь выбирает вариативный boundary type детерминированно, сохраняя dense forest как основной тип края.
+- Добавлен инструмент `tools/render_elevation_style_gallery.py` для сравнения elevation style presets на одном seed.
+- Gallery-режим генерирует отдельные output-папки для `flatland`, `rolling_hills`, `normal`, `rugged`, `mountainous`, `plateau` без изменения алгоритма генерации.
+- Для каждого стиля создаются `geography_preview.png`, `elevation_preview.png`, `slope_preview.png`, а также общий `style_gallery.png`, `style_comparison_report.json` и `style_comparison_summary.md`.
 - Версия проекта поднята до `0.0.71`.
 
 ## v0.0.71 -> v0.0.72
 
-- Добавлена dev-утилита `bin/generate_asset_registry_preview.py`, которая строит JSON/HTML предпросмотр asset registry для visual profile.
-- Новый вывод `asset_registry_report.json` показывает все `tile_id`/`sprite_id`, категории, draw layers, asset status, top tags и полный список entries.
-- Новый HTML `asset_registry_preview.html` помогает вручную просмотреть будущий объём ассетов перед подключением реальных PNG.
-- Добавлена команда `./r asset-preview`; полный `./r` теперь генерирует asset registry preview перед итоговым summary.
-- В summary добавлены ссылки на asset registry report и HTML preview.
+- Подкручены elevation style presets по новой пользовательской спецификации диапазонов и частоты уровня.
+- `flatland` теперь использует диапазон `-5..4`, частую мягкую волну и больше нижних уровней.
+- `rolling_hills` теперь использует диапазон `-5..10`, среднюю волну и настроен как основной игровой кандидат.
+- `mountainous` и `plateau` используют полный диапазон `-5..20`, но различаются частотой: частые горные изменения против редких крупных плато.
+- В профиль elevation добавлены `wave_frequency` и `character`, summary теперь печатает эти поля.
+- Генератор переименован в `size_aware_polygonal_macro_geography_v4`.
 - Версия проекта поднята до `0.0.72`.
 
 ## v0.0.72 -> v0.0.73
 
-- Добавлен генератор placeholder asset pack для профиля `dark_forest`.
-- Добавлено поле `asset_root` в `assets_manifest.json`, чтобы физические PNG лежали в `assets/dark_forest/`, а не внутри профиля.
-- Добавлены команды `./r asset-pack` и `./r assets-full`.
-- `asset_registry_preview.html` теперь показывает thumbnails для существующих asset-файлов.
-- Добавлен документ `docs/visual_asset_pack_dark_forest.md`.
+- Добавлен стиль elevation `super_flatland`.
+- Стиль `super_flatland` ограничивает активный и редкий диапазон высот до `-1..1`.
+- `super_flatland` добавлен в публичный config validation и в elevation style gallery.
+- В отчёте профиля стиль отображается как `nearly flat -1..1 micro relief` с частотой `soft`.
+- Обновлена документация `docs/map_package_v1.md`.
 - Версия проекта поднята до `0.0.73`.
-
 
 ## v0.0.73 -> v0.0.74
 
-- Добавлен asset-backed final renderer, создающий `output/visual_map/final_render.png` из `visual_layers.json`, `visual_objects.json` и PNG из `assets/dark_forest`.
-- Добавлен `final_render_report.json`, summary-блок `Final render` и команда `./r final-render`.
-- Visual pipeline теперь по умолчанию создаёт финальный PNG в нормальном разрешении через `assets_manifest.json`, не меняя gameplay/collision/routes.
-- Версия проекта поднята до `0.0.74`.
+- Добавлен изолированный post-elevation `RiverGenerator` с ограниченной шириной русла.
+- Добавлено локальное затопление связанных низин с лимитами площади и расстояния.
+- Добавлены river config, `river_report.json`, `river_preview.png` и диагностические данные в tactical map.
+
 
 ## v0.0.74 -> v0.0.75
 
-- Добавлен production manifest для ассетов профиля `dark_forest`.
-- Добавлен machine-readable план batch-ей `asset_batches.json` с первым batch `B01 — Grass + Forest Base`.
-- Добавлена команда `./r asset-plan` и JSON-отчёт `asset_production_plan_report.json`.
-- Зафиксирован первый набор из 20 planned assets для травы, земли и лесной массы.
-- Версия проекта поднята до `0.0.75`.
-
+- Добавлен пропущенный модуль `top_down_worldgen/tactical/river.py`, необходимый для запуска river pipeline.
+- Добавлены unit-тесты изолированного генератора реки.
+- Исправлена поставка патча: новые файлы теперь включены в diff.
 
 ## v0.0.75 -> v0.0.76
 
-- Добавлена утилита `bin/import_asset_drafts.py` для импорта accepted draft ZIP-архивов с ассетами в `assets/dark_forest/` по `assets_manifest.json`.
-- Добавлен профильный файл `asset_import_aliases.json`, который сопоставляет production draft id с логическими asset id проекта.
-- Добавлена команда `./r import-asset-packs [path]`, которая пишет `asset_draft_import_report.json` и не требует ручной раскладки PNG по папкам.
-- Добавлен документ `docs/dark_forest_asset_draft_import.md` и тесты импортера draft-паков.
+- Полностью удалён экспериментальный post-elevation `RiverGenerator`.
+- Удалены river config, pipeline hook, river preview/report и river diagnostics.
+- Удалены тесты экспериментального генератора реки; генерация возвращена к состоянию без рек.
 - Версия проекта поднята до `0.0.76`.
 
 ## v0.0.76 -> v0.0.77
 
-- Добавлен visual-only forest overlay pass для крупных хвойных кластеров поверх forest mask.
-- Добавлен профиль `forest_overlay_rules.json`, debug/report и summary-блок `Forest overlay`.
-- Добавлены asset manifest entries и import aliases для B08 forest large cluster sprites.
-- Visual debug steps теперь включают `12_forest_overlay.png`, а финальный preview переехал в `13_final_preview.png`.
+- Консольный вывод `./r` полностью переведён на русский язык и сокращён до читаемого поэтапного отчёта.
+- Удалены многократно повторявшиеся блоки `World preview / Rendered`; каждый этап теперь печатает одну строку и время выполнения.
+- Итоговый summary сокращён до ключевых показателей карты, проходимости, структуры мира и предупреждений validation.
+- Добавлено общее время выполнения и компактная сводка созданных preview-файлов.
+- Версия проекта поднята до `0.0.77`.
 
 ## v0.0.77 -> v0.0.78
 
-- Added `docs/dark_forest_rendering_model.md` to reset the visual direction after the forest/grass asset experiments.
-- Documented the new target model: grass as a calm base region and forest as a region/canopy renderer, not a noisy `16x16` tile carpet.
-- Marked B01-B07 assets as useful prototype/test assets rather than final art quality.
-- Marked the forest overlay work as experimental and defined the next proposed steps around grass and forest region rendering.
+- Переведено название этапа `3D-traversal` в консольном выводе на `3D-связность`.
+- Технический warning `quality.map_package_main_path_elevation_reachable` заменён понятным русским описанием.
+- Показатель `болота / вода` переименован в `болотная местность`, чтобы не дублировать отдельную статистику стоячей воды.
 - Версия проекта поднята до `0.0.78`.
 
 ## v0.0.78 -> v0.0.79
 
-- Добавлен `GrassBaseRenderer` как первый практический шаг новой модели рендера `dark_forest`.
-- Добавлен профильный файл `grass_render_rules.json` для спокойной травяной базы, мягких patches и переходов к лесу.
-- `visual_layers` теперь получает более спокойные grass tile IDs до декора/объектов.
-- Добавлены `grass_render_report.json` и debug step `02_grass_base_render.png`.
-- Summary выводит блок `Grass renderer`.
-- Gameplay-слои не меняются: collision, movement, routes, start/goal остаются источником истины world package.
+- Выделен публичный ранний `GeographyDraft` с непрерывными полями высоты, влажности и макрорегионов.
+- Черновая география теперь строится до legacy terrain-генератора и повторно используется финальным elevation без изменения карты.
+- Добавлена строгая проверка соответствия draft размеру, seed и elevation style.
+- Добавлены тесты детерминированности и идентичности результата с прежним расчётом.
 - Версия проекта поднята до `0.0.79`.
 
 ## v0.0.79 -> v0.0.80
 
-- Восстановлен отсутствующий модуль `top_down_visualgen.grass_base_renderer`.
-- Добавлен отсутствующий профильный файл `grass_render_rules.json` для `dark_forest`.
-- `visual_pipeline` снова может импортировать и выполнять grass base pass без `ModuleNotFoundError`.
+- Ранний `GeographyDraft` сериализуется в компактный guidance-файл и передаётся из pipeline в legacy terrain-генератор.
+- Добавлен изолированный `TerrainGuidance`: центры регионов, руины, поляны и дороги теперь предпочитают ровные участки и обходят крутые склоны/обрывы.
+- Добавлен geography-aware coarse A* для дорожной сети с безопасным fallback на прежний winding path.
+- Добавлены `terrain_guidance_report.json`, консольная диагностика адаптации terrain и manifest-описания новых служебных артефактов.
 - Версия проекта поднята до `0.0.80`.
 
 ## v0.0.80 -> v0.0.81
 
-- README.md rewritten around the world package as the core project deliverable.
-- Added architecture, output-format and roadmap documentation for the stabilized generator direction.
-- Changed `./r`/`./r all` to generate the core world package by default; full visual processing moved to explicit `./r visual-all`.
-- Simplified cleanup helper `./c` so it only clears output directories and no longer deletes arbitrary project files by extension.
-- Version bumped to `0.0.81`.
+- Финальная природная сетка высот теперь формируется до legacy terrain-генератора.
+- В terrain guidance добавлены натуральные integer elevation/slope grids; поздний elevation-проход повторно использует раннюю географию.
+- Добавлена контрольная проверка эквивалентности ранней природной географии перед terrain-зависимыми адаптациями.
+- Версия проекта поднята до `0.0.81`.
+
+## v0.0.81 -> v0.0.82
+
+- Открытая земля, дороги и локальная вода теперь учитывают natural barrier и wetland suitability.
+- Лесные кластеры учитывают влажность, высоту и уклон; добавлена диагностика отклонённых кандидатов.
+- Добавлена проверка перепада высот внутри footprint руин и расширен terrain guidance report.
+- Версия проекта поднята до `0.0.82`.
+
+## v0.0.82 -> v0.0.83
+
+- Исправлена диагностика дорожных склонов: трудные участки (`delta == 2`) и природные обрывы (`delta > 2`) теперь считаются раздельно по integer elevation.
+- `traversal repair` получил отчёт о доле изменённой карты, направлениях и величине коррекции высот, а также разбивку изменений по типам terrain.
+- Консольный итог теперь показывает процент карты и основные категории terrain, затронутые repair.
+- Версия проекта поднята до `0.0.83`.
+
+## v0.0.83 -> v0.0.84
+
+- Дороги и маркеры сценария больше не принудительно выравниваются к уровню `0`; они сохраняют природную высоту географии.
+- Устранён главный источник массового traversal repair на дорогах и соседней открытой земле.
+- В traversal repair report добавлен список изменённых тайлов и отдельный preview сравнения высот до/после repair.
+- Версия проекта поднята до `0.0.84`.
+
+## v0.0.84 -> v0.0.85
+
+- Добавлен единый контракт `TraversalRules` для естественных перепадов высот.
+- Traversal repair, 3D-preview и validation используют общий лимит `max_natural_delta = 1`.
+- Проверка маршрутов разрешает естественные переходы в пределах лимита без обязательного structural connector.
+- Публичный `elevation_model.json` теперь явно экспортирует числовой лимит естественного перепада.
+- Версия проекта поднята до `0.0.85`.
+
+## v0.0.85 -> v0.0.86
+
+- Исправлен запуск `render_geography_3d_preview.py` как самостоятельного скрипта: корень проекта добавляется в путь импорта до загрузки `top_down_worldgen`.
+- Восстановлена генерация 3D-preview без необходимости вручную задавать `PYTHONPATH`.
+- Добавлен smoke-тест запуска 3D-renderer из внешнего рабочего каталога.
+- Версия проекта поднята до `0.0.86`.
+
+
+## v0.0.86 -> v0.0.87
+
+- Добавлен комбинированный комплект 3D-preview из четырёх камер: elevation, semantic terrain и проходимость на одной карте.
+- Тайлы леса отображаются небольшими объёмными деревьями на фактической высоте, а заблокированные, медленные, водные и структурные области получают отдельную диагностику.
+- Команда `./r` создаёт `terrain_traversal_{nw,ne,se,sw}.png` и `terrain_traversal_report.json`; количество preview увеличено до 24.
+- Версия проекта поднята до `0.0.87`.
+
+## v0.0.87 -> v0.0.88
+
+- Добавлено позднее детерминированное прореживание визуальных деревьев по высоте и уклону.
+- На уровнях 18..20 визуальные деревья полностью удаляются, collision и walkability не меняются.
+- В map package добавлен `render/vegetation_visual.json`, комбинированный 3D-preview использует эту маску.
+- Версия проекта поднята до `0.0.88`.
+
+
+## v0.0.88 -> v0.0.89
+
+- Отрицательные уровни получили гидрологическую семантику: -5..-2 являются непроходимой водой, -1 — медленной влажной кромкой.
+- Обычные деревья удаляются на уровнях -5..-1; на -1 детерминированно размещается камыш с настраиваемой густотой.
+- Вероятность камыша уменьшается рядом с более глубокими уровнями воды; terrain, collision, movement grids и 3D-preview используют общую модель.
+- Версия проекта поднята до `0.0.89`.
+
+
+## v0.0.89 -> v0.0.90
+
+- START и GOAL теперь выбираются после финальной гидрологии внутри одной крупнейшей 3D-проходимой сухой компоненты.
+- Старые маркеры корректно возвращаются в итоговый terrain, а новые точки выбираются детерминированно, вдали друг от друга и вне runtime-объектов.
+- Камыш в комбинированном 3D-preview отображается простой контрастной оранжевой точкой.
+- Версия проекта поднята до `0.0.90`.
+
+## v0.0.90 -> v0.0.91
+
+- Добавлен отсутствовавший модуль позднего выбора START/GOAL, из-за которого v0.0.90 не запускался.
+- Восстановлены детерминированный выбор точек в крупнейшей сухой 3D-проходимой компоненте и маркировка затопленных runtime-объектов.
+- Добавлены тесты позднего выбора START/GOAL и обработки runtime-объектов после гидрологии.
+- Версия проекта поднята до `0.0.91`.
+
+
+## v0.0.91 -> v0.0.92
+
+- Добавлено детерминированное визуальное прореживание лесной кромки на глубину до четырёх тайлов без изменения collision и проходимости.
+- Вероятность видимого дерева плавно растёт от внешнего края к плотному лесному ядру; расчёт выполняется по исходной маске леса.
+- Кусты в комбинированном 3D-preview получили отдельный контрастный бирюзово-зелёный маркер.
+- Версия проекта поднята до `0.0.92`.
+
+
+## v0.0.92 -> v0.0.93
+
+- Финальная визуальная маска леса теперь согласуется с collision: скрытый `tree_blocker` открывается как обычная проходимая земля.
+- Другие причины блокировки не меняются: вода, стены, структуры и ограничения traversal по высоте сохраняются.
+- START/GOAL и итоговая связность пересчитываются после согласования растительности с проходимостью.
+- Версия проекта поднята до `0.0.93`.
+
+## v0.0.93 -> v0.0.94
+
+- После открытия визуально очищенных лесных тайлов выполняется финальная проверка 3D-связности.
+- Проходимыми остаются только очищенные тайлы крупнейшей итоговой компоненты; изолированные карманы снова получают явную причину блокировки.
+- Низинные изолированные карманы восстанавливаются как видимый лес, а высокогорные — как безлесные скальные блокеры.
+- START/GOAL, маршруты и validation по-прежнему строятся после окончательного согласования проходимости.
+- Версия проекта поднята до `0.0.94`.
+
+
+## v0.0.94 -> v0.0.95
+
+- Добавлена финальная очистка 3D-проходимости после позднего выбора START/GOAL.
+- Все проходимые, но недостижимые от START тайлы получают явную блокирующую семантику: вода для отрицательных уровней и скала для суши.
+- В tactical/debug-данные добавлен отчёт `final_3d_traversal_cleanup`; итоговый preview больше не должен содержать красные недостижимые карманы.
+- Версия проекта поднята до `0.0.95`.
+
+## v0.0.95 -> v0.0.96
+
+- Береговой камыш уровня `-1` и камыш старых луж разделены в визуальной маске, отчётах и комбинированном 3D-preview.
+- В `generation_tuning` добавлены параметры `bush_density` для дополнительных terrain-кустов и `bush_thicket_count` для runtime-зарослей.
+- Старый параметр `hydrology.reed_density` сохраняется как совместимый alias для `shore_reed_density`.
+- Версия проекта поднята до `0.0.96`.
+
+
+## v0.0.96 -> v0.0.97
+
+- Часть тайлов, освобождённых после прореживания лесной кромки и высотного леса, теперь получает проходимые кусты вместо пустой земли.
+- В `generation_tuning` добавлены отдельные плотности кустов для лесной кромки и высотного прореживания, а также максимальная высота их роста.
+- Кусты не размещаются в низинах, на обрывах и выше заданной границы; в map package они отмечаются как отдельный визуальный тип `reclaimed_bush`.
+- Версия проекта поднята до `0.0.97`.
+
+## v0.0.97 -> v0.0.98
+
+- Профиль `mountainous` переведён с набора разрозненных круглых гор на две детерминированные цепи связанных высокогорных регионов.
+- Горные и пиковые macro-регионы получили направленную вытянутую форму; уменьшены мелкий шум и количество независимых highland-регионов.
+- В geography-отчёт добавлен коэффициент вытянутости macro-региона для диагностики формы хребтов.
+- После финальной 3D-очистки повторно синхронизируется признак `flooded` у runtime-объектов; влажная кромка `w` теперь также считается неподходящей для их footprint.
+- Остальные elevation-профили и стадии hydrology/vegetation не изменялись.
+- Версия проекта поднята до `0.0.98`.
+
+
+## v0.0.98 -> v0.0.99
+
+- Профиль `plateau` переведён на один доминирующий массив и связанную вторичную полку вместо независимых круглых возвышенностей.
+- Плато получили увеличенную вытянутость, перекрывающиеся macro-регионы и более широкое плоское ядро с выраженной бровкой.
+- В `configs/default.json` выбран профиль `plateau` для проверки следующей серии карт.
+- Версия проекта поднята до `0.0.99`.
+
+
+## v0.0.99 -> v0.0.100
+
+- Доработан профиль `plateau`: крупноволновое искажение бровки убирает правильную овальность массива.
+- Площадь уровней `17..20` уменьшена, чтобы вершина не превращалась в огромную белую шапку.
+- На верхней площадке добавлены мягкие крупные полки и впадины без мелкого шумового рельефа.
+- Маршрутизация дорог для `plateau` сильнее штрафует естественные обрывы и в основном ищет пологие входы.
+- Версия проекта поднята до `0.0.100`.
+
+
+## v0.0.100 -> v0.0.101
+
+- В географические 3D-preview добавлен отдельный полупрозрачный объём воды для озёр на уровнях `-2..-5`.
+- Поверхность воды выравнивается на уровне `-1`, а дно и стенки низины остаются видны сквозь прозрачный синий слой.
+- Внутренние боковые грани соседних водных тайлов не рисуются, поэтому озеро выглядит единым объёмом, а не стопкой кубиков.
+- Генерация карты, hydrology и gameplay-семантика воды не изменялись.
+- Версия проекта поднята до `0.0.101`.
+
+
+## v0.0.101 -> v0.0.102
+
+- Исправлена визуализация воды в 3D-preview: водный объём теперь определяется напрямую по высотам `-5..-2`, без жёсткой зависимости от `water_lowland_grid`.
+- Полупрозрачная вода рисуется во всех четырёх наборах 3D-изображений: geography, walkability, traversal и terrain_traversal.
+- Поверхность воды сделана заметнее, при этом боковые стенки остаются более прозрачными и дно продолжает просвечивать.
+- Версия проекта поднята до `0.0.102`.
+
+## v0.0.102 -> v0.0.103
+
+- Удалены попавшие в исходный архив служебные каталоги `__pycache__`, `.pytest_cache` и пустой `output/`; рабочая генерация и формат выходного пакета не изменялись.
+- Добавлен `.gitignore` для Python-кэшей, виртуальных окружений, generated output, логов и локальных release-архивов/patch-файлов.
+- Скрипт `./c` переписан на безопасную адресную очистку: он больше не удаляет по всему репозиторию любые файлы `html` и `js`, а очищает только generated output, кэши и известные временные файлы.
+- Скрипт `./a` больше не упаковывает `output/`, вложенные `__pycache__`, `.pytest_cache` и ранее созданные ZIP/patch-артефакты.
+- Проверены связи модулей и assets: `legacy/` и `old_road_dot.png` используются текущим pipeline и намеренно сохранены.
+- Версия проекта поднята до `0.0.103`.
+
+
+## v0.0.103 -> v0.0.104
+
+- Флаг `--profile-performance` теперь собирает длительности всех стадий, уже размеченных через `timed_stage`, без изменения алгоритмов генерации.
+- После генерации выводится таблица самых дорогих стадий с абсолютным временем и долей общего времени.
+- В output записывается `performance_profile.json` с размером карты, временем на миллион тайлов, пиковым RSS процесса и полным списком замеров.
+- Обычный запуск без `--profile-performance` не создаёт профиль и не несёт заметных накладных расходов.
+- Версия проекта поднята до `0.0.104`.
+
+
+## v0.0.104 -> v0.0.105
+
+- Исправлена вложенность `timed_stage`: внутренние стадии больше не считаются независимыми верхнеуровневыми затратами.
+- В performance profile добавлен отдельный список `top_level_stages` без дублирования родительских и дочерних таймеров.
+- `build_geography_draft` разбит на построение макрорегионов, растеризацию полей, нормализацию elevation/moisture и смешивание влажности.
+- Legacy engine теперь сообщает длительности 21 внутренней стадии обратно в общий `performance_profile.json`.
+- Tactical processing разбит на загрузку raw data, оптимизацию, runtime layers, elevation, hydrology, vegetation, traversal cleanup и сериализацию.
+- Алгоритмы генерации не изменены; патч предназначен только для точного поиска узких мест.
+- Версия проекта поднята до `0.0.105`.
+
+
+## v0.0.105 -> v0.0.106
+
+- В `./r` восемь внутренних debug-overlay PNG больше не строятся по умолчанию; для полного набора используется `RENDER_DEBUG_LAYERS=1 ./r`. Основной base layer сохраняется.
+- Горячая функция lattice noise получила ограниченный LRU-кэш, переиспользующий одинаковые узловые значения между соседними тайлами без изменения результата для того же seed.
+- В растеризации geography заранее вычисляются нормализованные координаты строк и столбцов и постоянные масштабы карты, чтобы убрать повторные деления и `max()` из внутреннего цикла.
+- Версия проекта поднята до `0.0.106`.
+
+
+## v0.0.106 -> v0.0.107
+
+- Ускорено размещение runtime-объектов без изменения результата для того же seed.
+- Расстояние каждого кандидата до tactical anchors вычисляется один раз и переиспользуется для всех квот объектов.
+- Проверка минимальной дистанции до уже занятых клеток переведена с линейного перебора occupied на инкрементально обновляемое множество недоступных координат.
+- На контрольной карте 256x256 стадия `attach_runtime_layers` ускорилась примерно с 3.11 с до 1.27 с; SHA-256 списка из 149 runtime-объектов совпал.
+- Версия проекта поднята до `0.0.107`.
+
+
+## v0.0.107 -> v0.0.108
+
+- Ускорен финальный repair walkable connectivity: убран повторный полный поиск компонент после каждого успешного ремонта.
+- Сохранены прежние выбор компоненты, порядок ремонта и итоговая карта для одинакового seed.
+- В метрики connectivity repair добавлен счётчик `component_scans`.
+- Версия проекта поднята до `0.0.108`.

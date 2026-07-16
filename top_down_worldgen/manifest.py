@@ -8,12 +8,12 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v39"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v40"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
-TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.32"
-TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.20"
-RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v1"
+TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.33"
+TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.21"
+RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v2"
 VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v35"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v2"
@@ -38,6 +38,7 @@ OBJECT_TYPES_CATALOG_SCHEMA_VERSION = "object-types-catalog-v5"
 RENDER_PROFILE_SCHEMA_VERSION = "render-profile-v1"
 TILE_RENDER_HINTS_SCHEMA_VERSION = "tile-render-hints-v1"
 OBJECT_RENDER_HINTS_SCHEMA_VERSION = "object-render-hints-v5"
+VEGETATION_VISUAL_SCHEMA_VERSION = "vegetation-visual-report-v6"
 MARKERS_SCHEMA_VERSION = "markers-v1"
 RUNTIME_GRIDS_SCHEMA_VERSION = "runtime-grids-v1"
 WORLD_GRAPH_SCHEMA_VERSION = "world-graph-v2"
@@ -45,6 +46,12 @@ ROUTES_SCHEMA_VERSION = "routes-v1"
 GAMEPLAY_ZONES_SCHEMA_VERSION = "gameplay-zones-v1"
 ELEVATION_FEATURES_SCHEMA_VERSION = "elevation-features-v3"
 ELEVATION_TRANSITIONS_SCHEMA_VERSION = "elevation-transitions-v4"
+WORLD_DENSITY_REPORT_SCHEMA_VERSION = "world-density-report-v1"
+ELEVATION_DENSITY_REPORT_SCHEMA_VERSION = "elevation-density-report-v1"
+WORLD_SUMMARY_REPORT_SCHEMA_VERSION = "world-summary-report-v1"
+TERRAIN_ISLAND_REPORT_SCHEMA_VERSION = "terrain-island-repair-report-v1"
+GEOGRAPHY_GUIDANCE_SCHEMA_VERSION = "terrain-guidance-v2"
+TERRAIN_GUIDANCE_REPORT_SCHEMA_VERSION = "terrain-guidance-report-v3"
 
 
 @dataclass(frozen=True, slots=True)
@@ -146,11 +153,18 @@ def build_manifest(
         "render_profile": RENDER_PROFILE_SCHEMA_VERSION,
         "tile_render_hints": TILE_RENDER_HINTS_SCHEMA_VERSION,
         "object_render_hints": OBJECT_RENDER_HINTS_SCHEMA_VERSION,
+        "vegetation_visual": VEGETATION_VISUAL_SCHEMA_VERSION,
         "markers": MARKERS_SCHEMA_VERSION,
         "runtime_grids": RUNTIME_GRIDS_SCHEMA_VERSION,
         "world_graph": WORLD_GRAPH_SCHEMA_VERSION,
         "routes": ROUTES_SCHEMA_VERSION,
         "gameplay_zones": GAMEPLAY_ZONES_SCHEMA_VERSION,
+        "world_density_report": WORLD_DENSITY_REPORT_SCHEMA_VERSION,
+        "elevation_density_report": ELEVATION_DENSITY_REPORT_SCHEMA_VERSION,
+        "world_summary_report": WORLD_SUMMARY_REPORT_SCHEMA_VERSION,
+        "terrain_island_report": TERRAIN_ISLAND_REPORT_SCHEMA_VERSION,
+        "geography_guidance": GEOGRAPHY_GUIDANCE_SCHEMA_VERSION,
+        "terrain_guidance_report": TERRAIN_GUIDANCE_REPORT_SCHEMA_VERSION,
     }
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,

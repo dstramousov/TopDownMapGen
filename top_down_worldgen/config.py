@@ -15,6 +15,17 @@ LOGGER = logging.getLogger(__name__)
 UINT64_MAX = (1 << 64) - 1
 MIN_TUNING_SCALE = 0.0
 MAX_TUNING_SCALE = 10.0
+DEFAULT_ELEVATION_STYLE = "normal"
+DEFAULT_SHORE_REED_DENSITY = 0.45
+DEFAULT_PUDDLE_REED_DENSITY = 0.20
+DEFAULT_BUSH_DENSITY = 0.30
+DEFAULT_BUSH_THICKET_COUNT = 14
+DEFAULT_RECLAIMED_EDGE_BUSH_DENSITY = 0.55
+DEFAULT_RECLAIMED_ALTITUDE_BUSH_DENSITY = 0.30
+DEFAULT_RECLAIMED_BUSH_MAX_ELEVATION = 17
+SUPPORTED_ELEVATION_STYLES = frozenset(
+    {"super_flatland", "flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +43,11 @@ class GenerationTuning:
     road_width_scale: float = 1.0
     decoration_scale: float = 1.0
     bunker_scale: float = 1.0
+    bush_density: float = DEFAULT_BUSH_DENSITY
+    bush_thicket_count: int = DEFAULT_BUSH_THICKET_COUNT
+    reclaimed_edge_bush_density: float = DEFAULT_RECLAIMED_EDGE_BUSH_DENSITY
+    reclaimed_altitude_bush_density: float = DEFAULT_RECLAIMED_ALTITUDE_BUSH_DENSITY
+    reclaimed_bush_max_elevation: int = DEFAULT_RECLAIMED_BUSH_MAX_ELEVATION
 
     @classmethod
     def from_raw(cls, value: Any) -> "GenerationTuning":
@@ -52,6 +68,14 @@ class GenerationTuning:
             raw_value = value.get(key, default)
             if key == "water_patch_density":
                 sanitized[key] = _sanitize_ratio(raw_value, key=key)
+            elif key == "bush_density":
+                sanitized[key] = _sanitize_ratio(raw_value, key=key)
+            elif key == "bush_thicket_count":
+                sanitized[key] = _sanitize_nonnegative_int(raw_value, key=key, default=DEFAULT_BUSH_THICKET_COUNT)
+            elif key in {"reclaimed_edge_bush_density", "reclaimed_altitude_bush_density"}:
+                sanitized[key] = _sanitize_ratio(raw_value, key=key)
+            elif key == "reclaimed_bush_max_elevation":
+                sanitized[key] = _sanitize_int(raw_value, key=key, default=DEFAULT_RECLAIMED_BUSH_MAX_ELEVATION)
             else:
                 sanitized[key] = _sanitize_scale(raw_value, key=key)
         return cls(**sanitized)
@@ -70,6 +94,11 @@ class GenerationTuning:
             "road_width_scale": self.road_width_scale,
             "decoration_scale": self.decoration_scale,
             "bunker_scale": self.bunker_scale,
+            "bush_density": self.bush_density,
+            "bush_thicket_count": self.bush_thicket_count,
+            "reclaimed_edge_bush_density": self.reclaimed_edge_bush_density,
+            "reclaimed_altitude_bush_density": self.reclaimed_altitude_bush_density,
+            "reclaimed_bush_max_elevation": self.reclaimed_bush_max_elevation,
         }
 
 
@@ -79,6 +108,15 @@ def _sanitize_float(value: Any, *, key: str, default: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         LOGGER.warning("Invalid generation_tuning.%s=%r; using %.2f", key, value, default)
+        return default
+
+
+def _sanitize_int(value: Any, *, key: str, default: int) -> int:
+    """Convert a user-provided tuning value to int."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid generation_tuning.%s=%r; using %s", key, value, default)
         return default
 
 
@@ -120,7 +158,10 @@ class PublicConfig:
     chunk_height_tiles: int
     biome_profile: str
     objective_profile: str = "clear_map"
+    elevation_style: str = DEFAULT_ELEVATION_STYLE
     generation_tuning: GenerationTuning = field(default_factory=GenerationTuning)
+    shore_reed_density: float = DEFAULT_SHORE_REED_DENSITY
+    puddle_reed_density: float = DEFAULT_PUDDLE_REED_DENSITY
 
     @classmethod
     def from_file(cls, path: Path) -> "PublicConfig":
@@ -153,7 +194,10 @@ class PublicConfig:
                 chunk_height_tiles=int(data["chunk_height_tiles"]),
                 biome_profile=str(data["biome_profile"]),
                 objective_profile=objective_profile,
+                elevation_style=_sanitize_elevation_style(data),
                 generation_tuning=GenerationTuning.from_raw(data.get("generation_tuning")),
+                shore_reed_density=_sanitize_reed_density(data, key="shore_reed_density", legacy_key="reed_density", default=DEFAULT_SHORE_REED_DENSITY),
+                puddle_reed_density=_sanitize_reed_density(data, key="puddle_reed_density", legacy_key=None, default=DEFAULT_PUDDLE_REED_DENSITY),
             )
             metrics.update(
                 {
@@ -165,7 +209,10 @@ class PublicConfig:
                     "chunk_height_tiles": config.chunk_height_tiles,
                     "biome_profile": config.biome_profile,
                     "objective_profile": config.objective_profile,
+                    "elevation_style": config.elevation_style,
                     "generation_tuning": config.generation_tuning.to_dict(),
+                    "shore_reed_density": config.shore_reed_density,
+                    "puddle_reed_density": config.puddle_reed_density,
                 },
             )
             return config
@@ -199,6 +246,60 @@ class PublicConfig:
             engine_config = self.to_engine_dict()
             write_json(engine_config, path)
             metrics.update({"field_count": len(engine_config)})
+
+
+
+def _sanitize_reed_density(
+    data: dict[str, Any],
+    *,
+    key: str,
+    legacy_key: str | None,
+    default: float,
+) -> float:
+    """Return configured reed density in the inclusive 0..1 range."""
+    hydrology = data.get("hydrology")
+    if not isinstance(hydrology, dict):
+        return default
+    raw = hydrology.get(key)
+    if raw is None and legacy_key is not None:
+        raw = hydrology.get(legacy_key)
+    return _sanitize_ratio(default if raw is None else raw, key=f"hydrology.{key}")
+
+
+def _sanitize_nonnegative_int(value: Any, *, key: str, default: int) -> int:
+    """Return a non-negative integer config value."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid generation_tuning.%s=%r; using %s", key, value, default)
+        return default
+    if parsed < 0:
+        LOGGER.warning("generation_tuning.%s=%s is negative; clamping", key, parsed)
+    return max(0, parsed)
+
+
+def _sanitize_elevation_style(data: dict[str, Any]) -> str:
+    """Return a supported elevation style from public config data.
+
+    Args:
+        data: Raw public config dictionary.
+
+    Returns:
+        Supported elevation style name.
+    """
+    raw_value: Any = data.get("elevation_style")
+    elevation_block = data.get("elevation")
+    if raw_value is None and isinstance(elevation_block, dict):
+        raw_value = elevation_block.get("style")
+    style = str(raw_value or DEFAULT_ELEVATION_STYLE).strip().lower()
+    if style not in SUPPORTED_ELEVATION_STYLES:
+        LOGGER.warning(
+            "Unknown elevation style=%s; falling back to %s",
+            style,
+            DEFAULT_ELEVATION_STYLE,
+        )
+        return DEFAULT_ELEVATION_STYLE
+    return style
 
 
 def resolve_seed(seed: Any) -> int:

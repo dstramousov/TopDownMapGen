@@ -29,8 +29,10 @@ from top_down_worldgen.manifest import (
     TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
+    VEGETATION_VISUAL_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
+from top_down_worldgen.tactical.traversal import DEFAULT_TRAVERSAL_RULES
 from top_down_worldgen.utils.json_io import write_json
 
 _GAMEPLAY_FILES: tuple[tuple[str, str], ...] = (
@@ -64,6 +66,7 @@ def write_map_package(
         rows: ASCII map rows.
         width: Map width in tiles.
         height: Map height in tiles.
+        main_path_reachable_points: Final points reachable from START.
         tile_size_px: Tile size in pixels.
         seed: Raw seed value from public config.
         resolved_seed: Concrete uint64 seed used for the run.
@@ -172,12 +175,19 @@ def write_map_package(
     write_json(runtime_grids, outputs.map_package_runtime_grids)
 
     places_items = _list(runtime_data.get("places"))
+    start_point = _mapping_point(points.get("start"))
+    final_reachable_points = _reachable_final_points(
+        collision_rows=_string_rows(collision.get("rows"), []),
+        height_rows=_integer_rows(_dict(_dict(runtime_grids.get("grids")).get("height_grid")).get("rows")),
+        start=start_point,
+    )
     world_graph = _build_world_graph(
         points=points,
         markers=markers,
         places=places_items,
         width=width,
         height=height,
+        main_path_reachable_points=final_reachable_points,
     )
     write_json(world_graph, outputs.map_package_world_graph)
     routes = _build_routes(world_graph)
@@ -262,6 +272,10 @@ def write_map_package(
     write_json(render_profile, outputs.map_package_render_profile)
     write_json(tile_render_hints, outputs.map_package_tile_render_hints)
     write_json(object_render_hints, outputs.map_package_object_render_hints)
+    vegetation_visual = _dict(runtime_data.get("vegetation_visual"))
+    if vegetation_visual:
+        vegetation_visual["schema_version"] = VEGETATION_VISUAL_SCHEMA_VERSION
+        write_json(vegetation_visual, outputs.map_package_vegetation_visual)
 
     write_json(
         {
@@ -273,6 +287,7 @@ def write_map_package(
             "resolved_seed": resolved_seed,
             "profile": profile,
             "generation_tuning": generation_tuning or {},
+            "hydrology": _dict(runtime_data.get("elevation_hydrology")),
             "dimensions": {
                 "width_tiles": width,
                 "height_tiles": height,
@@ -316,6 +331,7 @@ def write_map_package(
                 "profile": "render/render_profile.json",
                 "tile_render_hints": "render/tile_render_hints.json",
                 "object_render_hints": "render/object_render_hints.json",
+                "vegetation_visual": "render/vegetation_visual.json",
             },
             "legacy_outputs": {
                 "ascii_map": "../generated_map.txt",
@@ -365,6 +381,7 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_render_profile,
         outputs.map_package_tile_render_hints,
         outputs.map_package_object_render_hints,
+        outputs.map_package_vegetation_visual,
     ]
 
 
@@ -376,6 +393,7 @@ def _build_world_graph(
     places: list[Any],
     width: int,
     height: int,
+    main_path_reachable_points: set[tuple[int, int]] | None = None,
 ) -> dict[str, Any]:
     """Build a semantic world graph from places and markers.
 
@@ -455,6 +473,7 @@ def _build_world_graph(
         marker_nodes=marker_nodes,
         edges=edges,
         edge_keys=edge_keys,
+        reachable_points=main_path_reachable_points,
     )
     main_path_nodes = set(_string_list(main_path.get("node_ids")))
     side_paths = _build_side_paths(
@@ -1335,6 +1354,7 @@ def _build_main_path(
     marker_nodes: dict[str, dict[str, Any]],
     edges: list[dict[str, Any]],
     edge_keys: set[tuple[str, str, str]],
+    reachable_points: set[tuple[int, int]] | None = None,
 ) -> dict[str, Any]:
     """Build a complete semantic main path and ensure its edges exist."""
     nodes_by_id = {**place_nodes, **marker_nodes}
@@ -1347,6 +1367,7 @@ def _build_main_path(
         start_node=start_node,
         goal_node=goal_node,
         place_nodes=place_nodes,
+        reachable_points=reachable_points,
     )
     node_ids = [start_id, *[node["id"] for node in main_places], goal_id]
 
@@ -1380,9 +1401,16 @@ def _main_path_place_nodes(
     start_node: dict[str, Any],
     goal_node: dict[str, Any],
     place_nodes: dict[str, dict[str, Any]],
+    reachable_points: set[tuple[int, int]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Select meaningful places ordered along the start-goal corridor."""
+    """Select reachable meaningful places along the start-goal corridor."""
     places = list(place_nodes.values())
+    if reachable_points is not None:
+        places = [
+            node
+            for node in places
+            if _node_has_reachable_anchor(node, reachable_points=reachable_points)
+        ]
     if not places:
         return []
     max_count = min(5, max(3, len(places) // 3))
@@ -1401,6 +1429,52 @@ def _main_path_place_nodes(
         key=lambda node: _node_projection(start_node=start_node, goal_node=goal_node, node=node),
     )
 
+
+
+def _node_has_reachable_anchor(
+    node: dict[str, Any],
+    *,
+    reachable_points: set[tuple[int, int]],
+) -> bool:
+    point = _mapping_point(node.get("position"))
+    if point is None:
+        return False
+    return point in reachable_points
+
+
+def _reachable_final_points(
+    *,
+    collision_rows: list[str],
+    height_rows: list[list[int]],
+    start: tuple[int, int] | None,
+) -> set[tuple[int, int]]:
+    if start is None or not collision_rows or not height_rows:
+        return set()
+    width = len(height_rows[0])
+    height = len(height_rows)
+    sx, sy = start
+    if not (0 <= sx < width and 0 <= sy < height):
+        return set()
+    if collision_rows[sy][sx] == "1":
+        return set()
+    visited = {start}
+    queue = [start]
+    index = 0
+    while index < len(queue):
+        x, y = queue[index]
+        index += 1
+        current_level = height_rows[y][x]
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if not (0 <= nx < width and 0 <= ny < height):
+                continue
+            point = (nx, ny)
+            if point in visited or collision_rows[ny][nx] == "1":
+                continue
+            if not DEFAULT_TRAVERSAL_RULES.allows_step(current_level, height_rows[ny][nx]):
+                continue
+            visited.add(point)
+            queue.append(point)
+    return visited
 
 def _main_path_place_score(
     *,
@@ -1736,6 +1810,22 @@ def _runtime_marker_type(item: dict[str, Any]) -> str | None:
     return None
 
 
+
+def _runtime_height_grid_level_range(elevation: dict[str, Any]) -> tuple[int, int]:
+    """Return runtime height-grid clamp for strict elevation styles."""
+    profile = _dict(elevation.get("profile"))
+    if profile.get("style") == "super_flatland":
+        active_range = profile.get("active_range")
+        if (
+            isinstance(active_range, list)
+            and len(active_range) == 2
+            and isinstance(active_range[0], int)
+            and isinstance(active_range[1], int)
+        ):
+            return active_range[0], active_range[1]
+    return -5, 20
+
+
 def _build_runtime_grids(
     *,
     tile_grid: list[str],
@@ -1758,6 +1848,7 @@ def _build_runtime_grids(
     cover_grid = [[0.0 for _ in range(width)] for _ in range(height)]
     concealment_grid = [[0.0 for _ in range(width)] for _ in range(height)]
     height_grid = _height_grid_rows(elevation=elevation, width=width, height=height)
+    runtime_level_min, runtime_level_max = _runtime_height_grid_level_range(elevation)
 
     for item in runtime_objects:
         if not isinstance(item, dict):
@@ -1783,7 +1874,7 @@ def _build_runtime_grids(
             )
             elevation_level = item.get("interior_elevation", item.get("elevation"))
             if isinstance(elevation_level, int):
-                height_grid[y][x] = elevation_level
+                height_grid[y][x] = max(runtime_level_min, min(elevation_level, runtime_level_max))
     return {
         "schema_version": RUNTIME_GRIDS_SCHEMA_VERSION,
         "kind": "runtime_grids",
@@ -1857,63 +1948,14 @@ def _build_elevation_model(
     feature_types = _count_by_key(features, "type")
     transition_connectors = _count_by_key(transitions, "suggested_connector")
     required_feature_types = _required_elevation_feature_types()
-    required_levels = {-1, 0, 1, 2, 3, 4}
+    required_levels = set(range(-5, 21))
     return {
         "schema_version": ELEVATION_MODEL_SCHEMA_VERSION,
         "kind": "elevation_model",
         "coordinate_space": "tile",
         "width": width,
         "height": height,
-        "levels": {
-            "-1": {
-                "name": "below_ground",
-                "meaning": "Trenches, pits, bunker interiors, and other low ground.",
-                "movement": "walkable_if_connected",
-                "visibility": "reduced_against_surface",
-                "projectiles": "requires_line_of_sight_transition",
-                "render_role": "below_floor_overlay",
-            },
-            "0": {
-                "name": "ground",
-                "meaning": "Default outdoor ground level.",
-                "movement": "normal",
-                "visibility": "baseline",
-                "projectiles": "baseline",
-                "render_role": "terrain_base",
-            },
-            "1": {
-                "name": "raised_ground",
-                "meaning": "Hills, berms, raised earth, and shallow platforms.",
-                "movement": "normal_or_ramp_required",
-                "visibility": "minor_high_ground_advantage",
-                "projectiles": "minor_high_ground_advantage",
-                "render_role": "raised_terrain_overlay",
-            },
-            "2": {
-                "name": "platform",
-                "meaning": "Bridges, ruin decks, ledges, and constructed platforms.",
-                "movement": "explicit_transition_required",
-                "visibility": "high_ground",
-                "projectiles": "high_ground",
-                "render_role": "platform_layer",
-            },
-            "3": {
-                "name": "high_platform",
-                "meaning": "Towers, roofs, and strong high vantage points.",
-                "movement": "explicit_transition_required",
-                "visibility": "strong_high_ground",
-                "projectiles": "strong_high_ground",
-                "render_role": "high_object_layer",
-            },
-            "4": {
-                "name": "special_high_landmark",
-                "meaning": "Reserved for exceptional vertical landmarks.",
-                "movement": "usually_blocked_or_scripted",
-                "visibility": "special_case",
-                "projectiles": "special_case",
-                "render_role": "landmark_layer",
-            },
-        },
+        "levels": _elevation_level_definitions(),
         "transition_types": {
             "ramp": "Smooth walkable elevation transition.",
             "stairs": "Discrete walkable constructed transition.",
@@ -1941,9 +1983,10 @@ def _build_elevation_model(
         },
         "rules": {
             "movement": {
+                "max_natural_delta": DEFAULT_TRAVERSAL_RULES.max_natural_delta,
                 "same_level": "allowed_if_collision_grid_allows",
-                "level_delta_1": "requires_ramp_stairs_or_object_transition",
-                "level_delta_gt_1": "requires_ladder_bridge_script_or_is_blocked",
+                "natural_delta": "allowed_if_collision_grid_allows",
+                "above_natural_delta": "requires_explicit_structural_transition",
             },
             "line_of_sight": {
                 "same_level": "use_vision_block_grid",
@@ -1983,6 +2026,76 @@ def _build_elevation_model(
     }
 
 
+
+
+def _elevation_level_definitions() -> dict[str, dict[str, str]]:
+    definitions: dict[str, dict[str, str]] = {}
+    for level in range(-5, 21):
+        if level < -1:
+            item = {
+                "name": "deep_lowland",
+                "meaning": "Deep cuts, basins, ravines, underground approaches, and flooded depressions.",
+                "movement": "explicit_transition_or_path_required",
+                "visibility": "low_ground_disadvantage",
+                "projectiles": "requires_line_of_sight_transition",
+                "render_role": "deep_below_floor_or_lowland_overlay",
+            }
+        elif level == -1:
+            item = {
+                "name": "below_ground",
+                "meaning": "Trenches, pits, bunker interiors, and shallow low ground.",
+                "movement": "walkable_if_connected",
+                "visibility": "reduced_against_surface",
+                "projectiles": "requires_line_of_sight_transition",
+                "render_role": "below_floor_overlay",
+            }
+        elif level == 0:
+            item = {
+                "name": "ground",
+                "meaning": "Baseline outdoor ground level.",
+                "movement": "normal",
+                "visibility": "baseline",
+                "projectiles": "baseline",
+                "render_role": "terrain_base",
+            }
+        elif level <= 4:
+            item = {
+                "name": "raised_ground",
+                "meaning": "Low hills, berms, raised earth, and shallow terraces.",
+                "movement": "natural_slope_or_connector",
+                "visibility": "minor_high_ground_advantage",
+                "projectiles": "minor_high_ground_advantage",
+                "render_role": "raised_terrain_overlay",
+            }
+        elif level <= 10:
+            item = {
+                "name": "hills",
+                "meaning": "Hills, ridges, terraces, and tactical high-ground areas.",
+                "movement": "slope_ramp_stairs_or_blocked_edge",
+                "visibility": "high_ground",
+                "projectiles": "high_ground",
+                "render_role": "hillside_or_plateau_layer",
+            }
+        elif level <= 16:
+            item = {
+                "name": "highlands",
+                "meaning": "Tall ridges, upper ruins, cliffs, and strong vantage regions.",
+                "movement": "explicit_connector_or_path_required",
+                "visibility": "strong_high_ground",
+                "projectiles": "strong_high_ground",
+                "render_role": "highland_layer",
+            }
+        else:
+            item = {
+                "name": "landmark_height",
+                "meaning": "Rare extreme landmarks, towers, cliffs, and scripted vertical points.",
+                "movement": "usually_blocked_or_scripted",
+                "visibility": "special_case",
+                "projectiles": "special_case",
+                "render_role": "landmark_layer",
+            }
+        definitions[str(level)] = item
+    return definitions
 
 def _required_elevation_feature_types() -> set[str]:
     return {
@@ -2331,7 +2444,7 @@ def _elevation_transitions(
                         ),
                     },
                 )
-    return transitions[:256]
+    return transitions
 
 
 def _elevation_features_by_point(
@@ -2367,6 +2480,8 @@ def _elevation_transition_connector(
         return "slope"
     if abs(delta) > 1:
         return "ladder_or_scripted"
+    if abs(delta) == 1:
+        return "slope"
     return "none"
 
 
@@ -2920,6 +3035,17 @@ def _string_rows(value: Any, fallback: list[str]) -> list[str]:
         return list(value)
     return list(fallback)
 
+
+
+def _integer_rows(value: Any) -> list[list[int]]:
+    if not isinstance(value, list):
+        return []
+    rows: list[list[int]] = []
+    for row in value:
+        if not isinstance(row, list) or not all(isinstance(item, int) for item in row):
+            return []
+        rows.append(list(row))
+    return rows
 
 def _extract_points(rows: list[str]) -> dict[str, dict[str, int] | None]:
     points: dict[str, dict[str, int] | None] = {"start": None, "goal": None}

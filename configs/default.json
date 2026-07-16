@@ -1,7 +1,7 @@
 {
   "seed": "random",
-  "map_width_tiles": 160,
-  "map_height_tiles": 96,
+  "map_width_tiles": 256,
+  "map_height_tiles": 256,
   "chunk_width_tiles": 16,
   "chunk_height_tiles": 16,
   "biome_profile": "forest_ruins",
@@ -17,6 +17,18 @@
     "bunker_scale": 1.0,
     "water_patch_count_scale": 1.0,
     "water_patch_size_scale": 2.0,
-    "water_patch_density": 0.62
+    "water_patch_density": 0.62,
+    "bush_density": 0.3,
+    "bush_thicket_count": 30,
+    "reclaimed_edge_bush_density": 0.55,
+    "reclaimed_altitude_bush_density": 0.3,
+    "reclaimed_bush_max_elevation": 17
+  },
+  "elevation": {
+    "style": "normal"
+  },
+  "hydrology": {
+    "shore_reed_density": 0.45,
+    "puddle_reed_density": 0.2
   }
 }

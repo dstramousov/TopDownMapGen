@@ -1,0 +1,28 @@
+# Python bytecode and tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and packaging
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Generated world data and temporary output
+output/
+out/
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# Locally produced release artifacts
+TopDownMapGen_v*_current.zip
+TopDownMapGen_v*_to_v*.patch

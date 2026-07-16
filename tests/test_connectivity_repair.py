@@ -73,3 +73,23 @@ def test_repair_carves_connector_for_large_isolated_component() -> None:
     assert metrics["connected_components"] == 1
     assert metrics["tiles_changed"] > 0
     assert metrics["failed_repairs"] == 0
+
+
+def test_traversal_repair_reports_change_breakdown() -> None:
+    from top_down_worldgen.tactical.elevation import _repair_change_diagnostics
+
+    diagnostics = _repair_change_diagnostics(
+        {(0, 0): (4, 2), (1, 0): (0, 1), (2, 0): (3, 3)},
+        terrain_rows=[".+R"],
+        total_tiles=6,
+        two_d_reachable_tiles=3,
+    )
+
+    assert diagnostics["adjusted_by_terrain"] == {
+        "open_ground": 1,
+        "road": 1,
+        "ruin_floor": 1,
+    }
+    assert diagnostics["direction"] == {"raised": 1, "lowered": 1}
+    assert diagnostics["magnitude"]["maximum_abs_delta"] == 2
+    assert diagnostics["coverage"]["percent_of_map"] == 50.0

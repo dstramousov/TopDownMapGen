@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "top-down-worldgen"
-version = "0.0.81"
+version = "0.0.108"
 description = "Seed-based procedural map generator for top-down games."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -20,20 +20,18 @@ dev = [
 
 [project.scripts]
 generate-world = "top_down_worldgen.cli:main"
-generate-visual-map = "top_down_visualgen.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["top_down_worldgen*", "top_down_visualgen*"]
+include = ["top_down_worldgen*"]
 
 [tool.setuptools.package-data]
 top_down_worldgen = ["py.typed"]
-top_down_visualgen = ["py.typed", "profiles/dark_forest/*.json"]
 
 [tool.ruff]
 target-version = "py312"
 line-length = 88
-src = ["top_down_worldgen", "top_down_visualgen", "tests"]
+src = ["top_down_worldgen", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
@@ -45,6 +43,7 @@ line-ending = "lf"
 
 [tool.pytest.ini_options]
 minversion = "8.0"
+pythonpath = ["."]
 testpaths = ["tests"]
 addopts = [
     "-ra",

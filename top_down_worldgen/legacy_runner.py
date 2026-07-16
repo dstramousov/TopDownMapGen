@@ -3,6 +3,9 @@ from __future__ import annotations
 import logging
 import subprocess
 import sys
+import re
+
+from .performance import active_profiler
 from pathlib import Path
 
 from .logging_utils import timed_stage
@@ -27,6 +30,7 @@ class LegacyEngineRunner:
         config_path: Path,
         map_out: Path,
         tactical_out: Path,
+        geography_guidance: Path | None,
         log_file: Path | None,
     ) -> None:
         """Run legacy engine once.
@@ -35,6 +39,7 @@ class LegacyEngineRunner:
             config_path: Sanitized engine config path.
             map_out: ASCII map output path.
             tactical_out: Raw tactical JSON output path.
+            geography_guidance: Optional internal geography guidance path.
             log_file: Optional engine log path.
 
         Raises:
@@ -51,6 +56,8 @@ class LegacyEngineRunner:
             str(tactical_out),
             "--no-render",
         ]
+        if geography_guidance is not None:
+            command.extend(["--geography-guidance", str(geography_guidance)])
         if log_file is not None:
             command.extend(["--log-file", str(log_file)])
 
@@ -61,6 +68,7 @@ class LegacyEngineRunner:
             config_path=config_path,
             map_out=map_out,
             tactical_out=tactical_out,
+            geography_guidance=geography_guidance,
         ) as metrics:
             LOGGER.debug("Legacy command: %s", " ".join(command))
             result = subprocess.run(
@@ -69,11 +77,22 @@ class LegacyEngineRunner:
                 text=True,
                 check=False,
             )
+            legacy_stage_count = 0
+            profiler = active_profiler()
+            if profiler is not None:
+                for match in re.finditer(r"PERF_STAGE\s+([^\s]+)\s+([0-9.]+)", result.stderr):
+                    profiler.record_external(
+                        f"legacy.{match.group(1)}",
+                        float(match.group(2)),
+                        depth=2,
+                    )
+                    legacy_stage_count += 1
             metrics.update(
                 {
                     "returncode": result.returncode,
                     "stdout_chars": len(result.stdout),
                     "stderr_chars": len(result.stderr),
+                    "legacy_stage_count": legacy_stage_count,
                 },
             )
             if result.stdout:
