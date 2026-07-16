@@ -11,6 +11,8 @@ TREE_HIDDEN_CODE = "."
 REED_VISIBLE_CODE = "R"
 THINNING_START_LEVEL = 9
 TREELESS_LEVEL = 18
+FOREST_EDGE_DEPTH = 4
+FOREST_EDGE_KEEP_PROBABILITY = {1: 0.30, 2: 0.55, 3: 0.80, 4: 1.0}
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,8 +51,10 @@ def build_visual_vegetation(
     removed_by_altitude = 0
     removed_by_slope = 0
     removed_by_lowland = 0
+    removed_by_forest_edge = 0
     reeds_visible = 0
     by_level: dict[int, dict[str, int]] = {}
+    forest_edge_depths = _forest_edge_depths(terrain_rows)
 
     for y, terrain_row in enumerate(terrain_rows):
         output_row: list[str] = []
@@ -78,7 +82,10 @@ def build_visual_vegetation(
             level_stats = by_level.setdefault(level, {"before": 0, "after": 0, "removed": 0})
             level_stats["before"] += 1
 
-            keep_probability = _tree_keep_probability(level=level, slope=slope)
+            altitude_probability = _tree_keep_probability(level=level, slope=slope)
+            edge_depth = forest_edge_depths[y][x]
+            edge_probability = _forest_edge_keep_probability(edge_depth)
+            keep_probability = min(altitude_probability, edge_probability)
             keep = _stable_unit(seed=seed, x=x, y=y) < keep_probability
             if keep:
                 output_row.append(TREE_VISIBLE_CODE)
@@ -89,6 +96,8 @@ def build_visual_vegetation(
                 level_stats["removed"] += 1
                 if level < 0:
                     removed_by_lowland += 1
+                elif edge_probability < altitude_probability:
+                    removed_by_forest_edge += 1
                 elif level >= TREELESS_LEVEL or level > THINNING_START_LEVEL:
                     removed_by_altitude += 1
                 elif slope > 1:
@@ -96,7 +105,7 @@ def build_visual_vegetation(
         output_rows.append("".join(output_row))
 
     report = {
-        "schema_version": "vegetation-visual-report-v1",
+        "schema_version": "vegetation-visual-report-v3",
         "kind": "vegetation_visual",
         "rules": {
             "tree_terrain": TREE_TERRAIN,
@@ -108,6 +117,11 @@ def build_visual_vegetation(
             "reed_level": -1,
             "reed_density": reed_density,
             "deterministic_by_seed_and_coordinate": True,
+            "forest_edge_depth_tiles": FOREST_EDGE_DEPTH,
+            "forest_edge_keep_probability": {
+                str(depth): probability
+                for depth, probability in FOREST_EDGE_KEEP_PROBABILITY.items()
+            },
         },
         "summary": {
             "tree_tiles_before": tree_before,
@@ -117,6 +131,7 @@ def build_visual_vegetation(
             "removed_by_altitude": removed_by_altitude,
             "removed_by_slope": removed_by_slope,
             "removed_by_lowland": removed_by_lowland,
+            "removed_by_forest_edge": removed_by_forest_edge,
             "reeds_visible": reeds_visible,
             "trees_at_or_above_treeless_level": 0,
         },
@@ -135,6 +150,63 @@ def build_visual_vegetation(
         "rows": output_rows,
     }
     return VegetationVisualResult(rows=output_rows, report=report)
+
+
+
+def _forest_edge_depths(terrain_rows: list[list[str]]) -> list[list[int]]:
+    """Return tree depth from the original forest boundary.
+
+    Args:
+        terrain_rows: Semantic terrain rows before visual thinning.
+
+    Returns:
+        Per-tile forest depth where edge trees have depth one.
+    """
+    height = len(terrain_rows)
+    width = len(terrain_rows[0]) if height else 0
+    depths = [[0 for _ in range(width)] for _ in range(height)]
+    frontier: list[tuple[int, int]] = []
+
+    for y, row in enumerate(terrain_rows):
+        for x, terrain in enumerate(row):
+            if terrain != TREE_TERRAIN:
+                continue
+            if _touches_non_tree(terrain_rows, x=x, y=y):
+                depths[y][x] = 1
+                frontier.append((x, y))
+
+    index = 0
+    while index < len(frontier):
+        x, y = frontier[index]
+        index += 1
+        depth = depths[y][x]
+        if depth >= FOREST_EDGE_DEPTH:
+            continue
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if not (0 <= ny < height and 0 <= nx < len(terrain_rows[ny])):
+                continue
+            if terrain_rows[ny][nx] != TREE_TERRAIN or depths[ny][nx] != 0:
+                continue
+            depths[ny][nx] = depth + 1
+            frontier.append((nx, ny))
+    return depths
+
+
+def _touches_non_tree(terrain_rows: list[list[str]], *, x: int, y: int) -> bool:
+    for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+        if ny < 0 or ny >= len(terrain_rows):
+            return True
+        if nx < 0 or nx >= len(terrain_rows[ny]):
+            return True
+        if terrain_rows[ny][nx] != TREE_TERRAIN:
+            return True
+    return False
+
+
+def _forest_edge_keep_probability(depth: int) -> float:
+    if depth <= 0 or depth >= FOREST_EDGE_DEPTH:
+        return 1.0
+    return FOREST_EDGE_KEEP_PROBABILITY.get(depth, 1.0)
 
 
 def _tree_keep_probability(*, level: int, slope: int) -> float:

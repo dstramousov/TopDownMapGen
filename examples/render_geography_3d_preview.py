@@ -719,6 +719,9 @@ def _draw_terrain_feature(
     if terrain == "reed_visual":
         _draw_reed_marker(draw, center=(center_x, center_y), scale=scale)
         return
+    if terrain == "bush_slow_concealment":
+        _draw_bush_marker(draw, center=(center_x, center_y), scale=scale)
+        return
     if terrain == "ruin_wall_blocker":
         _draw_blocked_marker(draw, top=top, color=(64, 58, 54, 225))
         return
@@ -732,6 +735,29 @@ def _draw_terrain_feature(
             fill=(236, 195, 74, 225),
         )
 
+
+
+def _draw_bush_marker(
+    draw: ImageDraw.ImageDraw,
+    *,
+    center: tuple[float, float],
+    scale: RenderScale,
+) -> None:
+    """Draw one compact cyan-green bush diagnostic marker."""
+    center_x, center_y = center
+    radius = max(1.5, scale.tile_width * 0.15)
+    lift = max(0.5, scale.tile_width * 0.04)
+    draw.ellipse(
+        (
+            center_x - radius,
+            center_y - lift - radius,
+            center_x + radius,
+            center_y - lift + radius,
+        ),
+        fill=(74, 214, 166, 255),
+        outline=(16, 92, 73, 255),
+        width=max(1, round(scale.tile_width * 0.04)),
+    )
 
 
 def _draw_reed_marker(

@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 RENDERER_PATH = ROOT / "examples" / "render_geography_3d_preview.py"
@@ -133,3 +133,16 @@ def _write_minimal_output(tmp_path: Path) -> Path:
 def _write_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def test_bush_marker_uses_distinct_cyan_green_color() -> None:
+    renderer = _load_renderer_module()
+    image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image, "RGBA")
+    scale = renderer.RenderScale(tile_width=16.0, tile_height=8.0, height_step=4.0, offset_x=0.0, offset_y=0.0)
+
+    renderer._draw_bush_marker(draw, center=(32.0, 32.0), scale=scale)
+
+    colors = image.getcolors(maxcolors=image.width * image.height)
+    assert colors is not None
+    assert any(color == (74, 214, 166, 255) for _, color in colors)
