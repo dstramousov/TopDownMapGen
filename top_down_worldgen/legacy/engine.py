@@ -78,6 +78,8 @@ class GenerationTuning:
     road_width_scale: float = 1.0
     decoration_scale: float = 1.0
     bunker_scale: float = 1.0
+    bush_density: float = 0.30
+    bush_thicket_count: int = 14
 
     @classmethod
     def from_raw(cls, value: object) -> "GenerationTuning":
@@ -118,6 +120,12 @@ class GenerationTuning:
                 "decoration_scale",
             ),
             bunker_scale=_sanitize_scale(value.get("bunker_scale", defaults.bunker_scale), "bunker_scale"),
+            bush_density=_sanitize_ratio(value.get("bush_density", defaults.bush_density), "bush_density"),
+            bush_thicket_count=_sanitize_nonnegative_int(
+                value.get("bush_thicket_count", defaults.bush_thicket_count),
+                "bush_thicket_count",
+                defaults.bush_thicket_count,
+            ),
         )
 
     def to_dict(self) -> dict[str, float]:
@@ -134,6 +142,8 @@ class GenerationTuning:
             "road_width_scale": self.road_width_scale,
             "decoration_scale": self.decoration_scale,
             "bunker_scale": self.bunker_scale,
+            "bush_density": self.bush_density,
+            "bush_thicket_count": self.bush_thicket_count,
         }
 
 
@@ -158,6 +168,19 @@ def _sanitize_scale(value: object, key: str) -> float:
             MAX_TUNING_SCALE,
         )
     return max(MIN_TUNING_SCALE, min(scale, MAX_TUNING_SCALE))
+
+
+
+def _sanitize_nonnegative_int(value: object, key: str, default: int) -> int:
+    """Return a non-negative integer tuning value."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid generation_tuning.%s=%r; using %s", key, value, default)
+        return default
+    if parsed < 0:
+        LOGGER.warning("generation_tuning.%s=%s is negative; clamping", key, parsed)
+    return max(0, parsed)
 
 
 def _sanitize_ratio(value: object, key: str) -> float:
@@ -352,6 +375,7 @@ class DerivedConfig:
     tree_cluster_min_radius: int
     tree_cluster_max_radius: int
     bush_ring_thickness: int
+    scattered_bush_count: int
     connected_pocket_min_radius: int
     connected_pocket_max_radius: int
     cleanup_small_component_max_size: int
@@ -460,6 +484,7 @@ class DerivedConfig:
             tree_cluster_min_radius=1,
             tree_cluster_max_radius=3,
             bush_ring_thickness=1,
+            scattered_bush_count=cls._clamp(round(area_tiles * tuning.bush_density * 0.02), 0, 2000),
             connected_pocket_min_radius=3,
             connected_pocket_max_radius=7,
             cleanup_small_component_max_size=32,
@@ -783,6 +808,7 @@ class MapGenerator:
         self._add_cracked_ground_patches()
         self._add_water_patches()
         self._add_tree_clusters_with_bushes()
+        self._add_scattered_bushes()
         self._add_flower_patches()
         self._add_mushroom_patches()
         self._cleanup_small_components()
@@ -1441,6 +1467,30 @@ class MapGenerator:
 
         LOGGER.info("  Tree clusters placed: %s/%s", placed, self._derived.tree_cluster_count)
 
+
+    def _add_scattered_bushes(self) -> None:
+        """Add configurable scattered bushes near forest terrain."""
+        target_count = self._derived.scattered_bush_count
+        LOGGER.info("Stage 8a: add scattered bushes target=%s", target_count)
+        placed = 0
+        attempts = target_count * 20
+        while placed < target_count and attempts > 0:
+            attempts -= 1
+            point = Point(
+                self._rng.randint(2, self._grid.width - 3),
+                self._rng.randint(2, self._grid.height - 3),
+            )
+            if self._grid.get_tile(point) != TileType.GRASS:
+                continue
+            if point in self._protected_path:
+                continue
+            if not self._has_nearby_tile(point, {TileType.TREE, TileType.BUSH}, radius=4):
+                continue
+            if self._guidance is not None and self._guidance.forest_suitability(point.x, point.y) < 0.35:
+                continue
+            self._grid.set_tile(point, TileType.BUSH)
+            placed += 1
+        LOGGER.info("  Scattered bushes placed: %s/%s", placed, target_count)
 
     def _add_cracked_ground_patches(self) -> None:
         """Add old stone and cracked ground patches near ruins and old roads."""

@@ -16,7 +16,10 @@ UINT64_MAX = (1 << 64) - 1
 MIN_TUNING_SCALE = 0.0
 MAX_TUNING_SCALE = 10.0
 DEFAULT_ELEVATION_STYLE = "normal"
-DEFAULT_REED_DENSITY = 0.45
+DEFAULT_SHORE_REED_DENSITY = 0.45
+DEFAULT_PUDDLE_REED_DENSITY = 0.20
+DEFAULT_BUSH_DENSITY = 0.30
+DEFAULT_BUSH_THICKET_COUNT = 14
 SUPPORTED_ELEVATION_STYLES = frozenset(
     {"super_flatland", "flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
 )
@@ -37,6 +40,8 @@ class GenerationTuning:
     road_width_scale: float = 1.0
     decoration_scale: float = 1.0
     bunker_scale: float = 1.0
+    bush_density: float = DEFAULT_BUSH_DENSITY
+    bush_thicket_count: int = DEFAULT_BUSH_THICKET_COUNT
 
     @classmethod
     def from_raw(cls, value: Any) -> "GenerationTuning":
@@ -57,6 +62,10 @@ class GenerationTuning:
             raw_value = value.get(key, default)
             if key == "water_patch_density":
                 sanitized[key] = _sanitize_ratio(raw_value, key=key)
+            elif key == "bush_density":
+                sanitized[key] = _sanitize_ratio(raw_value, key=key)
+            elif key == "bush_thicket_count":
+                sanitized[key] = _sanitize_nonnegative_int(raw_value, key=key, default=DEFAULT_BUSH_THICKET_COUNT)
             else:
                 sanitized[key] = _sanitize_scale(raw_value, key=key)
         return cls(**sanitized)
@@ -75,6 +84,8 @@ class GenerationTuning:
             "road_width_scale": self.road_width_scale,
             "decoration_scale": self.decoration_scale,
             "bunker_scale": self.bunker_scale,
+            "bush_density": self.bush_density,
+            "bush_thicket_count": self.bush_thicket_count,
         }
 
 
@@ -127,7 +138,8 @@ class PublicConfig:
     objective_profile: str = "clear_map"
     elevation_style: str = DEFAULT_ELEVATION_STYLE
     generation_tuning: GenerationTuning = field(default_factory=GenerationTuning)
-    reed_density: float = DEFAULT_REED_DENSITY
+    shore_reed_density: float = DEFAULT_SHORE_REED_DENSITY
+    puddle_reed_density: float = DEFAULT_PUDDLE_REED_DENSITY
 
     @classmethod
     def from_file(cls, path: Path) -> "PublicConfig":
@@ -162,7 +174,8 @@ class PublicConfig:
                 objective_profile=objective_profile,
                 elevation_style=_sanitize_elevation_style(data),
                 generation_tuning=GenerationTuning.from_raw(data.get("generation_tuning")),
-                reed_density=_sanitize_reed_density(data),
+                shore_reed_density=_sanitize_reed_density(data, key="shore_reed_density", legacy_key="reed_density", default=DEFAULT_SHORE_REED_DENSITY),
+                puddle_reed_density=_sanitize_reed_density(data, key="puddle_reed_density", legacy_key=None, default=DEFAULT_PUDDLE_REED_DENSITY),
             )
             metrics.update(
                 {
@@ -176,7 +189,8 @@ class PublicConfig:
                     "objective_profile": config.objective_profile,
                     "elevation_style": config.elevation_style,
                     "generation_tuning": config.generation_tuning.to_dict(),
-                    "reed_density": config.reed_density,
+                    "shore_reed_density": config.shore_reed_density,
+                    "puddle_reed_density": config.puddle_reed_density,
                 },
             )
             return config
@@ -213,11 +227,33 @@ class PublicConfig:
 
 
 
-def _sanitize_reed_density(data: dict[str, Any]) -> float:
-    """Return configured wet-shore reed density in the inclusive 0..1 range."""
+def _sanitize_reed_density(
+    data: dict[str, Any],
+    *,
+    key: str,
+    legacy_key: str | None,
+    default: float,
+) -> float:
+    """Return configured reed density in the inclusive 0..1 range."""
     hydrology = data.get("hydrology")
-    raw = hydrology.get("reed_density", DEFAULT_REED_DENSITY) if isinstance(hydrology, dict) else DEFAULT_REED_DENSITY
-    return _sanitize_ratio(raw, key="hydrology.reed_density")
+    if not isinstance(hydrology, dict):
+        return default
+    raw = hydrology.get(key)
+    if raw is None and legacy_key is not None:
+        raw = hydrology.get(legacy_key)
+    return _sanitize_ratio(default if raw is None else raw, key=f"hydrology.{key}")
+
+
+def _sanitize_nonnegative_int(value: Any, *, key: str, default: int) -> int:
+    """Return a non-negative integer config value."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid generation_tuning.%s=%r; using %s", key, value, default)
+        return default
+    if parsed < 0:
+        LOGGER.warning("generation_tuning.%s=%s is negative; clamping", key, parsed)
+    return max(0, parsed)
 
 
 def _sanitize_elevation_style(data: dict[str, Any]) -> str:

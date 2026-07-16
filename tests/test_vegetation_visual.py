@@ -55,12 +55,14 @@ def test_visual_vegetation_removes_lowland_trees_and_adds_seeded_reeds() -> None
         elevation_rows=elevation,
         slope_rows=slopes,
         seed=1,
-        reed_density=1.0,
+        shore_reed_density=1.0,
+        puddle_reed_density=1.0,
     )
 
     assert result.rows[0][0] == "."
     assert result.rows[0][3] == "."
     assert "R" in result.rows[0][1:3]
+    assert result.report["summary"]["shore_reeds_visible"] >= 1
     assert result.report["summary"]["removed_by_lowland"] == 1
 
 
@@ -170,3 +172,24 @@ def test_reconcile_tree_collision_marks_isolated_highland_as_rock() -> None:
     assert result.rows[0][0] == "#"
     assert result.visual_rows[0][0] == "."
     assert result.report["summary"]["rejected_as_rock"] == 1
+
+
+def test_visual_vegetation_distinguishes_shore_and_puddle_reeds() -> None:
+    terrain = [["water_slow", "water_slow"]]
+    elevation = [[-1, 0]]
+    slopes = [[0, 0]]
+
+    result = build_visual_vegetation(
+        terrain_rows=terrain,
+        elevation_rows=elevation,
+        slope_rows=slopes,
+        seed=7,
+        shore_reed_density=1.0,
+        puddle_reed_density=1.0,
+    )
+
+    assert result.rows == ["RP"]
+    assert result.report["summary"]["shore_reeds_visible"] == 1
+    assert result.report["summary"]["puddle_reeds_visible"] == 1
+    assert result.report["legend"]["R"] == "shore_reed"
+    assert result.report["legend"]["P"] == "puddle_reed"

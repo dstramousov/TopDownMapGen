@@ -887,6 +887,8 @@ class RuntimeObjectPlacer:
             return max(0, round(quota.base_count * _tuning_scale(self._generation_tuning, "bunker_scale")))
         if quota.object_type in LANDMARK_TYPES:
             return quota.base_count
+        if quota.object_type == "bush_thicket":
+            return max(0, int(self._generation_tuning.get("bush_thicket_count", quota.base_count)))
         return max(1, round(quota.base_count * area_scale))
 
     def _desired_shape(

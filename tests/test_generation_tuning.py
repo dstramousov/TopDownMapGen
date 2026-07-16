@@ -14,6 +14,8 @@ def test_water_tuning_fields_are_loaded_and_clamped() -> None:
             "water_patch_size_scale": 2.0,
             "water_patch_density": 0.85,
             "bunker_scale": 12.0,
+            "bush_density": 1.4,
+            "bush_thicket_count": 30,
         },
     )
 
@@ -22,6 +24,8 @@ def test_water_tuning_fields_are_loaded_and_clamped() -> None:
     assert tuning.water_patch_size_scale == 2.0
     assert tuning.water_patch_density == 0.85
     assert tuning.bunker_scale == 10.0
+    assert tuning.bush_density == 1.0
+    assert tuning.bush_thicket_count == 30
 
 
 def test_water_patch_density_is_a_ratio() -> None:
@@ -112,3 +116,29 @@ def test_elevation_style_changes_profile_report() -> None:
     assert plateau.report["profile"]["active_range"] == [-5, 20]
     assert plateau.report["profile"]["rare_range"] == [-5, 20]
     assert plateau.report["profile"]["wave_frequency"] == "rare"
+
+
+def test_public_config_reads_separate_reed_densities(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "seed": 42,
+                "map_width_tiles": 64,
+                "map_height_tiles": 64,
+                "chunk_width_tiles": 16,
+                "chunk_height_tiles": 16,
+                "biome_profile": "forest_ruins",
+                "hydrology": {
+                    "shore_reed_density": 0.75,
+                    "puddle_reed_density": 0.25,
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    config = PublicConfig.from_file(config_path)
+
+    assert config.shore_reed_density == 0.75
+    assert config.puddle_reed_density == 0.25

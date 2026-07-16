@@ -716,8 +716,11 @@ def _draw_terrain_feature(
     if terrain == "tree_blocker":
         _draw_tree_marker(draw, center=(center_x, center_y), scale=scale)
         return
-    if terrain == "reed_visual":
-        _draw_reed_marker(draw, center=(center_x, center_y), scale=scale)
+    if terrain == "shore_reed_visual":
+        _draw_reed_marker(draw, center=(center_x, center_y), scale=scale, kind="shore")
+        return
+    if terrain == "puddle_reed_visual":
+        _draw_reed_marker(draw, center=(center_x, center_y), scale=scale, kind="puddle")
         return
     if terrain == "bush_slow_concealment":
         _draw_bush_marker(draw, center=(center_x, center_y), scale=scale)
@@ -765,8 +768,9 @@ def _draw_reed_marker(
     *,
     center: tuple[float, float],
     scale: RenderScale,
+    kind: str,
 ) -> None:
-    """Draw one high-contrast orange reed diagnostic point."""
+    """Draw one high-contrast reed diagnostic point."""
     center_x, center_y = center
     radius = max(1.5, scale.tile_width * 0.13)
     lift = max(1.0, scale.tile_width * 0.08)
@@ -777,8 +781,8 @@ def _draw_reed_marker(
             center_x + radius,
             center_y - lift + radius,
         ),
-        fill=(255, 132, 24, 255),
-        outline=(118, 52, 4, 255),
+        fill=(255, 132, 24, 255) if kind == "shore" else (196, 214, 70, 255),
+        outline=(118, 52, 4, 255) if kind == "shore" else (72, 86, 18, 255),
         width=max(1, round(scale.tile_width * 0.04)),
     )
 
@@ -994,7 +998,15 @@ def _read_terrain_traversal_data(
     )
     rendered_terrain_rows = [
         [
-            "reed_visual" if visual_vegetation_rows[y][x] == "R" else (terrain if terrain != "tree_blocker" or visual_vegetation_rows[y][x] == "T" else "tree_blocker_hidden")
+            (
+                "shore_reed_visual"
+                if visual_vegetation_rows[y][x] == "R"
+                else "puddle_reed_visual"
+                if visual_vegetation_rows[y][x] == "P"
+                else terrain
+                if terrain != "tree_blocker" or visual_vegetation_rows[y][x] == "T"
+                else "tree_blocker_hidden"
+            )
             for x, terrain in enumerate(row)
         ]
         for y, row in enumerate(terrain_rows)

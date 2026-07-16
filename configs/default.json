@@ -17,12 +17,15 @@
     "bunker_scale": 1.0,
     "water_patch_count_scale": 1.0,
     "water_patch_size_scale": 2.0,
-    "water_patch_density": 0.62
+    "water_patch_density": 0.62,
+    "bush_density": 0.3,
+    "bush_thicket_count": 30
   },
   "elevation": {
     "style": "mountainous"
   },
   "hydrology": {
-    "reed_density": 0.45
+    "shore_reed_density": 0.45,
+    "puddle_reed_density": 0.2
   }
 }

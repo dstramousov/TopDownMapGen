@@ -11,7 +11,8 @@ from .traversal import DEFAULT_TRAVERSAL_RULES
 TREE_TERRAIN = "tree_blocker"
 TREE_VISIBLE_CODE = "T"
 TREE_HIDDEN_CODE = "."
-REED_VISIBLE_CODE = "R"
+SHORE_REED_VISIBLE_CODE = "R"
+PUDDLE_REED_VISIBLE_CODE = "P"
 THINNING_START_LEVEL = 9
 TREELESS_LEVEL = 18
 FOREST_EDGE_DEPTH = 4
@@ -41,7 +42,8 @@ def build_visual_vegetation(
     elevation_rows: list[list[int]],
     slope_rows: list[list[int]],
     seed: int,
-    reed_density: float = 0.45,
+    shore_reed_density: float = 0.45,
+    puddle_reed_density: float = 0.20,
 ) -> VegetationVisualResult:
     """Build a visual tree mask without changing gameplay blocking.
 
@@ -50,7 +52,8 @@ def build_visual_vegetation(
         elevation_rows: Final integer elevation rows.
         slope_rows: Final local slope rows.
         seed: Resolved deterministic world seed.
-        reed_density: Base probability for reeds on level -1.
+        shore_reed_density: Base probability for shore reeds on level -1.
+        puddle_reed_density: Base probability for reeds in legacy puddles.
 
     Returns:
         Visual tree mask and thinning diagnostics.
@@ -64,7 +67,8 @@ def build_visual_vegetation(
     removed_by_slope = 0
     removed_by_lowland = 0
     removed_by_forest_edge = 0
-    reeds_visible = 0
+    shore_reeds_visible = 0
+    puddle_reeds_visible = 0
     by_level: dict[int, dict[str, int]] = {}
     forest_edge_depths = _forest_edge_depths(terrain_rows)
 
@@ -73,16 +77,26 @@ def build_visual_vegetation(
         for x, terrain in enumerate(terrain_row):
             level = _grid_value(elevation_rows, x=x, y=y)
             slope = _grid_value(slope_rows, x=x, y=y)
-            if level == -1 and terrain == "water_slow":
-                probability = _reed_probability(
-                    elevation_rows=elevation_rows,
-                    x=x,
-                    y=y,
-                    base_density=reed_density,
-                )
-                if _stable_unit(seed=seed, x=x, y=y, salt="reed") < probability:
-                    output_row.append(REED_VISIBLE_CODE)
-                    reeds_visible += 1
+            if terrain == "water_slow":
+                if level == -1:
+                    probability = _reed_probability(
+                        elevation_rows=elevation_rows,
+                        x=x,
+                        y=y,
+                        base_density=shore_reed_density,
+                    )
+                    code = SHORE_REED_VISIBLE_CODE
+                    salt = "shore_reed"
+                else:
+                    probability = puddle_reed_density
+                    code = PUDDLE_REED_VISIBLE_CODE
+                    salt = "puddle_reed"
+                if _stable_unit(seed=seed, x=x, y=y, salt=salt) < probability:
+                    output_row.append(code)
+                    if code == SHORE_REED_VISIBLE_CODE:
+                        shore_reeds_visible += 1
+                    else:
+                        puddle_reeds_visible += 1
                 else:
                     output_row.append(TREE_HIDDEN_CODE)
                 continue
@@ -117,7 +131,7 @@ def build_visual_vegetation(
         output_rows.append("".join(output_row))
 
     report = {
-        "schema_version": "vegetation-visual-report-v4",
+        "schema_version": "vegetation-visual-report-v5",
         "kind": "vegetation_visual",
         "rules": {
             "tree_terrain": TREE_TERRAIN,
@@ -126,8 +140,9 @@ def build_visual_vegetation(
             "slope_penalty_per_level": 0.12,
             "gameplay_collision_unchanged": True,
             "lowland_tree_levels": [-5, -4, -3, -2, -1],
-            "reed_level": -1,
-            "reed_density": reed_density,
+            "shore_reed_level": -1,
+            "shore_reed_density": shore_reed_density,
+            "puddle_reed_density": puddle_reed_density,
             "deterministic_by_seed_and_coordinate": True,
             "forest_edge_depth_tiles": FOREST_EDGE_DEPTH,
             "forest_edge_keep_probability": {
@@ -144,7 +159,9 @@ def build_visual_vegetation(
             "removed_by_slope": removed_by_slope,
             "removed_by_lowland": removed_by_lowland,
             "removed_by_forest_edge": removed_by_forest_edge,
-            "reeds_visible": reeds_visible,
+            "shore_reeds_visible": shore_reeds_visible,
+            "puddle_reeds_visible": puddle_reeds_visible,
+            "reeds_visible": shore_reeds_visible + puddle_reeds_visible,
             "trees_at_or_above_treeless_level": 0,
         },
         "by_level": {
@@ -157,7 +174,8 @@ def build_visual_vegetation(
         "legend": {
             TREE_VISIBLE_CODE: "visible_tree",
             TREE_HIDDEN_CODE: "no_visual_tree",
-            REED_VISIBLE_CODE: "visible_reed",
+            SHORE_REED_VISIBLE_CODE: "shore_reed",
+            PUDDLE_REED_VISIBLE_CODE: "puddle_reed",
         },
         "rows": output_rows,
     }

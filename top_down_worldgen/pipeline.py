@@ -334,7 +334,8 @@ class WorldgenPipeline:
                 elevation_rows=elevation_rows,
                 slope_rows=geography_grids.get("slope_grid", {}).get("rows", []),
                 seed=config.resolved_seed,
-                reed_density=config.reed_density,
+                shore_reed_density=config.shore_reed_density,
+                puddle_reed_density=config.puddle_reed_density,
             )
             vegetation_collision = reconcile_tree_collision(
                 rows=rows,
