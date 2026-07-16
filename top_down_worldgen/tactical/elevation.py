@@ -11,6 +11,7 @@ from .geography_draft import (
     GeographyDraftRegion,
     NaturalGeographyModel,
 )
+from .traversal import DEFAULT_TRAVERSAL_RULES
 
 DEFAULT_ELEVATION_LEVEL = 0
 MIN_ELEVATION_LEVEL = -5
@@ -1945,17 +1946,25 @@ def _align_main_route_elevation(
         anchors = [fallback_path[0], fallback_path[-1]] if len(fallback_path) >= 2 else []
 
     route_path = _merged_route_path(segment_paths)
-    before_violations = _path_delta_violations(rows, route_path, max_delta=profile.max_natural_delta)
+    before_violations = _path_delta_violations(
+        rows,
+        route_path,
+        max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
+    )
     adjusted: set[tuple[int, int]] = set()
     if route_path:
         rows, adjusted = _apply_slope_corridor(
             rows,
             path=route_path,
             radius=profile.ground_corridor_radius,
-            max_delta=profile.max_natural_delta,
+            max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
             locked_points=locked_points,
         )
-    after_violations = _path_delta_violations(rows, route_path, max_delta=profile.max_natural_delta)
+    after_violations = _path_delta_violations(
+        rows,
+        route_path,
+        max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
+    )
     status = "ok" if route_path and after_violations == 0 else "partial" if route_path else "skipped"
     return MainRouteAlignmentResult(
         rows=rows,
@@ -1964,7 +1973,7 @@ def _align_main_route_elevation(
             "status": status,
             "rules": {
                 "scope": "semantic_main_path_when_places_available_else_start_goal",
-                "max_natural_delta": profile.max_natural_delta,
+                "max_natural_delta": DEFAULT_TRAVERSAL_RULES.max_natural_delta,
                 "blocked_terrain": "preserved",
                 "moisture": "preserved",
                 "terrain_tiles": "not_reclassified",
@@ -2266,7 +2275,7 @@ def _repair_traversal_consistency(
                 reachable_before=set(),
                 reachable_after=set(),
                 goal=goal,
-                max_delta=profile.max_natural_delta,
+                max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
             ),
         )
 
@@ -2279,7 +2288,7 @@ def _repair_traversal_consistency(
         rows,
         allowed_tiles=two_d_reachable,
         start=start,
-        max_delta=profile.max_natural_delta,
+        max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
     )
     before_missing = two_d_reachable - reachable_before
     adjusted_points: set[tuple[int, int]] = set()
@@ -2292,7 +2301,7 @@ def _repair_traversal_consistency(
             rows,
             allowed_tiles=two_d_reachable,
             start=start,
-            max_delta=profile.max_natural_delta,
+            max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
         )
         missing = two_d_reachable - reachable
         if not missing:
@@ -2305,7 +2314,7 @@ def _repair_traversal_consistency(
                 x=x,
                 y=y,
                 reachable=reachable,
-                max_delta=profile.max_natural_delta,
+                max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
             )
             if repaired_level is None or repaired_level == rows[y][x]:
                 continue
@@ -2325,7 +2334,7 @@ def _repair_traversal_consistency(
         rows,
         allowed_tiles=two_d_reachable,
         start=start,
-        max_delta=profile.max_natural_delta,
+        max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
     )
     return TraversalRepairResult(
         rows=rows,
@@ -2338,7 +2347,7 @@ def _repair_traversal_consistency(
             reachable_before=reachable_before,
             reachable_after=reachable_after,
             goal=goal,
-            max_delta=profile.max_natural_delta,
+            max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
             unreachable_before_components=_component_sizes(before_missing),
             unreachable_after_components=_component_sizes(two_d_reachable - reachable_after),
             change_diagnostics=_repair_change_diagnostics(

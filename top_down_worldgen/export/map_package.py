@@ -31,6 +31,7 @@ from top_down_worldgen.manifest import (
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
+from top_down_worldgen.tactical.traversal import DEFAULT_TRAVERSAL_RULES
 from top_down_worldgen.utils.json_io import write_json
 
 _GAMEPLAY_FILES: tuple[tuple[str, str], ...] = (
@@ -1909,9 +1910,10 @@ def _build_elevation_model(
         },
         "rules": {
             "movement": {
+                "max_natural_delta": DEFAULT_TRAVERSAL_RULES.max_natural_delta,
                 "same_level": "allowed_if_collision_grid_allows",
-                "level_delta_1": "natural_slope_allowed_unless_collision_grid_blocks",
-                "level_delta_gt_1": "requires_ladder_bridge_script_or_is_blocked",
+                "natural_delta": "allowed_if_collision_grid_allows",
+                "above_natural_delta": "requires_explicit_structural_transition",
             },
             "line_of_sight": {
                 "same_level": "use_vision_block_grid",

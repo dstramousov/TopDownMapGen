@@ -6,12 +6,19 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
 from collections import Counter, deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
 from PIL import Image, ImageDraw, ImageFont
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from top_down_worldgen.tactical.traversal import DEFAULT_TRAVERSAL_RULES
 
 LOGGER = logging.getLogger(__name__)
 
@@ -753,7 +760,7 @@ def _read_traversal_data(
         geographic_rows=geographic_rows,
         width=width,
         height=height,
-        max_delta=1,
+        max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
     )
     cliff_edges = _count_passable_cliff_edges(
         collision_rows=collision_rows,
@@ -762,7 +769,7 @@ def _read_traversal_data(
         geographic_rows=geographic_rows,
         width=width,
         height=height,
-        max_delta=1,
+        max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
     )
     rows: list[list[str]] = []
     counts: Counter[str] = Counter()
@@ -845,7 +852,7 @@ def _traversal_code(
             movement_rows=movement_rows,
             source_rows=source_rows,
             geographic_rows=geographic_rows,
-            max_delta=1,
+            max_delta=DEFAULT_TRAVERSAL_RULES.max_natural_delta,
         ):
             return "too_steep"
         return "unreachable"
@@ -1052,7 +1059,7 @@ def _write_traversal_report(
         total=total,
         extra={
             "rules": {
-                "max_natural_delta": 1,
+                "max_natural_delta": DEFAULT_TRAVERSAL_RULES.max_natural_delta,
                 "structural_depth": "marker_only_not_geographic_traversal",
                 "water": "classified_separately_from_structural_depth",
             },

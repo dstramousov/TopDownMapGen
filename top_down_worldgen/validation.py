@@ -12,6 +12,7 @@ from .tactical.places import (
     MIN_PLACE_DISTANCE_TILES,
     PLACE_TYPE_NAMES,
 )
+from .tactical.traversal import DEFAULT_TRAVERSAL_RULES
 from .tactical.runtime_objects import (
     BUNKER_TYPES,
     COLLISION_MOVEMENT_VALUES,
@@ -1055,6 +1056,9 @@ def _package_elevation_model_valid(package: dict[str, Any]) -> bool:
     rules = _json_object(elevation_model.get("rules"))
     if not {"movement", "line_of_sight", "projectiles", "render_order"}.issubset(rules):
         return False
+    movement_rules = _json_object(rules.get("movement"))
+    if movement_rules.get("max_natural_delta") != DEFAULT_TRAVERSAL_RULES.max_natural_delta:
+        return False
     summary = _json_object(elevation_model.get("summary"))
     present_levels = set(_string_list(summary.get("levels_present")))
     height_grid = _json_object(_json_object(_json_object(package.get("runtime_grids")).get("grids")).get("height_grid"))
@@ -1224,10 +1228,13 @@ def _package_points_elevation_reachable(
                 continue
             current_level = height_rows[y][x]
             next_level = height_rows[ny][nx]
-            if current_level != next_level:
-                edge = frozenset({(x, y), (nx, ny)})
-                if edge not in transition_pairs:
-                    continue
+            edge = frozenset({(x, y), (nx, ny)})
+            if not DEFAULT_TRAVERSAL_RULES.allows_step(
+                current_level,
+                next_level,
+                transition_allowed=edge in transition_pairs,
+            ):
+                continue
             visited.add((nx, ny))
             queue.append((nx, ny))
     return False
