@@ -373,6 +373,14 @@ class WorldgenPipeline:
                 source_rows=geography_grids.get("source_grid", {}).get("rows", []),
             )
             rows = final_traversal_cleanup.rows
+            retained_objects, object_pruning = finalize_runtime_objects_for_final_terrain(
+                runtime_data.get("runtime_objects"),
+                rows=rows,
+            )
+            runtime_data["runtime_objects"] = retained_objects
+            runtime_data["runtime_objects_summary"] = summarize_runtime_objects(retained_objects)
+            runtime_data["final_runtime_object_pruning"] = object_pruning
+            debug_data["final_runtime_object_pruning"] = object_pruning
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data["late_start_goal"] = late_start_goal.report
             runtime_data["final_3d_traversal_cleanup"] = final_traversal_cleanup.report

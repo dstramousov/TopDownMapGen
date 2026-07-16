@@ -18,6 +18,7 @@ class GeographyDraftRegion:
     moisture_bias: float
     roughness: float
     priority: float
+    elongation: float = 1.0
 
 
 @dataclass(frozen=True, slots=True)

@@ -628,18 +628,18 @@ def _apply_elevation_style(profile: ElevationScaleProfile, *, style: str) -> Ele
             active_max_level=MAX_ELEVATION_LEVEL,
             rare_min_level=MIN_ELEVATION_LEVEL,
             rare_max_level=MAX_ELEVATION_LEVEL,
-            terrace_min_size_tiles=8,
-            terrace_max_size_tiles=26,
-            macro_frequency=profile.macro_frequency * 1.20,
-            detail_frequency=profile.detail_frequency * 1.36,
-            ridge_frequency=profile.ridge_frequency * 1.62,
-            warp_strength=profile.warp_strength * 1.16,
-            macro_weight=max(0.58, profile.macro_weight - 0.05),
-            detail_weight=profile.detail_weight * 1.22,
-            ridge_weight=profile.ridge_weight * 1.88,
-            redistribution_power=profile.redistribution_power * 1.08,
-            score_smoothing_passes=max(1, profile.score_smoothing_passes - 1),
-            level_relax_passes=profile.level_relax_passes + 2,
+            terrace_min_size_tiles=12,
+            terrace_max_size_tiles=34,
+            macro_frequency=profile.macro_frequency * 0.96,
+            detail_frequency=profile.detail_frequency * 0.92,
+            ridge_frequency=profile.ridge_frequency * 1.28,
+            warp_strength=profile.warp_strength * 0.94,
+            macro_weight=profile.macro_weight + 0.03,
+            detail_weight=profile.detail_weight * 0.78,
+            ridge_weight=profile.ridge_weight * 1.72,
+            redistribution_power=profile.redistribution_power * 1.06,
+            score_smoothing_passes=profile.score_smoothing_passes + 1,
+            level_relax_passes=profile.level_relax_passes + 3,
             ground_corridor_radius=profile.ground_corridor_radius + 1,
             band_weights={
                 "underground_-5_-1": 0.09,
@@ -1076,27 +1076,103 @@ def _build_macro_regions(
     max_radius = max(min_radius + 1.0, min(short_side * 0.52, profile.terrace_max_size_tiles * 2.1))
     margin_x = max(2.0, width * 0.06)
     margin_y = max(2.0, height * 0.06)
+    mountain_chains = _mountain_chain_layout(
+        width=width,
+        height=height,
+        rng=rng,
+    ) if profile.style_name == "mountainous" else ()
+    highland_index = 0
     for index in range(count):
         kind = kinds[index % len(kinds)]
         radius = rng.uniform(min_radius, max_radius)
+        center_x = rng.uniform(margin_x, max(margin_x, width - 1 - margin_x))
+        center_y = rng.uniform(margin_y, max(margin_y, height - 1 - margin_y))
+        angle_degrees = rng.uniform(0.0, 180.0)
+        elongation = 1.0
+        if mountain_chains and kind in {"ridge", "mountain", "peak"}:
+            chain = mountain_chains[highland_index % len(mountain_chains)]
+            step = highland_index // len(mountain_chains)
+            center_x, center_y = _mountain_chain_position(
+                chain=chain,
+                step=step,
+                width=width,
+                height=height,
+                rng=rng,
+            )
+            angle_degrees = chain[2] + rng.uniform(-8.0, 8.0)
+            elongation = {
+                "ridge": 2.25,
+                "mountain": 1.75,
+                "peak": 1.45,
+            }[kind]
+            highland_index += 1
         base_score, moisture_bias, roughness = _macro_region_config(kind=kind, rng=rng)
         regions.append(
             GeographyDraftRegion(
                 region_id=f"geo_region_{index:03d}",
                 kind=kind,
-                center_x=rng.uniform(margin_x, max(margin_x, width - 1 - margin_x)),
-                center_y=rng.uniform(margin_y, max(margin_y, height - 1 - margin_y)),
+                center_x=center_x,
+                center_y=center_y,
                 radius_tiles=radius,
                 strength=rng.uniform(0.75, 1.15),
-                angle_degrees=rng.uniform(0.0, 180.0),
+                angle_degrees=angle_degrees,
                 base_elevation_score=base_score,
                 moisture_bias=moisture_bias,
                 roughness=roughness,
                 priority=rng.uniform(0.88, 1.12),
+                elongation=elongation,
             ),
         )
     return tuple(regions)
 
+
+
+def _mountain_chain_layout(
+    *,
+    width: int,
+    height: int,
+    rng: Random,
+) -> tuple[tuple[float, float, float], ...]:
+    """Return deterministic anchors and directions for mountain chains."""
+    margin_x = max(4.0, width * 0.18)
+    margin_y = max(4.0, height * 0.18)
+    primary_angle = rng.uniform(18.0, 72.0)
+    secondary_angle = (primary_angle + rng.uniform(58.0, 96.0)) % 180.0
+    return (
+        (
+            rng.uniform(margin_x, max(margin_x, width - margin_x)),
+            rng.uniform(margin_y, max(margin_y, height - margin_y)),
+            primary_angle,
+        ),
+        (
+            rng.uniform(margin_x, max(margin_x, width - margin_x)),
+            rng.uniform(margin_y, max(margin_y, height - margin_y)),
+            secondary_angle,
+        ),
+    )
+
+
+def _mountain_chain_position(
+    *,
+    chain: tuple[float, float, float],
+    step: int,
+    width: int,
+    height: int,
+    rng: Random,
+) -> tuple[float, float]:
+    """Place a highland region along a shared mountain-chain axis."""
+    anchor_x, anchor_y, angle_degrees = chain
+    angle = angle_degrees * pi / 180.0
+    spacing = max(12.0, min(width, height) * 0.16)
+    signed_step = ((step + 1) // 2) * (-1.0 if step % 2 else 1.0)
+    along = signed_step * spacing + rng.uniform(-spacing * 0.18, spacing * 0.18)
+    across = rng.uniform(-spacing * 0.24, spacing * 0.24)
+    x = anchor_x + cos(angle) * along - sin(angle) * across
+    y = anchor_y + sin(angle) * along + cos(angle) * across
+    return (
+        _clamp_float(x, max(2.0, width * 0.06), min(width - 3.0, width * 0.94)),
+        _clamp_float(y, max(2.0, height * 0.06), min(height - 3.0, height * 0.94)),
+    )
 
 
 def _macro_region_config(*, kind: str, rng: Random) -> tuple[float, float, float]:
@@ -1207,13 +1283,19 @@ def _macro_region_distance(*, x: float, y: float, region: GeographyDraftRegion) 
     """Return normalized distance to a macro region site."""
     dx = x - region.center_x
     dy = y - region.center_y
-    if region.kind == "ridge":
+    if region.kind == "ridge" or region.elongation > 1.0:
         angle = region.angle_degrees * pi / 180.0
         along = dx * cos(angle) + dy * sin(angle)
         across = -dx * sin(angle) + dy * cos(angle)
+        if region.kind == "ridge":
+            along_scale = region.radius_tiles * max(1.75, region.elongation)
+            across_scale = region.radius_tiles * 0.36
+        else:
+            along_scale = region.radius_tiles * region.elongation
+            across_scale = region.radius_tiles * 0.62
         return hypot(
-            along / max(1.0, region.radius_tiles * 1.75),
-            across / max(1.0, region.radius_tiles * 0.36),
+            along / max(1.0, along_scale),
+            across / max(1.0, across_scale),
         )
     if region.kind == "plateau":
         angle = region.angle_degrees * pi / 180.0
@@ -1302,8 +1384,10 @@ def _macro_region_count(profile: ElevationScaleProfile) -> int:
         return base_count + 1
     if profile.style_name == "plateau":
         return max(3, base_count - 2)
-    if profile.style_name in {"rugged", "mountainous"}:
+    if profile.style_name == "rugged":
         return base_count + 3
+    if profile.style_name == "mountainous":
+        return base_count + 2
     return base_count
 
 
@@ -1317,7 +1401,7 @@ def _macro_region_kinds(profile: ElevationScaleProfile) -> tuple[str, ...]:
     if profile.style_name == "rugged":
         return ("plain", "basin", "hill", "plateau", "ridge", "mountain", "hill")
     if profile.style_name == "mountainous":
-        return ("plain", "hill", "ridge", "mountain", "plateau", "mountain", "peak", "ridge", "basin")
+        return ("plain", "basin", "ridge", "mountain", "ridge", "peak", "mountain", "hill")
     if profile.style_name == "plateau":
         return ("plateau", "plain", "plateau", "basin", "ridge", "plateau")
     if profile.name == "tiny":
@@ -1351,15 +1435,7 @@ def _macro_region_bias(
 
 
 def _macro_region_influence(*, x: float, y: float, region: GeographyDraftRegion) -> float:
-    dx = x - region.center_x
-    dy = y - region.center_y
-    if region.kind == "ridge":
-        angle = region.angle_degrees * pi / 180.0
-        along = dx * cos(angle) + dy * sin(angle)
-        across = -dx * sin(angle) + dy * cos(angle)
-        distance = hypot(along / max(1.0, region.radius_tiles * 1.55), across / max(1.0, region.radius_tiles * 0.34))
-    else:
-        distance = hypot(dx, dy) / max(1.0, region.radius_tiles)
+    distance = _macro_region_distance(x=x, y=y, region=region)
     if distance >= 1.0:
         return 0.0
     if region.kind == "plateau" and distance <= 0.46:
@@ -2859,6 +2935,7 @@ def _geography_report(
                     "moisture_bias": round(region.moisture_bias, 4),
                     "roughness": round(region.roughness, 4),
                     "priority": round(region.priority, 4),
+                    "elongation": round(region.elongation, 3),
                 }
                 for region in geographic_fields.macro_regions
             ],

@@ -77,7 +77,7 @@ def finalize_runtime_objects_for_final_terrain(
             continue
         item = dict(value)
         points = _object_points(item)
-        is_flooded = any(not _point_is_passable(rows, point) for point in points)
+        is_flooded = any(not _point_is_object_safe(rows, point) for point in points)
         if is_flooded:
             item["flooded"] = True
             flooded += 1
@@ -444,6 +444,12 @@ def _distances_from(
             distances[point] = distances[(x, y)] + 1
             queue.append(point)
     return distances
+
+
+def _point_is_object_safe(rows: list[str], point: tuple[int, int]) -> bool:
+    """Return whether a runtime object may remain on the final terrain tile."""
+    x, y = point
+    return 0 <= y < len(rows) and 0 <= x < len(rows[y]) and rows[y][x] in DRY_WALKABLE_SYMBOLS
 
 
 def _point_is_passable(rows: list[str], point: tuple[int, int]) -> bool:
