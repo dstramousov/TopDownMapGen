@@ -1081,7 +1081,13 @@ def _build_macro_regions(
         height=height,
         rng=rng,
     ) if profile.style_name == "mountainous" else ()
+    plateau_layout = _plateau_layout(
+        width=width,
+        height=height,
+        rng=rng,
+    ) if profile.style_name == "plateau" else ()
     highland_index = 0
+    plateau_index = 0
     for index in range(count):
         kind = kinds[index % len(kinds)]
         radius = rng.uniform(min_radius, max_radius)
@@ -1106,6 +1112,20 @@ def _build_macro_regions(
                 "peak": 1.45,
             }[kind]
             highland_index += 1
+        elif plateau_layout and kind in {"plateau", "ridge"}:
+            anchor = plateau_layout[plateau_index % len(plateau_layout)]
+            step = plateau_index // len(plateau_layout)
+            center_x, center_y = _plateau_region_position(
+                anchor=anchor,
+                step=step,
+                width=width,
+                height=height,
+                rng=rng,
+            )
+            angle_degrees = anchor[2] + rng.uniform(-5.0, 5.0)
+            elongation = 1.55 if kind == "plateau" else 2.10
+            radius *= 1.18 if kind == "plateau" else 0.82
+            plateau_index += 1
         base_score, moisture_bias, roughness = _macro_region_config(kind=kind, rng=rng)
         regions.append(
             GeographyDraftRegion(
@@ -1126,6 +1146,57 @@ def _build_macro_regions(
     return tuple(regions)
 
 
+
+
+def _plateau_layout(
+    *,
+    width: int,
+    height: int,
+    rng: Random,
+) -> tuple[tuple[float, float, float], ...]:
+    """Return one dominant plateau mass and an optional secondary shelf."""
+    short_side = min(width, height)
+    margin_x = max(6.0, width * 0.24)
+    margin_y = max(6.0, height * 0.24)
+    angle = rng.uniform(12.0, 168.0)
+    primary = (
+        rng.uniform(margin_x, max(margin_x, width - margin_x)),
+        rng.uniform(margin_y, max(margin_y, height - margin_y)),
+        angle,
+    )
+    if short_side < 128:
+        return (primary,)
+    offset = short_side * rng.uniform(0.20, 0.29)
+    radians = angle * pi / 180.0
+    secondary = (
+        _clamp_float(primary[0] + cos(radians) * offset, width * 0.16, width * 0.84),
+        _clamp_float(primary[1] + sin(radians) * offset, height * 0.16, height * 0.84),
+        angle + rng.uniform(-12.0, 12.0),
+    )
+    return (primary, secondary)
+
+
+def _plateau_region_position(
+    *,
+    anchor: tuple[float, float, float],
+    step: int,
+    width: int,
+    height: int,
+    rng: Random,
+) -> tuple[float, float]:
+    """Place plateau pieces as overlapping shelves of one broad landform."""
+    anchor_x, anchor_y, angle_degrees = anchor
+    angle = angle_degrees * pi / 180.0
+    spacing = max(10.0, min(width, height) * 0.115)
+    signed_step = ((step + 1) // 2) * (-1.0 if step % 2 else 1.0)
+    along = signed_step * spacing + rng.uniform(-spacing * 0.12, spacing * 0.12)
+    across = rng.uniform(-spacing * 0.18, spacing * 0.18)
+    x = anchor_x + cos(angle) * along - sin(angle) * across
+    y = anchor_y + sin(angle) * along + cos(angle) * across
+    return (
+        _clamp_float(x, max(3.0, width * 0.08), min(width - 4.0, width * 0.92)),
+        _clamp_float(y, max(3.0, height * 0.08), min(height - 4.0, height * 0.92)),
+    )
 
 def _mountain_chain_layout(
     *,
@@ -1302,8 +1373,8 @@ def _macro_region_distance(*, x: float, y: float, region: GeographyDraftRegion) 
         along = dx * cos(angle) + dy * sin(angle)
         across = -dx * sin(angle) + dy * cos(angle)
         return hypot(
-            along / max(1.0, region.radius_tiles * 1.18),
-            across / max(1.0, region.radius_tiles * 0.84),
+            along / max(1.0, region.radius_tiles * max(1.22, region.elongation)),
+            across / max(1.0, region.radius_tiles * 0.92),
         )
     return hypot(dx, dy) / max(1.0, region.radius_tiles)
 
@@ -1313,7 +1384,7 @@ def _macro_region_local_influence(*, x: float, y: float, region: GeographyDraftR
     distance = _macro_region_distance(x=x, y=y, region=region)
     if distance >= 1.0:
         return 0.0
-    if region.kind == "plateau" and distance <= 0.46:
+    if region.kind == "plateau" and distance <= 0.58:
         return 1.0
     return (1.0 - distance) ** 2.0
 
@@ -1438,7 +1509,7 @@ def _macro_region_influence(*, x: float, y: float, region: GeographyDraftRegion)
     distance = _macro_region_distance(x=x, y=y, region=region)
     if distance >= 1.0:
         return 0.0
-    if region.kind == "plateau" and distance <= 0.46:
+    if region.kind == "plateau" and distance <= 0.58:
         return 1.0
     return (1.0 - distance) ** 2.0
 
