@@ -716,6 +716,9 @@ def _draw_terrain_feature(
     if terrain == "tree_blocker":
         _draw_tree_marker(draw, center=(center_x, center_y), scale=scale)
         return
+    if terrain == "reed_visual":
+        _draw_reed_marker(draw, center=(center_x, center_y), scale=scale)
+        return
     if terrain == "ruin_wall_blocker":
         _draw_blocked_marker(draw, top=top, color=(64, 58, 54, 225))
         return
@@ -729,6 +732,24 @@ def _draw_terrain_feature(
             fill=(236, 195, 74, 225),
         )
 
+
+
+def _draw_reed_marker(
+    draw: ImageDraw.ImageDraw,
+    *,
+    center: tuple[float, float],
+    scale: RenderScale,
+) -> None:
+    """Draw a compact reed cluster rooted on a wet-shore tile."""
+    center_x, center_y = center
+    height = max(3.0, scale.tile_width * 0.46)
+    spread = max(1.0, scale.tile_width * 0.16)
+    for offset in (-spread, 0.0, spread):
+        draw.line(
+            (center_x + offset, center_y, center_x + offset * 0.72, center_y - height),
+            fill=(91, 126, 48, 235),
+            width=max(1, round(scale.tile_width * 0.05)),
+        )
 
 def _draw_tree_marker(
     draw: ImageDraw.ImageDraw,
@@ -891,7 +912,7 @@ def _read_terrain_traversal_data(
         if isinstance(vegetation_ref, str) and vegetation_ref
         else {}
     )
-    visual_tree_rows = _read_visual_tree_rows(
+    visual_vegetation_rows = _read_visual_vegetation_rows(
         vegetation_visual,
         width=width,
         height=height,
@@ -928,7 +949,7 @@ def _read_terrain_traversal_data(
             counts[key] += 1
             if terrain_rows[y][x] == "tree_blocker":
                 counts["tree_logical"] += 1
-                if visual_tree_rows[y][x]:
+                if visual_vegetation_rows[y][x] == "T":
                     counts["tree"] += 1
                 else:
                     counts["tree_hidden_by_altitude"] += 1
@@ -942,7 +963,7 @@ def _read_terrain_traversal_data(
     )
     rendered_terrain_rows = [
         [
-            terrain if terrain != "tree_blocker" or visual_tree_rows[y][x] else "tree_blocker_hidden"
+            "reed_visual" if visual_vegetation_rows[y][x] == "R" else (terrain if terrain != "tree_blocker" or visual_vegetation_rows[y][x] == "T" else "tree_blocker_hidden")
             for x, terrain in enumerate(row)
         ]
         for y, row in enumerate(terrain_rows)
@@ -955,13 +976,13 @@ def _read_terrain_traversal_data(
 
 
 
-def _read_visual_tree_rows(
+def _read_visual_vegetation_rows(
     data: dict[str, Any],
     *,
     width: int,
     height: int,
-) -> list[list[bool]]:
-    """Read the optional visual tree mask from the map package.
+) -> list[list[str]]:
+    """Read the optional visual vegetation mask from the map package.
 
     Args:
         data: Vegetation visual document.
@@ -969,15 +990,15 @@ def _read_visual_tree_rows(
         height: Expected map height.
 
     Returns:
-        Boolean rows where True means that a tree should be rendered.
+        Character rows containing visible tree and reed codes.
     """
     raw_rows = data.get("rows")
     if not isinstance(raw_rows, list):
-        return [[True for _ in range(width)] for _ in range(height)]
-    rows: list[list[bool]] = []
+        return [["T" for _ in range(width)] for _ in range(height)]
+    rows: list[list[str]] = []
     for y in range(height):
         raw_row = raw_rows[y] if y < len(raw_rows) and isinstance(raw_rows[y], str) else ""
-        rows.append([x < len(raw_row) and raw_row[x] == "T" for x in range(width)])
+        rows.append([raw_row[x] if x < len(raw_row) else "." for x in range(width)])
     return rows
 
 def _walkability_code(

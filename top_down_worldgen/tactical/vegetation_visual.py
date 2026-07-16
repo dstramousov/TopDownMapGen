@@ -8,6 +8,7 @@ from typing import Any
 TREE_TERRAIN = "tree_blocker"
 TREE_VISIBLE_CODE = "T"
 TREE_HIDDEN_CODE = "."
+REED_VISIBLE_CODE = "R"
 THINNING_START_LEVEL = 9
 TREELESS_LEVEL = 18
 
@@ -26,6 +27,7 @@ def build_visual_vegetation(
     elevation_rows: list[list[int]],
     slope_rows: list[list[int]],
     seed: int,
+    reed_density: float = 0.45,
 ) -> VegetationVisualResult:
     """Build a visual tree mask without changing gameplay blocking.
 
@@ -34,6 +36,7 @@ def build_visual_vegetation(
         elevation_rows: Final integer elevation rows.
         slope_rows: Final local slope rows.
         seed: Resolved deterministic world seed.
+        reed_density: Base probability for reeds on level -1.
 
     Returns:
         Visual tree mask and thinning diagnostics.
@@ -45,18 +48,33 @@ def build_visual_vegetation(
     tree_after = 0
     removed_by_altitude = 0
     removed_by_slope = 0
+    removed_by_lowland = 0
+    reeds_visible = 0
     by_level: dict[int, dict[str, int]] = {}
 
     for y, terrain_row in enumerate(terrain_rows):
         output_row: list[str] = []
         for x, terrain in enumerate(terrain_row):
+            level = _grid_value(elevation_rows, x=x, y=y)
+            slope = _grid_value(slope_rows, x=x, y=y)
+            if level == -1 and terrain == "water_slow":
+                probability = _reed_probability(
+                    elevation_rows=elevation_rows,
+                    x=x,
+                    y=y,
+                    base_density=reed_density,
+                )
+                if _stable_unit(seed=seed, x=x, y=y, salt="reed") < probability:
+                    output_row.append(REED_VISIBLE_CODE)
+                    reeds_visible += 1
+                else:
+                    output_row.append(TREE_HIDDEN_CODE)
+                continue
             if terrain != TREE_TERRAIN:
                 output_row.append(TREE_HIDDEN_CODE)
                 continue
 
             tree_before += 1
-            level = _grid_value(elevation_rows, x=x, y=y)
-            slope = _grid_value(slope_rows, x=x, y=y)
             level_stats = by_level.setdefault(level, {"before": 0, "after": 0, "removed": 0})
             level_stats["before"] += 1
 
@@ -69,7 +87,9 @@ def build_visual_vegetation(
             else:
                 output_row.append(TREE_HIDDEN_CODE)
                 level_stats["removed"] += 1
-                if level >= TREELESS_LEVEL or level > THINNING_START_LEVEL:
+                if level < 0:
+                    removed_by_lowland += 1
+                elif level >= TREELESS_LEVEL or level > THINNING_START_LEVEL:
                     removed_by_altitude += 1
                 elif slope > 1:
                     removed_by_slope += 1
@@ -84,6 +104,9 @@ def build_visual_vegetation(
             "treeless_level": TREELESS_LEVEL,
             "slope_penalty_per_level": 0.12,
             "gameplay_collision_unchanged": True,
+            "lowland_tree_levels": [-5, -4, -3, -2, -1],
+            "reed_level": -1,
+            "reed_density": reed_density,
             "deterministic_by_seed_and_coordinate": True,
         },
         "summary": {
@@ -93,6 +116,8 @@ def build_visual_vegetation(
             "removed_percent": _percent(tree_before - tree_after, tree_before),
             "removed_by_altitude": removed_by_altitude,
             "removed_by_slope": removed_by_slope,
+            "removed_by_lowland": removed_by_lowland,
+            "reeds_visible": reeds_visible,
             "trees_at_or_above_treeless_level": 0,
         },
         "by_level": {
@@ -105,6 +130,7 @@ def build_visual_vegetation(
         "legend": {
             TREE_VISIBLE_CODE: "visible_tree",
             TREE_HIDDEN_CODE: "no_visual_tree",
+            REED_VISIBLE_CODE: "visible_reed",
         },
         "rows": output_rows,
     }
@@ -112,6 +138,8 @@ def build_visual_vegetation(
 
 
 def _tree_keep_probability(*, level: int, slope: int) -> float:
+    if level < 0:
+        return 0.0
     if level >= TREELESS_LEVEL:
         return 0.0
     if level <= THINNING_START_LEVEL:
@@ -123,8 +151,23 @@ def _tree_keep_probability(*, level: int, slope: int) -> float:
     return max(0.0, min(1.0, altitude_probability - slope_penalty))
 
 
-def _stable_unit(*, seed: int, x: int, y: int) -> float:
-    payload = f"{seed}:{x}:{y}:visual-tree".encode("ascii")
+def _reed_probability(
+    *,
+    elevation_rows: list[list[int]],
+    x: int,
+    y: int,
+    base_density: float,
+) -> float:
+    deepest_nearby = -1
+    for ny in range(max(0, y - 2), min(len(elevation_rows), y + 3)):
+        for nx in range(max(0, x - 2), min(len(elevation_rows[ny]), x + 3)):
+            deepest_nearby = min(deepest_nearby, int(elevation_rows[ny][nx]))
+    depth_penalty = max(0, -1 - deepest_nearby) * 0.16
+    return max(0.0, min(1.0, base_density - depth_penalty))
+
+
+def _stable_unit(*, seed: int, x: int, y: int, salt: str = "visual-tree") -> float:
+    payload = f"{seed}:{x}:{y}:{salt}".encode("ascii")
     digest = blake2b(payload, digest_size=8).digest()
     return int.from_bytes(digest, "big") / float(1 << 64)
 

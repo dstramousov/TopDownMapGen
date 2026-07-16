@@ -21,5 +21,8 @@
   },
   "elevation": {
     "style": "mountainous"
+  },
+  "hydrology": {
+    "reed_density": 0.45
   }
 }

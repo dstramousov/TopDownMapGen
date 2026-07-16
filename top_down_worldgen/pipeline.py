@@ -69,6 +69,7 @@ from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
 from .tactical.runtime_objects import attach_runtime_layers
 from .tactical.terrain_islands import elevation_cell_points, repair_terrain_islands
+from .tactical.hydrology import apply_elevation_hydrology
 from .tactical.vegetation_visual import build_visual_vegetation
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
@@ -301,15 +302,30 @@ class WorldgenPipeline:
                 natural_geography=natural_geography,
             )
             geography_grids = runtime_data.get("elevation_generation_report", {}).get("geography", {}).get("grids", {})
+            elevation_rows = geography_grids.get("geographic_level_grid", {}).get("rows", [])
+            hydrology = apply_elevation_hydrology(rows=rows, elevation_rows=elevation_rows)
+            rows = hydrology.rows
+            runtime_data = attach_tile_grid(runtime_data, rows)
+            map_info = dict(runtime_data.get("map", {}))
+            tile_legend = dict(map_info.get("tile_legend", {}))
+            tile_legend["~"] = "deep_water_blocker"
+            map_info["tile_legend"] = tile_legend
+            runtime_data["map"] = map_info
+            movement_costs = dict(runtime_data.get("movement_costs", {}))
+            movement_costs.pop("~", None)
+            runtime_data["movement_costs"] = movement_costs
+            runtime_data["elevation_hydrology"] = hydrology.report
+            debug_data["elevation_hydrology"] = hydrology.report
             terrain_rows = [
-                [runtime_data.get("map", {}).get("tile_legend", {}).get(tile, "unknown") for tile in row]
+                [tile_legend.get(tile, "unknown") for tile in row]
                 for row in rows
             ]
             vegetation_visual = build_visual_vegetation(
                 terrain_rows=terrain_rows,
-                elevation_rows=geography_grids.get("geographic_level_grid", {}).get("rows", []),
+                elevation_rows=elevation_rows,
                 slope_rows=geography_grids.get("slope_grid", {}).get("rows", []),
                 seed=config.resolved_seed,
+                reed_density=config.reed_density,
             )
             runtime_data["vegetation_visual"] = vegetation_visual.report
             outputs.generated_map.write_text("\n".join(rows) + "\n", encoding="utf-8")

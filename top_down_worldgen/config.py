@@ -16,6 +16,7 @@ UINT64_MAX = (1 << 64) - 1
 MIN_TUNING_SCALE = 0.0
 MAX_TUNING_SCALE = 10.0
 DEFAULT_ELEVATION_STYLE = "normal"
+DEFAULT_REED_DENSITY = 0.45
 SUPPORTED_ELEVATION_STYLES = frozenset(
     {"super_flatland", "flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
 )
@@ -126,6 +127,7 @@ class PublicConfig:
     objective_profile: str = "clear_map"
     elevation_style: str = DEFAULT_ELEVATION_STYLE
     generation_tuning: GenerationTuning = field(default_factory=GenerationTuning)
+    reed_density: float = DEFAULT_REED_DENSITY
 
     @classmethod
     def from_file(cls, path: Path) -> "PublicConfig":
@@ -160,6 +162,7 @@ class PublicConfig:
                 objective_profile=objective_profile,
                 elevation_style=_sanitize_elevation_style(data),
                 generation_tuning=GenerationTuning.from_raw(data.get("generation_tuning")),
+                reed_density=_sanitize_reed_density(data),
             )
             metrics.update(
                 {
@@ -173,6 +176,7 @@ class PublicConfig:
                     "objective_profile": config.objective_profile,
                     "elevation_style": config.elevation_style,
                     "generation_tuning": config.generation_tuning.to_dict(),
+                    "reed_density": config.reed_density,
                 },
             )
             return config
@@ -206,6 +210,14 @@ class PublicConfig:
             engine_config = self.to_engine_dict()
             write_json(engine_config, path)
             metrics.update({"field_count": len(engine_config)})
+
+
+
+def _sanitize_reed_density(data: dict[str, Any]) -> float:
+    """Return configured wet-shore reed density in the inclusive 0..1 range."""
+    hydrology = data.get("hydrology")
+    raw = hydrology.get("reed_density", DEFAULT_REED_DENSITY) if isinstance(hydrology, dict) else DEFAULT_REED_DENSITY
+    return _sanitize_ratio(raw, key="hydrology.reed_density")
 
 
 def _sanitize_elevation_style(data: dict[str, Any]) -> str:

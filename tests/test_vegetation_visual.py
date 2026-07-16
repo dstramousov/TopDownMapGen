@@ -40,3 +40,22 @@ def test_visual_vegetation_is_deterministic() -> None:
 
     assert first.rows == second.rows
     assert 0 < first.report["summary"]["tree_tiles_after"] < 16
+
+
+def test_visual_vegetation_removes_lowland_trees_and_adds_seeded_reeds() -> None:
+    terrain = [["tree_blocker", "water_slow", "water_slow", "deep_water_blocker"]]
+    elevation = [[-1, -1, -1, -2]]
+    slopes = [[0, 0, 0, 0]]
+
+    result = build_visual_vegetation(
+        terrain_rows=terrain,
+        elevation_rows=elevation,
+        slope_rows=slopes,
+        seed=1,
+        reed_density=1.0,
+    )
+
+    assert result.rows[0][0] == "."
+    assert result.rows[0][3] == "."
+    assert "R" in result.rows[0][1:3]
+    assert result.report["summary"]["removed_by_lowland"] == 1

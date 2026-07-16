@@ -279,6 +279,7 @@ def write_map_package(
             "resolved_seed": resolved_seed,
             "profile": profile,
             "generation_tuning": generation_tuning or {},
+            "hydrology": _dict(runtime_data.get("elevation_hydrology")),
             "dimensions": {
                 "width_tiles": width,
                 "height_tiles": height,
