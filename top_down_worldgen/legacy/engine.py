@@ -2082,6 +2082,7 @@ class MapGenerator:
             "connected_components": 0,
             "failed_repairs": 0,
             "tiles_changed": 0,
+            "component_scans": 0,
         }
         critical_points = {self.start_point(), self.goal_point(), self.central_point()}
         small_component_limit = self._small_isolated_component_limit()
@@ -2089,6 +2090,7 @@ class MapGenerator:
 
         for pass_index in range(max_repair_passes):
             components = MapValidator(self._grid).components()
+            metrics["component_scans"] += 1
             if pass_index == 0:
                 metrics["components_before"] = len(components)
             if len(components) <= 1:
@@ -2123,34 +2125,39 @@ class MapGenerator:
                 changed = self._connect_component_to_main(component, main_component)
                 action_key = "connected_components"
 
-            after_count = len(MapValidator(self._grid).components())
             metrics["tiles_changed"] += changed
-            if changed > 0 and after_count < before_count:
+            if changed > 0:
+                # Both repair actions guarantee progress without requiring an
+                # immediate second full connected-component scan:
+                # - filling removes the selected walkable component;
+                # - a carved connector joins it to the main component.
                 metrics[action_key] += 1
                 continue
 
             metrics["failed_repairs"] += 1
             LOGGER.warning(
                 "  Connectivity repair made no progress: action=%s changed=%s "
-                "components_before=%s components_after=%s",
+                "components_before=%s",
                 action_key,
                 changed,
                 before_count,
-                after_count,
             )
 
-        metrics["components_after"] = len(MapValidator(self._grid).components())
+        final_components = MapValidator(self._grid).components()
+        metrics["component_scans"] += 1
+        metrics["components_after"] = len(final_components)
         self._connectivity_repair_metrics = metrics
         LOGGER.info(
             "Stage 10c complete: components_before=%s components_after=%s "
             "filled_components=%s connected_components=%s failed_repairs=%s "
-            "tiles_changed=%s",
+            "tiles_changed=%s component_scans=%s",
             metrics["components_before"],
             metrics["components_after"],
             metrics["filled_components"],
             metrics["connected_components"],
             metrics["failed_repairs"],
             metrics["tiles_changed"],
+            metrics["component_scans"],
         )
 
     def _small_isolated_component_limit(self) -> int:
