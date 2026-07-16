@@ -19,6 +19,7 @@ class OutputPaths:
     metrics: Path
     log_file: Path
     engine_config: Path
+    geography_guidance: Path
     layer_base_map: Path
     layer_combat_zones: Path
     layer_cover_points: Path
@@ -34,6 +35,7 @@ class OutputPaths:
     elevation_density_report: Path
     world_summary_report: Path
     terrain_island_report: Path
+    terrain_guidance_report: Path
     object_catalog: Path
     map_package_dir: Path
     map_package_map: Path
@@ -108,6 +110,7 @@ class OutputPaths:
             metrics=output_dir / "metrics.txt",
             log_file=output_dir / "generation.log",
             engine_config=output_dir / "_engine_config.json",
+            geography_guidance=output_dir / "_geography_guidance.json",
             layer_base_map=output_dir / "layer_base_map.png",
             layer_combat_zones=output_dir / "layer_combat_zones.png",
             layer_cover_points=output_dir / "layer_cover_points.png",
@@ -123,6 +126,7 @@ class OutputPaths:
             elevation_density_report=output_dir / "elevation_density_report.json",
             world_summary_report=output_dir / "world_summary_report.json",
             terrain_island_report=output_dir / "terrain_island_report.json",
+            terrain_guidance_report=output_dir / "terrain_guidance_report.json",
             object_catalog=output_dir / "object_catalog.md",
             map_package_dir=map_package_dir,
             map_package_map=map_package_dir / "map.json",

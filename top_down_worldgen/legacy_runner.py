@@ -27,6 +27,7 @@ class LegacyEngineRunner:
         config_path: Path,
         map_out: Path,
         tactical_out: Path,
+        geography_guidance: Path | None,
         log_file: Path | None,
     ) -> None:
         """Run legacy engine once.
@@ -35,6 +36,7 @@ class LegacyEngineRunner:
             config_path: Sanitized engine config path.
             map_out: ASCII map output path.
             tactical_out: Raw tactical JSON output path.
+            geography_guidance: Optional internal geography guidance path.
             log_file: Optional engine log path.
 
         Raises:
@@ -51,6 +53,8 @@ class LegacyEngineRunner:
             str(tactical_out),
             "--no-render",
         ]
+        if geography_guidance is not None:
+            command.extend(["--geography-guidance", str(geography_guidance)])
         if log_file is not None:
             command.extend(["--log-file", str(log_file)])
 
@@ -61,6 +65,7 @@ class LegacyEngineRunner:
             config_path=config_path,
             map_out=map_out,
             tactical_out=tactical_out,
+            geography_guidance=geography_guidance,
         ) as metrics:
             LOGGER.debug("Legacy command: %s", " ".join(command))
             result = subprocess.run(

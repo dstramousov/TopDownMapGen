@@ -90,6 +90,7 @@ def build_world_reports(
         "world_density": terrain_report,
         "elevation_density": elevation_report,
         "world_structure": structure,
+        "terrain_guidance": _dict(runtime_data.get("terrain_guidance")),
         "render": {
             "enabled": render_enabled,
             "layers": rendered_layers,
@@ -125,6 +126,7 @@ def format_console_summary(summary: dict[str, Any]) -> str:
     structure = _dict(summary.get("world_structure"))
     validation = _dict(summary.get("validation"))
     overall = _dict(summary.get("overall"))
+    terrain_guidance = _dict(summary.get("terrain_guidance"))
 
     terrain = _dict(density.get("terrain"))
     collision = _dict(density.get("collision"))
@@ -180,6 +182,33 @@ def format_console_summary(summary: dict[str, Any]) -> str:
         cliff = float(_dict(slope_bands.get("cliff")).get("percent", 0.0))
         lines.append(f"  {'крутые склоны:':<22}{steep:>6.1f}%")
         lines.append(f"  {'обрывы:':<22}{cliff:>6.1f}%")
+
+    if terrain_guidance.get("enabled"):
+        evaluated = int(terrain_guidance.get("region_candidates_evaluated", 0))
+        rejected = int(terrain_guidance.get("region_candidates_rejected_steep", 0))
+        guided_routes = int(terrain_guidance.get("guided_road_routes", 0))
+        fallback_routes = int(terrain_guidance.get("fallback_road_routes", 0))
+        steep_road_tiles = int(terrain_guidance.get("road_steep_tiles", 0))
+        cliff_road_tiles = int(terrain_guidance.get("road_cliff_tiles", 0))
+        average_road_slope = float(terrain_guidance.get("average_road_slope", 0.0))
+        lines.extend(
+            [
+                "",
+                "Географическая адаптация terrain:",
+                (
+                    f"  кандидатов регионов: {evaluated}, отклонено крутых: {rejected}, "
+                    f"fallback: {int(terrain_guidance.get('region_steep_fallbacks', 0))}"
+                ),
+                f"  перемещено руин на ровные площадки: {int(terrain_guidance.get('ruin_regions_relocated', 0))}",
+                f"  маршрутов по рельефу: {guided_routes}, fallback: {fallback_routes}",
+                f"  средний локальный уклон дорог: {average_road_slope:.4f}",
+                f"  тайлов дорог на крутых участках: {steep_road_tiles}",
+                (
+                    f"  тайлов дорог через обрывы: {cliff_road_tiles} "
+                    f"{_status_tag_ru(cliff_road_tiles == 0, warning=True)}"
+                ),
+            ]
+        )
 
     lines.extend(["", "Проходимость:"])
     if traversal:
@@ -431,6 +460,7 @@ def _build_debug_files(*, outputs: OutputPaths, render_enabled: bool) -> dict[st
         "elevation_density": outputs.elevation_density_report,
         "world_summary": outputs.world_summary_report,
         "terrain_island_report": outputs.terrain_island_report,
+        "terrain_guidance_report": outputs.terrain_guidance_report,
         "generation_log": outputs.log_file,
         "full_world_preview": outputs.output_dir / "full_world_preview.png",
         "elevation_preview": outputs.output_dir / "elevation_preview.png",

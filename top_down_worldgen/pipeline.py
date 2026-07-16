@@ -37,6 +37,8 @@ from .manifest import (
     WORLD_DENSITY_REPORT_SCHEMA_VERSION,
     WORLD_SUMMARY_REPORT_SCHEMA_VERSION,
     TERRAIN_ISLAND_REPORT_SCHEMA_VERSION,
+    GEOGRAPHY_GUIDANCE_SCHEMA_VERSION,
+    TERRAIN_GUIDANCE_REPORT_SCHEMA_VERSION,
     PNG_LAYER_SCHEMA_VERSION,
     RAW_TACTICAL_MAP_SCHEMA_VERSION,
     TILE_RENDER_HINTS_SCHEMA_VERSION,
@@ -57,6 +59,7 @@ from .render.layers import LayerRenderer
 from .reports import build_world_reports, format_console_summary
 from .tactical.elevation import attach_next_gen_elevation, build_geography_draft
 from .tactical.fallback import FallbackPositionBuilder
+from .tactical.geography_guidance import write_geography_guidance
 from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
 from .tactical.runtime_objects import attach_runtime_layers
@@ -171,11 +174,13 @@ class WorldgenPipeline:
                 seed=config.resolved_seed,
                 elevation_style=config.elevation_style,
             )
+            write_geography_guidance(geography_draft, outputs.geography_guidance)
             metrics.update(
                 {
                     "macro_regions": len(geography_draft.macro_regions),
                     "region_edges": len(geography_draft.region_edges),
                     "elevation_style": geography_draft.elevation_style,
+                    "guidance_path": outputs.geography_guidance,
                 },
             )
 
@@ -186,6 +191,7 @@ class WorldgenPipeline:
                 config_path=outputs.engine_config,
                 map_out=outputs.generated_map,
                 tactical_out=outputs.raw_tactical_map,
+                geography_guidance=outputs.geography_guidance,
                 log_file=log_file or outputs.log_file,
             )
             rows = outputs.generated_map.read_text(encoding="utf-8").splitlines()
@@ -204,6 +210,9 @@ class WorldgenPipeline:
             raw_data["schema_version"] = RAW_TACTICAL_MAP_SCHEMA_VERSION
             raw_data["generator_version"] = self._project_version()
             raw_data["pipeline_version"] = "pipeline-v1"
+            terrain_guidance_report = raw_data.get("terrain_guidance", {})
+            if isinstance(terrain_guidance_report, dict):
+                write_json(terrain_guidance_report, outputs.terrain_guidance_report)
             write_json(raw_data, outputs.raw_tactical_map)
             LOGGER.info(
                 "Raw tactical counts combat_zones=%s cover_points=%s choke_points=%s "
@@ -614,6 +623,20 @@ class WorldgenPipeline:
                 False,
                 True,
                 TERRAIN_ISLAND_REPORT_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.geography_guidance,
+                "geography_guidance",
+                False,
+                True,
+                GEOGRAPHY_GUIDANCE_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.terrain_guidance_report,
+                "terrain_guidance_report",
+                False,
+                True,
+                TERRAIN_GUIDANCE_REPORT_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.object_catalog,

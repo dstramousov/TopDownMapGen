@@ -13,6 +13,11 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from typing import Iterable
 
+try:
+    from .terrain_guidance import TerrainGuidance, TerrainGuidanceError
+except ImportError:  # Direct script execution by LegacyEngineRunner.
+    from terrain_guidance import TerrainGuidance, TerrainGuidanceError
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -640,16 +645,22 @@ class MapValidator:
 class MapGenerator:
     """Top-down forest and ruins map generator."""
 
-    def __init__(self, public_config: PublicConfig) -> None:
+    def __init__(
+        self,
+        public_config: PublicConfig,
+        terrain_guidance: TerrainGuidance | None = None,
+    ) -> None:
         """Initialize generator.
 
         Args:
             public_config: Public generator configuration.
+            terrain_guidance: Optional precomputed geography context.
         """
         self._public = public_config
         self._derived = DerivedConfig.from_public(public_config)
         self._effective_seed = public_config.resolve_seed()
         self._rng = random.Random(self._effective_seed)
+        self._guidance = terrain_guidance
         self._grid = MapGrid(
             public_config.map_width_tiles,
             public_config.map_height_tiles,
@@ -669,6 +680,20 @@ class MapGenerator:
             "failed_repairs": 0,
             "tiles_changed": 0,
         }
+        self._terrain_guidance_metrics: dict[str, int | float | bool | str] = {
+            "enabled": terrain_guidance is not None,
+            "elevation_style": terrain_guidance.elevation_style if terrain_guidance else "disabled",
+            "region_candidates_evaluated": 0,
+            "region_candidates_rejected_steep": 0,
+            "region_steep_fallbacks": 0,
+            "ruin_regions_relocated": 0,
+            "guided_road_routes": 0,
+            "fallback_road_routes": 0,
+            "road_sample_tiles": 0,
+            "road_slope_sum": 0.0,
+            "road_steep_tiles": 0,
+            "road_cliff_tiles": 0,
+        }
 
     def effective_seed(self) -> int:
         """Return effective seed."""
@@ -677,6 +702,16 @@ class MapGenerator:
     def connectivity_repair_metrics(self) -> dict[str, int]:
         """Return final walkable connectivity repair metrics."""
         return dict(self._connectivity_repair_metrics)
+
+    def terrain_guidance_metrics(self) -> dict[str, int | float | bool | str]:
+        """Return terrain adaptation diagnostics."""
+        metrics = dict(self._terrain_guidance_metrics)
+        metrics["schema_version"] = "terrain-guidance-report-v1"
+        sample_tiles = int(metrics.pop("road_sample_tiles", 0))
+        slope_sum = float(metrics.pop("road_slope_sum", 0.0))
+        metrics["road_tiles_sampled"] = sample_tiles
+        metrics["average_road_slope"] = round(slope_sum / max(1, sample_tiles), 6)
+        return metrics
 
     def derived_config(self) -> DerivedConfig:
         """Return derived configuration."""
@@ -735,6 +770,7 @@ class MapGenerator:
         self._fill_forest()
         self._place_regions_evenly()
         self._assign_region_kinds()
+        self._relocate_ruin_regions_to_flat_ground()
         self._build_region_graph()
         self._carve_regions()
         self._carve_graph_roads()
@@ -770,10 +806,26 @@ class MapGenerator:
         bucket_width = self._grid.width / bucket_cols
         bucket_height = self._grid.height / bucket_rows
 
-        central = Point(
-            self._grid.width // 2 + self._rng.randint(-self._public.chunk_width_tiles, self._public.chunk_width_tiles),
-            self._grid.height // 2 + self._rng.randint(-self._public.chunk_height_tiles, self._public.chunk_height_tiles),
+        central_origin = Point(self._grid.width // 2, self._grid.height // 2)
+        central = self._best_guided_candidate(
+            left=max(10, central_origin.x - self._public.chunk_width_tiles),
+            right=min(self._grid.width - 11, central_origin.x + self._public.chunk_width_tiles),
+            top=max(10, central_origin.y - self._public.chunk_height_tiles),
+            bottom=min(self._grid.height - 11, central_origin.y + self._public.chunk_height_tiles),
+            radius=min(12, self._derived.central_clearing_radius),
+            attempts=36,
+            existing=(),
+            minimum_distance=0,
         )
+        if central is None:
+            central = Point(
+                central_origin.x + self._rng.randint(-self._public.chunk_width_tiles, self._public.chunk_width_tiles),
+                central_origin.y
+                + self._rng.randint(
+                    -self._public.chunk_height_tiles,
+                    self._public.chunk_height_tiles,
+                ),
+            )
         central_region = Region(0, central, RegionKind.CENTRAL_RUIN_CLEARING)
         self._regions.append(central_region)
         self._central_region_id = central_region.region_id
@@ -800,14 +852,25 @@ class MapGenerator:
             right = int((col + 1) * bucket_width) - 1
             top = int(row * bucket_height)
             bottom = int((row + 1) * bucket_height) - 1
-
             margin = 8
-            point = Point(
-                self._rng.randint(max(margin, left + margin), min(self._grid.width - margin - 1, right - margin)),
-                self._rng.randint(max(margin, top + margin), min(self._grid.height - margin - 1, bottom - margin)),
-            )
+            minimum_x = max(margin, left + margin)
+            maximum_x = min(self._grid.width - margin - 1, right - margin)
+            minimum_y = max(margin, top + margin)
+            maximum_y = min(self._grid.height - margin - 1, bottom - margin)
+            if minimum_x > maximum_x or minimum_y > maximum_y:
+                continue
 
-            if self._manhattan(point, central) < 18:
+            point = self._best_guided_candidate(
+                left=minimum_x,
+                right=maximum_x,
+                top=minimum_y,
+                bottom=maximum_y,
+                radius=8,
+                attempts=18,
+                existing=tuple(region.center for region in self._regions),
+                minimum_distance=12,
+            )
+            if point is None or self._manhattan(point, central) < 18:
                 continue
 
             region = Region(len(self._regions), point)
@@ -821,14 +884,20 @@ class MapGenerator:
                 point.y,
             )
 
-        attempts = self._derived.region_count * 60
+        attempts = self._derived.region_count * 80
         while len(self._regions) < self._derived.region_count and attempts > 0:
             attempts -= 1
-            point = Point(
-                self._rng.randint(10, self._grid.width - 11),
-                self._rng.randint(10, self._grid.height - 11),
+            point = self._best_guided_candidate(
+                left=10,
+                right=self._grid.width - 11,
+                top=10,
+                bottom=self._grid.height - 11,
+                radius=7,
+                attempts=4,
+                existing=tuple(region.center for region in self._regions),
+                minimum_distance=12,
             )
-            if any(self._manhattan(point, region.center) < 12 for region in self._regions):
+            if point is None:
                 continue
             self._regions.append(Region(len(self._regions), point))
 
@@ -836,6 +905,54 @@ class MapGenerator:
             raise GenerationError("Failed to place derived region count")
 
         LOGGER.info("Stage 2 complete: regions=%s", len(self._regions))
+
+    def _best_guided_candidate(
+        self,
+        *,
+        left: int,
+        right: int,
+        top: int,
+        bottom: int,
+        radius: int,
+        attempts: int,
+        existing: tuple[Point, ...],
+        minimum_distance: int,
+    ) -> Point | None:
+        """Choose the flattest valid random candidate inside one area."""
+        if left > right or top > bottom:
+            return None
+        best: Point | None = None
+        best_score = -1.0
+        steep_fallback: Point | None = None
+        steep_fallback_score = -1.0
+        for _ in range(max(1, attempts)):
+            point = Point(self._rng.randint(left, right), self._rng.randint(top, bottom))
+            if any(self._manhattan(point, other) < minimum_distance for other in existing):
+                continue
+            if self._guidance is None:
+                return point
+            self._terrain_guidance_metrics["region_candidates_evaluated"] = (
+                int(self._terrain_guidance_metrics["region_candidates_evaluated"]) + 1
+            )
+            score = self._guidance.footprint_score(point.x, point.y, radius)
+            if self._guidance.is_steep(point.x, point.y):
+                self._terrain_guidance_metrics["region_candidates_rejected_steep"] = (
+                    int(self._terrain_guidance_metrics["region_candidates_rejected_steep"]) + 1
+                )
+                if score > steep_fallback_score:
+                    steep_fallback = point
+                    steep_fallback_score = score
+                continue
+            if score > best_score:
+                best = point
+                best_score = score
+        if best is not None:
+            return best
+        if steep_fallback is not None:
+            self._terrain_guidance_metrics["region_steep_fallbacks"] = (
+                int(self._terrain_guidance_metrics["region_steep_fallbacks"]) + 1
+            )
+        return steep_fallback
 
     def _assign_region_kinds(self) -> None:
         LOGGER.info("Stage 3: assign region kinds")
@@ -876,6 +993,47 @@ class MapGenerator:
                 region.kind.value,
                 region.center.x,
                 region.center.y,
+            )
+
+    def _relocate_ruin_regions_to_flat_ground(self) -> None:
+        """Move ruin regions locally when a significantly flatter footprint exists."""
+        if self._guidance is None:
+            return
+        for region in self._regions:
+            if region.kind not in {
+                RegionKind.SMALL_RUIN,
+                RegionKind.MEDIUM_RUIN,
+                RegionKind.CENTRAL_RUIN_CLEARING,
+            }:
+                continue
+            radius = {
+                RegionKind.SMALL_RUIN: 7,
+                RegionKind.MEDIUM_RUIN: 11,
+                RegionKind.CENTRAL_RUIN_CLEARING: min(14, self._derived.central_clearing_radius),
+            }[region.kind]
+            current_score = self._guidance.footprint_score(region.center.x, region.center.y, radius)
+            search_radius = 16 if region.kind != RegionKind.CENTRAL_RUIN_CLEARING else 24
+            other_centers = tuple(
+                other.center for other in self._regions if other.region_id != region.region_id
+            )
+            candidate = self._best_guided_candidate(
+                left=max(10, region.center.x - search_radius),
+                right=min(self._grid.width - 11, region.center.x + search_radius),
+                top=max(10, region.center.y - search_radius),
+                bottom=min(self._grid.height - 11, region.center.y + search_radius),
+                radius=radius,
+                attempts=36,
+                existing=other_centers,
+                minimum_distance=10,
+            )
+            if candidate is None:
+                continue
+            candidate_score = self._guidance.footprint_score(candidate.x, candidate.y, radius)
+            if candidate_score < current_score + 0.06:
+                continue
+            region.center = candidate
+            self._terrain_guidance_metrics["ruin_regions_relocated"] = (
+                int(self._terrain_guidance_metrics["ruin_regions_relocated"]) + 1
             )
 
     def _build_region_graph(self) -> None:
@@ -988,7 +1146,13 @@ class MapGenerator:
                 dx = self._rng.randint(-radius + 4, radius - 4)
                 dy = self._rng.randint(-radius + 4, radius - 4)
                 if dx * dx + dy * dy <= (radius - 3) * (radius - 3):
-                    building_centers.append(Point(region.center.x + dx, region.center.y + dy))
+                    candidate = Point(region.center.x + dx, region.center.y + dy)
+                    if (
+                        self._guidance is not None
+                        and self._guidance.footprint_score(candidate.x, candidate.y, 6) < 0.42
+                    ):
+                        continue
+                    building_centers.append(candidate)
                     break
 
         all_entrances: list[Point] = []
@@ -1097,7 +1261,7 @@ class MapGenerator:
             self._carve_old_road(start, end, edge.is_loop)
 
     def _carve_old_road(self, start: Point, end: Point, is_loop: bool) -> None:
-        points = self._winding_points(start, end)
+        points = self._terrain_aware_road_points(start, end)
         corridor_width = self._rng.randint(
             self._derived.old_road_corridor_min_width,
             self._derived.old_road_corridor_max_width,
@@ -1131,18 +1295,101 @@ class MapGenerator:
 
             previous = point
 
+    def _terrain_aware_road_points(self, start: Point, end: Point) -> list[Point]:
+        """Return a geography-aware tile route or a legacy fallback path."""
+        if self._guidance is None:
+            return self._winding_points(start, end)
+        waypoints = self._guidance.road_path((start.x, start.y), (end.x, end.y))
+        if not waypoints:
+            self._terrain_guidance_metrics["fallback_road_routes"] = (
+                int(self._terrain_guidance_metrics["fallback_road_routes"]) + 1
+            )
+            points = self._winding_points(start, end)
+            self._record_road_guidance_metrics(points)
+            return points
+
+        points: list[Point] = []
+        for first, second in zip(waypoints, waypoints[1:]):
+            segment = self._line_points(Point(*first), Point(*second))
+            if points and segment and points[-1] == segment[0]:
+                segment = segment[1:]
+            points.extend(segment)
+        if not points:
+            points = [start, end]
+        self._terrain_guidance_metrics["guided_road_routes"] = (
+            int(self._terrain_guidance_metrics["guided_road_routes"]) + 1
+        )
+        self._record_road_guidance_metrics(points)
+        return points
+
+    def _record_road_guidance_metrics(self, points: list[Point]) -> None:
+        """Accumulate slope diagnostics for one road route."""
+        if self._guidance is None:
+            return
+        for point in points:
+            slope = self._guidance.slope_at(point.x, point.y)
+            self._terrain_guidance_metrics["road_sample_tiles"] = (
+                int(self._terrain_guidance_metrics["road_sample_tiles"]) + 1
+            )
+            self._terrain_guidance_metrics["road_slope_sum"] = (
+                float(self._terrain_guidance_metrics["road_slope_sum"]) + slope
+            )
+            if slope >= self._guidance.STEEP_SLOPE:
+                self._terrain_guidance_metrics["road_steep_tiles"] = (
+                    int(self._terrain_guidance_metrics["road_steep_tiles"]) + 1
+                )
+            if slope >= self._guidance.CLIFF_SLOPE:
+                self._terrain_guidance_metrics["road_cliff_tiles"] = (
+                    int(self._terrain_guidance_metrics["road_cliff_tiles"]) + 1
+                )
+
+    @staticmethod
+    def _line_points(start: Point, end: Point) -> list[Point]:
+        """Rasterize a continuous integer line between two points."""
+        points: list[Point] = []
+        x0, y0 = start.x, start.y
+        x1, y1 = end.x, end.y
+        dx = abs(x1 - x0)
+        dy = -abs(y1 - y0)
+        step_x = 1 if x0 < x1 else -1
+        step_y = 1 if y0 < y1 else -1
+        error = dx + dy
+        while True:
+            points.append(Point(x0, y0))
+            if x0 == x1 and y0 == y1:
+                break
+            doubled = 2 * error
+            if doubled >= dy:
+                error += dy
+                x0 += step_x
+            if doubled <= dx:
+                error += dx
+                y0 += step_y
+        return points
+
     def _add_connected_pockets(self) -> None:
         LOGGER.info("Stage 7: add connected grass pockets")
         for index in range(self._derived.connected_pocket_count):
             anchor = self._rng.choice(self._regions).connection_point()
-            pocket = Point(
-                min(max(anchor.x + self._rng.randint(-20, 20), 6), self._grid.width - 7),
-                min(max(anchor.y + self._rng.randint(-14, 14), 6), self._grid.height - 7),
-            )
             radius = self._rng.randint(
                 self._derived.connected_pocket_min_radius,
                 self._derived.connected_pocket_max_radius,
             )
+            pocket = self._best_guided_candidate(
+                left=max(6, anchor.x - 20),
+                right=min(self._grid.width - 7, anchor.x + 20),
+                top=max(6, anchor.y - 14),
+                bottom=min(self._grid.height - 7, anchor.y + 14),
+                radius=radius,
+                attempts=10,
+                existing=(),
+                minimum_distance=0,
+            )
+            if pocket is None:
+                pocket = Point(
+                    min(max(anchor.x + self._rng.randint(-20, 20), 6), self._grid.width - 7),
+                    min(max(anchor.y + self._rng.randint(-14, 14), 6), self._grid.height - 7),
+                )
             LOGGER.info(
                 "  Pocket %02d center=(%03d,%03d) radius=%s",
                 index,
@@ -3622,6 +3869,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-o", "--out", required=True, type=Path)
     parser.add_argument("--log-file", type=Path, default=None)
     parser.add_argument(
+        "--geography-guidance",
+        type=Path,
+        default=None,
+        help="Optional internal geography guidance JSON.",
+    )
+    parser.add_argument(
         "--tactical-out",
         type=Path,
         default=None,
@@ -3743,12 +3996,20 @@ def main() -> int:
             or args.out.with_name("layer_enemy_spawn_zones.png")
         )
         assets_dir = args.assets_dir or Path(__file__).resolve().parent / "assets"
+        terrain_guidance = None
+        if args.geography_guidance is not None:
+            terrain_guidance = TerrainGuidance.from_json_file(
+                args.geography_guidance,
+                expected_width=public_config.map_width_tiles,
+                expected_height=public_config.map_height_tiles,
+                expected_seed=public_config.resolve_seed(),
+            )
         last_error: Exception | None = None
 
         for attempt in range(1, max_attempts + 1):
             LOGGER.info("GENERATION ATTEMPT %s/%s", attempt, max_attempts)
             try:
-                generator = MapGenerator(public_config)
+                generator = MapGenerator(public_config, terrain_guidance=terrain_guidance)
                 grid = generator.generate()
                 AsciiExporter.export(grid, args.out)
 
@@ -3765,6 +4026,7 @@ def main() -> int:
                     tactical_data=tactical_data,
                 ).build()
                 tactical_data["connectivity_repair"] = generator.connectivity_repair_metrics()
+                tactical_data["terrain_guidance"] = generator.terrain_guidance_metrics()
                 TacticalExporter.export(tactical_data, tactical_out)
 
                 if not args.no_render:
@@ -3817,7 +4079,7 @@ def main() -> int:
         LOGGER.error("All generation attempts failed. Last error: %s", last_error)
         return 1
 
-    except (ConfigError, OSError) as exc:
+    except (ConfigError, TerrainGuidanceError, OSError) as exc:
         if not logging.getLogger().handlers:
             configure_logging(True, None)
         LOGGER.error("%s", exc)
