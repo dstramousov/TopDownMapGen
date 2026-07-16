@@ -100,3 +100,58 @@ def test_map_generator_uses_flat_guidance_for_roads() -> None:
     assert metrics["enabled"] is True
     assert int(metrics["guided_road_routes"]) > 0
     assert int(metrics["road_cliff_tiles"]) == 0
+
+
+def test_guidance_classifies_barriers_wetlands_and_forest() -> None:
+    width = 8
+    height = 8
+    elevation = tuple(tuple(0.25 for _ in range(width)) for _ in range(height))
+    moisture = tuple(tuple(0.9 for _ in range(width)) for _ in range(height))
+    slope = tuple(tuple(0.0 for _ in range(width)) for _ in range(height))
+    natural_levels = tuple(tuple(0 for _ in range(width)) for _ in range(height))
+    natural_slopes = tuple(
+        tuple(3 if x == 4 else 0 for x in range(width))
+        for _ in range(height)
+    )
+    guidance = TerrainGuidance(
+        width=width,
+        height=height,
+        seed=1,
+        elevation_style="plateau",
+        elevation_rows=elevation,
+        moisture_rows=moisture,
+        slope_rows=slope,
+        natural_level_rows=natural_levels,
+        natural_slope_rows=natural_slopes,
+    )
+
+    assert guidance.is_comfortable_walk(1, 1)
+    assert guidance.is_natural_barrier(4, 1)
+    assert guidance.wetland_score(1, 1) > 0.58
+    assert guidance.forest_suitability(1, 1) > 0.48
+    assert guidance.forest_suitability(4, 1) == 0.0
+
+
+def test_footprint_level_delta_uses_natural_levels() -> None:
+    width = 7
+    height = 7
+    elevation = tuple(tuple(0.5 for _ in range(width)) for _ in range(height))
+    moisture = tuple(tuple(0.5 for _ in range(width)) for _ in range(height))
+    slope = tuple(tuple(0.0 for _ in range(width)) for _ in range(height))
+    levels = tuple(
+        tuple(3 if x >= 4 else 0 for x in range(width))
+        for _ in range(height)
+    )
+    guidance = TerrainGuidance(
+        width=width,
+        height=height,
+        seed=1,
+        elevation_style="plateau",
+        elevation_rows=elevation,
+        moisture_rows=moisture,
+        slope_rows=slope,
+        natural_level_rows=levels,
+    )
+
+    assert guidance.footprint_level_delta(2, 3, 1) == 0
+    assert guidance.footprint_level_delta(3, 3, 2) == 3

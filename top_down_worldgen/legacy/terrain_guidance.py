@@ -116,6 +116,55 @@ class TerrainGuidance:
             return None
         return self.natural_slope_rows[y][x]
 
+
+    def natural_delta_at(self, x: int, y: int) -> int:
+        """Return final natural cardinal elevation delta at one tile."""
+        slope = self.natural_slope_at(x, y)
+        if slope is not None:
+            return slope
+        return 3 if self.slope_at(x, y) >= self.CLIFF_SLOPE else (2 if self.is_steep(x, y) else 0)
+
+    def is_natural_barrier(self, x: int, y: int) -> bool:
+        """Return whether natural geography should block ordinary terrain carving."""
+        return self.natural_delta_at(x, y) > 2
+
+    def is_comfortable_walk(self, x: int, y: int) -> bool:
+        """Return whether one tile is naturally comfortable for open ground."""
+        return self.natural_delta_at(x, y) <= 1
+
+    def is_difficult_walk(self, x: int, y: int) -> bool:
+        """Return whether one tile is a difficult but usable natural slope."""
+        return self.natural_delta_at(x, y) == 2
+
+    def wetland_score(self, x: int, y: int) -> float:
+        """Return suitability score for puddles and wetland terrain."""
+        moisture = self.moisture_at(x, y)
+        elevation = self.elevation_at(x, y)
+        slope_penalty = min(1.0, self.natural_delta_at(x, y) / 2.0)
+        lowland = max(0.0, 1.0 - elevation / 0.58)
+        return max(0.0, moisture * 0.62 + lowland * 0.38 - slope_penalty * 0.55)
+
+    def forest_suitability(self, x: int, y: int) -> float:
+        """Return natural suitability score for dense forest terrain."""
+        if self.is_natural_barrier(x, y):
+            return 0.0
+        moisture = self.moisture_at(x, y)
+        elevation = self.elevation_at(x, y)
+        slope_factor = 1.0 if self.is_comfortable_walk(x, y) else 0.55
+        elevation_factor = max(0.20, 1.0 - max(0.0, elevation - 0.68) * 1.8)
+        return max(0.0, min(1.0, (0.35 + moisture * 0.65) * slope_factor * elevation_factor))
+
+    def footprint_level_delta(self, x: int, y: int, radius: int) -> int:
+        """Return integer elevation range inside a circular footprint."""
+        if self.natural_level_rows is None:
+            return 0 if self.footprint_score(x, y, radius) >= 0.55 else 3
+        values: list[int] = []
+        for sy in range(max(0, y - radius), min(self.height, y + radius + 1)):
+            for sx in range(max(0, x - radius), min(self.width, x + radius + 1)):
+                if (sx - x) ** 2 + (sy - y) ** 2 <= radius * radius:
+                    values.append(self.natural_level_rows[sy][sx])
+        return max(values) - min(values) if values else 0
+
     def footprint_score(self, x: int, y: int, radius: int) -> float:
         """Return a placement score for a circular terrain footprint.
 

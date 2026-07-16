@@ -207,6 +207,11 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                     f"  тайлов дорог через обрывы: {cliff_road_tiles} "
                     f"{_status_tag_ru(cliff_road_tiles == 0, warning=True)}"
                 ),
+                f"  сохранено естественных барьеров от открытой земли: {int(terrain_guidance.get('open_ground_barrier_tiles_skipped', 0))}",
+                f"  сохранено естественных барьеров от дорог: {int(terrain_guidance.get('path_barrier_tiles_skipped', 0))}",
+                f"  отклонено неподходящих болотных зон: {int(terrain_guidance.get('wetland_candidates_rejected', 0))}",
+                f"  отклонено неподходящих лесных зон: {int(terrain_guidance.get('forest_candidates_rejected', 0))}",
+                f"  руин с плохим footprint: {int(terrain_guidance.get('ruin_bad_footprints', 0))}",
             ]
         )
 

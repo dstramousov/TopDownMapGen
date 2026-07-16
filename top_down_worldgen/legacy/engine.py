@@ -693,6 +693,11 @@ class MapGenerator:
             "road_slope_sum": 0.0,
             "road_steep_tiles": 0,
             "road_cliff_tiles": 0,
+            "open_ground_barrier_tiles_skipped": 0,
+            "path_barrier_tiles_skipped": 0,
+            "wetland_candidates_rejected": 0,
+            "forest_candidates_rejected": 0,
+            "ruin_bad_footprints": 0,
         }
 
     def effective_seed(self) -> int:
@@ -706,7 +711,7 @@ class MapGenerator:
     def terrain_guidance_metrics(self) -> dict[str, int | float | bool | str]:
         """Return terrain adaptation diagnostics."""
         metrics = dict(self._terrain_guidance_metrics)
-        metrics["schema_version"] = "terrain-guidance-report-v1"
+        metrics["schema_version"] = "terrain-guidance-report-v2"
         sample_tiles = int(metrics.pop("road_sample_tiles", 0))
         slope_sum = float(metrics.pop("road_slope_sum", 0.0))
         metrics["road_tiles_sampled"] = sample_tiles
@@ -1112,6 +1117,8 @@ class MapGenerator:
             self._rng.randint(self._derived.small_ruin_min_height, self._derived.small_ruin_max_height),
         )
         LOGGER.info("  Small ruin region=%02d rect=%s", region.region_id, rect)
+        if self._guidance is not None and self._guidance.footprint_level_delta(region.center.x, region.center.y, 7) > 2:
+            self._terrain_guidance_metrics["ruin_bad_footprints"] = int(self._terrain_guidance_metrics["ruin_bad_footprints"]) + 1
         self._carve_ruin_building(rect, region, self._rng.randint(1, 2))
 
     def _carve_medium_ruin(self, region: Region) -> None:
@@ -1123,6 +1130,8 @@ class MapGenerator:
             self._rng.randint(self._derived.medium_ruin_min_height, self._derived.medium_ruin_max_height),
         )
         LOGGER.info("  Medium ruin region=%02d rect=%s", region.region_id, rect)
+        if self._guidance is not None and self._guidance.footprint_level_delta(region.center.x, region.center.y, 11) > 2:
+            self._terrain_guidance_metrics["ruin_bad_footprints"] = int(self._terrain_guidance_metrics["ruin_bad_footprints"]) + 1
         self._carve_ruin_building(rect, region, self._rng.randint(2, 4))
         self._add_internal_ruin_walls(rect)
 
@@ -1413,6 +1422,11 @@ class MapGenerator:
             )
             if self._grid.get_tile(center) != TileType.GRASS:
                 continue
+            if self._guidance is not None and self._guidance.forest_suitability(center.x, center.y) < 0.48:
+                self._terrain_guidance_metrics["forest_candidates_rejected"] = (
+                    int(self._terrain_guidance_metrics["forest_candidates_rejected"]) + 1
+                )
+                continue
 
             radius = self._rng.randint(
                 self._derived.tree_cluster_min_radius,
@@ -1482,6 +1496,11 @@ class MapGenerator:
                 self._rng.randint(5, self._grid.height - 6),
             )
             if self._grid.get_tile(center) != TileType.GRASS:
+                continue
+            if self._guidance is not None and self._guidance.wetland_score(center.x, center.y) < 0.58:
+                self._terrain_guidance_metrics["wetland_candidates_rejected"] = (
+                    int(self._terrain_guidance_metrics["wetland_candidates_rejected"]) + 1
+                )
                 continue
 
             if not self._has_nearby_tile(center, {TileType.TREE, TileType.BUSH, TileType.MUSHROOM}, radius=5):
@@ -2280,6 +2299,14 @@ class MapGenerator:
 
     def _set_tile(self, point: Point, tile_type: TileType) -> None:
         current = self._grid.get_tile(point)
+
+        if self._guidance is not None and tile_type in {TileType.GRASS, TileType.PATH, TileType.WATER}:
+            if self._guidance.is_natural_barrier(point.x, point.y):
+                key = "path_barrier_tiles_skipped" if tile_type == TileType.PATH else "open_ground_barrier_tiles_skipped"
+                self._terrain_guidance_metrics[key] = int(self._terrain_guidance_metrics[key]) + 1
+                return
+            if tile_type == TileType.WATER and self._guidance.wetland_score(point.x, point.y) < 0.42:
+                return
 
         if current == TileType.RUIN_WALL and tile_type in {
             TileType.GRASS,
