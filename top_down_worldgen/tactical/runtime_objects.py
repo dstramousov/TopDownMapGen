@@ -843,6 +843,8 @@ class RuntimeObjectPlacer:
         objects: list[dict[str, Any]] = []
         quotas = _placement_quotas()
         anchors = _anchors(tactical_data)
+        anchor_distance_by_point = _anchor_distances(candidates, anchors)
+        unavailable = _points_too_close_to_occupied(occupied)
 
         for quota in quotas:
             target_count = self._target_count(quota, area_scale=scale)
@@ -857,8 +859,9 @@ class RuntimeObjectPlacer:
                     rows=rows,
                     candidates=candidates,
                     occupied=occupied,
+                    unavailable=unavailable,
                     preferred_tiles=quota.preferred_tiles,
-                    anchors=anchors,
+                    anchor_distance_by_point=anchor_distance_by_point,
                     object_type=quota.object_type,
                     desired_shape=desired_shape,
                 )
@@ -876,6 +879,7 @@ class RuntimeObjectPlacer:
                     ),
                 )
                 occupied.update(footprint)
+                _mark_points_too_close(unavailable, footprint)
                 placed += 1
                 if len(objects) >= MAX_RUNTIME_OBJECTS:
                     return objects
@@ -913,8 +917,9 @@ class RuntimeObjectPlacer:
         rows: list[str],
         candidates: list[tuple[int, int]],
         occupied: set[tuple[int, int]],
+        unavailable: set[tuple[int, int]],
         preferred_tiles: frozenset[str],
-        anchors: list[tuple[int, int]],
+        anchor_distance_by_point: dict[tuple[int, int], int],
         object_type: str,
         desired_shape: str | None,
     ) -> tuple[list[tuple[int, int]], str, str] | None:
@@ -925,7 +930,7 @@ class RuntimeObjectPlacer:
                 point,
                 rows=rows,
                 preferred_tiles=preferred_tiles,
-                anchors=anchors,
+                anchor_distance_by_point=anchor_distance_by_point,
                 rng=self._rng,
             ),
         )
@@ -938,7 +943,12 @@ class RuntimeObjectPlacer:
                 desired_shape=desired_shape,
             )
             for footprint, orientation, shape in footprints:
-                if _footprint_is_available(footprint, rows=rows, occupied=occupied):
+                if _footprint_is_available(
+                    footprint,
+                    rows=rows,
+                    occupied=occupied,
+                    unavailable=unavailable,
+                ):
                     return footprint, orientation, shape
         return None
 
@@ -1042,20 +1052,29 @@ def _anchors(tactical_data: dict[str, Any]) -> list[tuple[int, int]]:
     return anchors
 
 
+def _anchor_distances(
+    candidates: list[tuple[int, int]],
+    anchors: list[tuple[int, int]],
+) -> dict[tuple[int, int], int]:
+    if not anchors:
+        return {}
+    return {
+        point: min(_manhattan(point, anchor) for anchor in anchors)
+        for point in candidates
+    }
+
+
 def _placement_score(
     point: tuple[int, int],
     *,
     rows: list[str],
     preferred_tiles: frozenset[str],
-    anchors: list[tuple[int, int]],
+    anchor_distance_by_point: dict[tuple[int, int], int],
     rng: random.Random,
 ) -> tuple[int, int, float]:
     x, y = point
     tile_penalty = 0 if rows[y][x] in preferred_tiles else 3
-    anchor_distance = min(
-        (_manhattan(point, anchor) for anchor in anchors),
-        default=0,
-    )
+    anchor_distance = anchor_distance_by_point.get(point, 0)
     return tile_penalty, anchor_distance, rng.random()
 
 
@@ -1191,6 +1210,7 @@ def _footprint_is_available(
     *,
     rows: list[str],
     occupied: set[tuple[int, int]],
+    unavailable: set[tuple[int, int]],
 ) -> bool:
     if not footprint:
         return False
@@ -1202,19 +1222,29 @@ def _footprint_is_available(
             return False
         if rows[y][x] not in PASSABLE_OBJECT_TILES:
             return False
-        if _is_too_close_to_occupied(point, occupied):
+        if point in unavailable:
             return False
     return True
 
 
-def _is_too_close_to_occupied(
-    point: tuple[int, int],
+def _points_too_close_to_occupied(
     occupied: set[tuple[int, int]],
-) -> bool:
-    for occupied_point in occupied:
-        if _manhattan(point, occupied_point) < MIN_OBJECT_DISTANCE_TILES:
-            return True
-    return False
+) -> set[tuple[int, int]]:
+    unavailable: set[tuple[int, int]] = set()
+    _mark_points_too_close(unavailable, occupied)
+    return unavailable
+
+
+def _mark_points_too_close(
+    unavailable: set[tuple[int, int]],
+    points: Any,
+) -> None:
+    radius = MIN_OBJECT_DISTANCE_TILES - 1
+    for point_x, point_y in points:
+        for delta_y in range(-radius, radius + 1):
+            remaining = radius - abs(delta_y)
+            for delta_x in range(-remaining, remaining + 1):
+                unavailable.add((point_x + delta_x, point_y + delta_y))
 
 
 def _build_runtime_object(
