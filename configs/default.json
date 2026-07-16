@@ -1,5 +1,5 @@
 {
-  "seed": "random",
+  "seed": "16698809834256147907",
   "map_width_tiles": 352,
   "map_height_tiles": 352,
   "chunk_width_tiles": 16,
@@ -20,6 +20,6 @@
     "water_patch_density": 0.62
   },
   "elevation": {
-    "style": "rugged"
+    "style": "plateau"
   }
 }
