@@ -96,7 +96,7 @@ run_stage "3D-проходимость" \
   python3 examples/render_geography_3d_preview.py output \
     --overlay walkability --width 2560 --height 1440 --views nw ne se sw
 
-run_stage "3D-traversal" \
+run_stage "3D-связность" \
   python3 examples/render_geography_3d_preview.py output \
     --overlay traversal --width 2560 --height 1440 --views nw ne se sw
 

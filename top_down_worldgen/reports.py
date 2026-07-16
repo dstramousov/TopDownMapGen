@@ -164,7 +164,7 @@ def format_console_summary(summary: dict[str, Any]) -> str:
         "Основные показатели:",
         _metric_line_ru("лес", _dict(terrain.get("forest"))),
         _metric_line_ru("дороги", _dict(terrain.get("road"))),
-        _metric_line_ru("болота / вода", _dict(terrain.get("swamp"))),
+        _metric_line_ru("болотная местность", _dict(terrain.get("swamp"))),
         _metric_line_ru("руины", _dict(terrain.get("ruins"))),
         _metric_line_ru("открытая земля", _dict(terrain.get("open_ground"))),
         _metric_line_ru("заблокировано", _dict(collision.get("blocked"))),
@@ -275,6 +275,8 @@ def _format_validation_warning_ru(value: Any) -> str:
         details = _dict(warning.get("details"))
         total = sum(int(item) for item in details.values() if isinstance(item, int))
         return f"тактические точки рядом с краем карты: {total}"
+    if code == "quality.map_package_main_path_elevation_reachable":
+        return "главный маршрут map package не подтверждён как проходимый по высотам"
     return code
 
 def _build_world_density_report(*, rows: list[str], runtime_data: dict[str, Any]) -> dict[str, Any]:
