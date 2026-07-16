@@ -558,29 +558,7 @@ def print_summary(summary: PreviewSummary) -> None:
     Args:
         summary: Preview summary.
     """
-    LOGGER.info("World preview: OK")
-    LOGGER.info("Root: %s", summary.root)
-    LOGGER.info("Map package: %s", summary.map_json_path)
-    LOGGER.info(
-        "Map: %sx%s tiles, preview cell size %s px",
-        summary.width_tiles,
-        summary.height_tiles,
-        summary.cell_size_px,
-    )
-    LOGGER.info("Rendered:")
-    LOGGER.info("- terrain types: %s", summary.terrain_type_count)
-    LOGGER.info("- blocked tiles: %s", summary.blocked_tiles)
-    LOGGER.info("- runtime object markers: %s", summary.runtime_objects)
-    LOGGER.info("- multi-tile objects: %s", summary.multi_tile_objects)
-    LOGGER.info("- elevation levels: %s", summary.elevation_levels)
-    LOGGER.info("- elevation transitions: %s", summary.elevation_transitions)
-    LOGGER.info("- places: %s", summary.places)
-    LOGGER.info("- gameplay zones: %s", summary.gameplay_zones)
-    LOGGER.info("- routes: %s", summary.routes)
-    LOGGER.info("- world graph edges: %s", summary.world_graph_edges)
-    LOGGER.info("- start: %s", _format_point(summary.start))
-    LOGGER.info("- goal: %s", _format_point(summary.goal))
-    LOGGER.info("Output: %s", summary.output_path)
+    LOGGER.info("Preview создан: %s", summary.output_path)
 
 
 def _draw_terrain(
@@ -2146,7 +2124,7 @@ def main() -> int:
             draw_water_lowlands_only=args.water_lowlands_only,
         )
     except (FileNotFoundError, ValueError, json.JSONDecodeError, OSError) as exc:
-        LOGGER.error("World preview: FAILED")
+        LOGGER.error("Не удалось создать preview")
         LOGGER.error("- %s", exc)
         return 1
     print_summary(summary)

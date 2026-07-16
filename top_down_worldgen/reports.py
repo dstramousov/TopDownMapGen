@@ -96,6 +96,11 @@ def build_world_reports(
             "status": "ok" if render_enabled else "skipped",
         },
         "debug_files": debug_files,
+        "validation": {
+            "status": validation_report.get("status", "unknown"),
+            "warnings": validation_report.get("warnings", []),
+            "errors": validation_report.get("errors", []),
+        },
         "overall": {
             "status": status,
             "notes": _overall_notes(terrain_report, elevation_report, validation_report),
@@ -105,7 +110,7 @@ def build_world_reports(
 
 
 def format_console_summary(summary: dict[str, Any]) -> str:
-    """Format a compact human-readable generation summary.
+    """Format a compact Russian generation summary.
 
     Args:
         summary: Combined world summary report.
@@ -118,207 +123,159 @@ def format_console_summary(summary: dict[str, Any]) -> str:
     density = _dict(summary.get("world_density"))
     elevation = _dict(summary.get("elevation_density"))
     structure = _dict(summary.get("world_structure"))
-    render = _dict(summary.get("render"))
-    debug_files = _dict(summary.get("debug_files"))
+    validation = _dict(summary.get("validation"))
     overall = _dict(summary.get("overall"))
 
-    lines = [
-        "==> summary",
-        f"TopDownMapGen v{summary.get('generator_version', __version__)}",
-        f"Pipeline: {summary.get('pipeline', 'world')}",
-        "",
-        "World generation:",
-        f"  output: {_path_text(generation.get('output'))}",
-        f"  map:    {map_info.get('width', 0)} x {map_info.get('height', 0)} = {map_info.get('tiles', 0)} tiles",
-        f"  seed:   {generation.get('seed')}",
-        f"  status: {generation.get('status', 'unknown')}",
-        "",
-        "World density:",
-        "  terrain:",
-    ]
-    for key, label in (
-        ("forest", "forest"),
-        ("road", "road"),
-        ("swamp", "swamp"),
-        ("ruins", "ruins"),
-        ("open_ground", "open ground"),
-    ):
-        lines.append(_format_targeted_metric(label, _dict(_dict(density.get("terrain")).get(key))))
-    lines.extend(["", "  collision:"])
-    for key, label in (("blocked", "blocked"), ("walkable", "walkable")):
-        lines.append(_format_targeted_metric(label, _dict(_dict(density.get("collision")).get(key))))
-    lines.extend(["", "  movement:"])
-    for key, label in (("normal", "normal"), ("slow", "slow"), ("blocked", "blocked")):
-        lines.append(_format_targeted_metric(label, _dict(_dict(density.get("movement")).get(key))))
-    lines.extend(["", "  elevation profile:"])
-    profile = _dict(elevation.get("profile"))
-    lines.extend(
-        [
-            f"    map class:        {_path_text(profile.get('map_class', 'unknown'))}",
-            f"    style:            {_path_text(profile.get('style', 'normal'))}",
-            f"    wave frequency:   {_path_text(profile.get('wave_frequency', 'medium'))}",
-            f"    character:        {_path_text(profile.get('character', 'balanced terrain'))}",
-            f"    format range:     {_range_text(profile.get('format_range'))}",
-            f"    active range:     {_range_text(profile.get('active_range'))}",
-            f"    rare range:       {_range_text(profile.get('rare_range'))}",
-            f"    terrace target:   {_range_text(profile.get('terrace_target_size_tiles'))} tiles",
-            f"    smoothing passes: {int(profile.get('score_smoothing_passes', 0))}",
-            f"    max natural delta:{int(profile.get('max_natural_delta', 0)):>2}",
-        ],
-    )
-    lines.extend(["", "  elevation:"])
-    bands = _dict(elevation.get("bands"))
-    for key, label in (
-        ("underground_-5_-1", "underground -5..-1"),
-        ("ground_0", "ground 0"),
-        ("low_raised_1_4", "raised 1..4"),
-        ("hills_5_10", "hills 5..10"),
-        ("highlands_11_16", "highlands 11..16"),
-        ("landmarks_17_20", "landmarks 17..20"),
-    ):
-        lines.append(_format_targeted_metric(label, _dict(bands.get(key))))
-    summary_info = _dict(elevation.get("summary"))
-    lines.extend(
-        [
-            f"    min level:        {summary_info.get('min_level', 0):>5}",
-            f"    max level:        {summary_info.get('max_level', 0):>5}",
-            "",
-            "  geography:",
-        ],
-    )
+    terrain = _dict(density.get("terrain"))
+    collision = _dict(density.get("collision"))
     geography = _dict(elevation.get("geography"))
-    macro_regions = _dict(geography.get("macro_regions"))
-    lines.append(f"    macro regions:     {int(macro_regions.get('count', 0)):>5}")
-    macro_graph = _dict(macro_regions.get("graph"))
-    if macro_graph:
-        lines.append(f"    region graph edges:{int(macro_graph.get('edge_count', 0)):>5}")
-    sources = _dict(geography.get("sources"))
-    if sources:
-        geography_source = float(_dict(sources.get("geography")).get("percent", 0.0))
-        water_source = float(_dict(sources.get("water")).get("percent", 0.0))
-        structural_source = float(_dict(sources.get("structural_depth")).get("percent", 0.0))
-        lines.append(
-            f"    sources: geography {geography_source:.1f}%, "
-            f"water {water_source:.1f}%, structural {structural_source:.1f}%",
-        )
-    masks = _dict(geography.get("masks"))
-    for key, label in (
-        ("basins", "basins"),
-        ("lowlands", "lowlands"),
-        ("plains", "plains"),
-        ("hills", "hills"),
-        ("plateaus", "plateaus"),
-        ("ridges", "ridges"),
-        ("mountains", "mountains"),
-        ("peaks", "peaks"),
-    ):
-        metric = _dict(masks.get(key))
-        if metric:
-            lines.append(_format_plain_metric(label, metric))
-    moisture = _dict(geography.get("moisture"))
-    if moisture:
-        lines.append(
-            f"    moisture avg:      {float(moisture.get('avg', 0.0)):>5.3f}"
-            f" [{float(moisture.get('min', 0.0)):>5.3f}..{float(moisture.get('max', 0.0)):>5.3f}]",
-        )
     standing_water = _dict(geography.get("standing_water"))
-    if standing_water:
-        water_total = float(_dict(standing_water.get("water_total")).get("percent", 0.0))
-        wet_lowland = float(_dict(standing_water.get("wet_lowland_total")).get("percent", 0.0))
-        dry_lowland = float(_dict(standing_water.get("dry_lowland_total")).get("percent", 0.0))
-        structural = float(_dict(standing_water.get("structural_total")).get("percent", 0.0))
-        lines.append(
-            f"    standing water: water {water_total:.1f}%, "
-            f"wet lowland {wet_lowland:.1f}%, dry lowland {dry_lowland:.1f}%",
-        )
-        lines.append(f"    water model:       no rivers, structural depth {structural:.1f}%")
     slope_bands = _dict(_dict(geography.get("slope")).get("bands"))
+    profile = _dict(elevation.get("profile"))
+    elevation_summary = _dict(elevation.get("summary"))
+    traversal = _dict(_dict(elevation.get("traversal_repair")).get("summary"))
+    islands = _dict(_dict(elevation.get("terrain_island_repair")).get("summary"))
+
+    warnings = validation.get("warnings")
+    warning_items = warnings if isinstance(warnings, list) else []
+    errors = validation.get("errors")
+    error_items = errors if isinstance(errors, list) else []
+
+    lines = [
+        f"TopDownMapGen v{summary.get('generator_version', __version__)}",
+        "",
+        "Карта:",
+        (
+            f"  размер: {map_info.get('width', 0)} × {map_info.get('height', 0)}"
+            f" = {map_info.get('tiles', 0)} тайлов"
+        ),
+        f"  seed: {generation.get('seed')}",
+        (
+            "  стиль высот: "
+            f"{_path_text(profile.get('style', 'normal'))} — "
+            f"{_translate_character(profile.get('character'))}"
+        ),
+        (
+            "  диапазон высот: "
+            f"{elevation_summary.get('min_level', 0)}.."
+            f"{elevation_summary.get('max_level', 0)}"
+        ),
+        "",
+        "Основные показатели:",
+        _metric_line_ru("лес", _dict(terrain.get("forest"))),
+        _metric_line_ru("дороги", _dict(terrain.get("road"))),
+        _metric_line_ru("болота / вода", _dict(terrain.get("swamp"))),
+        _metric_line_ru("руины", _dict(terrain.get("ruins"))),
+        _metric_line_ru("открытая земля", _dict(terrain.get("open_ground"))),
+        _metric_line_ru("заблокировано", _dict(collision.get("blocked"))),
+    ]
+
+    if standing_water:
+        water = _dict(standing_water.get("water_total"))
+        wet = _dict(standing_water.get("wet_lowland_total"))
+        lines.append(f"  {'стоячая вода:':<22}{float(water.get('percent', 0.0)):>6.1f}%")
+        lines.append(f"  {'влажные низины:':<22}{float(wet.get('percent', 0.0)):>6.1f}%")
     if slope_bands:
-        flat = float(_dict(slope_bands.get("flat")).get("percent", 0.0))
-        gentle = float(_dict(slope_bands.get("gentle")).get("percent", 0.0))
         steep = float(_dict(slope_bands.get("steep")).get("percent", 0.0))
         cliff = float(_dict(slope_bands.get("cliff")).get("percent", 0.0))
-        lines.append(f"    slope: flat {flat:.1f}%, gentle {gentle:.1f}%, steep {steep:.1f}%, cliff {cliff:.1f}%")
-    region_transition = _dict(elevation.get("region_transition_shaping"))
-    transition_summary = _dict(region_transition.get("summary"))
-    if transition_summary:
+        lines.append(f"  {'крутые склоны:':<22}{steep:>6.1f}%")
+        lines.append(f"  {'обрывы:':<22}{cliff:>6.1f}%")
+
+    lines.extend(["", "Проходимость:"])
+    if traversal:
+        unreachable_before = int(traversal.get("unreachable_before", 0))
+        unreachable_after = int(traversal.get("unreachable_after", 0))
+        adjusted = int(traversal.get("adjusted_tiles", 0))
         lines.append(
-            "    region transitions: "
-            f"{int(transition_summary.get('cliff_edges_before', 0))} -> "
-            f"{int(transition_summary.get('cliff_edges_after', 0))} boundary cliffs, "
-            f"adjusted {int(transition_summary.get('adjusted_tiles', 0))} tiles"
+            f"  недостижимые тайлы: {unreachable_before} -> "
+            f"{unreachable_after} {_status_tag_ru(unreachable_after == 0)}"
         )
-    route_alignment = _dict(elevation.get("main_route_alignment"))
-    route_summary = _dict(route_alignment.get("summary"))
-    if route_summary:
+        lines.append(f"  traversal repair: изменено {adjusted} тайлов")
+    if islands:
+        removed = int(islands.get("small_island_tiles_removed", 0))
+        preserved = int(islands.get("large_islands_preserved", 0))
+        lines.append(f"  удалено мелких островов: {removed} тайлов")
         lines.append(
-            "    main route align: "
-            f"{int(route_summary.get('delta_violations_before', 0))} -> "
-            f"{int(route_summary.get('delta_violations_after', 0))} delta violations, "
-            f"adjusted {int(route_summary.get('adjusted_tiles', 0))} tiles"
+            f"  сохранено крупных островов: {preserved} "
+            f"{_status_tag_ru(preserved == 0, warning=True)}"
         )
-    traversal_repair = _dict(elevation.get("traversal_repair"))
-    repair_summary = _dict(traversal_repair.get("summary"))
-    if repair_summary:
-        lines.append(
-            "    traversal repair: "
-            f"{int(repair_summary.get('unreachable_before', 0))} -> "
-            f"{int(repair_summary.get('unreachable_after', 0))} unreachable, "
-            f"adjusted {int(repair_summary.get('adjusted_tiles', 0))} tiles, "
-            f"goal {'ok' if repair_summary.get('goal_reachable_after') else 'blocked'}",
-        )
-    terrain_island_repair = _dict(elevation.get("terrain_island_repair"))
-    island_summary = _dict(terrain_island_repair.get("summary"))
-    if island_summary:
-        lines.append(
-            "    terrain islands:  "
-            f"removed {int(island_summary.get('small_islands_removed', 0))} small "
-            f"({int(island_summary.get('small_island_tiles_removed', 0))} tiles), "
-            f"preserved {int(island_summary.get('large_islands_preserved', 0))} large",
-        )
-    lines.extend(["", "  elevation transitions:"])
-    transitions = _dict(elevation.get("transitions"))
-    lines.append(_format_transition_metric("total", transitions.get("total", 0)))
-    connector_counts = _dict(transitions.get("by_connector"))
-    type_counts = _dict(transitions.get("by_type"))
-    for key, label, source in (
-        ("slope", "slopes", connector_counts),
-        ("ramp", "ramps", connector_counts),
-        ("stairs", "stairs", connector_counts),
-        ("bridge_edge", "bridge edges", type_counts),
-        ("steep_transition", "steep edges", type_counts),
-        ("step_up", "step up", type_counts),
-        ("step_down", "step down", type_counts),
-    ):
-        lines.append(f"    {label + ':':<22}{int(source.get(key, 0)):>7}")
-    lines.extend(["", "  world structure:"])
-    for key, label in (
-        ("places", "places"),
-        ("routes", "routes"),
-        ("markers", "markers"),
-        ("runtime_objects", "runtime objects"),
-    ):
-        lines.append(f"    {label + ':':<22}{int(structure.get(key, 0)):>7} {_status_tag('ok')}")
+
     lines.extend(
         [
             "",
-            "Render:",
-            f"  enabled: {str(render.get('enabled', False)).lower()}",
-            f"  status:  {render.get('status', 'unknown')}",
+            "Структура мира:",
+            f"  места: {int(structure.get('places', 0))}",
+            f"  маршруты: {int(structure.get('routes', 0))}",
+            f"  маркеры: {int(structure.get('markers', 0))}",
+            f"  runtime-объекты: {int(structure.get('runtime_objects', 0))}",
             "",
-            "Debug files:",
+            "Результаты:",
+            "  map package: output/map_package/map.json",
+            "  основной preview: output/full_world_preview.png",
+            "  отчёты: output/*.json",
+            f"  статус: {_translate_status(overall.get('status'))}",
         ],
     )
-    for label, path in debug_files.items():
-        lines.append(f"  {str(label).replace('_', ' ') + ':':<29}{_path_text(path)}")
-    lines.extend(["", "Overall:", f"  status: {overall.get('status', 'unknown')}"])
-    notes = overall.get("notes")
-    if isinstance(notes, list) and notes:
-        lines.append("  notes:")
-        for note in notes:
-            lines.append(f"    - {note}")
+
+    if error_items:
+        lines.append(f"  ошибки проверки: {len(error_items)}")
+    if warning_items:
+        lines.append(f"  предупреждения: {len(warning_items)}")
+        for warning in warning_items[:5]:
+            lines.append(f"    - {_format_validation_warning_ru(warning)}")
+    else:
+        lines.append("  предупреждения: нет")
     return "\n".join(lines)
 
+
+def _metric_line_ru(label: str, metric: dict[str, Any]) -> str:
+    """Format one targeted percentage metric in Russian."""
+    percent = float(metric.get("percent", 0.0))
+    status = str(metric.get("status", "ok"))
+    return f"  {label + ':':<22}{percent:>6.1f}% {_status_tag_ru(status != 'warn')}"
+
+
+def _status_tag_ru(ok: bool, *, warning: bool = False) -> str:
+    """Return a compact Russian status tag."""
+    if ok:
+        return "[ОК]"
+    return "[ПРЕДУПРЕЖДЕНИЕ]" if warning else "[ВНЕ ЦЕЛИ]"
+
+
+def _translate_status(value: Any) -> str:
+    """Translate a report status to Russian."""
+    return {
+        "ok": "успешно",
+        "warning": "успешно с предупреждениями",
+        "failed": "ошибка",
+        "passed": "успешно",
+        "passed_with_warnings": "успешно с предупреждениями",
+        "skipped": "пропущено",
+    }.get(str(value), str(value))
+
+
+def _translate_character(value: Any) -> str:
+    """Translate known elevation character descriptions to Russian."""
+    return {
+        "nearly flat -1..1 micro relief": "почти плоский микрорельеф -1..1",
+        "soft lowland terrain": "мягкая низинная местность",
+        "playable rolling terrain": "игровые холмы и долины",
+        "balanced terrain": "сбалансированный рельеф",
+        "rough broken terrain": "пересечённая рваная местность",
+        "frequent mountain terrain": "частый горный рельеф",
+        "large sparse plateaus": "крупные редкие плато",
+    }.get(str(value), str(value))
+
+
+def _format_validation_warning_ru(value: Any) -> str:
+    """Format one validation warning for console output."""
+    warning = _dict(value)
+    code = str(warning.get("code", "unknown_warning"))
+    if code == "tactical_points_near_map_edge":
+        details = _dict(warning.get("details"))
+        total = sum(int(item) for item in details.values() if isinstance(item, int))
+        return f"тактические точки рядом с краем карты: {total}"
+    return code
 
 def _build_world_density_report(*, rows: list[str], runtime_data: dict[str, Any]) -> dict[str, Any]:
     width = len(rows[0]) if rows else 0

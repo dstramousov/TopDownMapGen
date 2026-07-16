@@ -181,9 +181,9 @@ def main() -> int:
                 output_size=(args.width, args.height),
                 draw_grid=not args.no_grid,
             )
-            LOGGER.info("3D %s preview: %s", args.overlay, output_path)
+            LOGGER.info("3D-preview создан: %s", output_path)
     except (FileNotFoundError, ValueError, json.JSONDecodeError, OSError) as exc:
-        LOGGER.error("3D preview: FAILED")
+        LOGGER.error("Не удалось создать 3D-preview")
         LOGGER.error("- %s", exc)
         return 1
     return 0

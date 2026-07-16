@@ -62,15 +62,9 @@ def test_world_preview_renderer_cli_prints_summary(tmp_path: Path) -> None:
         check=True,
     )
 
-    assert "World preview: OK" in result.stderr
-    assert "Map: 3x2 tiles, preview cell size 6 px" in result.stderr
-    assert "elevation levels: [-1, 0, 1, 2]" in result.stderr
-    assert "elevation transitions: 2" in result.stderr
-    assert "places: 1" in result.stderr
-    assert "gameplay zones: 1" in result.stderr
-    assert "routes: 1" in result.stderr
-    assert "world graph edges: 1" in result.stderr
-    assert "Output:" in result.stderr
+    assert "Preview создан:" in result.stderr
+    assert "Rendered:" not in result.stderr
+    assert "terrain types:" not in result.stderr
     assert (output_dir / "world_preview.png").is_file()
 
 
@@ -85,7 +79,7 @@ def test_world_preview_renderer_cli_fails_on_missing_package(tmp_path: Path) -> 
     )
 
     assert result.returncode == 1
-    assert "World preview: FAILED" in result.stderr
+    assert "Не удалось создать preview" in result.stderr
 
 
 def _write_minimal_package(tmp_path: Path) -> Path:
