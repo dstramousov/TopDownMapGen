@@ -49,6 +49,7 @@ from .manifest import (
     TILE_GRID_LAYER_SCHEMA_VERSION,
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
     VALIDATION_REPORT_SCHEMA_VERSION,
+    VEGETATION_VISUAL_SCHEMA_VERSION,
     OutputArtifact,
     build_manifest,
     write_manifest,
@@ -68,6 +69,7 @@ from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
 from .tactical.runtime_objects import attach_runtime_layers
 from .tactical.terrain_islands import elevation_cell_points, repair_terrain_islands
+from .tactical.vegetation_visual import build_visual_vegetation
 from .tactical.objectives import ObjectiveProfileSelector
 from .tactical.optimizer import TacticalOptimizer
 from .utils.json_io import read_json, write_json
@@ -298,6 +300,18 @@ class WorldgenPipeline:
                 geography_draft=geography_draft,
                 natural_geography=natural_geography,
             )
+            geography_grids = runtime_data.get("elevation_generation_report", {}).get("geography", {}).get("grids", {})
+            terrain_rows = [
+                [runtime_data.get("map", {}).get("tile_legend", {}).get(tile, "unknown") for tile in row]
+                for row in rows
+            ]
+            vegetation_visual = build_visual_vegetation(
+                terrain_rows=terrain_rows,
+                elevation_rows=geography_grids.get("geographic_level_grid", {}).get("rows", []),
+                slope_rows=geography_grids.get("slope_grid", {}).get("rows", []),
+                seed=config.resolved_seed,
+            )
+            runtime_data["vegetation_visual"] = vegetation_visual.report
             outputs.generated_map.write_text("\n".join(rows) + "\n", encoding="utf-8")
             runtime_data["version"] = "0.31-runtime"
             debug_data["version"] = "0.20-debug"
@@ -873,6 +887,13 @@ class WorldgenPipeline:
                 True,
                 False,
                 OBJECT_RENDER_HINTS_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_vegetation_visual,
+                "map_package:vegetation_visual",
+                True,
+                False,
+                VEGETATION_VISUAL_SCHEMA_VERSION,
             ),
         ]
         if render:

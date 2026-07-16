@@ -29,6 +29,7 @@ from top_down_worldgen.manifest import (
     TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
+    VEGETATION_VISUAL_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.tactical.traversal import DEFAULT_TRAVERSAL_RULES
@@ -263,6 +264,10 @@ def write_map_package(
     write_json(render_profile, outputs.map_package_render_profile)
     write_json(tile_render_hints, outputs.map_package_tile_render_hints)
     write_json(object_render_hints, outputs.map_package_object_render_hints)
+    vegetation_visual = _dict(runtime_data.get("vegetation_visual"))
+    if vegetation_visual:
+        vegetation_visual["schema_version"] = VEGETATION_VISUAL_SCHEMA_VERSION
+        write_json(vegetation_visual, outputs.map_package_vegetation_visual)
 
     write_json(
         {
@@ -317,6 +322,7 @@ def write_map_package(
                 "profile": "render/render_profile.json",
                 "tile_render_hints": "render/tile_render_hints.json",
                 "object_render_hints": "render/object_render_hints.json",
+                "vegetation_visual": "render/vegetation_visual.json",
             },
             "legacy_outputs": {
                 "ascii_map": "../generated_map.txt",
@@ -366,6 +372,7 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_render_profile,
         outputs.map_package_tile_render_hints,
         outputs.map_package_object_render_hints,
+        outputs.map_package_vegetation_visual,
     ]
 
 

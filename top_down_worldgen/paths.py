@@ -71,6 +71,7 @@ class OutputPaths:
     map_package_render_profile: Path
     map_package_tile_render_hints: Path
     map_package_object_render_hints: Path
+    map_package_vegetation_visual: Path
 
     @classmethod
     def from_cli_output(cls, output_path: Path) -> "OutputPaths":
@@ -162,6 +163,7 @@ class OutputPaths:
             map_package_render_profile=map_package_render_dir / "render_profile.json",
             map_package_tile_render_hints=map_package_render_dir / "tile_render_hints.json",
             map_package_object_render_hints=map_package_render_dir / "object_render_hints.json",
+            map_package_vegetation_visual=map_package_render_dir / "vegetation_visual.json",
         )
 
 

@@ -38,6 +38,7 @@ OBJECT_TYPES_CATALOG_SCHEMA_VERSION = "object-types-catalog-v5"
 RENDER_PROFILE_SCHEMA_VERSION = "render-profile-v1"
 TILE_RENDER_HINTS_SCHEMA_VERSION = "tile-render-hints-v1"
 OBJECT_RENDER_HINTS_SCHEMA_VERSION = "object-render-hints-v5"
+VEGETATION_VISUAL_SCHEMA_VERSION = "vegetation-visual-report-v1"
 MARKERS_SCHEMA_VERSION = "markers-v1"
 RUNTIME_GRIDS_SCHEMA_VERSION = "runtime-grids-v1"
 WORLD_GRAPH_SCHEMA_VERSION = "world-graph-v2"
@@ -152,6 +153,7 @@ def build_manifest(
         "render_profile": RENDER_PROFILE_SCHEMA_VERSION,
         "tile_render_hints": TILE_RENDER_HINTS_SCHEMA_VERSION,
         "object_render_hints": OBJECT_RENDER_HINTS_SCHEMA_VERSION,
+        "vegetation_visual": VEGETATION_VISUAL_SCHEMA_VERSION,
         "markers": MARKERS_SCHEMA_VERSION,
         "runtime_grids": RUNTIME_GRIDS_SCHEMA_VERSION,
         "world_graph": WORLD_GRAPH_SCHEMA_VERSION,

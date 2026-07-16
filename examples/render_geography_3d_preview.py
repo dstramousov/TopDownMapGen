@@ -884,6 +884,18 @@ def _read_terrain_traversal_data(
     collision_rows = _read_collision_rows(runtime_grids, width=width, height=height)
     movement_rows = _read_movement_rows(runtime_grids, width=width, height=height)
     terrain_rows = _read_terrain_rows(terrain_layer, width=width, height=height)
+    render_refs = _optional_object(map_index.get("render"))
+    vegetation_ref = render_refs.get("vegetation_visual")
+    vegetation_visual = (
+        _read_object(_package_ref_path(package_dir, vegetation_ref))
+        if isinstance(vegetation_ref, str) and vegetation_ref
+        else {}
+    )
+    visual_tree_rows = _read_visual_tree_rows(
+        vegetation_visual,
+        width=width,
+        height=height,
+    )
     source_rows = _read_source_rows(geography, width=width, height=height)
     water_rows = _read_water_rows(geography, width=width, height=height)
     start = _read_point(_optional_object(map_index.get("points")).get("start"))
@@ -915,7 +927,11 @@ def _read_terrain_traversal_data(
             output_row.append(key)
             counts[key] += 1
             if terrain_rows[y][x] == "tree_blocker":
-                counts["tree"] += 1
+                counts["tree_logical"] += 1
+                if visual_tree_rows[y][x]:
+                    counts["tree"] += 1
+                else:
+                    counts["tree_hidden_by_altitude"] += 1
         rows.append(output_row)
     _write_terrain_traversal_report(
         output_root / "geography_3d_preview" / "terrain_traversal_report.json",
@@ -924,12 +940,45 @@ def _read_terrain_traversal_data(
         goal=goal,
         total=width * height,
     )
+    rendered_terrain_rows = [
+        [
+            terrain if terrain != "tree_blocker" or visual_tree_rows[y][x] else "tree_blocker_hidden"
+            for x, terrain in enumerate(row)
+        ]
+        for y, row in enumerate(terrain_rows)
+    ]
     return OverlayData(
         overlay_rows=rows,
         counts=dict(counts),
-        terrain_rows=terrain_rows,
+        terrain_rows=rendered_terrain_rows,
     )
 
+
+
+def _read_visual_tree_rows(
+    data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> list[list[bool]]:
+    """Read the optional visual tree mask from the map package.
+
+    Args:
+        data: Vegetation visual document.
+        width: Expected map width.
+        height: Expected map height.
+
+    Returns:
+        Boolean rows where True means that a tree should be rendered.
+    """
+    raw_rows = data.get("rows")
+    if not isinstance(raw_rows, list):
+        return [[True for _ in range(width)] for _ in range(height)]
+    rows: list[list[bool]] = []
+    for y in range(height):
+        raw_row = raw_rows[y] if y < len(raw_rows) and isinstance(raw_rows[y], str) else ""
+        rows.append([x < len(raw_row) and raw_row[x] == "T" for x in range(width)])
+    return rows
 
 def _walkability_code(
     x: int,
@@ -1373,6 +1422,8 @@ def _write_terrain_traversal_report(
                 "elevation_color_preserved": True,
                 "semantic_terrain_tints": True,
                 "tree_blockers_rendered_as_objects": True,
+                "altitude_visual_thinning_applied": True,
+                "gameplay_collision_unchanged": True,
             }
         },
     )
