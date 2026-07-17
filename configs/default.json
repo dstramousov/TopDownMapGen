@@ -28,7 +28,7 @@
     "style": "normal"
   },
   "hydrology": {
-    "shore_reed_density": 0.45,
+    "shore_reed_density": 0.16,
     "puddle_reed_density": 0.2
   }
 }

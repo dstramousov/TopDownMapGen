@@ -724,6 +724,15 @@ class MapGenerator:
             "wetland_candidates_rejected": 0,
             "forest_candidates_rejected": 0,
             "ruin_bad_footprints": 0,
+            "regional_terrain_enabled": (
+                terrain_guidance is not None
+                and terrain_guidance.initial_terrain_rows is not None
+            ),
+            "terrain_profile_count": (
+                terrain_guidance.terrain_profile_count if terrain_guidance else 0
+            ),
+            "initial_tree_tiles": 0,
+            "initial_open_tiles": 0,
         }
 
     def effective_seed(self) -> int:
@@ -737,11 +746,17 @@ class MapGenerator:
     def terrain_guidance_metrics(self) -> dict[str, int | float | bool | str]:
         """Return terrain adaptation diagnostics."""
         metrics = dict(self._terrain_guidance_metrics)
-        metrics["schema_version"] = "terrain-guidance-report-v3"
+        metrics["schema_version"] = "terrain-guidance-report-v4"
         sample_tiles = int(metrics.pop("road_sample_tiles", 0))
         slope_sum = float(metrics.pop("road_slope_sum", 0.0))
         metrics["road_tiles_sampled"] = sample_tiles
         metrics["average_road_slope"] = round(slope_sum / max(1, sample_tiles), 6)
+        tree_tiles = int(metrics.get("initial_tree_tiles", 0))
+        open_tiles = int(metrics.get("initial_open_tiles", 0))
+        metrics["initial_tree_percent"] = round(
+            tree_tiles * 100.0 / max(1, tree_tiles + open_tiles),
+            3,
+        )
         return metrics
 
     def derived_config(self) -> DerivedConfig:
@@ -834,10 +849,35 @@ class MapGenerator:
         return self._grid
 
     def _fill_forest(self) -> None:
-        LOGGER.info("Stage 1: fill map with TREE")
-        for y in range(self._grid.height):
-            for x in range(self._grid.width):
-                self._grid.set_tile(Point(x, y), TileType.TREE)
+        if self._guidance is None or self._guidance.initial_terrain_rows is None:
+            LOGGER.info("Stage 1: fill map with TREE")
+            tree_tiles = self._grid.width * self._grid.height
+            self._terrain_guidance_metrics["initial_tree_tiles"] = tree_tiles
+            for y in range(self._grid.height):
+                for x in range(self._grid.width):
+                    self._grid.set_tile(Point(x, y), TileType.TREE)
+            return
+
+        LOGGER.info("Stage 1: fill map from regional terrain profiles")
+        tree_tiles = 0
+        open_tiles = 0
+        for y, row in enumerate(self._guidance.initial_terrain_rows):
+            for x, symbol in enumerate(row):
+                tile_type = TileType.TREE if symbol == TileType.TREE.value else TileType.GRASS
+                self._grid.set_tile(Point(x, y), tile_type)
+                if tile_type == TileType.TREE:
+                    tree_tiles += 1
+                else:
+                    open_tiles += 1
+        self._terrain_guidance_metrics["initial_tree_tiles"] = tree_tiles
+        self._terrain_guidance_metrics["initial_open_tiles"] = open_tiles
+        LOGGER.info(
+            "  Regional base terrain: profiles=%s tree=%s open=%s tree_percent=%.2f",
+            self._guidance.terrain_profile_count,
+            tree_tiles,
+            open_tiles,
+            tree_tiles * 100.0 / max(1, tree_tiles + open_tiles),
+        )
 
     def _place_regions_evenly(self) -> None:
         LOGGER.info("Stage 2: place regions evenly using spatial buckets")

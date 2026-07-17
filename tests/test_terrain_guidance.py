@@ -194,3 +194,104 @@ def test_road_metrics_distinguish_steep_from_cliff() -> None:
 
     assert metrics["road_steep_tiles"] == 1
     assert metrics["road_cliff_tiles"] == 1
+
+
+def test_large_map_guidance_contains_regional_base_terrain(tmp_path) -> None:
+    """Ensure large maps receive deterministic regional terrain profiles."""
+    draft = build_geography_draft(
+        width=256,
+        height=256,
+        seed=24680,
+        elevation_style="mountainous",
+    )
+    model = build_natural_geography_model(
+        width=256,
+        height=256,
+        seed=24680,
+        elevation_style="mountainous",
+        geography_draft=draft,
+    )
+    path = tmp_path / "guidance.json"
+    write_geography_guidance(model, path)
+
+    guidance = TerrainGuidance.from_json_file(
+        path,
+        expected_width=256,
+        expected_height=256,
+        expected_seed=24680,
+    )
+
+    assert guidance.initial_terrain_rows is not None
+    assert guidance.terrain_profile_count == len(draft.macro_regions)
+    symbols = set("".join(guidance.initial_terrain_rows))
+    assert symbols == {"+", "T"}
+
+
+def test_legacy_size_map_keeps_original_forest_base(tmp_path) -> None:
+    """Ensure maps up to 192 tiles keep the legacy all-forest base."""
+    draft = build_geography_draft(
+        width=192,
+        height=192,
+        seed=13579,
+        elevation_style="mountainous",
+    )
+    model = build_natural_geography_model(
+        width=192,
+        height=192,
+        seed=13579,
+        elevation_style="mountainous",
+        geography_draft=draft,
+    )
+    path = tmp_path / "guidance.json"
+    write_geography_guidance(model, path)
+
+    guidance = TerrainGuidance.from_json_file(
+        path,
+        expected_width=192,
+        expected_height=192,
+        expected_seed=13579,
+    )
+
+    assert guidance.initial_terrain_rows is None
+
+
+def test_map_generator_uses_regional_base_rows() -> None:
+    """Ensure the legacy generator consumes the compact regional base mask."""
+    width = 96
+    height = 80
+    flat_rows = tuple(tuple(0.5 for _ in range(width)) for _ in range(height))
+    zero_slope = tuple(tuple(0.0 for _ in range(width)) for _ in range(height))
+    base_rows = tuple(
+        "+" * (width // 2) + "T" * (width - width // 2)
+        for _ in range(height)
+    )
+    guidance = TerrainGuidance(
+        width=width,
+        height=height,
+        seed=5,
+        elevation_style="flatland",
+        elevation_rows=flat_rows,
+        moisture_rows=flat_rows,
+        slope_rows=zero_slope,
+        initial_terrain_rows=base_rows,
+        terrain_profile_count=2,
+    )
+    config = PublicConfig(
+        seed=5,
+        map_width_tiles=width,
+        map_height_tiles=height,
+        chunk_width_tiles=16,
+        chunk_height_tiles=16,
+        biome_profile="forest_ruins",
+    )
+    generator = MapGenerator(config, terrain_guidance=guidance)
+
+    generator._fill_forest()  # noqa: SLF001
+    rows = generator._grid.rows_as_text()  # noqa: SLF001
+    metrics = generator.terrain_guidance_metrics()
+
+    assert all(row[: width // 2] == "+" * (width // 2) for row in rows)
+    assert all(row[width // 2 :] == "T" * (width - width // 2) for row in rows)
+    assert metrics["regional_terrain_enabled"] is True
+    assert metrics["terrain_profile_count"] == 2
+    assert metrics["initial_tree_percent"] == 50.0

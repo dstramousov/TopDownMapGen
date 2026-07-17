@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import logging
 from collections import Counter
 from dataclasses import dataclass, replace
 from functools import lru_cache
-from math import cos, floor, hypot, pi, sin
-from time import perf_counter
+from heapq import nsmallest
+from math import ceil, cos, floor, hypot, pi, sin, sqrt
 from random import Random
+from time import perf_counter
 from typing import Any, Iterable
 
 from top_down_worldgen.logging_utils import timed_stage
-import logging
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,6 +28,9 @@ ROAD_MIN_LEVEL = 0
 ROAD_MAX_LEVEL = 0
 WATER_MAX_LEVEL = 0
 _WALKABLE_SYMBOLS = set("+.bfmwcRSG")
+_REFERENCE_GEOGRAPHY_SPAN_TILES = 192
+_TARGET_MACRO_REGION_AREA_TILES = 128 * 128
+_MAX_MACRO_REGION_COUNT = 256
 
 _BAND_RANGES: dict[str, range] = {
     "underground_-5_-1": range(-5, 0),
@@ -82,13 +86,21 @@ class PolygonalRegionSample:
 
 
 @dataclass(frozen=True, slots=True)
+class MacroRegionSpatialIndex:
+    """Spatial lookup for bounded macro-region candidate queries."""
+
+    cell_size: float
+    columns: int
+    rows: int
+    buckets: tuple[tuple[int, ...], ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ElevationGenerationResult:
     """Result of deterministic next-generation elevation generation."""
 
     rows: list[list[int]]
     report: dict[str, Any]
-
-
 
 
 @dataclass(frozen=True, slots=True)
@@ -949,6 +961,11 @@ def _build_geographic_fields(
             profile=profile,
         )
         metrics["macro_regions"] = len(macro_regions)
+    region_spatial_index = _build_macro_region_spatial_index(
+        width=width,
+        height=height,
+        regions=macro_regions,
+    )
     raster_started = perf_counter()
     raw_elevation: list[list[float]] = []
     raw_moisture: list[list[float]] = []
@@ -962,6 +979,12 @@ def _build_geographic_fields(
     height_scale = max(1, height - 1)
     normalized_x = [x / width_scale for x in range(width)]
     normalized_y = [y / height_scale for y in range(height)]
+    noise_scale_x, noise_scale_y = _geography_noise_domain_scale(
+        width=width,
+        height=height,
+    )
+    noise_x_coordinates = [value * noise_scale_x for value in normalized_x]
+    noise_y_coordinates = [value * noise_scale_y for value in normalized_y]
     region_x_scale = width_scale
     region_y_scale = height_scale
     for y in range(height):
@@ -970,30 +993,35 @@ def _build_geographic_fields(
         basin_row: list[float] = []
         dominant_row: list[int] = []
         ny = normalized_y[y]
+        noise_y = noise_y_coordinates[y]
         for x in range(width):
             nx = normalized_x[x]
+            noise_x = noise_x_coordinates[x]
             warp_x = _fbm(
-                nx + 31.7,
-                ny - 17.3,
+                noise_x + 31.7,
+                noise_y - 17.3,
                 seed=seed ^ 0xA11CE,
                 base_frequency=profile.warp_frequency,
                 octaves=3,
             )
             warp_y = _fbm(
-                nx - 13.1,
-                ny + 29.9,
+                noise_x - 13.1,
+                noise_y + 29.9,
                 seed=seed ^ 0xB0B,
                 base_frequency=profile.warp_frequency,
                 octaves=3,
             )
-            wx = nx + warp_x * profile.warp_strength
-            wy = ny + warp_y * profile.warp_strength
-            sx = _clamp_float(wx, 0.0, 1.0) * region_x_scale
-            sy = _clamp_float(wy, 0.0, 1.0) * region_y_scale
+            wx = noise_x + warp_x * profile.warp_strength
+            wy = noise_y + warp_y * profile.warp_strength
+            region_wx = nx + warp_x * profile.warp_strength / noise_scale_x
+            region_wy = ny + warp_y * profile.warp_strength / noise_scale_y
+            sx = _clamp_float(region_wx, 0.0, 1.0) * region_x_scale
+            sy = _clamp_float(region_wy, 0.0, 1.0) * region_y_scale
             region_sample = _polygonal_region_sample(
                 x=sx,
                 y=sy,
                 regions=macro_regions,
+                spatial_index=region_spatial_index,
             )
             macro = _fbm(
                 wx,
@@ -1051,7 +1079,10 @@ def _build_geographic_fields(
         dominant_region_rows.append(dominant_row)
 
     raster_ms = (perf_counter() - raster_started) * 1000.0
-    profiler = __import__("top_down_worldgen.performance", fromlist=["active_profiler"]).active_profiler()
+    profiler = __import__(
+        "top_down_worldgen.performance",
+        fromlist=["active_profiler"],
+    ).active_profiler()
     if profiler is not None:
         profiler.stage_finished(
             "geography.rasterize_fields",
@@ -1092,6 +1123,7 @@ def _build_geographic_fields(
         region_edges=_region_edges(dominant_region_rows),
     )
 
+
 def _build_macro_regions(
     *,
     width: int,
@@ -1104,21 +1136,67 @@ def _build_macro_regions(
     rng = Random((seed ^ 0x6E06_1A9E) & 0xFFFF_FFFF_FFFF_FFFF)
     regions: list[GeographyDraftRegion] = []
     kinds = _macro_region_kinds(profile)
-    count = _macro_region_count(profile)
-    min_radius = max(profile.terrace_min_size_tiles * 1.6, short_side * 0.10)
-    max_radius = max(min_radius + 1.0, min(short_side * 0.52, profile.terrace_max_size_tiles * 2.1))
+    count = _macro_region_count(
+        width=width,
+        height=height,
+        profile=profile,
+    )
+    min_radius, max_radius = _macro_region_radius_range(
+        width=width,
+        height=height,
+        region_count=count,
+        profile=profile,
+    )
     margin_x = max(2.0, width * 0.06)
     margin_y = max(2.0, height * 0.06)
-    mountain_chains = _mountain_chain_layout(
-        width=width,
-        height=height,
-        rng=rng,
-    ) if profile.style_name == "mountainous" else ()
-    plateau_layout = _plateau_layout(
-        width=width,
-        height=height,
-        rng=rng,
-    ) if profile.style_name == "plateau" else ()
+    kind_sequence = tuple(kinds[index % len(kinds)] for index in range(count))
+    average_spacing = sqrt(max(1.0, width * height / count))
+    highland_count = sum(
+        kind in {"ridge", "mountain", "peak"} for kind in kind_sequence
+    )
+    plateau_count = sum(kind in {"plateau", "ridge"} for kind in kind_sequence)
+    mountain_chains = (
+        _mountain_chain_layout(
+            width=width,
+            height=height,
+            chain_count=_large_map_layout_group_count(
+                feature_count=highland_count,
+                width=width,
+                height=height,
+                legacy_count=2,
+            ),
+            rng=rng,
+        )
+        if profile.style_name == "mountainous"
+        else ()
+    )
+    plateau_layout = (
+        _plateau_layout(
+            width=width,
+            height=height,
+            anchor_count=_large_map_layout_group_count(
+                feature_count=plateau_count,
+                width=width,
+                height=height,
+                legacy_count=2 if short_side >= 128 else 1,
+            ),
+            rng=rng,
+        )
+        if profile.style_name == "plateau"
+        else ()
+    )
+    mountain_spacing = (
+        max(12.0, short_side * 0.16)
+        if width <= _REFERENCE_GEOGRAPHY_SPAN_TILES
+        and height <= _REFERENCE_GEOGRAPHY_SPAN_TILES
+        else max(12.0, average_spacing * 0.72)
+    )
+    plateau_spacing = (
+        max(10.0, short_side * 0.115)
+        if width <= _REFERENCE_GEOGRAPHY_SPAN_TILES
+        and height <= _REFERENCE_GEOGRAPHY_SPAN_TILES
+        else max(10.0, average_spacing * 0.62)
+    )
     highland_index = 0
     plateau_index = 0
     for index in range(count):
@@ -1136,6 +1214,7 @@ def _build_macro_regions(
                 step=step,
                 width=width,
                 height=height,
+                spacing_tiles=mountain_spacing,
                 rng=rng,
             )
             angle_degrees = chain[2] + rng.uniform(-8.0, 8.0)
@@ -1153,6 +1232,7 @@ def _build_macro_regions(
                 step=step,
                 width=width,
                 height=height,
+                spacing_tiles=plateau_spacing,
                 rng=rng,
             )
             angle_degrees = anchor[2] + rng.uniform(-5.0, 5.0)
@@ -1180,15 +1260,75 @@ def _build_macro_regions(
 
 
 
+def _large_map_layout_group_count(
+    *,
+    feature_count: int,
+    width: int,
+    height: int,
+    legacy_count: int,
+) -> int:
+    """Return a stable number of landform groups for the map area."""
+    if (
+        width <= _REFERENCE_GEOGRAPHY_SPAN_TILES
+        and height <= _REFERENCE_GEOGRAPHY_SPAN_TILES
+    ):
+        return legacy_count
+    return max(legacy_count, min(16, round(feature_count / 5)))
+
+
+def _distributed_layout(
+    *,
+    width: int,
+    height: int,
+    count: int,
+    rng: Random,
+    margin_ratio: float,
+) -> tuple[tuple[float, float, float], ...]:
+    """Return jittered layout anchors distributed across the map."""
+    count = max(1, count)
+    aspect = width / max(1, height)
+    columns = max(1, ceil(sqrt(count * aspect)))
+    rows = max(1, ceil(count / columns))
+    cells = [(column, row) for row in range(rows) for column in range(columns)]
+    rng.shuffle(cells)
+    margin_x = max(4.0, width * margin_ratio)
+    margin_y = max(4.0, height * margin_ratio)
+    usable_width = max(1.0, width - 2.0 * margin_x)
+    usable_height = max(1.0, height - 2.0 * margin_y)
+    cell_width = usable_width / columns
+    cell_height = usable_height / rows
+    anchors: list[tuple[float, float, float]] = []
+    for column, row in cells[:count]:
+        x_min = margin_x + column * cell_width
+        y_min = margin_y + row * cell_height
+        anchors.append(
+            (
+                rng.uniform(x_min + cell_width * 0.18, x_min + cell_width * 0.82),
+                rng.uniform(y_min + cell_height * 0.18, y_min + cell_height * 0.82),
+                rng.uniform(8.0, 172.0),
+            ),
+        )
+    return tuple(anchors)
+
 
 def _plateau_layout(
     *,
     width: int,
     height: int,
+    anchor_count: int,
     rng: Random,
 ) -> tuple[tuple[float, float, float], ...]:
-    """Return one dominant plateau mass and an optional secondary shelf."""
+    """Return anchors for one or more broad plateau masses."""
     short_side = min(width, height)
+    if anchor_count > 2:
+        return _distributed_layout(
+            width=width,
+            height=height,
+            count=anchor_count,
+            rng=rng,
+            margin_ratio=0.10,
+        )
+
     margin_x = max(6.0, width * 0.24)
     margin_y = max(6.0, height * 0.24)
     angle = rng.uniform(12.0, 168.0)
@@ -1197,13 +1337,21 @@ def _plateau_layout(
         rng.uniform(margin_y, max(margin_y, height - margin_y)),
         angle,
     )
-    if short_side < 128:
+    if anchor_count == 1 or short_side < 128:
         return (primary,)
     offset = short_side * rng.uniform(0.20, 0.29)
     radians = angle * pi / 180.0
     secondary = (
-        _clamp_float(primary[0] + cos(radians) * offset, width * 0.16, width * 0.84),
-        _clamp_float(primary[1] + sin(radians) * offset, height * 0.16, height * 0.84),
+        _clamp_float(
+            primary[0] + cos(radians) * offset,
+            width * 0.16,
+            width * 0.84,
+        ),
+        _clamp_float(
+            primary[1] + sin(radians) * offset,
+            height * 0.16,
+            height * 0.84,
+        ),
         angle + rng.uniform(-12.0, 12.0),
     )
     return (primary, secondary)
@@ -1215,12 +1363,13 @@ def _plateau_region_position(
     step: int,
     width: int,
     height: int,
+    spacing_tiles: float,
     rng: Random,
 ) -> tuple[float, float]:
     """Place plateau pieces as overlapping shelves of one broad landform."""
     anchor_x, anchor_y, angle_degrees = anchor
     angle = angle_degrees * pi / 180.0
-    spacing = max(10.0, min(width, height) * 0.115)
+    spacing = max(10.0, spacing_tiles)
     signed_step = ((step + 1) // 2) * (-1.0 if step % 2 else 1.0)
     along = signed_step * spacing + rng.uniform(-spacing * 0.12, spacing * 0.12)
     across = rng.uniform(-spacing * 0.18, spacing * 0.18)
@@ -1231,13 +1380,24 @@ def _plateau_region_position(
         _clamp_float(y, max(3.0, height * 0.08), min(height - 4.0, height * 0.92)),
     )
 
+
 def _mountain_chain_layout(
     *,
     width: int,
     height: int,
+    chain_count: int,
     rng: Random,
 ) -> tuple[tuple[float, float, float], ...]:
     """Return deterministic anchors and directions for mountain chains."""
+    if chain_count > 2:
+        return _distributed_layout(
+            width=width,
+            height=height,
+            count=chain_count,
+            rng=rng,
+            margin_ratio=0.10,
+        )
+
     margin_x = max(4.0, width * 0.18)
     margin_y = max(4.0, height * 0.18)
     primary_angle = rng.uniform(18.0, 72.0)
@@ -1262,12 +1422,13 @@ def _mountain_chain_position(
     step: int,
     width: int,
     height: int,
+    spacing_tiles: float,
     rng: Random,
 ) -> tuple[float, float]:
     """Place a highland region along a shared mountain-chain axis."""
     anchor_x, anchor_y, angle_degrees = chain
     angle = angle_degrees * pi / 180.0
-    spacing = max(12.0, min(width, height) * 0.16)
+    spacing = max(12.0, spacing_tiles)
     signed_step = ((step + 1) // 2) * (-1.0 if step % 2 else 1.0)
     along = signed_step * spacing + rng.uniform(-spacing * 0.18, spacing * 0.18)
     across = rng.uniform(-spacing * 0.24, spacing * 0.24)
@@ -1315,11 +1476,103 @@ def _macro_region_config(*, kind: str, rng: Random) -> tuple[float, float, float
     )
 
 
+def _build_macro_region_spatial_index(
+    *,
+    width: int,
+    height: int,
+    regions: tuple[GeographyDraftRegion, ...],
+) -> MacroRegionSpatialIndex | None:
+    """Build precomputed candidate buckets for large region sets."""
+    if len(regions) <= 24:
+        return None
+    cell_size = max(48.0, min(160.0, sqrt(width * height / len(regions))))
+    columns = max(1, ceil(width / cell_size))
+    rows = max(1, ceil(height / cell_size))
+    buckets: list[tuple[int, ...]] = []
+    for row in range(rows):
+        for column in range(columns):
+            x_min = column * cell_size
+            y_min = row * cell_size
+            x_max = min(float(max(0, width - 1)), (column + 1) * cell_size)
+            y_max = min(float(max(0, height - 1)), (row + 1) * cell_size)
+            sample_points = (
+                ((x_min + x_max) * 0.5, (y_min + y_max) * 0.5),
+                (x_min, y_min),
+                (x_max, y_min),
+                (x_min, y_max),
+                (x_max, y_max),
+            )
+            candidate_indices: set[int] = set()
+            per_sample_limit = min(12, len(regions))
+            for sample_x, sample_y in sample_points:
+                nearest = nsmallest(
+                    per_sample_limit,
+                    (
+                        (
+                            _macro_region_distance(
+                                x=sample_x,
+                                y=sample_y,
+                                region=region,
+                            )
+                            / max(0.1, region.priority),
+                            index,
+                        )
+                        for index, region in enumerate(regions)
+                    ),
+                )
+                candidate_indices.update(index for _, index in nearest)
+            buckets.append(tuple(sorted(candidate_indices)))
+    return MacroRegionSpatialIndex(
+        cell_size=cell_size,
+        columns=columns,
+        rows=rows,
+        buckets=tuple(buckets),
+    )
+
+
+def _nearest_macro_regions(
+    *,
+    x: float,
+    y: float,
+    regions: tuple[GeographyDraftRegion, ...],
+    spatial_index: MacroRegionSpatialIndex | None,
+    limit: int,
+) -> list[tuple[float, int, GeographyDraftRegion]]:
+    """Return nearest regions from a precomputed large-map candidate set."""
+    if spatial_index is None:
+        candidate_indices: Iterable[int] = range(len(regions))
+    else:
+        column = min(
+            spatial_index.columns - 1,
+            max(0, int(x / spatial_index.cell_size)),
+        )
+        row = min(
+            spatial_index.rows - 1,
+            max(0, int(y / spatial_index.cell_size)),
+        )
+        candidate_indices = spatial_index.buckets[
+            row * spatial_index.columns + column
+        ]
+    return nsmallest(
+        limit,
+        (
+            (
+                _macro_region_distance(x=x, y=y, region=regions[index])
+                / max(0.1, regions[index].priority),
+                index,
+                regions[index],
+            )
+            for index in candidate_indices
+        ),
+    )
+
+
 def _polygonal_region_sample(
     *,
     x: float,
     y: float,
     regions: tuple[GeographyDraftRegion, ...],
+    spatial_index: MacroRegionSpatialIndex | None = None,
 ) -> PolygonalRegionSample:
     """Sample a soft Voronoi-like macro region control map."""
     if not regions:
@@ -1333,15 +1586,14 @@ def _polygonal_region_sample(
             basin_mask=0.0,
             boundary_softness=0.0,
         )
-    ordered = sorted(
-        (
-            _macro_region_distance(x=x, y=y, region=region) / max(0.1, region.priority),
-            index,
-            region,
-        )
-        for index, region in enumerate(regions)
+    ordered = _nearest_macro_regions(
+        x=x,
+        y=y,
+        regions=regions,
+        spatial_index=spatial_index,
+        limit=min(3, len(regions)),
     )
-    selected = ordered[: min(3, len(ordered))]
+    selected = ordered
     weight_total = 0.0
     elevation_score = 0.0
     moisture_bias = 0.0
@@ -1480,7 +1732,30 @@ def _region_edge_items(
 def _clamp_float(value: float, minimum: float, maximum: float) -> float:
     return max(minimum, min(maximum, value))
 
-def _macro_region_count(profile: ElevationScaleProfile) -> int:
+
+def _geography_noise_domain_scale(*, width: int, height: int) -> tuple[float, float]:
+    """Return tile-stable noise domain scales for the requested map size."""
+    reference_span = max(1, _REFERENCE_GEOGRAPHY_SPAN_TILES - 1)
+    return (
+        max(1.0, max(0, width - 1) / reference_span),
+        max(1.0, max(0, height - 1) / reference_span),
+    )
+
+
+def _macro_region_style_delta(profile: ElevationScaleProfile) -> int:
+    """Return the region-count adjustment for an elevation style."""
+    return {
+        "super_flatland": 1,
+        "flatland": 2,
+        "rolling_hills": 1,
+        "plateau": -2,
+        "rugged": 3,
+        "mountainous": 2,
+    }.get(profile.style_name, 0)
+
+
+def _legacy_macro_region_count(profile: ElevationScaleProfile) -> int:
+    """Return the original profile-driven macro-region budget."""
     base_count = {
         "tiny": 2,
         "small": 3,
@@ -1488,19 +1763,60 @@ def _macro_region_count(profile: ElevationScaleProfile) -> int:
         "large": 10,
         "huge": 14,
     }.get(profile.name, 6)
-    if profile.style_name == "super_flatland":
-        return base_count + 1
-    if profile.style_name == "flatland":
-        return base_count + 2
-    if profile.style_name == "rolling_hills":
-        return base_count + 1
     if profile.style_name == "plateau":
         return max(3, base_count - 2)
-    if profile.style_name == "rugged":
-        return base_count + 3
-    if profile.style_name == "mountainous":
-        return base_count + 2
-    return base_count
+    return max(1, base_count + _macro_region_style_delta(profile))
+
+
+def _macro_region_count(
+    *,
+    width: int,
+    height: int,
+    profile: ElevationScaleProfile,
+) -> int:
+    """Return a map-area-aware macro-region budget."""
+    legacy_count = _legacy_macro_region_count(profile)
+    map_area = max(1, width * height)
+    area_count = max(1, round(map_area / _TARGET_MACRO_REGION_AREA_TILES))
+    scaled_count = max(1, area_count + _macro_region_style_delta(profile))
+    return min(_MAX_MACRO_REGION_COUNT, max(legacy_count, scaled_count))
+
+
+def _macro_region_radius_range(
+    *,
+    width: int,
+    height: int,
+    region_count: int,
+    profile: ElevationScaleProfile,
+) -> tuple[float, float]:
+    """Return macro-region radii without stretching large-map features."""
+    short_side = max(1, min(width, height))
+    is_reference_sized = (
+        width <= _REFERENCE_GEOGRAPHY_SPAN_TILES
+        and height <= _REFERENCE_GEOGRAPHY_SPAN_TILES
+    )
+    if is_reference_sized:
+        minimum = max(profile.terrace_min_size_tiles * 1.6, short_side * 0.10)
+        maximum = max(
+            minimum + 1.0,
+            min(short_side * 0.52, profile.terrace_max_size_tiles * 2.1),
+        )
+        return minimum, maximum
+
+    average_spacing = sqrt(max(1.0, width * height / region_count))
+    minimum = max(
+        profile.terrace_min_size_tiles * 1.25,
+        average_spacing * 0.50,
+    )
+    maximum = max(
+        minimum + 1.0,
+        average_spacing * 0.90,
+        min(
+            profile.terrace_max_size_tiles * 1.25,
+            average_spacing * 1.15,
+        ),
+    )
+    return minimum, maximum
 
 
 def _macro_region_kinds(profile: ElevationScaleProfile) -> tuple[str, ...]:
@@ -2914,10 +3230,13 @@ def _build_generation_report(
 
 def _generator_info(*, seed: int, profile: ElevationScaleProfile) -> dict[str, Any]:
     return {
-        "name": "size_aware_polygonal_macro_geography_v5",
+        "name": "size_aware_polygonal_macro_geography_v6",
         "seed": seed,
         "range": [MIN_ELEVATION_LEVEL, MAX_ELEVATION_LEVEL],
-        "algorithm": "elevation_style_presets_polygon_inspired_macro_region_graph_region_transition_belts_main_route_alignment_traversal_repair",
+        "algorithm": (
+            "tile_stable_noise_area_scaled_macro_region_graph_"
+            "region_transition_belts_main_route_alignment_traversal_repair"
+        ),
         "redistribution": "profile_weighted_percentile_quantization",
         "smoothing_passes": profile.score_smoothing_passes,
         "level_relax_passes": profile.level_relax_passes,
@@ -2990,6 +3309,37 @@ def _adjacent_delta_report(levels: list[list[int]]) -> dict[str, Any]:
     }
 
 
+def _macro_region_scaling_report(
+    *,
+    width: int,
+    height: int,
+    regions: tuple[GeographyDraftRegion, ...],
+) -> dict[str, Any]:
+    """Build diagnostics for large-map macro-region scaling."""
+    count = len(regions)
+    map_area = max(0, width * height)
+    radii = [region.radius_tiles for region in regions]
+    noise_scale_x, noise_scale_y = _geography_noise_domain_scale(
+        width=width,
+        height=height,
+    )
+    return {
+        "target_region_area_tiles": _TARGET_MACRO_REGION_AREA_TILES,
+        "average_region_area_tiles": round(map_area / count, 3) if count else 0.0,
+        "regions_per_million_tiles": (
+            round(count * 1_000_000.0 / map_area, 3) if map_area else 0.0
+        ),
+        "noise_domain_scale": {
+            "x": round(noise_scale_x, 4),
+            "y": round(noise_scale_y, 4),
+        },
+        "radius_tiles": {
+            "minimum": round(min(radii), 3) if radii else 0.0,
+            "average": round(sum(radii) / count, 3) if count else 0.0,
+            "maximum": round(max(radii), 3) if radii else 0.0,
+        },
+    }
+
 
 def _geography_report(
     levels: list[list[int]],
@@ -3026,6 +3376,11 @@ def _geography_report(
         "schema_version": "geography-report-v1",
         "macro_regions": {
             "count": len(geographic_fields.macro_regions),
+            "scaling": _macro_region_scaling_report(
+                width=len(levels[0]) if levels else 0,
+                height=len(levels),
+                regions=geographic_fields.macro_regions,
+            ),
             "graph": {
                 "edge_count": len(geographic_fields.region_edges),
                 "edges": _region_edge_items(

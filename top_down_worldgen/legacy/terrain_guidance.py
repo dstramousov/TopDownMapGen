@@ -25,6 +25,8 @@ class TerrainGuidance:
     slope_rows: tuple[tuple[float, ...], ...]
     natural_level_rows: tuple[tuple[int, ...], ...] | None = None
     natural_slope_rows: tuple[tuple[int, ...], ...] | None = None
+    initial_terrain_rows: tuple[str, ...] | None = None
+    terrain_profile_count: int = 0
 
     STEEP_SLOPE = 0.085
     CLIFF_SLOPE = 0.18
@@ -60,7 +62,12 @@ class TerrainGuidance:
             raise TerrainGuidanceError(f"Invalid terrain guidance JSON: {path}") from exc
         if not isinstance(raw, dict):
             raise TerrainGuidanceError("Terrain guidance root must be an object")
-        if raw.get("schema_version") not in {"terrain-guidance-v1", "terrain-guidance-v2"}:
+        supported_schemas = {
+            "terrain-guidance-v1",
+            "terrain-guidance-v2",
+            "terrain-guidance-v3",
+        }
+        if raw.get("schema_version") not in supported_schemas:
             raise TerrainGuidanceError("Unsupported terrain guidance schema")
 
         width = _required_int(raw, "width")
@@ -90,6 +97,10 @@ class TerrainGuidance:
             natural_slope_rows=_decode_integer_rows_optional(
                 raw.get("natural_slope_rows"), width, height, "natural_slope_rows"
             ),
+            initial_terrain_rows=_decode_initial_terrain_rows_optional(
+                raw.get("initial_terrain_rows"), width, height
+            ),
+            terrain_profile_count=_terrain_profile_count(raw.get("terrain_profiles")),
         )
 
     def elevation_at(self, x: int, y: int) -> float:
@@ -115,6 +126,12 @@ class TerrainGuidance:
         if self.natural_slope_rows is None:
             return None
         return self.natural_slope_rows[y][x]
+
+    def initial_terrain_at(self, x: int, y: int) -> str | None:
+        """Return the regional base terrain symbol when available."""
+        if self.initial_terrain_rows is None:
+            return None
+        return self.initial_terrain_rows[y][x]
 
 
     def natural_delta_at(self, x: int, y: int) -> int:
@@ -366,3 +383,34 @@ def _reconstruct_nodes(
         current = parents[current]
     output.reverse()
     return output
+
+
+def _decode_initial_terrain_rows_optional(
+    raw: object,
+    width: int,
+    height: int,
+) -> tuple[str, ...] | None:
+    """Validate optional compact TREE/GRASS terrain rows."""
+    if raw is None:
+        return None
+    if not isinstance(raw, list) or len(raw) != height:
+        raise TerrainGuidanceError("Terrain guidance initial_terrain_rows height mismatch")
+    rows: list[str] = []
+    for row in raw:
+        if not isinstance(row, str) or len(row) != width:
+            raise TerrainGuidanceError("Terrain guidance initial_terrain_rows width mismatch")
+        if set(row) - {"T", "+"}:
+            raise TerrainGuidanceError(
+                "Terrain guidance initial_terrain_rows contains invalid symbols"
+            )
+        rows.append(row)
+    return tuple(rows)
+
+
+def _terrain_profile_count(raw: object) -> int:
+    """Return the number of valid regional terrain profile records."""
+    if raw is None:
+        return 0
+    if not isinstance(raw, list):
+        raise TerrainGuidanceError("Terrain guidance terrain_profiles must be a list")
+    return len(raw)
