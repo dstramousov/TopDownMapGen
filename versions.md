@@ -988,3 +988,16 @@
 - Добавлен отчёт `ruin-wall-provenance-v1` и hard validation `ruin_walls_belong_to_planned_buildings`; итоговая карта обязана иметь `outside_planned_buildings = 0` и `artificial_connectivity_blockers_created = 0`.
 - Форматы map package, manifest и VXMAP остаются без изменения: `map-package-map-v13`, `generation-manifest-v42`, VXMAP `1.2`.
 - Версия проекта поднята до `0.0.116`.
+
+## v0.0.116 -> v0.0.117
+
+- Старый случайный генератор обломков заменён архитектурным pipeline: сначала строится цельный план здания с внешним контуром, помещениями, внутренними перегородками и дверями, затем применяется связное разрушение крупными сегментами.
+- Добавлены архетипы `small_house`, `long_house`, `barn`, `warehouse` и `outpost_building`; тип корпуса зависит от semantic ruin site и роли здания внутри деревни, хутора или поста.
+- Для каждого site выбираются общие направление и тяжесть разрушения, а для каждого здания детерминированно оцениваются несколько сценариев: collapsed corner, damaged facade, side collapse, central breach и weathered decay.
+- Одиночные стеновые тайлы запрещены; результат проверяется по сохранённым углам, длинным стеновым сегментам, доступности пола, доле разрушения, числу проломов и максимальному перепаду соседних высот.
+- Высота стен `1..3` теперь вычисляется самим архитектурным damage-plan и публикуется в `ruin-site-plan-v3`; `structure_height` использует эти значения напрямую, сохраняя legacy fallback только для старых metadata.
+- Схема слоя высот обновлена до `structure-height-layer-v2`; бинарный формат VXMAP и набор секций не изменены, поскольку физическое представление остаётся прежним `uint8`.
+- Стены и пол запланированных зданий защищены от последующего перезаписывания дорогами, водой и декоративными этапами, а hard validation сверяет архитектурный план с финальным tactical grid.
+- Расширены отчёт и тесты: добавлены показатели wall components, isolated tiles, accessibility, damage ratio, planned/fallback structure heights и детерминизм архитектуры.
+- Форматы map package, generation manifest и VXMAP остаются `map-package-map-v13`, `generation-manifest-v42`, VXMAP `1.2`.
+- Версия проекта поднята до `0.0.117`.

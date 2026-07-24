@@ -256,6 +256,17 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                     f"foundation cells: {int(terrain_guidance.get('ruin_foundation_cells', 0))}"
                 ),
                 (
+                    "  архитектура руин: "
+                    f"buildings={int(terrain_guidance.get('ruin_architecture_buildings', 0))}, "
+                    f"walls={int(terrain_guidance.get('ruin_architecture_wall_tiles', 0))}, "
+                    "components="
+                    f"{int(terrain_guidance.get('ruin_architecture_total_components', 0))}, "
+                    "isolated="
+                    f"{int(terrain_guidance.get('ruin_architecture_isolated_wall_tiles', 0))}, "
+                    "max height delta="
+                    f"{int(terrain_guidance.get('ruin_architecture_max_height_delta', 0))}"
+                ),
+                (
                     "  типы sites: "
                     f"деревни={int(terrain_guidance.get('ruin_sites_village', 0))}, "
                     f"хутора={int(terrain_guidance.get('ruin_sites_farmstead', 0))}, "
@@ -280,6 +291,8 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                     f"ниже 0={int(terrain_guidance.get('ruin_candidates_rejected_negative', 0))}, "
                     f"buffer={int(terrain_guidance.get('ruin_candidates_rejected_buffer', 0))}, "
                     f"overlap={int(terrain_guidance.get('ruin_candidates_rejected_overlap', 0))}, "
+                    "architecture="
+                    f"{int(terrain_guidance.get('ruin_candidates_rejected_architecture', 0))}, "
                     "site exclusion="
                     f"{int(terrain_guidance.get('settlement_candidates_rejected_exclusion', 0))}"
                 ),

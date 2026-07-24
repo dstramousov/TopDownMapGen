@@ -141,7 +141,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert movement["costs_by_type"]["grass"] == 1
     assert collision["format"] == "boolean_rows"
     assert collision["rows"] == ["00", "00"]
-    assert structure_height["schema_version"] == "structure-height-layer-v1"
+    assert structure_height["schema_version"] == "structure-height-layer-v2"
     assert structure_height["units"] == "logical_levels_above_ground"
     assert structure_height["ground_reference"] == "elevation_plus_one"
     assert structure_height["rows"] == [[0, 0], [0, 0]]

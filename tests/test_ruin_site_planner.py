@@ -394,7 +394,7 @@ def test_ruin_site_planning_is_deterministic_for_same_seed() -> None:
 
     first_metadata = first.ruin_sites_metadata()
     second_metadata = second.ruin_sites_metadata()
-    assert first_metadata["schema_version"] == "ruin-site-plan-v2"
+    assert first_metadata["schema_version"] == "ruin-site-plan-v3"
     assert first_metadata == second_metadata
     assert first.ruin_foundation_cells() == second.ruin_foundation_cells()
     runtime_data = {

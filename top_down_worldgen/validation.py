@@ -320,6 +320,12 @@ def build_validation_report(
             width=width,
             height=height,
         ),
+        "ruin_architecture_valid": _ruin_architecture_valid(
+            runtime_data,
+            tile_grid=tile_grid,
+            width=width,
+            height=height,
+        ),
         "ruin_walls_belong_to_planned_buildings": (
             _ruin_walls_belong_to_planned_buildings(runtime_data)
         ),
@@ -2091,9 +2097,13 @@ def _ruin_sites_valid(
     if not isinstance(payload, dict):
         return False
     schema_version = payload.get("schema_version")
-    if schema_version not in {"ruin-site-plan-v1", "ruin-site-plan-v2"}:
+    if schema_version not in {
+        "ruin-site-plan-v1",
+        "ruin-site-plan-v2",
+        "ruin-site-plan-v3",
+    }:
         return False
-    if schema_version == "ruin-site-plan-v2":
+    if schema_version in {"ruin-site-plan-v2", "ruin-site-plan-v3"}:
         if payload.get("settlement_profile") not in {
             "open_plain",
             "rural_plain",
@@ -2188,6 +2198,16 @@ def _ruin_sites_valid(
         site_ids.add(site_id)
         if site.get("type") not in allowed_types:
             return False
+        if schema_version == "ruin-site-plan-v3":
+            if site.get("destruction_direction") not in {
+                "north",
+                "east",
+                "south",
+                "west",
+            }:
+                return False
+            if site.get("destruction_severity") not in {"moderate", "heavy"}:
+                return False
         anchor = _point(site.get("road_anchor"))
         center = _point(site.get("center"))
         if anchor is None or center is None:
@@ -2226,6 +2246,181 @@ def _ruin_sites_valid(
                 if point is None or not _point_in_bounds(point, width=width, height=height):
                     return False
     return True
+
+
+def _ruin_architecture_valid(
+    runtime_data: dict[str, Any],
+    *,
+    tile_grid: list[str],
+    width: int,
+    height: int,
+) -> bool:
+    """Return whether v3 ruin architecture matches the final tactical grid."""
+    payload = runtime_data.get("ruin_sites")
+    if payload is None:
+        return True
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("schema_version") != "ruin-site-plan-v3":
+        return True
+    allowed_archetypes = {
+        "small_house",
+        "long_house",
+        "barn",
+        "warehouse",
+        "outpost_building",
+    }
+    allowed_patterns = {
+        "collapsed_corner",
+        "damaged_facade",
+        "side_collapse",
+        "central_breach",
+        "weathered_decay",
+    }
+    planned_global: set[tuple[int, int]] = set()
+    for site in _dict_list(payload.get("sites")):
+        for building in _dict_list(site.get("buildings")):
+            architecture = building.get("architecture")
+            if not isinstance(architecture, dict):
+                return False
+            if architecture.get("schema_version") != "ruin-building-architecture-v1":
+                return False
+            if architecture.get("archetype") not in allowed_archetypes:
+                return False
+            if architecture.get("damage_pattern") not in allowed_patterns:
+                return False
+            if architecture.get("destruction_direction") not in {
+                "north",
+                "east",
+                "south",
+                "west",
+            }:
+                return False
+            if architecture.get("destruction_severity") not in {
+                "moderate",
+                "heavy",
+            }:
+                return False
+            rect = building.get("rect")
+            if not isinstance(rect, dict):
+                return False
+            try:
+                left = int(rect["left"])
+                top = int(rect["top"])
+                right = int(rect["right"])
+                bottom = int(rect["bottom"])
+            except (KeyError, TypeError, ValueError):
+                return False
+            if not (0 <= left <= right < width and 0 <= top <= bottom < height):
+                return False
+            entrance = _point(building.get("entrance"))
+            external_door = _point(architecture.get("external_door"))
+            if entrance is None or external_door != entrance:
+                return False
+            if not _point_in_bounds(entrance, width=width, height=height):
+                return False
+            wall_heights = architecture.get("wall_heights")
+            if not isinstance(wall_heights, list) or not wall_heights:
+                return False
+            walls: dict[tuple[int, int], int] = {}
+            for item in wall_heights:
+                if not isinstance(item, list) or len(item) != 3:
+                    return False
+                x, y, wall_height = item
+                if not all(isinstance(value, int) for value in item):
+                    return False
+                if not (left <= x <= right and top <= y <= bottom):
+                    return False
+                if not 1 <= wall_height <= 3:
+                    return False
+                point = (x, y)
+                if point in walls or point in planned_global:
+                    return False
+                walls[point] = wall_height
+                planned_global.add(point)
+                if tile_grid[y][x] != "#":
+                    return False
+            if entrance in walls or tile_grid[entrance[1]][entrance[0]] == "#":
+                return False
+            actual_walls = {
+                (x, y)
+                for y in range(top, bottom + 1)
+                for x in range(left, right + 1)
+                if tile_grid[y][x] == "#"
+            }
+            if actual_walls != set(walls):
+                return False
+            if any(
+                sum(
+                    (x + delta_x, y + delta_y) in walls
+                    for delta_x, delta_y in ((0, -1), (-1, 0), (1, 0), (0, 1))
+                )
+                == 0
+                for x, y in walls
+            ):
+                return False
+            maximum_delta = max(
+                (
+                    abs(value - walls[(x + delta_x, y + delta_y)])
+                    for (x, y), value in walls.items()
+                    for delta_x, delta_y in ((1, 0), (0, 1))
+                    if (x + delta_x, y + delta_y) in walls
+                ),
+                default=0,
+            )
+            if maximum_delta > 1:
+                return False
+            metrics = architecture.get("metrics")
+            if not isinstance(metrics, dict):
+                return False
+            required_integer_metrics = (
+                "intact_wall_tiles",
+                "surviving_wall_tiles",
+                "connected_wall_components",
+                "isolated_wall_tiles",
+                "retained_corners",
+                "longest_straight_run",
+                "entrance_or_breach_count",
+                "maximum_adjacent_height_delta",
+            )
+            if any(
+                not isinstance(metrics.get(key), int)
+                for key in required_integer_metrics
+            ):
+                return False
+            for key in (
+                "wall_destroyed_ratio",
+                "outer_wall_retained_ratio",
+                "accessible_floor_ratio",
+                "score",
+            ):
+                if not isinstance(metrics.get(key), (int, float)):
+                    return False
+            if metrics["surviving_wall_tiles"] != len(walls):
+                return False
+            if metrics["isolated_wall_tiles"] != 0:
+                return False
+            if metrics["retained_corners"] < 1:
+                return False
+            if metrics["longest_straight_run"] < 3:
+                return False
+            if metrics["entrance_or_breach_count"] < 1:
+                return False
+            if float(metrics["accessible_floor_ratio"]) < 0.80:
+                return False
+            if metrics["maximum_adjacent_height_delta"] != maximum_delta:
+                return False
+            if not 0.18 <= float(metrics["wall_destroyed_ratio"]) <= 0.68:
+                return False
+            if not 0.28 <= float(metrics["outer_wall_retained_ratio"]) <= 0.82:
+                return False
+    actual_global = {
+        (x, y)
+        for y, row in enumerate(tile_grid)
+        for x, symbol in enumerate(row)
+        if symbol == "#"
+    }
+    return actual_global == planned_global
 
 
 def _ruin_site_foundations_flat(

@@ -30,6 +30,8 @@ class StructureHeightSummary:
     average_wall_height: float
     maximum_adjacent_height_delta: int
     collision_mismatches: int
+    architecture_planned_tiles: int
+    legacy_fallback_tiles: int
 
     def to_dict(self) -> dict[str, int | float]:
         """Return a JSON-compatible summary.
@@ -53,6 +55,8 @@ class StructureHeightSummary:
             "invalid_floor_height": 0,
             "invalid_non_ruin_height": 0,
             "collision_mismatches": self.collision_mismatches,
+            "architecture_planned_tiles": self.architecture_planned_tiles,
+            "legacy_fallback_tiles": self.legacy_fallback_tiles,
         }
 
 
@@ -69,6 +73,7 @@ def build_structure_height(
     terrain_rows: list[list[str]],
     collision_rows: list[str],
     resolved_seed: int,
+    ruin_sites: object | None = None,
 ) -> StructureHeightResult:
     """Build deterministic ruined-wall heights from final terrain.
 
@@ -79,6 +84,7 @@ def build_structure_height(
         terrain_rows: Final terrain type grid.
         collision_rows: Final zero/one collision rows.
         resolved_seed: Concrete generation seed.
+        ruin_sites: Optional semantic architecture metadata.
 
     Returns:
         Generated height rows and validation summary.
@@ -101,6 +107,7 @@ def build_structure_height(
     rows = [[0 for _ in range(width)] for _ in range(height)]
     component_ids = [[_NO_COMPONENT for _ in range(width)] for _ in range(height)]
     components = _find_components(terrain_rows, component_ids)
+    planned_heights = _planned_architecture_heights(ruin_sites)
 
     for component_id, component in enumerate(components):
         _assign_component_heights(
@@ -110,6 +117,16 @@ def build_structure_height(
             component=component,
             resolved_seed=resolved_seed,
         )
+    architecture_planned_tiles = 0
+    for (x, y), value in planned_heights.items():
+        if not (0 <= x < width and 0 <= y < height):
+            raise ValueError("planned structure height is outside the map")
+        if terrain_rows[y][x] != RUIN_WALL:
+            raise ValueError("planned structure height does not reference a ruin wall")
+        if not _MIN_HEIGHT <= value <= _MAX_HEIGHT:
+            raise ValueError("planned structure height is outside the supported range")
+        rows[y][x] = value
+        architecture_planned_tiles += 1
 
     _validate_invariants(terrain_rows, collision_rows, rows)
     summary = _build_summary(
@@ -118,8 +135,46 @@ def build_structure_height(
         rows=rows,
         component_ids=component_ids,
         component_count=len(components),
+        architecture_planned_tiles=architecture_planned_tiles,
     )
     return StructureHeightResult(rows=rows, summary=summary)
+
+
+def _planned_architecture_heights(ruin_sites: object | None) -> dict[tuple[int, int], int]:
+    """Return explicit wall heights stored by architecture planning."""
+    if not isinstance(ruin_sites, dict):
+        return {}
+    sites = ruin_sites.get("sites")
+    if not isinstance(sites, list):
+        return {}
+    output: dict[tuple[int, int], int] = {}
+    for site in sites:
+        if not isinstance(site, dict):
+            continue
+        buildings = site.get("buildings")
+        if not isinstance(buildings, list):
+            continue
+        for building in buildings:
+            if not isinstance(building, dict):
+                continue
+            architecture = building.get("architecture")
+            if not isinstance(architecture, dict):
+                continue
+            wall_heights = architecture.get("wall_heights")
+            if not isinstance(wall_heights, list):
+                continue
+            for item in wall_heights:
+                if not isinstance(item, list) or len(item) != 3:
+                    raise ValueError("invalid planned structure-height entry")
+                x, y, value = item
+                if not all(isinstance(part, int) for part in (x, y, value)):
+                    raise ValueError("invalid planned structure-height value")
+                point = (x, y)
+                existing = output.get(point)
+                if existing is not None and existing != value:
+                    raise ValueError("conflicting planned structure heights")
+                output[point] = value
+    return output
 
 
 def _find_components(
@@ -358,6 +413,7 @@ def _build_summary(
     rows: list[list[int]],
     component_ids: list[list[int]],
     component_count: int,
+    architecture_planned_tiles: int,
 ) -> StructureHeightSummary:
     counts = [0, 0, 0, 0]
     ruin_floor_tiles = 0
@@ -400,4 +456,6 @@ def _build_summary(
         average_wall_height=average,
         maximum_adjacent_height_delta=maximum_delta,
         collision_mismatches=collision_mismatches,
+        architecture_planned_tiles=architecture_planned_tiles,
+        legacy_fallback_tiles=max(0, ruin_wall_tiles - architecture_planned_tiles),
     )

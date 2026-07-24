@@ -28,6 +28,11 @@ try:
         select_settlement_regions,
         site_kind_sequence,
     )
+    from .ruin_architecture import (
+        RuinArchitecturePlan,
+        architecture_plan_is_valid,
+        generate_ruin_architecture,
+    )
     from .terrain_guidance import TerrainGuidance, TerrainGuidanceError
 except ImportError:  # Direct script execution by LegacyEngineRunner.
     from settlement_context import (
@@ -42,6 +47,11 @@ except ImportError:  # Direct script execution by LegacyEngineRunner.
         select_settlement_profile,
         select_settlement_regions,
         site_kind_sequence,
+    )
+    from ruin_architecture import (
+        RuinArchitecturePlan,
+        architecture_plan_is_valid,
+        generate_ruin_architecture,
     )
     from terrain_guidance import TerrainGuidance, TerrainGuidanceError
 
@@ -284,7 +294,7 @@ class Rect:
 
 @dataclass(frozen=True, slots=True)
 class RuinBuildingPlan:
-    """One flat building footprint planned inside a semantic ruin site."""
+    """One flat building footprint with deterministic ruined architecture."""
 
     building_id: int
     rect: Rect
@@ -293,6 +303,7 @@ class RuinBuildingPlan:
     outside_approach: Point
     orientation: str
     is_main: bool
+    architecture: RuinArchitecturePlan
 
 
 @dataclass(frozen=True, slots=True)
@@ -306,6 +317,8 @@ class RuinSitePlan:
     road_anchor: Point
     orientation: str
     architectural_profile: str
+    destruction_direction: str
+    destruction_severity: str
     requested_buildings: int
     buildings: tuple[RuinBuildingPlan, ...]
 
@@ -810,6 +823,12 @@ class MapGenerator:
             "ruin_candidates_rejected_not_flat": 0,
             "ruin_candidates_rejected_buffer": 0,
             "ruin_candidates_rejected_approach": 0,
+            "ruin_candidates_rejected_architecture": 0,
+            "ruin_architecture_buildings": 0,
+            "ruin_architecture_wall_tiles": 0,
+            "ruin_architecture_isolated_wall_tiles": 0,
+            "ruin_architecture_total_components": 0,
+            "ruin_architecture_max_height_delta": 0,
             "ruin_foundation_cells": 0,
             "ruin_foundation_max_delta": 0,
             "settlement_profile": "disabled",
@@ -927,6 +946,7 @@ class MapGenerator:
                     ],
                     "orientation": building.orientation,
                     "is_main": building.is_main,
+                    "architecture": building.architecture.to_dict(),
                 }
                 for building in site.buildings
             ]
@@ -939,6 +959,8 @@ class MapGenerator:
                     "road_anchor": [site.road_anchor.x, site.road_anchor.y],
                     "orientation": site.orientation,
                     "architectural_profile": site.architectural_profile,
+                    "destruction_direction": site.destruction_direction,
+                    "destruction_severity": site.destruction_severity,
                     "requested_buildings": site.requested_buildings,
                     "placed_buildings": len(site.buildings),
                     "buildings": buildings,
@@ -956,7 +978,7 @@ class MapGenerator:
             else {}
         )
         return {
-            "schema_version": "ruin-site-plan-v2",
+            "schema_version": "ruin-site-plan-v3",
             "settlement_profile": self._settlement_profile.value,
             "source_elevation_style": terrain_context.get(
                 "elevation_style",
@@ -1019,6 +1041,35 @@ class MapGenerator:
                 ),
                 "foundation_rule": "one_exact_natural_level_per_building",
                 "road_anchor_policy": "one_semantic_anchor_per_site",
+                "architecture_rule": (
+                    "intact_plan_then_connected_destruction"
+                ),
+                "structure_height_policy": "planned_from_damage",
+                "architecture_buildings": int(
+                    self._terrain_guidance_metrics[
+                        "ruin_architecture_buildings"
+                    ]
+                ),
+                "architecture_wall_tiles": int(
+                    self._terrain_guidance_metrics[
+                        "ruin_architecture_wall_tiles"
+                    ]
+                ),
+                "architecture_isolated_wall_tiles": int(
+                    self._terrain_guidance_metrics[
+                        "ruin_architecture_isolated_wall_tiles"
+                    ]
+                ),
+                "architecture_wall_components": int(
+                    self._terrain_guidance_metrics[
+                        "ruin_architecture_total_components"
+                    ]
+                ),
+                "architecture_max_height_delta": int(
+                    self._terrain_guidance_metrics[
+                        "ruin_architecture_max_height_delta"
+                    ]
+                ),
             },
         }
 
@@ -1635,6 +1686,39 @@ class MapGenerator:
         self._terrain_guidance_metrics["settlement_average_site_distance"] = (
             round(sum(distances) / len(distances), 3) if distances else 0.0
         )
+        architectures = [
+            building.architecture
+            for site in sites
+            for building in site.buildings
+        ]
+        self._terrain_guidance_metrics["ruin_architecture_buildings"] = len(
+            architectures
+        )
+        self._terrain_guidance_metrics["ruin_architecture_wall_tiles"] = sum(
+            architecture.metrics.surviving_wall_tiles
+            for architecture in architectures
+        )
+        self._terrain_guidance_metrics[
+            "ruin_architecture_isolated_wall_tiles"
+        ] = sum(
+            architecture.metrics.isolated_wall_tiles
+            for architecture in architectures
+        )
+        self._terrain_guidance_metrics[
+            "ruin_architecture_total_components"
+        ] = sum(
+            architecture.metrics.connected_wall_components
+            for architecture in architectures
+        )
+        self._terrain_guidance_metrics[
+            "ruin_architecture_max_height_delta"
+        ] = max(
+            (
+                architecture.metrics.maximum_adjacent_height_delta
+                for architecture in architectures
+            ),
+            default=0,
+        )
 
     @staticmethod
     def _ruin_site_priority(kind: RuinSiteKind | None) -> int:
@@ -1667,6 +1751,10 @@ class MapGenerator:
         orientation = self._rng.choice(("east_west", "north_south"))
         road_direction = self._rng.choice(((0, -1), (1, 0), (0, 1), (-1, 0)))
         profile = self._site_architectural_profile(kind)
+        destruction_direction = self._rng.choice(
+            ("north", "east", "south", "west")
+        )
+        destruction_severity = self._site_destruction_severity(kind)
         site_radius = self._site_radius(kind)
         site_center = self._best_ruin_site_center(
             region.center,
@@ -1704,6 +1792,10 @@ class MapGenerator:
                 reserve_site_center=(
                     kind == RuinSiteKind.VILLAGE and requested >= 4
                 ),
+                site_id=site_id,
+                site_kind=kind,
+                destruction_direction=destruction_direction,
+                destruction_severity=destruction_severity,
             )
             if building is None:
                 self._increment_guidance_metric("ruin_buildings_skipped")
@@ -1728,6 +1820,8 @@ class MapGenerator:
             road_anchor=main_building.outside_approach,
             orientation=orientation,
             architectural_profile=profile,
+            destruction_direction=destruction_direction,
+            destruction_severity=destruction_severity,
             requested_buildings=requested,
             buildings=tuple(buildings),
         )
@@ -1778,6 +1872,16 @@ class MapGenerator:
             RuinSiteKind.VILLAGE: "village_street",
             RuinSiteKind.OUTPOST: "compact_outpost",
         }[kind]
+
+    def _site_destruction_severity(self, kind: RuinSiteKind) -> str:
+        """Return one shared destruction severity for a semantic ruin site."""
+        heavy_probability = {
+            RuinSiteKind.ISOLATED_BUILDING: 0.35,
+            RuinSiteKind.FARMSTEAD: 0.42,
+            RuinSiteKind.VILLAGE: 0.48,
+            RuinSiteKind.OUTPOST: 0.30,
+        }[kind]
+        return "heavy" if self._rng.random() < heavy_probability else "moderate"
 
     def _site_radius(self, kind: RuinSiteKind) -> int:
         """Return local planning radius for a ruin site."""
@@ -1857,6 +1961,10 @@ class MapGenerator:
         existing_site_rects: list[Rect],
         exhaustive: bool,
         reserve_site_center: bool,
+        site_id: int,
+        site_kind: RuinSiteKind,
+        destruction_direction: str,
+        destruction_severity: str,
     ) -> RuinBuildingPlan | None:
         """Find one exact flat building footprint with a valid approach tile."""
         centers = self._ruin_building_candidate_centers(
@@ -1902,6 +2010,23 @@ class MapGenerator:
                     self._increment_guidance_metric("ruin_candidates_rejected_approach")
                     continue
                 entrance_point, outside_approach = entrance
+                architecture = generate_ruin_architecture(
+                    rect=(rect.left, rect.top, rect.right, rect.bottom),
+                    entrance=(entrance_point.x, entrance_point.y),
+                    site_kind=site_kind.value,
+                    building_id=building_id,
+                    is_main=is_main,
+                    orientation=orientation,
+                    destruction_direction=destruction_direction,
+                    destruction_severity=destruction_severity,
+                    resolved_seed=self._effective_seed,
+                    site_id=site_id,
+                )
+                if not architecture_plan_is_valid(architecture):
+                    self._increment_guidance_metric(
+                        "ruin_candidates_rejected_architecture"
+                    )
+                    continue
                 return RuinBuildingPlan(
                     building_id=building_id,
                     rect=rect,
@@ -1910,6 +2035,7 @@ class MapGenerator:
                     outside_approach=outside_approach,
                     orientation=orientation,
                     is_main=is_main,
+                    architecture=architecture,
                 )
         return None
 
@@ -2205,23 +2331,11 @@ class MapGenerator:
         elif len(site.buildings) > 1:
             self._carve_circle(site.center, 2, TileType.GRASS)
 
-        all_entrances: list[Point] = []
         for building in site.buildings:
             self._carve_rect(building.rect.expanded(2), TileType.GRASS)
-            temp_region = Region(region.region_id, building.rect.center)
-            self._carve_ruin_building(
-                building.rect,
-                temp_region,
-                entrance_count=1,
-                planned_entrances=(building.entrance,),
-            )
-            if site.kind != RuinSiteKind.ISOLATED_BUILDING:
-                self._add_internal_ruin_walls(building.rect)
-            all_entrances.extend(temp_region.entrances)
+            self._carve_ruin_building(building)
 
         region.entrances = [site.road_anchor]
-        if not all_entrances:
-            region.entrances = [site.center]
 
     def _carve_rect(self, rect: Rect, tile_type: TileType) -> None:
         """Carve an inclusive rectangle clipped to the map."""
@@ -2229,109 +2343,13 @@ class MapGenerator:
             for x in range(max(0, rect.left), min(self._grid.width, rect.right + 1)):
                 self._set_tile(Point(x, y), tile_type)
 
-    def _carve_ruin_building(
-        self,
-        rect: Rect,
-        region: Region,
-        entrance_count: int,
-        planned_entrances: Iterable[Point] | None = None,
-    ) -> None:
-        """Carve one simple building using planned or legacy entrances."""
-        for y in range(rect.top, rect.bottom + 1):
-            for x in range(rect.left, rect.right + 1):
-                point = Point(x, y)
-                is_wall = x in {rect.left, rect.right} or y in {rect.top, rect.bottom}
-                self._set_tile(point, TileType.RUIN_WALL if is_wall else TileType.RUIN_FLOOR)
-
-        self._damage_ruin_edges(rect)
-        entrances = (
-            list(planned_entrances)
-            if planned_entrances is not None
-            else self._ruin_entrances(rect, entrance_count)
-        )
-        region.entrances.extend(entrances)
-
-        for entrance in entrances:
-            self._carve_circle(entrance, 1, TileType.RUIN_FLOOR)
-            self._carve_winding_line(entrance, rect.center, 1, TileType.RUIN_FLOOR, protect_path=False)
-
-    def _damage_ruin_edges(self, rect: Rect) -> None:
-        for x in range(rect.left, rect.right + 1):
-            for y in (rect.top, rect.bottom):
-                if self._rng.random() < 0.14:
-                    self._set_tile(Point(x, y), TileType.RUIN_FLOOR)
-
-        for y in range(rect.top, rect.bottom + 1):
-            for x in (rect.left, rect.right):
-                if self._rng.random() < 0.14:
-                    self._set_tile(Point(x, y), TileType.RUIN_FLOOR)
-
-        corner_fragments = (
-            (
-                Point(rect.left, rect.top),
-                Point(rect.left + 1, rect.top),
-                Point(rect.left, rect.top + 1),
-            ),
-            (
-                Point(rect.right, rect.top),
-                Point(rect.right - 1, rect.top),
-                Point(rect.right, rect.top + 1),
-            ),
-            (
-                Point(rect.left, rect.bottom),
-                Point(rect.left + 1, rect.bottom),
-                Point(rect.left, rect.bottom - 1),
-            ),
-            (
-                Point(rect.right, rect.bottom),
-                Point(rect.right - 1, rect.bottom),
-                Point(rect.right, rect.bottom - 1),
-            ),
-        )
-        for fragment in corner_fragments:
-            if self._rng.random() < 0.45:
-                for point in fragment:
-                    self._set_tile(point, TileType.RUIN_FLOOR)
-
-    def _add_internal_ruin_walls(self, rect: Rect) -> None:
-        if rect.right - rect.left < 8 or rect.bottom - rect.top < 7:
-            return
-
-        for _ in range(self._rng.randint(1, 3)):
-            if self._rng.random() < 0.5:
-                x = self._rng.randint(rect.left + 3, rect.right - 3)
-                for y in range(rect.top + 1, rect.bottom):
-                    if self._rng.random() < 0.25:
-                        continue
-                    self._set_tile(Point(x, y), TileType.RUIN_WALL)
-                self._set_tile(
-                    Point(x, self._rng.randint(rect.top + 2, rect.bottom - 2)),
-                    TileType.RUIN_FLOOR,
-                )
-            else:
-                y = self._rng.randint(rect.top + 3, rect.bottom - 3)
-                for x in range(rect.left + 1, rect.right):
-                    if self._rng.random() < 0.25:
-                        continue
-                    self._set_tile(Point(x, y), TileType.RUIN_WALL)
-                self._set_tile(
-                    Point(self._rng.randint(rect.left + 2, rect.right - 2), y),
-                    TileType.RUIN_FLOOR,
-                )
-
-    def _ruin_entrances(self, rect: Rect, entrance_count: int) -> list[Point]:
-        candidates = [
-            Point((rect.left + rect.right) // 2, rect.top),
-            Point((rect.left + rect.right) // 2, rect.bottom),
-            Point(rect.left, (rect.top + rect.bottom) // 2),
-            Point(rect.right, (rect.top + rect.bottom) // 2),
-            Point(rect.left + 1, rect.top),
-            Point(rect.right - 1, rect.bottom),
-            Point(rect.left, rect.bottom - 1),
-            Point(rect.right, rect.top + 1),
-        ]
-        self._rng.shuffle(candidates)
-        return candidates[:entrance_count]
+    def _carve_ruin_building(self, building: RuinBuildingPlan) -> None:
+        """Carve one planned architecture without adding random wall noise."""
+        self._carve_rect(building.rect, TileType.RUIN_FLOOR)
+        for x, y, _height in building.architecture.wall_heights:
+            self._set_tile(Point(x, y), TileType.RUIN_WALL)
+        self._set_tile(building.entrance, TileType.RUIN_FLOOR)
+        self._set_tile(building.outside_approach, TileType.GRASS)
 
     def _carve_graph_roads(self) -> None:
         LOGGER.info("Stage 6: carve old overgrown road network")
@@ -3360,17 +3378,13 @@ class MapGenerator:
             if tile_type == TileType.WATER and self._guidance.wetland_score(point.x, point.y) < 0.42:
                 return
 
-        if current == TileType.RUIN_WALL and tile_type in {
-            TileType.GRASS,
-            TileType.PATH,
-            TileType.BUSH,
-        }:
+        if (
+            current in {TileType.RUIN_WALL, TileType.RUIN_FLOOR}
+            and tile_type not in {TileType.RUIN_WALL, TileType.RUIN_FLOOR}
+        ):
             return
 
-        if tile_type == TileType.PATH and current == TileType.RUIN_WALL:
-            self._grid.set_tile(point, TileType.RUIN_FLOOR)
-        else:
-            self._grid.set_tile(point, tile_type)
+        self._grid.set_tile(point, tile_type)
 
     def _can_place_tree_cluster(self, center: Point, radius: int) -> bool:
         expanded = radius + self._derived.bush_ring_thickness

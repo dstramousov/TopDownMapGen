@@ -198,6 +198,7 @@ def write_map_package(
         terrain_rows=terrain_rows,
         collision_rows=final_collision_rows,
         resolved_seed=resolved_seed,
+        ruin_sites=runtime_data.get("ruin_sites"),
     )
     write_json(
         {
@@ -217,7 +218,7 @@ def write_map_package(
     )
     LOGGER.info(
         "Ruin structure height walls=%s components=%s heights=%s/%s/%s "
-        "average=%.3f max_adjacent_delta=%s",
+        "average=%.3f max_adjacent_delta=%s planned=%s fallback=%s",
         structure_height.summary.ruin_wall_tiles,
         structure_height.summary.connected_wall_components,
         structure_height.summary.height_counts[1],
@@ -225,6 +226,8 @@ def write_map_package(
         structure_height.summary.height_counts[3],
         structure_height.summary.average_wall_height,
         structure_height.summary.maximum_adjacent_height_delta,
+        structure_height.summary.architecture_planned_tiles,
+        structure_height.summary.legacy_fallback_tiles,
     )
 
     places_items = _list(runtime_data.get("places"))
