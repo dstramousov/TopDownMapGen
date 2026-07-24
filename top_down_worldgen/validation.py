@@ -2087,8 +2087,90 @@ def _ruin_sites_valid(
         return True
     if not isinstance(payload, dict):
         return False
-    if payload.get("schema_version") != "ruin-site-plan-v1":
+    schema_version = payload.get("schema_version")
+    if schema_version not in {"ruin-site-plan-v1", "ruin-site-plan-v2"}:
         return False
+    if schema_version == "ruin-site-plan-v2":
+        if payload.get("settlement_profile") not in {
+            "open_plain",
+            "rural_plain",
+            "rolling_valleys",
+            "rugged_outposts",
+            "mountain_stronghold",
+            "plateau_settlement",
+            "sparse_frontier",
+        }:
+            return False
+        if not isinstance(payload.get("source_elevation_style"), str):
+            return False
+        terrain_context = payload.get("terrain_context")
+        budgets = payload.get("budgets")
+        settlement_regions = payload.get("settlement_regions")
+        if not isinstance(terrain_context, dict) or not isinstance(budgets, dict):
+            return False
+        if not isinstance(settlement_regions, list):
+            return False
+        for key in (
+            "site_budget",
+            "building_budget",
+            "landmark_budget",
+            "used_sites",
+            "used_buildings",
+            "unused_site_budget",
+            "unused_building_budget",
+        ):
+            value = budgets.get(key)
+            if not isinstance(value, int) or value < 0:
+                return False
+        if budgets["used_sites"] > budgets["site_budget"]:
+            return False
+        if budgets["used_buildings"] > budgets["building_budget"]:
+            return False
+        if budgets["unused_site_budget"] != budgets["site_budget"] - budgets["used_sites"]:
+            return False
+        if (
+            budgets["unused_building_budget"]
+            != budgets["building_budget"] - budgets["used_buildings"]
+        ):
+            return False
+        for area in settlement_regions:
+            if not isinstance(area, dict):
+                return False
+            for key in (
+                "id",
+                "center_x",
+                "center_y",
+                "radius",
+                "foundation_level",
+                "source_component_area",
+            ):
+                if not isinstance(area.get(key), int):
+                    return False
+            if area["radius"] <= 0 or area["source_component_area"] <= 0:
+                return False
+            if not 0 <= area["center_x"] < width:
+                return False
+            if not 0 <= area["center_y"] < height:
+                return False
+        landmark = payload.get("landmark_reservation")
+        if landmark is not None:
+            if not isinstance(landmark, dict):
+                return False
+            center = _point(landmark.get("center"))
+            access = _point(landmark.get("access_anchor"))
+            if center is None or access is None:
+                return False
+            if not _point_in_bounds(center, width=width, height=height):
+                return False
+            if not _point_in_bounds(access, width=width, height=height):
+                return False
+            if not isinstance(landmark.get("type"), str):
+                return False
+            if not isinstance(landmark.get("elevation"), int):
+                return False
+            radius = landmark.get("footprint_radius")
+            if not isinstance(radius, int) or radius <= 0:
+                return False
     sites = payload.get("sites")
     if not isinstance(sites, list):
         return False

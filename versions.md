@@ -962,3 +962,16 @@
 - На контрольных картах с фиксированным seed доля руин составила 2.2% для 192x192, 2.0% для 320x320 и 2.1% для 400x400; ошибок foundation validation нет.
 - Форматы map package, manifest и VXMAP остаются без изменения: `map-package-map-v13`, `generation-manifest-v42`, VXMAP `1.2`.
 - Версия проекта поднята до `0.0.114`.
+
+## v0.0.114 -> v0.0.115
+
+- Добавлен elevation-aware settlement planner: тип исторического заселения выбирается по elevation style и фактической геометрии конкретной карты, включая долю пригодных площадок, rough/cliff terrain и связные плоские компоненты.
+- Введены профили `open_plain`, `rural_plain`, `rolling_valleys`, `rugged_outposts`, `mountain_stronghold`, `plateau_settlement` и `sparse_frontier`; центральная деревня больше не является обязательной.
+- Линейное area-scaled заполнение заменено отдельными верхними бюджетами sites, обычных зданий и landmark; рост плотности зависит от линейного размера карты, а не прямо от площади, и неиспользованный бюджет больше не заполняется принудительно.
+- Ёмкость архетипов снижена: деревня содержит 6..9 зданий, хутор 2..3, пост 1..2, отдельно стоящий объект ровно один корпус.
+- Ordinary sites группируются в одном или двух settlement regions, независимые sites соблюдают map-scaled exclusion radius, а landmark reservation дополнительно освобождает вокруг себя крупную незастроенную область.
+- Для `mountainous` и `plateau` при наличии достаточно крупной высокой плоской компоненты резервируется будущий `mountain_fortress` или `plateau_fortress`; архитектура landmark пока не создаётся старым генератором стен.
+- Metadata ruin-site planner обновлена до `ruin-site-plan-v2`: добавлены settlement profile, terrain context, бюджеты и их фактическое использование, settlement regions, landmark reservation и статистика расстояний; чтение legacy `ruin-site-plan-v1` сохранено.
+- Terrain guidance report обновлён до `terrain-guidance-report-v5`, расширены консольный отчёт, validation и тесты всех ключевых elevation-aware сценариев.
+- Форматы map package, manifest и VXMAP остаются без изменения: `map-package-map-v13`, `generation-manifest-v42`, VXMAP `1.2`.
+- Версия проекта поднята до `0.0.115`.

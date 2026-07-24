@@ -15,8 +15,34 @@ from PIL import Image, ImageDraw, ImageFont
 from typing import Iterable
 
 try:
+    from .settlement_context import (
+        LandmarkReservation,
+        SettlementBudgets,
+        SettlementProfile,
+        SettlementRegionArea,
+        SettlementTerrainContext,
+        allocate_settlement_budgets,
+        analyze_settlement_terrain,
+        reserve_landmark,
+        select_settlement_profile,
+        select_settlement_regions,
+        site_kind_sequence,
+    )
     from .terrain_guidance import TerrainGuidance, TerrainGuidanceError
 except ImportError:  # Direct script execution by LegacyEngineRunner.
+    from settlement_context import (
+        LandmarkReservation,
+        SettlementBudgets,
+        SettlementProfile,
+        SettlementRegionArea,
+        SettlementTerrainContext,
+        allocate_settlement_budgets,
+        analyze_settlement_terrain,
+        reserve_landmark,
+        select_settlement_profile,
+        select_settlement_regions,
+        site_kind_sequence,
+    )
     from terrain_guidance import TerrainGuidance, TerrainGuidanceError
 
 
@@ -398,14 +424,6 @@ class DerivedConfig:
     chunk_count: int
     area_tiles: int
     region_count: int
-    small_ruin_count: int
-    medium_ruin_count: int
-    central_ruin_count: int
-    isolated_site_count: int
-    farmstead_site_count: int
-    outpost_site_count: int
-    village_site_count: int
-    ruin_building_budget: int
     loop_target_count: int
     nearest_neighbor_links: int
     connected_pocket_count: int
@@ -433,8 +451,6 @@ class DerivedConfig:
     medium_ruin_max_width: int
     medium_ruin_min_height: int
     medium_ruin_max_height: int
-    settlement_min_buildings: int
-    settlement_max_buildings: int
     tree_cluster_min_radius: int
     tree_cluster_max_radius: int
     bush_ring_thickness: int
@@ -471,47 +487,6 @@ class DerivedConfig:
         # stay within profile-specific bounds. Larger maps get more regions, not giant ruins.
         tuning = public.generation_tuning
         region_count = cls._clamp(round(chunk_count / 4.2), 18, 140)
-        ruin_area_scale = area_tiles / float(320 * 320)
-        isolated_site_count = cls._clamp(
-            round(ruin_area_scale * 6.0 * tuning.ruins_scale),
-            0,
-            96,
-        )
-        farmstead_site_count = cls._clamp(
-            round(ruin_area_scale * 2.5 * tuning.ruins_scale),
-            0,
-            40,
-        )
-        outpost_site_count = cls._clamp(
-            round(ruin_area_scale * 1.25 * tuning.ruins_scale),
-            0,
-            24,
-        )
-        village_site_count = (
-            cls._clamp(
-                max(1, round(ruin_area_scale * 1.5 * tuning.ruins_scale)),
-                1,
-                12,
-            )
-            if tuning.ruins_scale > 0.0
-            else 0
-        )
-        small_ruin_count = isolated_site_count
-        medium_ruin_count = (
-            farmstead_site_count
-            + outpost_site_count
-            + max(0, village_site_count - 1)
-        )
-        ruin_building_budget = cls._clamp(
-            round(
-                area_tiles
-                / 2500.0
-                * tuning.ruins_scale
-                * tuning.buildings_scale
-            ),
-            0,
-            320,
-        )
         loop_target_count = cls._clamp(round(region_count * 0.55), 8, 70)
         connected_pocket_count = cls._clamp(
             round(region_count * 1.75 * tuning.open_space_scale),
@@ -542,19 +517,6 @@ class DerivedConfig:
         road_width_bonus = max(-2, min(4, round(tuning.road_width_scale - 1.0)))
         road_min_width = cls._clamp(4 + road_width_bonus, 1, 10)
         road_max_width = cls._clamp(6 + road_width_bonus, road_min_width, 12)
-        map_linear_scale = math.sqrt(max(0.01, ruin_area_scale))
-        base_village_min = cls._clamp(round(5 * map_linear_scale), 2, 9)
-        base_village_max = cls._clamp(round(8 * map_linear_scale), base_village_min, 14)
-        settlement_min_buildings = cls._clamp(
-            round(base_village_min * tuning.buildings_scale),
-            0,
-            18,
-        )
-        settlement_max_buildings = cls._clamp(
-            round(base_village_max * tuning.buildings_scale),
-            settlement_min_buildings,
-            24,
-        )
 
         return cls(
             chunk_cols=chunk_cols,
@@ -562,14 +524,6 @@ class DerivedConfig:
             chunk_count=chunk_count,
             area_tiles=area_tiles,
             region_count=region_count,
-            small_ruin_count=small_ruin_count,
-            medium_ruin_count=medium_ruin_count,
-            central_ruin_count=village_site_count,
-            isolated_site_count=isolated_site_count,
-            farmstead_site_count=farmstead_site_count,
-            outpost_site_count=outpost_site_count,
-            village_site_count=village_site_count,
-            ruin_building_budget=ruin_building_budget,
             loop_target_count=loop_target_count,
             nearest_neighbor_links=4,
             connected_pocket_count=connected_pocket_count,
@@ -597,8 +551,6 @@ class DerivedConfig:
             medium_ruin_max_width=24,
             medium_ruin_min_height=10,
             medium_ruin_max_height=17,
-            settlement_min_buildings=settlement_min_buildings,
-            settlement_max_buildings=settlement_max_buildings,
             tree_cluster_min_radius=1,
             tree_cluster_max_radius=3,
             bush_ring_thickness=1,
@@ -817,6 +769,11 @@ class MapGenerator:
         self._protected_path: set[Point] = set()
         self._ruin_sites: dict[int, RuinSitePlan] = {}
         self._planned_ruin_rects: list[Rect] = []
+        self._settlement_context: SettlementTerrainContext | None = None
+        self._settlement_profile = SettlementProfile.SPARSE_FRONTIER
+        self._settlement_budgets = SettlementBudgets(0, 0, 0)
+        self._settlement_regions: tuple[SettlementRegionArea, ...] = ()
+        self._landmark_reservation: LandmarkReservation | None = None
         self._connectivity_repair_metrics: dict[str, int] = {
             "components_before": 0,
             "components_after": 0,
@@ -851,6 +808,22 @@ class MapGenerator:
             "ruin_candidates_rejected_approach": 0,
             "ruin_foundation_cells": 0,
             "ruin_foundation_max_delta": 0,
+            "settlement_profile": "disabled",
+            "settlement_site_budget": 0,
+            "settlement_site_budget_used": 0,
+            "settlement_building_budget": 0,
+            "settlement_building_budget_used": 0,
+            "settlement_landmark_budget": 0,
+            "settlement_landmark_reserved": 0,
+            "settlement_regions": 0,
+            "settlement_sites_outside_regions": 0,
+            "settlement_min_site_distance": 0.0,
+            "settlement_average_site_distance": 0.0,
+            "settlement_buildable_ratio": 0.0,
+            "settlement_rough_ratio": 0.0,
+            "settlement_large_flat_components": 0,
+            "settlement_high_plateau_candidates": 0,
+            "settlement_candidates_rejected_exclusion": 0,
             "guided_road_routes": 0,
             "fallback_road_routes": 0,
             "road_sample_tiles": 0,
@@ -884,7 +857,7 @@ class MapGenerator:
     def terrain_guidance_metrics(self) -> dict[str, int | float | bool | str]:
         """Return terrain adaptation diagnostics."""
         metrics = dict(self._terrain_guidance_metrics)
-        metrics["schema_version"] = "terrain-guidance-report-v4"
+        metrics["schema_version"] = "terrain-guidance-report-v5"
         sample_tiles = int(metrics.pop("road_sample_tiles", 0))
         slope_sum = float(metrics.pop("road_slope_sum", 0.0))
         metrics["road_tiles_sampled"] = sample_tiles
@@ -967,18 +940,78 @@ class MapGenerator:
                     "buildings": buildings,
                 }
             )
+        site_budget_used = int(
+            self._terrain_guidance_metrics["settlement_site_budget_used"]
+        )
+        building_budget_used = int(
+            self._terrain_guidance_metrics["settlement_building_budget_used"]
+        )
+        terrain_context = (
+            self._settlement_context.to_dict()
+            if self._settlement_context is not None
+            else {}
+        )
         return {
-            "schema_version": "ruin-site-plan-v1",
+            "schema_version": "ruin-site-plan-v2",
+            "settlement_profile": self._settlement_profile.value,
+            "source_elevation_style": terrain_context.get(
+                "elevation_style",
+                "normal",
+            ),
+            "terrain_context": terrain_context,
+            "budgets": {
+                **self._settlement_budgets.to_dict(),
+                "used_sites": site_budget_used,
+                "used_buildings": building_budget_used,
+                "unused_site_budget": max(
+                    0,
+                    self._settlement_budgets.site_budget - site_budget_used,
+                ),
+                "unused_building_budget": max(
+                    0,
+                    self._settlement_budgets.building_budget
+                    - building_budget_used,
+                ),
+            },
+            "settlement_regions": [
+                area.to_dict() for area in self._settlement_regions
+            ],
+            "landmark_reservation": (
+                self._landmark_reservation.to_dict()
+                if self._landmark_reservation is not None
+                else None
+            ),
             "sites": sites,
             "summary": {
-                "requested_sites": int(self._terrain_guidance_metrics["ruin_sites_requested"]),
-                "planned_sites": int(self._terrain_guidance_metrics["ruin_sites_planned"]),
-                "skipped_sites": int(self._terrain_guidance_metrics["ruin_sites_skipped"]),
+                "requested_sites": int(
+                    self._terrain_guidance_metrics["ruin_sites_requested"]
+                ),
+                "planned_sites": int(
+                    self._terrain_guidance_metrics["ruin_sites_planned"]
+                ),
+                "skipped_sites": int(
+                    self._terrain_guidance_metrics["ruin_sites_skipped"]
+                ),
                 "requested_buildings": int(
                     self._terrain_guidance_metrics["ruin_buildings_requested"]
                 ),
                 "planned_buildings": int(
                     self._terrain_guidance_metrics["ruin_buildings_planned"]
+                ),
+                "minimum_site_distance": float(
+                    self._terrain_guidance_metrics[
+                        "settlement_min_site_distance"
+                    ]
+                ),
+                "average_site_distance": float(
+                    self._terrain_guidance_metrics[
+                        "settlement_average_site_distance"
+                    ]
+                ),
+                "sites_outside_settlement_regions": int(
+                    self._terrain_guidance_metrics[
+                        "settlement_sites_outside_regions"
+                    ]
                 ),
                 "foundation_rule": "one_exact_natural_level_per_building",
                 "road_anchor_policy": "one_semantic_anchor_per_site",
@@ -1245,52 +1278,84 @@ class MapGenerator:
         return steep_fallback
 
     def _assign_region_kinds(self) -> None:
-        LOGGER.info("Stage 3: assign region kinds and ruin-site archetypes")
+        LOGGER.info("Stage 3: assign elevation-aware ruin-site archetypes")
         farthest = self._find_farthest_pair_excluding({self._central_region_id})
         self._start_region_id = farthest.a
         self._goal_region_id = farthest.b
 
+        for region in self._regions:
+            region.ruin_site_kind = None
+            if region.region_id not in {self._central_region_id}:
+                region.kind = RegionKind.FOREST
         self._regions[self._start_region_id].kind = RegionKind.START
         self._regions[self._goal_region_id].kind = RegionKind.GOAL
-        central_region = self._regions[self._central_region_id]
-        central_region.kind = RegionKind.CENTRAL_RUIN_CLEARING
-        if self._derived.village_site_count > 0:
-            central_region.ruin_site_kind = RuinSiteKind.VILLAGE
+        self._regions[self._central_region_id].kind = RegionKind.CENTRAL_RUIN_CLEARING
 
-        free_ids = [
-            region.region_id
-            for region in self._regions
-            if region.region_id not in {
-                self._start_region_id,
-                self._goal_region_id,
-                self._central_region_id,
-            }
-        ]
-        self._rng.shuffle(free_ids)
-
-        medium_kinds = (
-            [RuinSiteKind.VILLAGE] * max(0, self._derived.village_site_count - 1)
-            + [RuinSiteKind.FARMSTEAD] * self._derived.farmstead_site_count
-            + [RuinSiteKind.OUTPOST] * self._derived.outpost_site_count
+        self._prepare_settlement_strategy()
+        kind_names = site_kind_sequence(
+            self._settlement_profile,
+            site_budget=self._settlement_budgets.site_budget,
+            valley_candidates=(
+                self._settlement_context.valley_candidate_count
+                if self._settlement_context is not None
+                else 0
+            ),
         )
-        self._rng.shuffle(medium_kinds)
-        cursor = 0
-        for site_kind in medium_kinds:
-            if cursor >= len(free_ids):
-                break
-            region = self._regions[free_ids[cursor]]
-            cursor += 1
-            region.kind = RegionKind.MEDIUM_RUIN
-            region.ruin_site_kind = site_kind
+        candidates = [
+            region
+            for region in self._regions
+            if region.region_id not in {self._start_region_id, self._goal_region_id}
+        ]
+        selected: list[Region] = []
+        for kind_name in kind_names:
+            kind = RuinSiteKind(kind_name)
+            region = self._select_region_for_site(kind, candidates, selected)
+            if region is None:
+                continue
+            region.ruin_site_kind = kind
+            region.kind = (
+                RegionKind.SMALL_RUIN
+                if kind == RuinSiteKind.ISOLATED_BUILDING
+                else RegionKind.MEDIUM_RUIN
+            )
+            if region.region_id == self._central_region_id:
+                region.kind = RegionKind.CENTRAL_RUIN_CLEARING
+            selected.append(region)
+            candidates.remove(region)
 
-        for _ in range(self._derived.isolated_site_count):
-            if cursor >= len(free_ids):
-                break
-            region = self._regions[free_ids[cursor]]
-            cursor += 1
-            region.kind = RegionKind.SMALL_RUIN
-            region.ruin_site_kind = RuinSiteKind.ISOLATED_BUILDING
+        self._terrain_guidance_metrics["ruin_sites_requested"] = (
+            self._settlement_budgets.site_budget
+        )
+        self._terrain_guidance_metrics["ruin_sites_skipped"] = max(
+            0,
+            self._settlement_budgets.site_budget - len(selected),
+        )
+        self._terrain_guidance_metrics["settlement_site_budget"] = (
+            self._settlement_budgets.site_budget
+        )
+        self._terrain_guidance_metrics["settlement_building_budget"] = (
+            self._settlement_budgets.building_budget
+        )
+        self._terrain_guidance_metrics["settlement_landmark_budget"] = (
+            self._settlement_budgets.landmark_budget
+        )
+        self._terrain_guidance_metrics["settlement_regions"] = len(
+            self._settlement_regions
+        )
+        self._terrain_guidance_metrics["settlement_landmark_reserved"] = int(
+            self._landmark_reservation is not None
+        )
 
+        LOGGER.info(
+            "  Settlement profile=%s style=%s budgets sites=%s buildings=%s landmark=%s",
+            self._settlement_profile.value,
+            self._settlement_context.elevation_style
+            if self._settlement_context is not None
+            else "normal",
+            self._settlement_budgets.site_budget,
+            self._settlement_budgets.building_budget,
+            self._settlement_budgets.landmark_budget,
+        )
         for region in self._regions:
             LOGGER.info(
                 "  Region %02d kind=%s site=%s center=(%03d,%03d)",
@@ -1300,6 +1365,169 @@ class MapGenerator:
                 region.center.x,
                 region.center.y,
             )
+
+    def _prepare_settlement_strategy(self) -> None:
+        """Analyze elevation and prepare one map-wide settlement strategy."""
+        self._settlement_context = analyze_settlement_terrain(
+            self._guidance,
+            width=self._grid.width,
+            height=self._grid.height,
+        )
+        self._settlement_profile = select_settlement_profile(
+            self._settlement_context,
+            seed=self._effective_seed,
+        )
+        self._settlement_budgets = allocate_settlement_budgets(
+            self._settlement_context,
+            self._settlement_profile,
+            width=self._grid.width,
+            height=self._grid.height,
+            ruins_scale=self._public.generation_tuning.ruins_scale,
+            buildings_scale=self._public.generation_tuning.buildings_scale,
+            seed=self._effective_seed,
+        )
+        self._settlement_regions = select_settlement_regions(
+            self._settlement_context,
+            self._settlement_profile,
+            width=self._grid.width,
+            height=self._grid.height,
+            seed=self._effective_seed,
+        )
+        self._landmark_reservation = reserve_landmark(
+            self._settlement_context,
+            self._settlement_profile,
+            budget=self._settlement_budgets.landmark_budget,
+            width=self._grid.width,
+            height=self._grid.height,
+        )
+        self._terrain_guidance_metrics["settlement_profile"] = (
+            self._settlement_profile.value
+        )
+        self._terrain_guidance_metrics["settlement_buildable_ratio"] = (
+            self._settlement_context.buildable_tile_ratio
+        )
+        self._terrain_guidance_metrics["settlement_rough_ratio"] = (
+            self._settlement_context.rough_tile_ratio
+        )
+        self._terrain_guidance_metrics["settlement_large_flat_components"] = (
+            self._settlement_context.large_flat_component_count
+        )
+        self._terrain_guidance_metrics["settlement_high_plateau_candidates"] = (
+            self._settlement_context.high_plateau_candidate_count
+        )
+
+    def _select_region_for_site(
+        self,
+        kind: RuinSiteKind,
+        candidates: list[Region],
+        selected: list[Region],
+    ) -> Region | None:
+        """Choose the best region for one site while preserving empty space."""
+        ranked: list[tuple[float, int, Region]] = []
+        for region in candidates:
+            if self._landmark_reservation is not None:
+                landmark_distance = math.hypot(
+                    region.center.x - self._landmark_reservation.center_x,
+                    region.center.y - self._landmark_reservation.center_y,
+                )
+                landmark_buffer = max(
+                    28,
+                    round(min(self._grid.width, self._grid.height) * 0.12),
+                )
+                if landmark_distance < (
+                    self._landmark_reservation.footprint_radius + landmark_buffer
+                ):
+                    self._increment_guidance_metric(
+                        "settlement_candidates_rejected_exclusion"
+                    )
+                    continue
+            if any(
+                math.hypot(
+                    region.center.x - other.center.x,
+                    region.center.y - other.center.y,
+                )
+                < self._minimum_site_distance(kind, other.ruin_site_kind)
+                for other in selected
+            ):
+                self._increment_guidance_metric(
+                    "settlement_candidates_rejected_exclusion"
+                )
+                continue
+            inside = any(
+                area.contains(region.center.x, region.center.y)
+                for area in self._settlement_regions
+            )
+            if kind != RuinSiteKind.ISOLATED_BUILDING and not inside:
+                continue
+            score = self._site_candidate_score(region, kind, inside=inside)
+            ranked.append((score, -region.region_id, region))
+        if not ranked:
+            return None
+        ranked.sort(reverse=True, key=lambda item: (item[0], item[1]))
+        return ranked[0][2]
+
+    def _site_candidate_score(
+        self,
+        region: Region,
+        kind: RuinSiteKind,
+        *,
+        inside: bool,
+    ) -> float:
+        """Return deterministic terrain and clustering score for one region."""
+        if self._guidance is None:
+            terrain_score = 0.75
+            level = 0
+        else:
+            terrain_score = self._guidance.footprint_score(
+                region.center.x,
+                region.center.y,
+                5,
+            )
+            level = self._guidance.natural_level_at(
+                region.center.x,
+                region.center.y,
+            ) or 0
+        affinity = 0.0
+        for area in self._settlement_regions:
+            distance = math.hypot(
+                region.center.x - area.center_x,
+                region.center.y - area.center_y,
+            )
+            affinity = max(affinity, 1.0 - distance / max(1, area.radius))
+        score = terrain_score * 2.4 + affinity * 1.5 + (0.20 if inside else -0.25)
+        if self._settlement_profile in {
+            SettlementProfile.MOUNTAIN_STRONGHOLD,
+            SettlementProfile.RUGGED_OUTPOSTS,
+        } and kind == RuinSiteKind.OUTPOST:
+            score += max(0, level) * 0.035
+        if kind == RuinSiteKind.VILLAGE:
+            score += affinity * 0.55
+        return score
+
+    def _minimum_site_distance(
+        self,
+        first: RuinSiteKind,
+        second: RuinSiteKind | None,
+    ) -> float:
+        """Return map-scaled exclusion distance for independent sites."""
+        second = second or RuinSiteKind.ISOLATED_BUILDING
+        base = {
+            RuinSiteKind.VILLAGE: 72.0,
+            RuinSiteKind.FARMSTEAD: 48.0,
+            RuinSiteKind.OUTPOST: 44.0,
+            RuinSiteKind.ISOLATED_BUILDING: 34.0,
+        }
+        distance = max(base[first], base[second])
+        map_scale = max(
+            0.62,
+            min(1.35, min(self._grid.width, self._grid.height) / 400.0),
+        )
+        if self._settlement_profile in {
+            SettlementProfile.MOUNTAIN_STRONGHOLD,
+            SettlementProfile.RUGGED_OUTPOSTS,
+        }:
+            distance *= 1.12
+        return distance * map_scale
 
     def _plan_ruin_sites(self) -> None:
         """Plan semantic ruin sites before roads and terrain carving."""
@@ -1313,7 +1541,6 @@ class MapGenerator:
                 region.region_id,
             ),
         )
-        self._terrain_guidance_metrics["ruin_sites_requested"] = len(ruin_regions)
         requested_buildings = self._allocate_site_building_counts(ruin_regions)
 
         for site_id, region in enumerate(ruin_regions):
@@ -1322,6 +1549,11 @@ class MapGenerator:
                 site_id,
                 requested=requested_buildings.get(region.region_id, 0),
             )
+            if plan is not None and self._planned_site_conflicts(plan):
+                self._increment_guidance_metric(
+                    "settlement_candidates_rejected_exclusion"
+                )
+                plan = None
             if plan is None:
                 skipped_kind = region.ruin_site_kind
                 self._increment_guidance_metric("ruin_sites_skipped")
@@ -1351,10 +1583,54 @@ class MapGenerator:
                 plan.road_anchor.y,
             )
 
+        self._update_settlement_usage_metrics()
         LOGGER.info(
             "Stage 4 complete: sites=%s buildings=%s",
             len(self._ruin_sites),
             int(self._terrain_guidance_metrics["ruin_buildings_planned"]),
+        )
+
+    def _planned_site_conflicts(self, plan: RuinSitePlan) -> bool:
+        """Return whether a relocated site violates final exclusion distances."""
+        for existing in self._ruin_sites.values():
+            distance = math.hypot(
+                plan.center.x - existing.center.x,
+                plan.center.y - existing.center.y,
+            )
+            if distance < self._minimum_site_distance(plan.kind, existing.kind):
+                return True
+        return False
+
+    def _update_settlement_usage_metrics(self) -> None:
+        """Store final budget usage and pairwise site-distance diagnostics."""
+        sites = list(self._ruin_sites.values())
+        building_count = sum(len(site.buildings) for site in sites)
+        self._terrain_guidance_metrics["settlement_site_budget_used"] = len(sites)
+        self._terrain_guidance_metrics[
+            "settlement_building_budget_used"
+        ] = building_count
+        outside = sum(
+            1
+            for site in sites
+            if not any(
+                area.contains(site.center.x, site.center.y)
+                for area in self._settlement_regions
+            )
+        )
+        self._terrain_guidance_metrics["settlement_sites_outside_regions"] = outside
+        distances = [
+            math.hypot(
+                first.center.x - second.center.x,
+                first.center.y - second.center.y,
+            )
+            for index, first in enumerate(sites)
+            for second in sites[index + 1 :]
+        ]
+        self._terrain_guidance_metrics["settlement_min_site_distance"] = (
+            round(min(distances), 3) if distances else 0.0
+        )
+        self._terrain_guidance_metrics["settlement_average_site_distance"] = (
+            round(sum(distances) / len(distances), 3) if distances else 0.0
         )
 
     @staticmethod
@@ -1457,10 +1733,12 @@ class MapGenerator:
         self,
         regions: list[Region],
     ) -> dict[int, int]:
-        """Allocate the area-scaled building budget across semantic ruin sites."""
+        """Allocate an upper building budget without forcing full consumption."""
         counts = {region.region_id: 0 for region in regions}
-        budget = self._derived.ruin_building_budget
-        if budget <= 0:
+        if self._settlement_context is None:
+            self._prepare_settlement_strategy()
+        remaining = self._settlement_budgets.building_budget
+        if remaining <= 0:
             return counts
 
         ordered = sorted(
@@ -1470,56 +1748,22 @@ class MapGenerator:
                 region.region_id,
             ),
         )
+        ranges = {
+            RuinSiteKind.VILLAGE: (6, 9),
+            RuinSiteKind.FARMSTEAD: (2, 3),
+            RuinSiteKind.OUTPOST: (1, 2),
+            RuinSiteKind.ISOLATED_BUILDING: (1, 1),
+        }
         for region in ordered:
-            if budget <= 0:
+            if remaining <= 0:
                 break
-            counts[region.region_id] = 1
-            budget -= 1
-
-        minimums = {
-            RuinSiteKind.VILLAGE: 5,
-            RuinSiteKind.FARMSTEAD: 3,
-            RuinSiteKind.OUTPOST: 2,
-            RuinSiteKind.ISOLATED_BUILDING: 1,
-        }
-        capacities = {
-            RuinSiteKind.VILLAGE: 14,
-            RuinSiteKind.FARMSTEAD: 6,
-            RuinSiteKind.OUTPOST: 4,
-            RuinSiteKind.ISOLATED_BUILDING: 1,
-        }
-        for region in ordered:
-            kind = region.ruin_site_kind
-            target = minimums.get(kind, 1)
-            while budget > 0 and counts[region.region_id] < target:
-                counts[region.region_id] += 1
-                budget -= 1
-
-        weighted = [
-            region
-            for region in ordered
-            for _ in range(
-                3
-                if region.ruin_site_kind == RuinSiteKind.VILLAGE
-                else 2
-                if region.ruin_site_kind == RuinSiteKind.FARMSTEAD
-                else 1
+            minimum, maximum = ranges.get(
+                region.ruin_site_kind or RuinSiteKind.ISOLATED_BUILDING,
+                (1, 1),
             )
-        ]
-        while budget > 0:
-            progress = False
-            for region in weighted:
-                kind = region.ruin_site_kind
-                capacity = capacities.get(kind, 1)
-                if counts[region.region_id] >= capacity:
-                    continue
-                counts[region.region_id] += 1
-                budget -= 1
-                progress = True
-                if budget <= 0:
-                    break
-            if not progress:
-                break
+            target = self._rng.randint(minimum, maximum)
+            counts[region.region_id] = min(target, remaining)
+            remaining -= counts[region.region_id]
         return counts
 
     @staticmethod

@@ -193,6 +193,13 @@ def format_console_summary(summary: dict[str, Any]) -> str:
         steep_road_tiles = int(terrain_guidance.get("road_steep_tiles", 0))
         cliff_road_tiles = int(terrain_guidance.get("road_cliff_tiles", 0))
         average_road_slope = float(terrain_guidance.get("average_road_slope", 0.0))
+        settlement_buildable = (
+            float(terrain_guidance.get("settlement_buildable_ratio", 0.0))
+            * 100.0
+        )
+        settlement_rough = (
+            float(terrain_guidance.get("settlement_rough_ratio", 0.0)) * 100.0
+        )
         lines.extend(
             [
                 "",
@@ -200,6 +207,39 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                 (
                     f"  кандидатов регионов: {evaluated}, отклонено крутых: {rejected}, "
                     f"fallback: {int(terrain_guidance.get('region_steep_fallbacks', 0))}"
+                ),
+                (
+                    "  профиль заселения: "
+                    f"{terrain_guidance.get('settlement_profile', 'disabled')} "
+                    f"(elevation={terrain_guidance.get('elevation_style', 'disabled')})"
+                ),
+                (
+                    "  пригодность застройки: "
+                    f"ровно={settlement_buildable:.1f}%, "
+                    f"rough={settlement_rough:.1f}%, "
+                    "крупных плоских областей="
+                    f"{int(terrain_guidance.get('settlement_large_flat_components', 0))}, "
+                    "высоких площадок="
+                    f"{int(terrain_guidance.get('settlement_high_plateau_candidates', 0))}"
+                ),
+                (
+                    "  бюджеты застройки: "
+                    f"sites={int(terrain_guidance.get('settlement_site_budget_used', 0))}/"
+                    f"{int(terrain_guidance.get('settlement_site_budget', 0))}, "
+                    f"buildings={int(terrain_guidance.get('settlement_building_budget_used', 0))}/"
+                    f"{int(terrain_guidance.get('settlement_building_budget', 0))}, "
+                    f"landmark={int(terrain_guidance.get('settlement_landmark_reserved', 0))}/"
+                    f"{int(terrain_guidance.get('settlement_landmark_budget', 0))}"
+                ),
+                (
+                    "  settlement regions: "
+                    f"{int(terrain_guidance.get('settlement_regions', 0))}, "
+                    "sites вне регионов="
+                    f"{int(terrain_guidance.get('settlement_sites_outside_regions', 0))}, "
+                    "min distance="
+                    f"{float(terrain_guidance.get('settlement_min_site_distance', 0.0)):.1f}, "
+                    "avg distance="
+                    f"{float(terrain_guidance.get('settlement_average_site_distance', 0.0)):.1f}"
                 ),
                 (
                     "  ruin sites: "
@@ -237,7 +277,9 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                     f"не плоские={int(terrain_guidance.get('ruin_candidates_rejected_not_flat', 0))}, "
                     f"ниже 0={int(terrain_guidance.get('ruin_candidates_rejected_negative', 0))}, "
                     f"buffer={int(terrain_guidance.get('ruin_candidates_rejected_buffer', 0))}, "
-                    f"overlap={int(terrain_guidance.get('ruin_candidates_rejected_overlap', 0))}"
+                    f"overlap={int(terrain_guidance.get('ruin_candidates_rejected_overlap', 0))}, "
+                    "site exclusion="
+                    f"{int(terrain_guidance.get('settlement_candidates_rejected_exclusion', 0))}"
                 ),
             ]
         )
