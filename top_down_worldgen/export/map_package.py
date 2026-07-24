@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ from top_down_worldgen.manifest import (
     TILE_RENDER_HINTS_SCHEMA_VERSION,
     PLACES_SCHEMA_VERSION,
     START_GOAL_LAYER_SCHEMA_VERSION,
+    STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION,
     TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
@@ -33,8 +35,11 @@ from top_down_worldgen.manifest import (
 )
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.runtime_binary import RuntimeBinarySource, write_runtime_binary
+from top_down_worldgen.structure_height import build_structure_height
 from top_down_worldgen.tactical.traversal import DEFAULT_TRAVERSAL_RULES
 from top_down_worldgen.utils.json_io import write_json, write_json_atomic
+
+LOGGER = logging.getLogger(__name__)
 
 _GAMEPLAY_FILES: tuple[tuple[str, str], ...] = (
     ("combat_zones", "combat_zones.json"),
@@ -175,6 +180,44 @@ def write_map_package(
     write_json(markers, outputs.map_package_markers)
     write_json(runtime_grids, outputs.map_package_runtime_grids)
 
+    runtime_grid_items = _dict(runtime_grids.get("grids"))
+    final_collision_rows = _string_rows(
+        _dict(runtime_grid_items.get("collision_grid")).get("rows"),
+        [],
+    )
+    structure_height = build_structure_height(
+        terrain_rows=terrain_rows,
+        collision_rows=final_collision_rows,
+        resolved_seed=resolved_seed,
+    )
+    write_json(
+        {
+            "schema_version": STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION,
+            "kind": "structure_height",
+            "width": width,
+            "height": height,
+            "format": "uint8_rows",
+            "units": "logical_levels_above_ground",
+            "ground_reference": "elevation_plus_one",
+            "range": [0, 3],
+            "default": 0,
+            "rows": structure_height.rows,
+            "summary": structure_height.summary.to_dict(),
+        },
+        outputs.map_package_structure_height,
+    )
+    LOGGER.info(
+        "Ruin structure height walls=%s components=%s heights=%s/%s/%s "
+        "average=%.3f max_adjacent_delta=%s",
+        structure_height.summary.ruin_wall_tiles,
+        structure_height.summary.connected_wall_components,
+        structure_height.summary.height_counts[1],
+        structure_height.summary.height_counts[2],
+        structure_height.summary.height_counts[3],
+        structure_height.summary.average_wall_height,
+        structure_height.summary.maximum_adjacent_height_delta,
+    )
+
     places_items = _list(runtime_data.get("places"))
     start_point = _mapping_point(points.get("start"))
     final_reachable_points = _reachable_final_points(
@@ -276,7 +319,6 @@ def write_map_package(
         vegetation_visual["schema_version"] = VEGETATION_VISUAL_SCHEMA_VERSION
         write_json(vegetation_visual, outputs.map_package_vegetation_visual)
 
-    runtime_grid_items = _dict(runtime_grids.get("grids"))
     runtime_binary = write_runtime_binary(
         RuntimeBinarySource(
             width=width,
@@ -292,10 +334,7 @@ def write_map_package(
             movement_rows=_numeric_rows(
                 _dict(runtime_grid_items.get("movement_grid")).get("rows"),
             ),
-            collision_rows=_string_rows(
-                _dict(runtime_grid_items.get("collision_grid")).get("rows"),
-                [],
-            ),
+            collision_rows=final_collision_rows,
             projectile_rows=_string_rows(
                 _dict(runtime_grid_items.get("projectile_block_grid")).get("rows"),
                 [],
@@ -313,6 +352,7 @@ def write_map_package(
             elevation_rows=_integer_rows(
                 _dict(runtime_grid_items.get("height_grid")).get("rows"),
             ),
+            structure_height_rows=structure_height.rows,
             start=points.get("start"),
             goal=points.get("goal"),
             terrain_catalog=tile_types_catalog,
@@ -360,6 +400,7 @@ def write_map_package(
                 "movement_costs": "layers/movement_costs.json",
                 "collision": "layers/collision.json",
                 "elevation": "layers/elevation.json",
+                "structure_height": "layers/structure_height.json",
                 "start_goal": "layers/start_goal.json",
             },
             "gameplay": {
@@ -413,6 +454,7 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_movement_costs,
         outputs.map_package_collision,
         outputs.map_package_elevation,
+        outputs.map_package_structure_height,
         outputs.map_package_start_goal,
         outputs.map_package_combat_zones,
         outputs.map_package_cover_points,

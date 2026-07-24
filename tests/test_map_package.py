@@ -51,6 +51,9 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_movement_costs.read_text(encoding="utf-8"),
     )
     collision = json.loads(outputs.map_package_collision.read_text(encoding="utf-8"))
+    structure_height = json.loads(
+        outputs.map_package_structure_height.read_text(encoding="utf-8"),
+    )
     start_goal = json.loads(outputs.map_package_start_goal.read_text(encoding="utf-8"))
     markers = json.loads(outputs.map_package_markers.read_text(encoding="utf-8"))
     runtime_grids = json.loads(
@@ -89,7 +92,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
     )
 
-    assert package_index["schema_version"] == "map-package-map-v11"
+    assert package_index["schema_version"] == "map-package-map-v12"
     assert package_index["dimensions"]["width_tiles"] == 2
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
@@ -97,6 +100,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["runtime_grids"] == "runtime_grids.json"
     assert package_index["runtime_binary"]["path"] == "map_runtime.vxmap"
     assert package_index["runtime_binary"]["format"] == "vxmap-runtime-v1"
+    assert package_index["runtime_binary"]["format_minor"] == 1
     assert len(package_index["runtime_binary"]["build_id"]) == 32
     assert outputs.map_package_runtime_binary.exists()
     assert package_index["world_graph"] == "world_graph.json"
@@ -107,6 +111,9 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["elevation_transitions"] == "elevation_transitions.json"
     assert package_index["layers"]["collision"] == "layers/collision.json"
     assert package_index["layers"]["terrain"] == "layers/terrain.json"
+    assert package_index["layers"]["structure_height"] == (
+        "layers/structure_height.json"
+    )
     assert package_index["layers"]["start_goal"] == "layers/start_goal.json"
     assert package_index["catalogs"]["tile_types"] == "catalogs/tile_types.json"
     assert package_index["catalogs"]["object_types"] == "catalogs/object_types.json"
@@ -122,6 +129,10 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert movement["costs_by_type"]["grass"] == 1
     assert collision["format"] == "boolean_rows"
     assert collision["rows"] == ["00", "00"]
+    assert structure_height["schema_version"] == "structure-height-layer-v1"
+    assert structure_height["units"] == "logical_levels_above_ground"
+    assert structure_height["ground_reference"] == "elevation_plus_one"
+    assert structure_height["rows"] == [[0, 0], [0, 0]]
     assert start_goal["start"] == {"x": 0, "y": 0}
     assert start_goal["goal"] == {"x": 1, "y": 1}
     assert markers["schema_version"] == "markers-v1"

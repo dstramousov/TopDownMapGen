@@ -45,6 +45,7 @@ from .manifest import (
     TACTICAL_DEBUG_SCHEMA_VERSION,
     TACTICAL_MAP_SCHEMA_VERSION,
     START_GOAL_LAYER_SCHEMA_VERSION,
+    STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION,
     TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
@@ -872,6 +873,13 @@ class WorldgenPipeline:
                 True,
                 False,
                 ELEVATION_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_structure_height,
+                "map_package:structure_height",
+                True,
+                False,
+                STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.map_package_start_goal,

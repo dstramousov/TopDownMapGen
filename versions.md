@@ -926,3 +926,14 @@
 - `map.json` публикует блок `runtime_binary`; обычный JSON package сохраняется без изменения существующих путей и остаётся fallback-контрактом.
 - Обычные elevation transitions, source JSON digests, compression и optional gameplay sections намеренно не включены в первую бинарную версию.
 - Версия проекта поднята до `0.0.111`.
+
+## v0.0.111 -> v0.0.112
+
+- Добавлен отдельный deterministic derived-layer `structure_height`, вычисляемый по финальному terrain после формирования runtime grids без изменения terrain, проходов или collision.
+- `ruin_wall_blocker` получает связную относительную высоту `1..3` логических уровня над поверхностью земли; остальные тайлы получают `0`, а основание 3D-геометрии определяется как `elevation + 1`.
+- Добавлен обязательный JSON-слой `map_package/layers/structure_height.json` со схемой `structure-height-layer-v1`, статистикой и проверкой инвариантов.
+- Схема карты обновлена до `map-package-map-v12`, manifest schema — до `generation-manifest-v41`.
+- VXMAP обновлён до format minor `1`; добавлена required regional section type `28` (`STRUCTURE_HEIGHT_U8`) и девятая core grid-секция каждого региона.
+- Один и тот же in-memory grid передаётся JSON- и VXMAP-сериализаторам; independent binary validator выполняет tile-by-tile parity check.
+- Добавлены тесты связности, детерминизма, существующих проходов, карты без руин, collision-инварианта, edge-регионов, CRC и чтения legacy VXMAP minor `0`.
+- Версия проекта поднята до `0.0.112`.

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import struct
+import zlib
 from pathlib import Path
 
 import pytest
@@ -27,6 +29,10 @@ def test_runtime_binary_roundtrip_and_determinism(tmp_path: Path) -> None:
     assert container.header.build_id == first_result.build_id
     assert len(container.sections_of_type(int(SectionType.TERRAIN_GRID))) == 1
     assert len(container.sections_of_type(int(SectionType.ELEVATION_GRID))) == 1
+    assert len(
+        container.sections_of_type(int(SectionType.STRUCTURE_HEIGHT_U8))
+    ) == 1
+    assert container.header.format_minor == 1
     assert not container.sections_of_type(31)
 
 
@@ -41,7 +47,26 @@ def test_runtime_binary_splits_edge_regions(tmp_path: Path) -> None:
     assert result.region_count_x == 2
     assert result.region_count_y == 2
     assert len(container.sections_of_type(int(SectionType.TERRAIN_GRID))) == 4
+    assert len(
+        container.sections_of_type(int(SectionType.STRUCTURE_HEIGHT_U8))
+    ) == 4
     assert result.file_size < 300_000
+
+
+def test_runtime_binary_reader_accepts_legacy_minor_zero(tmp_path: Path) -> None:
+    """Ensure the structural reader accepts older v1.0 containers."""
+    path = tmp_path / "legacy-minor.vxmap"
+    write_runtime_binary(_source(width=3, height=2), path)
+    data = bytearray(path.read_bytes())
+    struct.pack_into("<H", data, 12, 0)
+    struct.pack_into("<I", data, 104, 0)
+    struct.pack_into("<I", data, 104, zlib.crc32(data[:128]) & 0xFFFFFFFF)
+    path.write_bytes(data)
+
+    container = open_runtime_container(path)
+
+    assert container.header.format_major == 1
+    assert container.header.format_minor == 0
 
 
 def test_runtime_binary_rejects_corrupted_payload(tmp_path: Path) -> None:
@@ -69,8 +94,9 @@ def test_runtime_binary_rejects_bad_magic(tmp_path: Path) -> None:
 
 
 def _source(*, width: int, height: int) -> RuntimeBinarySource:
+    terrain_types = ("grass", "tree_blocker", "ruin_wall_blocker")
     terrain_rows = [
-        ["grass" if (x + y) % 2 == 0 else "tree_blocker" for x in range(width)]
+        [terrain_types[(x + y) % len(terrain_types)] for x in range(width)]
         for y in range(height)
     ]
     movement_rows = [
@@ -97,10 +123,10 @@ def _source(*, width: int, height: int) -> RuntimeBinarySource:
         height=height,
         tile_size_px=16,
         resolved_seed=123456789,
-        generator_version="0.0.111",
+        generator_version="0.0.112",
         pipeline_version="pipeline-v1",
         profile="test",
-        map_schema="map-package-map-v11",
+        map_schema="map-package-map-v12",
         package_schema="map-package-v1",
         terrain_rows=terrain_rows,
         movement_rows=movement_rows,
@@ -110,6 +136,13 @@ def _source(*, width: int, height: int) -> RuntimeBinarySource:
         cover_rows=cover_rows,
         concealment_rows=concealment_rows,
         elevation_rows=elevation_rows,
+        structure_height_rows=[
+            [
+                2 if terrain_rows[y][x] == "ruin_wall_blocker" else 0
+                for x in range(width)
+            ]
+            for y in range(height)
+        ],
         start={"x": 0, "y": 0},
         goal={"x": width - 1, "y": height - 1},
         terrain_catalog={
@@ -127,6 +160,13 @@ def _source(*, width: int, height: int) -> RuntimeBinarySource:
                     "collision": "blocked",
                     "walkable": False,
                     "tags": ["blocker", "vegetation"],
+                },
+                "ruin_wall_blocker": {
+                    "symbol": "#",
+                    "movement_cost": None,
+                    "collision": "blocked",
+                    "walkable": False,
+                    "tags": ["blocker", "ruin"],
                 },
             },
         },

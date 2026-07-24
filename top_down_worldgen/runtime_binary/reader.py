@@ -10,6 +10,7 @@ from pathlib import Path
 from .constants import (
     ENDIAN_MARKER,
     FORMAT_MAJOR,
+    FORMAT_MINOR,
     HEADER_SIZE,
     MAGIC,
     MAX_SECTION_COUNT,
@@ -152,6 +153,8 @@ def _decode_header(data: bytes, actual_file_size: int) -> RuntimeHeader:
         raise ValueError(f"unsupported header size: {header_size}")
     if format_major != FORMAT_MAJOR:
         raise ValueError(f"unsupported runtime format major: {format_major}")
+    if format_minor > FORMAT_MINOR:
+        raise ValueError(f"unsupported runtime format minor: {format_minor}")
     if entry_size != SECTION_ENTRY_SIZE:
         raise ValueError(f"unsupported section entry size: {entry_size}")
     if endian_marker != ENDIAN_MARKER:

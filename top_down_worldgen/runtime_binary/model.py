@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .constants import FORMAT_MAJOR, FORMAT_MINOR, FORMAT_NAME, REGION_SIZE_TILES
+
 
 @dataclass(frozen=True, slots=True)
 class RuntimeBinarySource:
@@ -29,6 +31,7 @@ class RuntimeBinarySource:
         cover_rows: Cover values in the inclusive range zero to one.
         concealment_rows: Concealment values in the inclusive range zero to one.
         elevation_rows: Signed elevation level per tile.
+        structure_height_rows: Logical height levels above ground per tile.
         start: Optional start point.
         goal: Optional goal point.
         terrain_catalog: Public terrain catalog object.
@@ -51,6 +54,7 @@ class RuntimeBinarySource:
     cover_rows: list[list[int | float]]
     concealment_rows: list[list[int | float]]
     elevation_rows: list[list[int]]
+    structure_height_rows: list[list[int]]
     start: dict[str, int] | None
     goal: dict[str, int] | None
     terrain_catalog: dict[str, Any]
@@ -105,13 +109,13 @@ class RuntimeBinaryResult:
         """
         return {
             "path": self.path.relative_to(package_dir).as_posix(),
-            "format": "vxmap-runtime-v1",
-            "format_major": 1,
-            "format_minor": 0,
+            "format": FORMAT_NAME,
+            "format_major": FORMAT_MAJOR,
+            "format_minor": FORMAT_MINOR,
             "build_id": self.build_id.hex(),
             "file_size": self.file_size,
             "section_count": self.section_count,
-            "region_size_tiles": 128,
+            "region_size_tiles": REGION_SIZE_TILES,
             "regions": {
                 "x": self.region_count_x,
                 "y": self.region_count_y,

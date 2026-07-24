@@ -37,7 +37,7 @@ from .validator import validate_runtime_binary
 
 LOGGER = logging.getLogger(__name__)
 _GLOBAL_SECTION_COUNT = 6
-_REGIONAL_SECTION_COUNT = 8
+_REGIONAL_SECTION_COUNT = 9
 
 
 def write_runtime_binary(
@@ -122,7 +122,7 @@ def write_runtime_binary(
         validate_time_ms=validate_time_ms,
     )
     LOGGER.info(
-        "Runtime binary path=%s format=vxmap-runtime-v1 regions=%sx%s "
+        "Runtime binary path=%s format=vxmap-runtime-v1.1 regions=%sx%s "
         "sections=%s strings=%s terrain_types=%s file_size=%s "
         "write_ms=%.3f validate_ms=%.3f build_id=%s",
         path,
@@ -247,6 +247,7 @@ def _build_region_sections(
     vision_values: list[bool] = []
     cover_values = bytearray()
     concealment_values = bytearray()
+    structure_height_values = bytearray()
     for y in range(origin_y, origin_y + region_height):
         for x in range(origin_x, origin_x + region_width):
             terrain_name = source.terrain_rows[y][x]
@@ -263,6 +264,7 @@ def _build_region_sections(
             vision_values.append(source.vision_rows[y][x] == "1")
             cover_values.append(_quantize_unit(source.cover_rows[y][x]))
             concealment_values.append(_quantize_unit(source.concealment_rows[y][x]))
+            structure_height_values.append(source.structure_height_rows[y][x])
     common = {
         "parent_id": region_id,
         "alignment": GRID_ALIGNMENT,
@@ -330,6 +332,14 @@ def _build_region_sections(
             SectionType.CONCEALMENT_GRID_U8,
             REGIONAL_GRID_FLAGS,
             bytes(concealment_values),
+            tile_count,
+            1,
+            **common,
+        ),
+        _section(
+            SectionType.STRUCTURE_HEIGHT_U8,
+            REGIONAL_GRID_FLAGS,
+            bytes(structure_height_values),
             tile_count,
             1,
             **common,
@@ -627,9 +637,27 @@ def _validate_source(source: RuntimeBinarySource) -> None:
         "concealment",
     )
     _validate_matrix(source.elevation_rows, source.width, source.height, "elevation")
+    _validate_matrix(
+        source.structure_height_rows,
+        source.width,
+        source.height,
+        "structure height",
+    )
     for row in source.elevation_rows:
         if any(value < -32768 or value > 32767 for value in row):
             raise ValueError("runtime elevation exceeds i16")
+    for y, row in enumerate(source.structure_height_rows):
+        for x, value in enumerate(row):
+            if value < 0 or value > 3:
+                raise ValueError("runtime structure height exceeds u8 v1 contract")
+            terrain = source.terrain_rows[y][x]
+            if terrain == "ruin_wall_blocker":
+                if value == 0:
+                    raise ValueError("runtime ruin wall has zero structure height")
+                if source.collision_rows[y][x] != "1":
+                    raise ValueError("runtime ruin wall is not collision-blocked")
+            elif value != 0:
+                raise ValueError("runtime non-ruin tile has structure height")
     _validate_point(source.start, source.width, source.height, "start")
     _validate_point(source.goal, source.width, source.height, "goal")
 
