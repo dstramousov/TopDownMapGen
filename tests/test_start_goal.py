@@ -58,7 +58,7 @@ def test_runtime_objects_are_marked_flooded_and_points_are_collected() -> None:
 
 
 
-def test_cleanup_unreachable_walkable_blocks_final_3d_pockets() -> None:
+def test_cleanup_unreachable_walkable_is_diagnostic_only() -> None:
     rows = [
         "########",
         "#S...G##",
@@ -78,12 +78,14 @@ def test_cleanup_unreachable_walkable_blocks_final_3d_pockets() -> None:
 
     result = cleanup_unreachable_walkable(rows=rows, elevation_rows=elevation)
 
-    assert result.rows[2][6] == "~"
-    assert result.rows[3][6] == "#"
-    assert result.rows[4][1:3] == "##"
-    assert result.report["summary"]["unreachable_walkable_tiles_after"] == 0
-    assert result.report["summary"]["blocked_as_water"] == 1
-    assert result.report["summary"]["blocked_as_rock"] == 3
+    assert result.rows == rows
+    assert result.report["policy"]["mode"] == "diagnostic_only"
+    assert result.report["policy"]["terrain_mutation"] is False
+    assert result.report["summary"]["component_count"] == 3
+    assert result.report["summary"]["disconnected_walkable_tiles"] == 4
+    assert result.report["summary"]["blocked_as_water"] == 0
+    assert result.report["summary"]["blocked_as_rock"] == 0
+    assert result.report["summary"]["artificial_connectivity_blockers_created"] == 0
 
 
 def test_cleanup_unreachable_walkable_honors_structural_source_grid() -> None:
@@ -107,5 +109,5 @@ def test_cleanup_unreachable_walkable_honors_structural_source_grid() -> None:
         source_rows=source,
     )
 
-    assert result.rows[1][3] == "."
+    assert result.rows == rows
     assert result.report["policy"]["structural_source_tiles_excluded"] is True

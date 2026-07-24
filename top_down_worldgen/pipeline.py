@@ -71,6 +71,7 @@ from .tactical.geography_guidance import write_geography_guidance
 from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
 from .tactical.runtime_objects import attach_runtime_layers, summarize_runtime_objects
+from .tactical.ruin_wall_provenance import analyze_ruin_wall_provenance
 from .tactical.terrain_islands import elevation_cell_points, repair_terrain_islands
 from .tactical.hydrology import apply_elevation_hydrology
 from .tactical.start_goal import (
@@ -351,8 +352,8 @@ class WorldgenPipeline:
                 )
             with timed_stage(LOGGER, "tactical.reconcile_vegetation_collision"):
                 vegetation_collision = reconcile_tree_collision(
-                rows=rows,
-                visual_rows=vegetation_visual.rows,
+                    rows=rows,
+                    visual_rows=vegetation_visual.rows,
                     elevation_rows=elevation_rows,
                 )
             rows = vegetation_collision.rows
@@ -372,18 +373,26 @@ class WorldgenPipeline:
             debug_data["final_runtime_object_pruning"] = object_pruning
             with timed_stage(LOGGER, "tactical.final_traversal_cleanup"):
                 late_start_goal = relocate_start_goal(
-                rows=rows,
-                elevation_rows=elevation_rows,
-                seed=config.resolved_seed,
-                    excluded_points=runtime_object_points(runtime_data.get("runtime_objects")),
+                    rows=rows,
+                    elevation_rows=elevation_rows,
+                    seed=config.resolved_seed,
+                    excluded_points=runtime_object_points(
+                        runtime_data.get("runtime_objects"),
+                    ),
                 )
                 rows = late_start_goal.rows
                 final_traversal_cleanup = cleanup_unreachable_walkable(
-                rows=rows,
-                elevation_rows=elevation_rows,
+                    rows=rows,
+                    elevation_rows=elevation_rows,
                     source_rows=geography_grids.get("source_grid", {}).get("rows", []),
                 )
                 rows = final_traversal_cleanup.rows
+            ruin_wall_provenance = analyze_ruin_wall_provenance(
+                rows=rows,
+                ruin_sites=runtime_data.get("ruin_sites"),
+            )
+            runtime_data["ruin_wall_provenance"] = ruin_wall_provenance
+            debug_data["ruin_wall_provenance"] = ruin_wall_provenance
             retained_objects, object_pruning = finalize_runtime_objects_for_final_terrain(
                 runtime_data.get("runtime_objects"),
                 rows=rows,
@@ -405,15 +414,15 @@ class WorldgenPipeline:
                 write_json(runtime_data, outputs.tactical_map)
                 write_json(debug_data, outputs.tactical_map_debug)
                 write_map_package(
-                outputs=outputs,
-                runtime_data=runtime_data,
-                rows=rows,
-                width=config.map_width_tiles,
-                height=config.map_height_tiles,
-                tile_size_px=tile_size_px,
-                seed=config.seed,
-                resolved_seed=config.resolved_seed,
-                profile=config.objective_profile,
+                    outputs=outputs,
+                    runtime_data=runtime_data,
+                    rows=rows,
+                    width=config.map_width_tiles,
+                    height=config.map_height_tiles,
+                    tile_size_px=tile_size_px,
+                    seed=config.seed,
+                    resolved_seed=config.resolved_seed,
+                    profile=config.objective_profile,
                     generation_tuning=config.generation_tuning.to_dict(),
                 )
             metrics.update(

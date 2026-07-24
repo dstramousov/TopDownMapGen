@@ -362,7 +362,7 @@ def generate_next_gen_elevation(
     )
     levels = transition_result.rows
     locked_levels = _locked_terrain_levels(levels, rows)
-    path = _find_walkable_path(rows)
+    path: list[tuple[int, int]] = []
     route_result = _align_main_route_elevation(
         levels,
         terrain_rows=rows,
@@ -2477,7 +2477,7 @@ def _align_main_route_elevation(
             "schema_version": "main-route-elevation-alignment-report-v1",
             "status": status,
             "rules": {
-                "scope": "semantic_main_path_when_places_available_else_start_goal",
+                "scope": "semantic_places_only_no_start_goal_fallback",
                 "max_natural_delta": DEFAULT_TRAVERSAL_RULES.max_natural_delta,
                 "blocked_terrain": "preserved",
                 "moisture": "preserved",
@@ -2502,21 +2502,40 @@ def _semantic_main_route_points(
     terrain_rows: list[str],
     tactical_data: dict[str, Any],
 ) -> list[tuple[int, int]]:
-    start = _find_tile(terrain_rows, "S")
-    goal = _find_tile(terrain_rows, "G")
-    if start is None or goal is None:
-        return []
+    """Return a deterministic route through semantic places only."""
     places: list[dict[str, Any]] = []
+    seen_centers: set[tuple[int, int]] = set()
     for item in tactical_data.get("places", []):
         if not isinstance(item, dict):
             continue
         center = _mapping_point(item.get("center"))
-        if center is None:
+        if center is None or center in seen_centers:
             continue
+        if not _terrain_walkable(terrain_rows, *center):
+            continue
+        seen_centers.add(center)
         places.append(item)
-    if not places:
-        return [start, goal]
-    max_count = min(5, max(3, len(places) // 3))
+    if len(places) < 2:
+        return []
+
+    endpoints = max(
+        (
+            (left, right)
+            for index, left in enumerate(places)
+            for right in places[index + 1 :]
+        ),
+        key=lambda pair: (
+            _manhattan(
+                _mapping_point(pair[0].get("center")) or (0, 0),
+                _mapping_point(pair[1].get("center")) or (0, 0),
+            ),
+            str(pair[0].get("id")),
+            str(pair[1].get("id")),
+        ),
+    )
+    start = _mapping_point(endpoints[0].get("center")) or (0, 0)
+    goal = _mapping_point(endpoints[1].get("center")) or start
+    max_count = min(5, max(2, len(places) // 3))
     selected = sorted(
         places,
         key=lambda place: (
@@ -2526,14 +2545,24 @@ def _semantic_main_route_points(
             str(place.get("id")),
         ),
     )[:max_count]
-    selected.sort(key=lambda place: _point_projection(start=start, goal=goal, point=_mapping_point(place.get("center")) or start))
-    points = [start]
-    for place in selected:
-        center = _mapping_point(place.get("center"))
-        if center is not None:
-            points.append(center)
-    points.append(goal)
-    return points
+    for endpoint in endpoints:
+        if endpoint not in selected:
+            selected.append(endpoint)
+    selected.sort(
+        key=lambda place: (
+            _point_projection(
+                start=start,
+                goal=goal,
+                point=_mapping_point(place.get("center")) or start,
+            ),
+            str(place.get("id")),
+        ),
+    )
+    return [
+        center
+        for place in selected
+        if (center := _mapping_point(place.get("center"))) is not None
+    ]
 
 
 def _route_place_score(
@@ -3218,7 +3247,8 @@ def _build_generation_report(
         ),
         "terrain_bias": {
             "start_goal_forced_to_level": 0,
-            "start_goal_ground_corridor_tiles": len(corridor_path),
+            "start_goal_ground_corridor_tiles": 0,
+            "start_goal_influence": False,
             "ground_corridor_radius": profile.ground_corridor_radius,
             "road_clamp": [ROAD_MIN_LEVEL, ROAD_MAX_LEVEL],
             "water_max_level": WATER_MAX_LEVEL,

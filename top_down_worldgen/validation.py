@@ -320,6 +320,9 @@ def build_validation_report(
             width=width,
             height=height,
         ),
+        "ruin_walls_belong_to_planned_buildings": (
+            _ruin_walls_belong_to_planned_buildings(runtime_data)
+        ),
         "places_non_empty": bool(_places(runtime_data)),
         "places_have_unique_ids": _places_have_unique_ids(runtime_data),
         "places_have_valid_types": _places_have_valid_types(runtime_data),
@@ -2278,6 +2281,32 @@ def _ruin_site_foundations_flat(
             if levels.get(approach, default_level) != foundation:
                 return False
     return True
+
+
+def _ruin_walls_belong_to_planned_buildings(runtime_data: dict[str, Any]) -> bool:
+    """Return whether every final ruin wall belongs to a planned building."""
+    report = runtime_data.get("ruin_wall_provenance")
+    if report is None:
+        return True
+    if not isinstance(report, dict):
+        return False
+    summary = report.get("summary")
+    if not isinstance(summary, dict):
+        return False
+    try:
+        total = int(summary["total_ruin_wall_tiles"])
+        inside = int(summary["inside_planned_buildings"])
+        outside = int(summary["outside_planned_buildings"])
+        artificial = int(summary["artificial_connectivity_blockers_created"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return (
+        total >= 0
+        and inside >= 0
+        and outside == 0
+        and artificial == 0
+        and total == inside
+    )
 
 
 def _runtime_object_points(item: dict[str, Any]) -> list[tuple[int, int]]:

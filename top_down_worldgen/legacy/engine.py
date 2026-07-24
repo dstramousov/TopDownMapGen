@@ -766,6 +766,8 @@ class MapGenerator:
         self._start_region_id = 0
         self._goal_region_id = 0
         self._central_region_id = 0
+        self._placed_start_point: Point | None = None
+        self._placed_goal_point: Point | None = None
         self._protected_path: set[Point] = set()
         self._ruin_sites: dict[int, RuinSitePlan] = {}
         self._planned_ruin_rects: list[Rect] = []
@@ -781,6 +783,8 @@ class MapGenerator:
             "connected_components": 0,
             "failed_repairs": 0,
             "tiles_changed": 0,
+            "component_scans": 0,
+            "diagnostic_only": 1,
         }
         self._terrain_guidance_metrics: dict[str, int | float | bool | str] = {
             "enabled": terrain_guidance is not None,
@@ -875,12 +879,12 @@ class MapGenerator:
         return self._derived
 
     def start_point(self) -> Point:
-        """Return start point."""
-        return self._regions[self._start_region_id].center
+        """Return the placed start marker or its region anchor."""
+        return self._placed_start_point or self._regions[self._start_region_id].center
 
     def goal_point(self) -> Point:
-        """Return goal point."""
-        return self._regions[self._goal_region_id].center
+        """Return the placed goal marker or its region anchor."""
+        return self._placed_goal_point or self._regions[self._goal_region_id].center
 
     def central_point(self) -> Point:
         """Return central ruin clearing point."""
@@ -1070,11 +1074,10 @@ class MapGenerator:
             ("flower_patches", self._add_flower_patches),
             ("mushroom_patches", self._add_mushroom_patches),
             ("cleanup_components", self._cleanup_small_components),
-            ("place_start_goal_1", self._place_start_goal),
             ("open_dead_forest", self._open_dead_forest_masses),
-            ("repair_critical", self._repair_critical_connectivity),
-            ("repair_walkable", self._repair_walkable_connectivity),
-            ("place_start_goal_2", self._place_start_goal),
+            ("diagnose_critical", self._repair_critical_connectivity),
+            ("diagnose_walkable", self._repair_walkable_connectivity),
+            ("place_start_goal", self._place_start_goal),
             ("validate", self._validate),
         )
         for stage_name, stage_function in stages:
@@ -2763,17 +2766,21 @@ class MapGenerator:
         )
 
     def _place_start_goal(self) -> None:
-        LOGGER.info("Stage 10: place START and GOAL")
-        start = self.start_point()
-        goal = self.goal_point()
+        """Place markers on existing walkable terrain without carving it."""
+        LOGGER.info("Stage 10: place START and GOAL without terrain repair")
+        start_anchor = self._regions[self._start_region_id].center
+        goal_anchor = self._regions[self._goal_region_id].center
+        start = self._nearest_marker_point(start_anchor, excluded=set())
+        if start is None:
+            raise GenerationError("No existing walkable tile is available for START")
+        goal = self._nearest_marker_point(goal_anchor, excluded={start})
+        if goal is None:
+            raise GenerationError("No second existing walkable tile is available for GOAL")
 
-        self._carve_circle(start, 2, TileType.PATH)
-        self._set_tile(start, TileType.START)
-        self._protected_path.add(start)
-
-        self._carve_circle(goal, 2, TileType.PATH)
-        self._set_tile(goal, TileType.GOAL)
-        self._protected_path.add(goal)
+        self._grid.set_tile(start, TileType.START)
+        self._grid.set_tile(goal, TileType.GOAL)
+        self._placed_start_point = start
+        self._placed_goal_point = goal
 
         LOGGER.info("  START=(%03d,%03d)", start.x, start.y)
         LOGGER.info("  GOAL=(%03d,%03d)", goal.x, goal.y)
@@ -2929,9 +2936,6 @@ class MapGenerator:
                 allowed_sources={TileType.GRASS},
                 density=0.50,
             )
-            if self._rng.random() < 0.55:
-                for x in range(max(2, center.x - 2), min(self._grid.width - 3, center.x + 2) + 1):
-                    self._set_tile(Point(x, center.y), TileType.RUIN_WALL)
 
     def _nearest_walkable_point(self, point: Point) -> Point | None:
         """Find nearest walkable point using BFS over the full map."""
@@ -2961,6 +2965,36 @@ class MapGenerator:
                 visited.add(neighbor)
                 queue.append(neighbor)
 
+        return None
+
+    def _nearest_marker_point(
+        self,
+        point: Point,
+        *,
+        excluded: set[Point],
+    ) -> Point | None:
+        """Find the nearest existing walkable tile for a marker."""
+        walkable_tiles = {
+            TileType.GRASS,
+            TileType.PATH,
+            TileType.BUSH,
+            TileType.FLOWER,
+            TileType.MUSHROOM,
+            TileType.WATER,
+            TileType.CRACKED_GROUND,
+            TileType.RUIN_FLOOR,
+        }
+        visited = {point}
+        queue: deque[Point] = deque([point])
+        while queue:
+            current = queue.popleft()
+            if current not in excluded and self._grid.get_tile(current) in walkable_tiles:
+                return current
+            for neighbor in self._grid.neighbors_4(current):
+                if neighbor in visited:
+                    continue
+                visited.add(neighbor)
+                queue.append(neighbor)
         return None
 
     def _carve_forest_trail(self, start: Point, end: Point) -> None:
@@ -3060,141 +3094,53 @@ class MapGenerator:
         return 0.0
 
     def _repair_critical_connectivity(self) -> None:
-        """Repair critical route connectivity after decoration and cleanup."""
-        LOGGER.info("Stage 10b: repair critical connectivity")
+        """Report critical-point reachability without modifying terrain."""
+        LOGGER.info("Stage 10b: diagnose critical connectivity")
         validator = MapValidator(self._grid)
-        start = self.start_point()
+        start = self._regions[self._start_region_id].center
         central = self.central_point()
-        goal = self.goal_point()
-
-        self._ensure_walkable_area(start, TileType.PATH)
-        self._ensure_walkable_area(central, TileType.GRASS)
-        self._ensure_walkable_area(goal, TileType.PATH)
-
+        goal = self._regions[self._goal_region_id].center
         distances = validator.reachable_distances(start)
-        repairs = 0
-
-        if central not in distances:
-            LOGGER.info("  Central ruin clearing is unreachable; carving repair road S -> central")
-            self._carve_old_road(start, central, is_loop=False)
-            repairs += 1
-
-        validator = MapValidator(self._grid)
-        distances = validator.reachable_distances(start)
-
-        if goal not in distances:
-            LOGGER.info("  Goal is unreachable; carving repair road central -> G")
-            self._carve_old_road(central, goal, is_loop=False)
-            repairs += 1
-
-        validator = MapValidator(self._grid)
-        distances = validator.reachable_distances(start)
-
-        disconnected_regions = []
-        for region in self._regions:
-            points = [region.center, *region.entrances]
-            if not any(point in distances for point in points):
-                disconnected_regions.append(region)
-
-        for region in disconnected_regions:
-            target = region.connection_point()
-            LOGGER.info(
-                "  Region %02d is unreachable; carving repair road central -> (%03d,%03d)",
-                region.region_id,
-                target.x,
-                target.y,
-            )
-            self._carve_old_road(central, target, is_loop=True)
-            repairs += 1
-
-        LOGGER.info("Stage 10b complete: repairs=%s", repairs)
+        reachable_regions = sum(
+            any(point in distances for point in (region.center, *region.entrances))
+            for region in self._regions
+        )
+        LOGGER.info(
+            "Stage 10b complete: mode=diagnostic_only start_to_central=%s "
+            "start_to_goal=%s reachable_regions=%s/%s terrain_changes=0",
+            central in distances,
+            goal in distances,
+            reachable_regions,
+            len(self._regions),
+        )
 
     def _repair_walkable_connectivity(self) -> None:
-        """Repair disconnected walkable components before final validation."""
-        LOGGER.info("Stage 10c: repair final walkable connectivity")
+        """Report walkable components without filling or connecting them."""
+        LOGGER.info("Stage 10c: diagnose final walkable connectivity")
+        components = MapValidator(self._grid).components()
+        component_sizes = sorted(
+            (len(component) for component in components),
+            reverse=True,
+        )
         metrics = {
-            "components_before": 0,
-            "components_after": 0,
+            "components_before": len(components),
+            "components_after": len(components),
             "filled_components": 0,
             "connected_components": 0,
             "failed_repairs": 0,
             "tiles_changed": 0,
-            "component_scans": 0,
+            "component_scans": 1,
+            "diagnostic_only": 1,
+            "largest_component_tiles": component_sizes[0] if component_sizes else 0,
+            "disconnected_tiles": sum(component_sizes[1:]),
         }
-        critical_points = {self.start_point(), self.goal_point(), self.central_point()}
-        small_component_limit = self._small_isolated_component_limit()
-        max_repair_passes = 16
-
-        for pass_index in range(max_repair_passes):
-            components = MapValidator(self._grid).components()
-            metrics["component_scans"] += 1
-            if pass_index == 0:
-                metrics["components_before"] = len(components)
-            if len(components) <= 1:
-                break
-
-            main_component = self._main_walkable_component(components)
-            isolated_components = [
-                component for component in components if component is not main_component
-            ]
-            component = min(isolated_components, key=len)
-            before_count = len(components)
-
-            if len(component) <= small_component_limit and component.isdisjoint(critical_points):
-                LOGGER.info(
-                    "  Filling small isolated component size=%s limit=%s",
-                    len(component),
-                    small_component_limit,
-                )
-                changed = self._fill_isolated_component(component)
-                action_key = "filled_components"
-            else:
-                source = self._nearest_component_point(
-                    component,
-                    self._component_center(component),
-                )
-                LOGGER.info(
-                    "  Connecting isolated component size=%s from=(%03d,%03d)",
-                    len(component),
-                    source.x,
-                    source.y,
-                )
-                changed = self._connect_component_to_main(component, main_component)
-                action_key = "connected_components"
-
-            metrics["tiles_changed"] += changed
-            if changed > 0:
-                # Both repair actions guarantee progress without requiring an
-                # immediate second full connected-component scan:
-                # - filling removes the selected walkable component;
-                # - a carved connector joins it to the main component.
-                metrics[action_key] += 1
-                continue
-
-            metrics["failed_repairs"] += 1
-            LOGGER.warning(
-                "  Connectivity repair made no progress: action=%s changed=%s "
-                "components_before=%s",
-                action_key,
-                changed,
-                before_count,
-            )
-
-        final_components = MapValidator(self._grid).components()
-        metrics["component_scans"] += 1
-        metrics["components_after"] = len(final_components)
         self._connectivity_repair_metrics = metrics
         LOGGER.info(
-            "Stage 10c complete: components_before=%s components_after=%s "
-            "filled_components=%s connected_components=%s failed_repairs=%s "
-            "tiles_changed=%s component_scans=%s",
+            "Stage 10c complete: mode=diagnostic_only components=%s "
+            "largest_component_tiles=%s disconnected_tiles=%s terrain_changes=0",
             metrics["components_before"],
-            metrics["components_after"],
-            metrics["filled_components"],
-            metrics["connected_components"],
-            metrics["failed_repairs"],
-            metrics["tiles_changed"],
-            metrics["component_scans"],
+            metrics["largest_component_tiles"],
+            metrics["disconnected_tiles"],
         )
 
     def _small_isolated_component_limit(self) -> int:

@@ -975,3 +975,16 @@
 - Terrain guidance report обновлён до `terrain-guidance-report-v5`, расширены консольный отчёт, validation и тесты всех ключевых elevation-aware сценариев.
 - Форматы map package, manifest и VXMAP остаются без изменения: `map-package-map-v13`, `generation-manifest-v42`, VXMAP `1.2`.
 - Версия проекта поднята до `0.0.115`.
+
+## v0.0.115 -> v0.0.116
+
+- Символ `#` закреплён исключительно за `ruin_wall_blocker`; vegetation reconciliation и финальная traversal cleanup больше не создают искусственные руинные стены или «rock blocker» через тот же символ.
+- Изолированные highland-кандидаты после прореживания растительности теперь восстанавливаются как видимые деревья, а не превращаются в коричневые блоки высотой `1..3`.
+- Глобальные critical/walkable connectivity stages переведены в диагностический режим: они считают компоненты и доступность, но не заполняют островки, не прорезают соединительные дороги и не меняют terrain ради START/GOAL.
+- START и GOAL размещаются один раз на уже существующих проходимых тайлах без расчистки кругов и без защиты или расширения маршрута; поздняя relocation остаётся только выбором финальных маркеров.
+- Elevation main-route alignment больше не использует START/GOAL как концы или fallback: маршрут строится только по semantic places, а при их отсутствии этап пропускается.
+- Финальная 3D traversal cleanup обновлена до `final-3d-traversal-cleanup-v2`: disconnected areas сохраняются, а отчёт фиксирует число компонентов и нулевое количество искусственных blockers.
+- Удалена декоративная запись блокирующей стены в hidden forest clearing, чтобы одиночные `#` не появлялись вне запланированных зданий.
+- Добавлен отчёт `ruin-wall-provenance-v1` и hard validation `ruin_walls_belong_to_planned_buildings`; итоговая карта обязана иметь `outside_planned_buildings = 0` и `artificial_connectivity_blockers_created = 0`.
+- Форматы map package, manifest и VXMAP остаются без изменения: `map-package-map-v13`, `generation-manifest-v42`, VXMAP `1.2`.
+- Версия проекта поднята до `0.0.116`.

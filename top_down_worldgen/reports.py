@@ -91,6 +91,7 @@ def build_world_reports(
         "elevation_density": elevation_report,
         "world_structure": structure,
         "terrain_guidance": _dict(runtime_data.get("terrain_guidance")),
+        "ruin_wall_provenance": _dict(runtime_data.get("ruin_wall_provenance")),
         "render": {
             "enabled": render_enabled,
             "layers": rendered_layers,
@@ -127,6 +128,7 @@ def format_console_summary(summary: dict[str, Any]) -> str:
     validation = _dict(summary.get("validation"))
     overall = _dict(summary.get("overall"))
     terrain_guidance = _dict(summary.get("terrain_guidance"))
+    ruin_wall_provenance = _dict(summary.get("ruin_wall_provenance"))
 
     terrain = _dict(density.get("terrain"))
     collision = _dict(density.get("collision"))
@@ -315,6 +317,28 @@ def format_console_summary(summary: dict[str, Any]) -> str:
         lines.append(
             f"  сохранено крупных островов: {preserved} "
             f"{_status_tag_ru(preserved == 0, warning=True)}"
+        )
+
+    provenance_summary = _dict(ruin_wall_provenance.get("summary"))
+    if provenance_summary:
+        lines.extend(
+            [
+                "",
+                "Происхождение стен руин:",
+                (
+                    "  стен внутри зданий: "
+                    f"{int(provenance_summary.get('inside_planned_buildings', 0))}/"
+                    f"{int(provenance_summary.get('total_ruin_wall_tiles', 0))}"
+                ),
+                (
+                    "  стен вне зданий: "
+                    f"{int(provenance_summary.get('outside_planned_buildings', 0))}"
+                ),
+                (
+                    "  искусственных connectivity blockers: "
+                    f"{int(provenance_summary.get('artificial_connectivity_blockers_created', 0))}"
+                ),
+            ],
         )
 
     lines.extend(

@@ -162,16 +162,18 @@ def test_reconcile_tree_collision_rejects_isolated_opened_pockets() -> None:
     assert result.report["summary"]["rejected_isolated_tiles"] == 1
 
 
-def test_reconcile_tree_collision_marks_isolated_highland_as_rock() -> None:
+def test_reconcile_tree_collision_restores_isolated_highland_tree() -> None:
     result = reconcile_tree_collision(
         rows=["T#..", "####"],
         visual_rows=["....", "...."],
         elevation_rows=[[18, 0, 0, 0], [0, 0, 0, 0]],
     )
 
-    assert result.rows[0][0] == "#"
-    assert result.visual_rows[0][0] == "."
-    assert result.report["summary"]["rejected_as_rock"] == 1
+    assert result.rows[0][0] == "T"
+    assert result.visual_rows[0][0] == "T"
+    assert result.report["summary"]["rejected_as_visible_tree"] == 1
+    assert result.report["summary"]["rejected_as_rock"] == 0
+    assert result.report["summary"]["artificial_rock_blockers_created"] == 0
 
 
 def test_visual_vegetation_distinguishes_shore_and_puddle_reeds() -> None:

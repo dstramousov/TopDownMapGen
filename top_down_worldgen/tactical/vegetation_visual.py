@@ -272,7 +272,6 @@ def reconcile_tree_collision(
     reopened_points = set(opened_points)
     rejected_points: set[tuple[int, int]] = set()
     rejected_as_tree = 0
-    rejected_as_rock = 0
     component_count = 0
     primary_component_tiles = 0
 
@@ -285,14 +284,9 @@ def reconcile_tree_collision(
         reopened_points -= rejected_points
 
         for x, y in rejected_points:
-            if elevation_rows[y][x] >= THINNING_START_LEVEL:
-                opened_rows[y][x] = "#"
-                output_visual[y][x] = TREE_HIDDEN_CODE
-                rejected_as_rock += 1
-            else:
-                opened_rows[y][x] = "T"
-                output_visual[y][x] = TREE_VISIBLE_CODE
-                rejected_as_tree += 1
+            opened_rows[y][x] = "T"
+            output_visual[y][x] = TREE_VISIBLE_CODE
+            rejected_as_tree += 1
 
     opened_as_reclaimed_bush = sum(
         output_visual[y][x] == RECLAIMED_BUSH_VISIBLE_CODE
@@ -302,13 +296,13 @@ def reconcile_tree_collision(
     output_rows = ["".join(row) for row in opened_rows]
     final_visual_rows = ["".join(row) for row in output_visual]
     report = {
-        "schema_version": "vegetation-collision-reconciliation-v2",
+        "schema_version": "vegetation-collision-reconciliation-v3",
         "kind": "vegetation_collision_reconciliation",
         "policy": {
             "hidden_tree_tile_becomes": "grass_or_reclaimed_bush_when_connected",
             "reclaimed_bush_gameplay": "walkable_slow_concealment",
-            "isolated_lowland_tile_becomes": "visible_tree_blocker",
-            "isolated_highland_tile_becomes": "rock_blocker",
+            "isolated_opened_tile_becomes": "visible_tree_blocker",
+            "artificial_rock_blockers_created": False,
             "primary_component": "largest_final_3d_traversable_component",
             "visible_tree_tile_remains_blocked": True,
             "non_tree_blockers_unchanged": True,
@@ -321,7 +315,8 @@ def reconcile_tree_collision(
             "opened_as_reclaimed_bush": opened_as_reclaimed_bush,
             "rejected_isolated_tiles": len(rejected_points),
             "rejected_as_visible_tree": rejected_as_tree,
-            "rejected_as_rock": rejected_as_rock,
+            "rejected_as_rock": 0,
+            "artificial_rock_blockers_created": 0,
             "retained_visible_tree_tiles": retained_visible_tree_tiles,
             "retained_non_tree_tiles": retained_non_tree_tiles,
             "component_count_after_candidate_opening": component_count,
