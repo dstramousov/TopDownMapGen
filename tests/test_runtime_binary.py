@@ -1,0 +1,133 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from top_down_worldgen.runtime_binary.constants import SectionType
+from top_down_worldgen.runtime_binary.model import RuntimeBinarySource
+from top_down_worldgen.runtime_binary.reader import open_runtime_container
+from top_down_worldgen.runtime_binary.writer import write_runtime_binary
+
+
+def test_runtime_binary_roundtrip_and_determinism(tmp_path: Path) -> None:
+    """Ensure the runtime container round-trips and is byte deterministic."""
+    source = _source(width=3, height=2)
+    first = tmp_path / "first.vxmap"
+    second = tmp_path / "second.vxmap"
+
+    first_result = write_runtime_binary(source, first)
+    second_result = write_runtime_binary(source, second)
+
+    assert first.read_bytes() == second.read_bytes()
+    assert first_result.build_id == second_result.build_id
+    container = open_runtime_container(first)
+    assert container.header.width == 3
+    assert container.header.height == 2
+    assert container.header.build_id == first_result.build_id
+    assert len(container.sections_of_type(int(SectionType.TERRAIN_GRID))) == 1
+    assert len(container.sections_of_type(int(SectionType.ELEVATION_GRID))) == 1
+    assert not container.sections_of_type(31)
+
+
+def test_runtime_binary_splits_edge_regions(tmp_path: Path) -> None:
+    """Ensure non-multiple map sizes produce correctly clipped edge regions."""
+    source = _source(width=129, height=130)
+    path = tmp_path / "edge.vxmap"
+
+    result = write_runtime_binary(source, path)
+    container = open_runtime_container(path)
+
+    assert result.region_count_x == 2
+    assert result.region_count_y == 2
+    assert len(container.sections_of_type(int(SectionType.TERRAIN_GRID))) == 4
+    assert result.file_size < 300_000
+
+
+def test_runtime_binary_rejects_corrupted_payload(tmp_path: Path) -> None:
+    """Ensure a modified payload is rejected by section CRC validation."""
+    path = tmp_path / "corrupt.vxmap"
+    write_runtime_binary(_source(width=3, height=2), path)
+    data = bytearray(path.read_bytes())
+    data[-1] ^= 0x80
+    path.write_bytes(data)
+
+    with pytest.raises(ValueError, match="bad CRC"):
+        open_runtime_container(path)
+
+
+def test_runtime_binary_rejects_bad_magic(tmp_path: Path) -> None:
+    """Ensure a file with an unknown magic is rejected safely."""
+    path = tmp_path / "bad-magic.vxmap"
+    write_runtime_binary(_source(width=3, height=2), path)
+    data = bytearray(path.read_bytes())
+    data[0] = 0
+    path.write_bytes(data)
+
+    with pytest.raises(ValueError, match="magic"):
+        open_runtime_container(path)
+
+
+def _source(*, width: int, height: int) -> RuntimeBinarySource:
+    terrain_rows = [
+        ["grass" if (x + y) % 2 == 0 else "tree_blocker" for x in range(width)]
+        for y in range(height)
+    ]
+    movement_rows = [
+        [1 if terrain_rows[y][x] == "grass" else None for x in range(width)]
+        for y in range(height)
+    ]
+    collision_rows = [
+        "".join("0" if value == "grass" else "1" for value in row)
+        for row in terrain_rows
+    ]
+    projectile_rows = list(collision_rows)
+    vision_rows = list(collision_rows)
+    cover_rows = [
+        [0.0 if terrain_rows[y][x] == "grass" else 0.75 for x in range(width)]
+        for y in range(height)
+    ]
+    concealment_rows = [
+        [0.0 if terrain_rows[y][x] == "grass" else 0.5 for x in range(width)]
+        for y in range(height)
+    ]
+    elevation_rows = [[(x + y) % 4 - 1 for x in range(width)] for y in range(height)]
+    return RuntimeBinarySource(
+        width=width,
+        height=height,
+        tile_size_px=16,
+        resolved_seed=123456789,
+        generator_version="0.0.111",
+        pipeline_version="pipeline-v1",
+        profile="test",
+        map_schema="map-package-map-v11",
+        package_schema="map-package-v1",
+        terrain_rows=terrain_rows,
+        movement_rows=movement_rows,
+        collision_rows=collision_rows,
+        projectile_rows=projectile_rows,
+        vision_rows=vision_rows,
+        cover_rows=cover_rows,
+        concealment_rows=concealment_rows,
+        elevation_rows=elevation_rows,
+        start={"x": 0, "y": 0},
+        goal={"x": width - 1, "y": height - 1},
+        terrain_catalog={
+            "types": {
+                "grass": {
+                    "symbol": "+",
+                    "movement_cost": 1,
+                    "collision": "passable",
+                    "walkable": True,
+                    "tags": ["terrain"],
+                },
+                "tree_blocker": {
+                    "symbol": "T",
+                    "movement_cost": None,
+                    "collision": "blocked",
+                    "walkable": False,
+                    "tags": ["blocker", "vegetation"],
+                },
+            },
+        },
+    )

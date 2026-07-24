@@ -32,8 +32,9 @@ from top_down_worldgen.manifest import (
     VEGETATION_VISUAL_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
+from top_down_worldgen.runtime_binary import RuntimeBinarySource, write_runtime_binary
 from top_down_worldgen.tactical.traversal import DEFAULT_TRAVERSAL_RULES
-from top_down_worldgen.utils.json_io import write_json
+from top_down_worldgen.utils.json_io import write_json, write_json_atomic
 
 _GAMEPLAY_FILES: tuple[tuple[str, str], ...] = (
     ("combat_zones", "combat_zones.json"),
@@ -251,14 +252,12 @@ def write_map_package(
         outputs.map_package_places,
     )
 
-    write_json(
-        _build_tile_types_catalog(
-            tile_legend=tile_legend,
-            movement_costs=movement_costs,
-            collision=collision,
-        ),
-        outputs.map_package_tile_types,
+    tile_types_catalog = _build_tile_types_catalog(
+        tile_legend=tile_legend,
+        movement_costs=movement_costs,
+        collision=collision,
     )
+    write_json(tile_types_catalog, outputs.map_package_tile_types)
     object_types_catalog = _build_object_types_catalog(runtime_objects)
     write_json(object_types_catalog, outputs.map_package_object_types)
 
@@ -277,7 +276,51 @@ def write_map_package(
         vegetation_visual["schema_version"] = VEGETATION_VISUAL_SCHEMA_VERSION
         write_json(vegetation_visual, outputs.map_package_vegetation_visual)
 
-    write_json(
+    runtime_grid_items = _dict(runtime_grids.get("grids"))
+    runtime_binary = write_runtime_binary(
+        RuntimeBinarySource(
+            width=width,
+            height=height,
+            tile_size_px=tile_size_px,
+            resolved_seed=resolved_seed,
+            generator_version=__version__,
+            pipeline_version="pipeline-v1",
+            profile=profile,
+            map_schema=MAP_PACKAGE_MAP_SCHEMA_VERSION,
+            package_schema=MAP_PACKAGE_SCHEMA_VERSION,
+            terrain_rows=terrain_rows,
+            movement_rows=_numeric_rows(
+                _dict(runtime_grid_items.get("movement_grid")).get("rows"),
+            ),
+            collision_rows=_string_rows(
+                _dict(runtime_grid_items.get("collision_grid")).get("rows"),
+                [],
+            ),
+            projectile_rows=_string_rows(
+                _dict(runtime_grid_items.get("projectile_block_grid")).get("rows"),
+                [],
+            ),
+            vision_rows=_string_rows(
+                _dict(runtime_grid_items.get("vision_block_grid")).get("rows"),
+                [],
+            ),
+            cover_rows=_numeric_rows(
+                _dict(runtime_grid_items.get("cover_grid")).get("rows"),
+            ),
+            concealment_rows=_numeric_rows(
+                _dict(runtime_grid_items.get("concealment_grid")).get("rows"),
+            ),
+            elevation_rows=_integer_rows(
+                _dict(runtime_grid_items.get("height_grid")).get("rows"),
+            ),
+            start=points.get("start"),
+            goal=points.get("goal"),
+            terrain_catalog=tile_types_catalog,
+        ),
+        outputs.map_package_runtime_binary,
+    )
+
+    write_json_atomic(
         {
             "schema_version": MAP_PACKAGE_MAP_SCHEMA_VERSION,
             "package_schema_version": MAP_PACKAGE_SCHEMA_VERSION,
@@ -300,6 +343,9 @@ def write_map_package(
                 "y_axis": "down",
             },
             "points": points,
+            "runtime_binary": runtime_binary.map_index_entry(
+                outputs.map_package_dir,
+            ),
             "markers": "markers.json",
             "runtime_grids": "runtime_grids.json",
             "world_graph": "world_graph.json",
@@ -382,6 +428,7 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_tile_render_hints,
         outputs.map_package_object_render_hints,
         outputs.map_package_vegetation_visual,
+        outputs.map_package_runtime_binary,
     ]
 
 
@@ -3035,6 +3082,22 @@ def _string_rows(value: Any, fallback: list[str]) -> list[str]:
         return list(value)
     return list(fallback)
 
+
+
+def _numeric_rows(value: Any) -> list[list[int | float | None]]:
+    if not isinstance(value, list):
+        return []
+    rows: list[list[int | float | None]] = []
+    for row in value:
+        if not isinstance(row, list):
+            return []
+        parsed: list[int | float | None] = []
+        for item in row:
+            if item is not None and not isinstance(item, int | float):
+                return []
+            parsed.append(item)
+        rows.append(parsed)
+    return rows
 
 
 def _integer_rows(value: Any) -> list[list[int]]:

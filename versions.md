@@ -915,3 +915,14 @@
 - Малые карты сохраняют прежнюю сплошную стартовую лесную заливку и прежнее поведение генератора.
 - Guidance schema поднята до `terrain-guidance-v3`, report schema — до `terrain-guidance-report-v4`; добавлены признаки регионального terrain, количество профилей и начальная доля леса.
 - Версия проекта поднята до `0.0.110`.
+
+
+## v0.0.110 -> v0.0.111
+
+- Добавлен финальный runtime-binary export layer, создающий `map_package/map_runtime.vxmap` из уже готовых in-memory grids без повторного чтения JSON.
+- Контейнер `vxmap-runtime-v1` содержит фиксированный header, таблицу секций, terrain catalog, start/goal и региональные core grids размером 128x128 тайлов.
+- Terrain, elevation и movement сохраняются как фиксированные числовые массивы; collision, projectile и vision — как bitset; cover и concealment — как u8.
+- Добавлены детерминированный build ID, CRC32 каждой секции, атомарная запись, независимый reader и полная semantic validation по исходной runtime-модели.
+- `map.json` публикует блок `runtime_binary`; обычный JSON package сохраняется без изменения существующих путей и остаётся fallback-контрактом.
+- Обычные elevation transitions, source JSON digests, compression и optional gameplay sections намеренно не включены в первую бинарную версию.
+- Версия проекта поднята до `0.0.111`.

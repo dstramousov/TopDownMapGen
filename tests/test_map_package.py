@@ -95,6 +95,10 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
     assert package_index["markers"] == "markers.json"
     assert package_index["runtime_grids"] == "runtime_grids.json"
+    assert package_index["runtime_binary"]["path"] == "map_runtime.vxmap"
+    assert package_index["runtime_binary"]["format"] == "vxmap-runtime-v1"
+    assert len(package_index["runtime_binary"]["build_id"]) == 32
+    assert outputs.map_package_runtime_binary.exists()
     assert package_index["world_graph"] == "world_graph.json"
     assert package_index["routes"] == "routes.json"
     assert package_index["gameplay_zones"] == "gameplay_zones.json"

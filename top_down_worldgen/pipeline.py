@@ -978,6 +978,13 @@ class WorldgenPipeline:
                 False,
                 VEGETATION_VISUAL_SCHEMA_VERSION,
             ),
+            OutputArtifact(
+                outputs.map_package_runtime_binary,
+                "map_package:runtime_binary",
+                True,
+                False,
+                "vxmap-runtime-v1",
+            ),
         ]
         if render:
             layer_paths = {
