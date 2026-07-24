@@ -31,11 +31,17 @@ from top_down_worldgen.manifest import (
     TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
+    VEGETATION_HEIGHT_LAYER_SCHEMA_VERSION,
+    VEGETATION_TYPE_LAYER_SCHEMA_VERSION,
     VEGETATION_VISUAL_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.runtime_binary import RuntimeBinarySource, write_runtime_binary
 from top_down_worldgen.structure_height import build_structure_height
+from top_down_worldgen.vegetation_geometry import (
+    VEGETATION_TYPE_NAMES,
+    build_vegetation_geometry,
+)
 from top_down_worldgen.tactical.traversal import DEFAULT_TRAVERSAL_RULES
 from top_down_worldgen.utils.json_io import write_json, write_json_atomic
 
@@ -185,6 +191,9 @@ def write_map_package(
         _dict(runtime_grid_items.get("collision_grid")).get("rows"),
         [],
     )
+    final_elevation_rows = _integer_rows(
+        _dict(runtime_grid_items.get("height_grid")).get("rows"),
+    )
     structure_height = build_structure_height(
         terrain_rows=terrain_rows,
         collision_rows=final_collision_rows,
@@ -318,6 +327,63 @@ def write_map_package(
     if vegetation_visual:
         vegetation_visual["schema_version"] = VEGETATION_VISUAL_SCHEMA_VERSION
         write_json(vegetation_visual, outputs.map_package_vegetation_visual)
+    if vegetation_visual:
+        final_vegetation_rows = _string_rows(vegetation_visual.get("rows"), [])
+        if not final_vegetation_rows:
+            raise ValueError("vegetation visual report does not contain valid rows")
+    else:
+        final_vegetation_rows = ["." * width for _ in range(height)]
+    vegetation_geometry = build_vegetation_geometry(
+        visual_rows=final_vegetation_rows,
+        elevation_rows=final_elevation_rows,
+        resolved_seed=resolved_seed,
+    )
+    vegetation_summary = vegetation_geometry.summary.to_dict()
+    write_json(
+        {
+            "schema_version": VEGETATION_TYPE_LAYER_SCHEMA_VERSION,
+            "kind": "vegetation_type",
+            "width": width,
+            "height": height,
+            "format": "uint8_rows",
+            "dictionary": {
+                str(code): name
+                for code, name in sorted(VEGETATION_TYPE_NAMES.items())
+            },
+            "default": 0,
+            "rows": vegetation_geometry.type_rows,
+            "summary": vegetation_summary,
+        },
+        outputs.map_package_vegetation_type,
+    )
+    write_json(
+        {
+            "schema_version": VEGETATION_HEIGHT_LAYER_SCHEMA_VERSION,
+            "kind": "vegetation_height",
+            "width": width,
+            "height": height,
+            "format": "uint8_rows",
+            "units": "logical_levels_above_ground",
+            "ground_reference": "elevation_plus_one",
+            "range": [0, 5],
+            "default": 0,
+            "rows": vegetation_geometry.height_rows,
+            "summary": vegetation_summary,
+        },
+        outputs.map_package_vegetation_height,
+    )
+    LOGGER.info(
+        "Vegetation geometry trees=%s bushes=%s reeds=%s/%s "
+        "tree_height=%.3f[%s..%s] bush_height=%.3f",
+        vegetation_geometry.summary.trees,
+        vegetation_geometry.summary.bushes,
+        vegetation_geometry.summary.shore_reeds,
+        vegetation_geometry.summary.puddle_reeds,
+        vegetation_geometry.summary.average_tree_height,
+        vegetation_geometry.summary.minimum_tree_height,
+        vegetation_geometry.summary.maximum_tree_height,
+        vegetation_geometry.summary.average_bush_height,
+    )
 
     runtime_binary = write_runtime_binary(
         RuntimeBinarySource(
@@ -349,10 +415,10 @@ def write_map_package(
             concealment_rows=_numeric_rows(
                 _dict(runtime_grid_items.get("concealment_grid")).get("rows"),
             ),
-            elevation_rows=_integer_rows(
-                _dict(runtime_grid_items.get("height_grid")).get("rows"),
-            ),
+            elevation_rows=final_elevation_rows,
             structure_height_rows=structure_height.rows,
+            vegetation_type_rows=vegetation_geometry.type_rows,
+            vegetation_height_rows=vegetation_geometry.height_rows,
             start=points.get("start"),
             goal=points.get("goal"),
             terrain_catalog=tile_types_catalog,
@@ -401,6 +467,8 @@ def write_map_package(
                 "collision": "layers/collision.json",
                 "elevation": "layers/elevation.json",
                 "structure_height": "layers/structure_height.json",
+                "vegetation_type": "layers/vegetation_type.json",
+                "vegetation_height": "layers/vegetation_height.json",
                 "start_goal": "layers/start_goal.json",
             },
             "gameplay": {
@@ -455,6 +523,8 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_collision,
         outputs.map_package_elevation,
         outputs.map_package_structure_height,
+        outputs.map_package_vegetation_type,
+        outputs.map_package_vegetation_height,
         outputs.map_package_start_goal,
         outputs.map_package_combat_zones,
         outputs.map_package_cover_points,

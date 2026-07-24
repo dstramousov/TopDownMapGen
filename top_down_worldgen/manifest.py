@@ -8,7 +8,7 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v41"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v42"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.33"
@@ -23,13 +23,15 @@ RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v13"
 PLACES_SCHEMA_VERSION = "places-v3"
 OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
 MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
-MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v12"
+MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v13"
 TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
 TERRAIN_LAYER_SCHEMA_VERSION = "terrain-layer-v1"
 MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"
 COLLISION_LAYER_SCHEMA_VERSION = "collision-layer-v2"
 ELEVATION_LAYER_SCHEMA_VERSION = "elevation-layer-v1"
 STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION = "structure-height-layer-v1"
+VEGETATION_TYPE_LAYER_SCHEMA_VERSION = "vegetation-type-layer-v1"
+VEGETATION_HEIGHT_LAYER_SCHEMA_VERSION = "vegetation-height-layer-v1"
 ELEVATION_MODEL_SCHEMA_VERSION = "elevation-model-v5"
 START_GOAL_LAYER_SCHEMA_VERSION = "start-goal-layer-v1"
 GAMEPLAY_LAYER_SCHEMA_VERSION = "gameplay-layer-v1"
@@ -144,6 +146,8 @@ def build_manifest(
         "collision_layer": COLLISION_LAYER_SCHEMA_VERSION,
         "elevation_layer": ELEVATION_LAYER_SCHEMA_VERSION,
         "structure_height_layer": STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION,
+        "vegetation_type_layer": VEGETATION_TYPE_LAYER_SCHEMA_VERSION,
+        "vegetation_height_layer": VEGETATION_HEIGHT_LAYER_SCHEMA_VERSION,
         "elevation_model": ELEVATION_MODEL_SCHEMA_VERSION,
         "elevation_features": ELEVATION_FEATURES_SCHEMA_VERSION,
         "elevation_transitions": ELEVATION_TRANSITIONS_SCHEMA_VERSION,

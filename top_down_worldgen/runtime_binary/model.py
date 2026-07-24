@@ -31,7 +31,9 @@ class RuntimeBinarySource:
         cover_rows: Cover values in the inclusive range zero to one.
         concealment_rows: Concealment values in the inclusive range zero to one.
         elevation_rows: Signed elevation level per tile.
-        structure_height_rows: Logical height levels above ground per tile.
+        structure_height_rows: Logical ruin height levels above ground per tile.
+        vegetation_type_rows: Numeric mass-vegetation type per tile.
+        vegetation_height_rows: Logical vegetation height levels above ground per tile.
         start: Optional start point.
         goal: Optional goal point.
         terrain_catalog: Public terrain catalog object.
@@ -55,6 +57,8 @@ class RuntimeBinarySource:
     concealment_rows: list[list[int | float]]
     elevation_rows: list[list[int]]
     structure_height_rows: list[list[int]]
+    vegetation_type_rows: list[list[int]]
+    vegetation_height_rows: list[list[int]]
     start: dict[str, int] | None
     goal: dict[str, int] | None
     terrain_catalog: dict[str, Any]

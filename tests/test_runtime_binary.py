@@ -32,8 +32,13 @@ def test_runtime_binary_roundtrip_and_determinism(tmp_path: Path) -> None:
     assert len(
         container.sections_of_type(int(SectionType.STRUCTURE_HEIGHT_U8))
     ) == 1
-    assert container.header.format_minor == 1
-    assert not container.sections_of_type(31)
+    assert container.header.format_minor == 2
+    assert len(
+        container.sections_of_type(int(SectionType.VEGETATION_TYPE_U8))
+    ) == 1
+    assert len(
+        container.sections_of_type(int(SectionType.VEGETATION_HEIGHT_U8))
+    ) == 1
 
 
 def test_runtime_binary_splits_edge_regions(tmp_path: Path) -> None:
@@ -49,6 +54,12 @@ def test_runtime_binary_splits_edge_regions(tmp_path: Path) -> None:
     assert len(container.sections_of_type(int(SectionType.TERRAIN_GRID))) == 4
     assert len(
         container.sections_of_type(int(SectionType.STRUCTURE_HEIGHT_U8))
+    ) == 4
+    assert len(
+        container.sections_of_type(int(SectionType.VEGETATION_TYPE_U8))
+    ) == 4
+    assert len(
+        container.sections_of_type(int(SectionType.VEGETATION_HEIGHT_U8))
     ) == 4
     assert result.file_size < 300_000
 
@@ -67,6 +78,22 @@ def test_runtime_binary_reader_accepts_legacy_minor_zero(tmp_path: Path) -> None
 
     assert container.header.format_major == 1
     assert container.header.format_minor == 0
+
+
+def test_runtime_binary_reader_accepts_legacy_minor_one(tmp_path: Path) -> None:
+    """Ensure the structural reader accepts older v1.1 containers."""
+    path = tmp_path / "legacy-minor-one.vxmap"
+    write_runtime_binary(_source(width=3, height=2), path)
+    data = bytearray(path.read_bytes())
+    struct.pack_into("<H", data, 12, 1)
+    struct.pack_into("<I", data, 104, 0)
+    struct.pack_into("<I", data, 104, zlib.crc32(data[:128]) & 0xFFFFFFFF)
+    path.write_bytes(data)
+
+    container = open_runtime_container(path)
+
+    assert container.header.format_major == 1
+    assert container.header.format_minor == 1
 
 
 def test_runtime_binary_rejects_corrupted_payload(tmp_path: Path) -> None:
@@ -123,10 +150,10 @@ def _source(*, width: int, height: int) -> RuntimeBinarySource:
         height=height,
         tile_size_px=16,
         resolved_seed=123456789,
-        generator_version="0.0.112",
+        generator_version="0.0.113",
         pipeline_version="pipeline-v1",
         profile="test",
-        map_schema="map-package-map-v12",
+        map_schema="map-package-map-v13",
         package_schema="map-package-v1",
         terrain_rows=terrain_rows,
         movement_rows=movement_rows,
@@ -139,6 +166,17 @@ def _source(*, width: int, height: int) -> RuntimeBinarySource:
         structure_height_rows=[
             [
                 2 if terrain_rows[y][x] == "ruin_wall_blocker" else 0
+                for x in range(width)
+            ]
+            for y in range(height)
+        ],
+        vegetation_type_rows=[
+            [(x + y) % 5 for x in range(width)]
+            for y in range(height)
+        ],
+        vegetation_height_rows=[
+            [
+                {0: 0, 1: 3, 2: 2, 3: 1, 4: 1}[(x + y) % 5]
                 for x in range(width)
             ]
             for y in range(height)

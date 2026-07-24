@@ -37,7 +37,7 @@ from .validator import validate_runtime_binary
 
 LOGGER = logging.getLogger(__name__)
 _GLOBAL_SECTION_COUNT = 6
-_REGIONAL_SECTION_COUNT = 9
+_REGIONAL_SECTION_COUNT = 11
 
 
 def write_runtime_binary(
@@ -122,7 +122,7 @@ def write_runtime_binary(
         validate_time_ms=validate_time_ms,
     )
     LOGGER.info(
-        "Runtime binary path=%s format=vxmap-runtime-v1.1 regions=%sx%s "
+        "Runtime binary path=%s format=vxmap-runtime-v1.2 regions=%sx%s "
         "sections=%s strings=%s terrain_types=%s file_size=%s "
         "write_ms=%.3f validate_ms=%.3f build_id=%s",
         path,
@@ -248,6 +248,8 @@ def _build_region_sections(
     cover_values = bytearray()
     concealment_values = bytearray()
     structure_height_values = bytearray()
+    vegetation_type_values = bytearray()
+    vegetation_height_values = bytearray()
     for y in range(origin_y, origin_y + region_height):
         for x in range(origin_x, origin_x + region_width):
             terrain_name = source.terrain_rows[y][x]
@@ -265,6 +267,8 @@ def _build_region_sections(
             cover_values.append(_quantize_unit(source.cover_rows[y][x]))
             concealment_values.append(_quantize_unit(source.concealment_rows[y][x]))
             structure_height_values.append(source.structure_height_rows[y][x])
+            vegetation_type_values.append(source.vegetation_type_rows[y][x])
+            vegetation_height_values.append(source.vegetation_height_rows[y][x])
     common = {
         "parent_id": region_id,
         "alignment": GRID_ALIGNMENT,
@@ -340,6 +344,22 @@ def _build_region_sections(
             SectionType.STRUCTURE_HEIGHT_U8,
             REGIONAL_GRID_FLAGS,
             bytes(structure_height_values),
+            tile_count,
+            1,
+            **common,
+        ),
+        _section(
+            SectionType.VEGETATION_TYPE_U8,
+            REGIONAL_GRID_FLAGS,
+            bytes(vegetation_type_values),
+            tile_count,
+            1,
+            **common,
+        ),
+        _section(
+            SectionType.VEGETATION_HEIGHT_U8,
+            REGIONAL_GRID_FLAGS,
+            bytes(vegetation_height_values),
             tile_count,
             1,
             **common,
@@ -643,6 +663,18 @@ def _validate_source(source: RuntimeBinarySource) -> None:
         source.height,
         "structure height",
     )
+    _validate_matrix(
+        source.vegetation_type_rows,
+        source.width,
+        source.height,
+        "vegetation type",
+    )
+    _validate_matrix(
+        source.vegetation_height_rows,
+        source.width,
+        source.height,
+        "vegetation height",
+    )
     for row in source.elevation_rows:
         if any(value < -32768 or value > 32767 for value in row):
             raise ValueError("runtime elevation exceeds i16")
@@ -658,6 +690,21 @@ def _validate_source(source: RuntimeBinarySource) -> None:
                     raise ValueError("runtime ruin wall is not collision-blocked")
             elif value != 0:
                 raise ValueError("runtime non-ruin tile has structure height")
+    for y, row in enumerate(source.vegetation_type_rows):
+        for x, vegetation_type in enumerate(row):
+            vegetation_height = source.vegetation_height_rows[y][x]
+            if vegetation_type < 0 or vegetation_type > 4:
+                raise ValueError("runtime vegetation type exceeds u8 v1 contract")
+            if vegetation_height < 0 or vegetation_height > 5:
+                raise ValueError("runtime vegetation height exceeds u8 v1 contract")
+            if vegetation_type == 0 and vegetation_height != 0:
+                raise ValueError("runtime none vegetation has non-zero height")
+            if vegetation_type == 1 and not 2 <= vegetation_height <= 5:
+                raise ValueError("runtime tree height is outside the v1 range")
+            if vegetation_type == 2 and not 1 <= vegetation_height <= 2:
+                raise ValueError("runtime bush height is outside the v1 range")
+            if vegetation_type in {3, 4} and vegetation_height != 1:
+                raise ValueError("runtime reed height must equal one")
     _validate_point(source.start, source.width, source.height, "start")
     _validate_point(source.goal, source.width, source.height, "goal")
 

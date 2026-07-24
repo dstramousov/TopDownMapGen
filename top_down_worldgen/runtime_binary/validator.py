@@ -65,6 +65,8 @@ def validate_runtime_binary(path: Path, source: RuntimeBinarySource) -> None:
         int(SectionType.COVER_GRID_U8),
         int(SectionType.CONCEALMENT_GRID_U8),
         int(SectionType.STRUCTURE_HEIGHT_U8),
+        int(SectionType.VEGETATION_TYPE_U8),
+        int(SectionType.VEGETATION_HEIGHT_U8),
     }
     for region in regions:
         by_type = regional_sections.get(region.region_id, {})
@@ -202,8 +204,8 @@ def _decode_region_index(
             raise ValueError("runtime region exceeds map height")
         if record.tile_count != record.width * record.height:
             raise ValueError("runtime region tile count is invalid")
-        if record.section_count != 9:
-            raise ValueError("runtime region does not reference nine core sections")
+        if record.section_count != 11:
+            raise ValueError("runtime region does not reference eleven core sections")
         if (
             record.first_section_table_index + record.section_count
             > len(container.sections)
@@ -289,6 +291,12 @@ def _validate_region_values(
     structure_height_payload = container.payload(
         sections[int(SectionType.STRUCTURE_HEIGHT_U8)],
     )
+    vegetation_type_payload = container.payload(
+        sections[int(SectionType.VEGETATION_TYPE_U8)],
+    )
+    vegetation_height_payload = container.payload(
+        sections[int(SectionType.VEGETATION_HEIGHT_U8)],
+    )
     terrain_values = struct.unpack(f"<{tile_count}H", terrain_payload)
     elevation_values = struct.unpack(f"<{tile_count}h", elevation_payload)
     movement_values = struct.unpack(f"<{tile_count}H", movement_payload)
@@ -302,6 +310,10 @@ def _validate_region_values(
         raise ValueError("runtime normalized grid size mismatch")
     if len(structure_height_payload) != tile_count:
         raise ValueError("runtime structure-height grid size mismatch")
+    if len(vegetation_type_payload) != tile_count:
+        raise ValueError("runtime vegetation-type grid size mismatch")
+    if len(vegetation_height_payload) != tile_count:
+        raise ValueError("runtime vegetation-height grid size mismatch")
     local_index = 0
     for y in range(region.origin_y, region.origin_y + region.height):
         for x in range(region.origin_x, region.origin_x + region.width):
@@ -347,6 +359,16 @@ def _validate_region_values(
                 != source.structure_height_rows[y][x]
             ):
                 raise ValueError("runtime structure-height grid differs from source")
+            if (
+                vegetation_type_payload[local_index]
+                != source.vegetation_type_rows[y][x]
+            ):
+                raise ValueError("runtime vegetation-type grid differs from source")
+            if (
+                vegetation_height_payload[local_index]
+                != source.vegetation_height_rows[y][x]
+            ):
+                raise ValueError("runtime vegetation-height grid differs from source")
             local_index += 1
     _validate_unused_bits(collision_payload, tile_count)
     _validate_unused_bits(projectile_payload, tile_count)

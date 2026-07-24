@@ -937,3 +937,15 @@
 - Один и тот же in-memory grid передаётся JSON- и VXMAP-сериализаторам; independent binary validator выполняет tile-by-tile parity check.
 - Добавлены тесты связности, детерминизма, существующих проходов, карты без руин, collision-инварианта, edge-регионов, CRC и чтения legacy VXMAP minor `0`.
 - Версия проекта поднята до `0.0.112`.
+
+## v0.0.112 -> v0.0.113
+
+- Добавлены два deterministic derived-layer для массовой растительности: `vegetation_type` и `vegetation_height`, построенные по финальной reconciled-маске `vegetation_visual`.
+- Типы `none/tree/bush/shore_reed/puddle_reed` кодируются значениями `0..4`; высоты хранятся как логические уровни над поверхностью `elevation + 1`.
+- Деревья получают связные высоты `2..5` с учётом глубины леса и высоты местности, кусты — локально согласованные значения `1..2`, камыш — высоту `1`.
+- Добавлены обязательные JSON-слои `layers/vegetation_type.json` и `layers/vegetation_height.json` со статистикой и проверками type/height consistency.
+- Схема карты обновлена до `map-package-map-v13`, manifest schema — до `generation-manifest-v42`.
+- VXMAP обновлён до format minor `2`; добавлены required regional sections type `31` (`VEGETATION_TYPE_U8`) и type `32` (`VEGETATION_HEIGHT_U8`), число core grid-секций региона увеличено до одиннадцати.
+- Один и тот же in-memory результат передаётся JSON- и VXMAP-сериализаторам; binary validator выполняет tile-by-tile parity check для обоих vegetation grids.
+- Добавлены тесты детерминизма, диапазонов, высоты опушки и середины леса, высокогорного ограничения, карты без растительности, reconciled-маски, edge-регионов, CRC и чтения legacy VXMAP minor `0`/`1`.
+- Версия проекта поднята до `0.0.113`.

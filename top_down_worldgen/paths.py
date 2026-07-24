@@ -54,6 +54,8 @@ class OutputPaths:
     map_package_collision: Path
     map_package_elevation: Path
     map_package_structure_height: Path
+    map_package_vegetation_type: Path
+    map_package_vegetation_height: Path
     map_package_start_goal: Path
     map_package_gameplay_dir: Path
     map_package_combat_zones: Path
@@ -149,6 +151,12 @@ class OutputPaths:
             map_package_elevation=map_package_layers_dir / "elevation.json",
             map_package_structure_height=(
                 map_package_layers_dir / "structure_height.json"
+            ),
+            map_package_vegetation_type=(
+                map_package_layers_dir / "vegetation_type.json"
+            ),
+            map_package_vegetation_height=(
+                map_package_layers_dir / "vegetation_height.json"
             ),
             map_package_start_goal=map_package_layers_dir / "start_goal.json",
             map_package_gameplay_dir=map_package_gameplay_dir,
