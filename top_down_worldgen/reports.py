@@ -267,6 +267,26 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                     f"{int(terrain_guidance.get('ruin_architecture_max_height_delta', 0))}"
                 ),
                 (
+                    "  качество руин: "
+                    "largest component="
+                    f"{float(terrain_guidance.get(
+                        'ruin_architecture_largest_component_ratio', 0.0
+                    )):.3f}, "
+                    "inner retained="
+                    f"{float(terrain_guidance.get(
+                        'ruin_architecture_inner_wall_retained_ratio', 0.0
+                    )):.3f}, "
+                    "window hints="
+                    f"{int(terrain_guidance.get('ruin_architecture_window_sill_hints', 0))}"
+                ),
+                (
+                    "  пол руин: "
+                    f"{int(terrain_guidance.get('ruin_floor_tiles_actual', 0))}/"
+                    f"{int(terrain_guidance.get('ruin_floor_tiles_expected', 0))}, "
+                    "missing="
+                    f"{int(terrain_guidance.get('ruin_floor_tiles_missing', 0))}"
+                ),
+                (
                     "  типы sites: "
                     f"деревни={int(terrain_guidance.get('ruin_sites_village', 0))}, "
                     f"хутора={int(terrain_guidance.get('ruin_sites_farmstead', 0))}, "

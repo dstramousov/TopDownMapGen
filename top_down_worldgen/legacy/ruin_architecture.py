@@ -13,6 +13,16 @@ RectTuple = tuple[int, int, int, int]
 _HEIGHT_MIN = 1
 _HEIGHT_MAX = 3
 _NEIGHBORS: tuple[PointTuple, ...] = ((0, -1), (-1, 0), (1, 0), (0, 1))
+_SEVERITY_TARGETS: dict[str, tuple[float, float]] = {
+    "light": (0.14, 0.86),
+    "moderate": (0.23, 0.76),
+    "heavy": (0.34, 0.66),
+}
+_SEVERITY_LIMITS: dict[str, tuple[float, float, float, float, int, float, float]] = {
+    "light": (0.08, 0.24, 0.72, 0.98, 5, 0.40, 0.50),
+    "moderate": (0.14, 0.34, 0.57, 0.92, 5, 0.38, 0.35),
+    "heavy": (0.24, 0.46, 0.40, 0.85, 6, 0.35, 0.20),
+}
 
 
 class BuildingArchetype(StrEnum):
@@ -90,6 +100,10 @@ class ArchitectureMetrics:
     entrance_or_breach_count: int
     accessible_floor_ratio: float
     maximum_adjacent_height_delta: int
+    largest_component_ratio: float
+    surviving_inner_wall_ratio: float
+    window_sill_hint_count: int
+    planned_floor_tiles: int
     score: float
 
     def to_dict(self) -> dict[str, int | float]:
@@ -111,6 +125,16 @@ class ArchitectureMetrics:
             "maximum_adjacent_height_delta": (
                 self.maximum_adjacent_height_delta
             ),
+            "largest_component_ratio": round(
+                self.largest_component_ratio,
+                6,
+            ),
+            "surviving_inner_wall_ratio": round(
+                self.surviving_inner_wall_ratio,
+                6,
+            ),
+            "window_sill_hint_count": self.window_sill_hint_count,
+            "planned_floor_tiles": self.planned_floor_tiles,
             "score": round(self.score, 6),
         }
 
@@ -126,6 +150,7 @@ class RuinArchitecturePlan:
     rooms: tuple[RoomPlan, ...]
     external_door: PointTuple
     internal_doors: tuple[PointTuple, ...]
+    window_sill_hints: tuple[PointTuple, ...]
     wall_runs: tuple[WallRun, ...]
     wall_heights: tuple[tuple[int, int, int], ...]
     metrics: ArchitectureMetrics
@@ -138,13 +163,16 @@ class RuinArchitecturePlan:
     def to_dict(self) -> dict[str, object]:
         """Return JSON-compatible architecture metadata."""
         return {
-            "schema_version": "ruin-building-architecture-v1",
+            "schema_version": "ruin-building-architecture-v2",
             "archetype": self.archetype.value,
             "damage_pattern": self.damage_pattern.value,
             "destruction_direction": self.destruction_direction,
             "destruction_severity": self.destruction_severity,
             "external_door": [self.external_door[0], self.external_door[1]],
             "internal_doors": [[x, y] for x, y in self.internal_doors],
+            "window_sill_hints": [
+                [x, y] for x, y in self.window_sill_hints
+            ],
             "rooms": [room.to_dict() for room in self.rooms],
             "wall_runs": [run.to_dict() for run in self.wall_runs],
             "wall_heights": [
@@ -264,16 +292,36 @@ def generate_ruin_architecture(
 def architecture_plan_is_valid(plan: RuinArchitecturePlan) -> bool:
     """Return whether a generated architecture plan meets hard invariants."""
     metrics = plan.metrics
+    limits = _SEVERITY_LIMITS.get(plan.destruction_severity)
+    if limits is None:
+        return False
+    (
+        destroyed_min,
+        destroyed_max,
+        outer_min,
+        outer_max,
+        component_max,
+        largest_component_min,
+        inner_retained_min,
+    ) = limits
     return (
         metrics.surviving_wall_tiles >= 6
         and metrics.isolated_wall_tiles == 0
-        and metrics.retained_corners >= 1
+        and metrics.retained_corners >= 2
         and metrics.longest_straight_run >= 3
         and metrics.entrance_or_breach_count >= 1
-        and metrics.accessible_floor_ratio >= 0.80
+        and metrics.accessible_floor_ratio >= 0.78
         and metrics.maximum_adjacent_height_delta <= 1
-        and 0.18 <= metrics.wall_destroyed_ratio <= 0.68
-        and 0.28 <= metrics.outer_wall_retained_ratio <= 0.82
+        and destroyed_min
+        <= metrics.wall_destroyed_ratio
+        <= destroyed_max
+        and outer_min
+        <= metrics.outer_wall_retained_ratio
+        <= outer_max
+        and metrics.connected_wall_components <= component_max
+        and metrics.largest_component_ratio >= largest_component_min
+        and metrics.surviving_inner_wall_ratio >= inner_retained_min
+        and metrics.planned_floor_tiles > 0
     )
 
 
@@ -368,9 +416,14 @@ def _build_intact_plan(
             door = points[len(points) // 2]
         internal_doors.append(door)
         for point in points:
-            if point == door:
+            if point in {door, entrance}:
                 continue
             wall_roles.setdefault(point, "inner_wall")
+    inside_entrance = _inside_boundary_neighbor(rect, entrance)
+    if inside_entrance is not None:
+        wall_roles.pop(inside_entrance, None)
+        if inside_entrance not in internal_doors:
+            internal_doors.append(inside_entrance)
     rooms.extend(_approximate_rooms(rect, partitions))
     if not rooms:
         rooms.append(RoomPlan(0, (left + 1, top + 1, right - 1, bottom - 1)))
@@ -402,19 +455,19 @@ def _partition_lines(
         if inner_width >= 6 and inner_height >= 4:
             if long_horizontal:
                 x = left + 1 + inner_width * 2 // 3
-                partitions.append([(x, y) for y in range(top + 1, bottom)])
+                partitions.append([(x, y) for y in range(top, bottom + 1)])
             else:
                 y = top + 1 + inner_height * 2 // 3
-                partitions.append([(x, y) for x in range(left + 1, right)])
+                partitions.append([(x, y) for x in range(left, right + 1)])
     elif archetype == BuildingArchetype.LONG_HOUSE:
         count = 2 if max(inner_width, inner_height) >= 9 else 1
         for index in range(1, count + 1):
             if long_horizontal:
                 x = left + 1 + inner_width * index // (count + 1)
-                partitions.append([(x, y) for y in range(top + 1, bottom)])
+                partitions.append([(x, y) for y in range(top, bottom + 1)])
             else:
                 y = top + 1 + inner_height * index // (count + 1)
-                partitions.append([(x, y) for x in range(left + 1, right)])
+                partitions.append([(x, y) for x in range(left, right + 1)])
     elif archetype == BuildingArchetype.BARN:
         if min(inner_width, inner_height) >= 5:
             if long_horizontal:
@@ -430,17 +483,17 @@ def _partition_lines(
     elif archetype == BuildingArchetype.WAREHOUSE:
         if long_horizontal:
             x = left + 1 + inner_width * 2 // 3
-            partitions.append([(x, y) for y in range(top + 1, bottom)])
+            partitions.append([(x, y) for y in range(top, bottom + 1)])
         else:
             y = top + 1 + inner_height * 2 // 3
-            partitions.append([(x, y) for x in range(left + 1, right)])
+            partitions.append([(x, y) for x in range(left, right + 1)])
     else:
         x = (left + right) // 2
         y = (top + bottom) // 2
         if inner_height >= 5:
-            partitions.append([(x, item_y) for item_y in range(top + 1, bottom)])
+            partitions.append([(x, item_y) for item_y in range(top, bottom + 1)])
         if inner_width >= 6:
-            partitions.append([(item_x, y) for item_x in range(left + 1, right)])
+            partitions.append([(item_x, y) for item_x in range(left, right + 1)])
     return partitions
 
 
@@ -507,12 +560,21 @@ def _build_candidate(
         walls=walls,
         removed=removed,
         intact=intact,
+        direction=direction,
         severity=severity,
         rng=rng,
     )
     walls = _remove_isolated_walls(walls)
     removed.update(set(intact.wall_roles) - walls)
     heights = _assign_heights(walls, removed)
+    window_sill_hints = _apply_window_sill_hints(
+        intact=intact,
+        walls=walls,
+        heights=heights,
+        removed=removed,
+        entrance=entrance,
+        rng=rng,
+    )
     wall_runs = _build_wall_runs(walls, intact.wall_roles)
     metrics = _build_metrics(
         rect=rect,
@@ -522,6 +584,8 @@ def _build_candidate(
         heights=heights,
         removed=removed,
         wall_runs=wall_runs,
+        window_sill_hints=window_sill_hints,
+        severity=severity,
     )
     plan = RuinArchitecturePlan(
         archetype=intact.archetype,
@@ -531,6 +595,7 @@ def _build_candidate(
         rooms=intact.rooms,
         external_door=entrance,
         internal_doors=intact.internal_doors,
+        window_sill_hints=window_sill_hints,
         wall_runs=wall_runs,
         wall_heights=tuple(
             sorted((x, y, height) for (x, y), height in heights.items())
@@ -550,7 +615,11 @@ def _build_fallback_candidate(
 ) -> _Candidate:
     walls = set(intact.wall_roles)
     removed: set[PointTuple] = set()
-    side = _opposite_side(_side_for_point(rect, entrance))
+    side = (
+        direction
+        if direction in {"north", "east", "south", "west"}
+        else _side_for_point(rect, entrance)
+    )
     sequence = _side_points(rect, side, include_corners=False)
     if sequence:
         length = max(2, min(4, len(sequence) // 2))
@@ -561,12 +630,21 @@ def _build_fallback_candidate(
         walls=walls,
         removed=removed,
         intact=intact,
+        direction=direction,
         severity=severity,
         rng=random.Random(0),
     )
     walls = _remove_isolated_walls(walls)
     removed.update(set(intact.wall_roles) - walls)
     heights = _assign_heights(walls, removed)
+    window_sill_hints = _apply_window_sill_hints(
+        intact=intact,
+        walls=walls,
+        heights=heights,
+        removed=removed,
+        entrance=entrance,
+        rng=random.Random(1),
+    )
     wall_runs = _build_wall_runs(walls, intact.wall_roles)
     metrics = _build_metrics(
         rect=rect,
@@ -576,6 +654,8 @@ def _build_fallback_candidate(
         heights=heights,
         removed=removed,
         wall_runs=wall_runs,
+        window_sill_hints=window_sill_hints,
+        severity=severity,
     )
     plan = RuinArchitecturePlan(
         archetype=intact.archetype,
@@ -585,6 +665,7 @@ def _build_fallback_candidate(
         rooms=intact.rooms,
         external_door=entrance,
         internal_doors=intact.internal_doors,
+        window_sill_hints=window_sill_hints,
         wall_runs=wall_runs,
         wall_heights=tuple(
             sorted((x, y, height) for (x, y), height in heights.items())
@@ -606,7 +687,11 @@ def _apply_damage(
     rng: random.Random,
 ) -> None:
     side = direction if direction in {"north", "east", "south", "west"} else "north"
-    intensity = 1.20 if severity == "heavy" else 1.0
+    intensity = {
+        "light": 0.55,
+        "moderate": 0.78,
+        "heavy": 1.0,
+    }.get(severity, 0.78)
     if pattern == DamagePattern.COLLAPSED_CORNER:
         corner = _corner_for_direction(side)
         _damage_corner(rect, walls, removed, corner, intensity=intensity)
@@ -616,7 +701,7 @@ def _apply_damage(
             walls,
             removed,
             side,
-            fraction=0.34 * intensity,
+            fraction=0.28 * intensity,
             rng=rng,
         )
     elif pattern == DamagePattern.SIDE_COLLAPSE:
@@ -625,22 +710,10 @@ def _apply_damage(
             walls,
             removed,
             side,
-            fraction=0.48 * intensity,
+            fraction=0.38 * intensity,
             rng=rng,
         )
-        _damage_inner_run(walls, removed, rng, fraction=0.35)
     elif pattern == DamagePattern.CENTRAL_BREACH:
-        _damage_side_interval(
-            rect,
-            walls,
-            removed,
-            side,
-            fraction=0.28 * intensity,
-            rng=rng,
-            center_bias=True,
-        )
-        _damage_inner_run(walls, removed, rng, fraction=0.45)
-    else:
         _damage_side_interval(
             rect,
             walls,
@@ -648,16 +721,27 @@ def _apply_damage(
             side,
             fraction=0.24 * intensity,
             rng=rng,
+            center_bias=True,
         )
-        second = _rotate_side(side, 1 if rng.random() < 0.5 else -1)
+    else:
         _damage_side_interval(
             rect,
             walls,
             removed,
-            second,
-            fraction=0.20 * intensity,
+            side,
+            fraction=0.18 * intensity,
             rng=rng,
         )
+        if severity == "heavy":
+            second = _rotate_side(side, 1 if rng.random() < 0.5 else -1)
+            _damage_side_interval(
+                rect,
+                walls,
+                removed,
+                second,
+                fraction=0.12,
+                rng=rng,
+            )
     walls.discard(entrance)
     removed.add(entrance)
 
@@ -668,66 +752,72 @@ def _ensure_damage_targets(
     walls: set[PointTuple],
     removed: set[PointTuple],
     intact: _IntactPlan,
+    direction: str,
     severity: str,
     rng: random.Random,
 ) -> None:
-    """Extend connected damage until the target readability range is reached."""
-    target_destroyed = 0.38 if severity == "heavy" else 0.28
+    """Extend existing exterior breaches without scattering wall damage."""
+    target_destroyed, target_outer_retained = _SEVERITY_TARGETS.get(
+        severity,
+        _SEVERITY_TARGETS["moderate"],
+    )
     target_removed = max(2, round(len(intact.wall_roles) * target_destroyed))
-    inner_points = {
-        point
-        for point, role in intact.wall_roles.items()
-        if role == "inner_wall" and point in walls
-    }
-    while len(removed) < target_removed and inner_points:
-        sequence = _longest_line(inner_points)
-        if not sequence:
-            break
-        remaining = target_removed - len(removed)
-        length = min(len(sequence), max(1, remaining))
-        start = rng.randint(0, max(0, len(sequence) - length))
-        selected = sequence[start : start + length]
-        _remove_points(walls, removed, selected)
-        inner_points.difference_update(selected)
+    target_outer_count = round(len(intact.outer_points) * target_outer_retained)
+    primary = direction if direction in {"north", "east", "south", "west"} else "north"
+    side_step = 1 if rng.random() < 0.5 else -1
+    sides = (
+        primary,
+        _rotate_side(primary, side_step),
+        _rotate_side(primary, -side_step),
+        _opposite_side(primary),
+    )
 
-    side_index = rng.randrange(4)
-    sides = ("north", "east", "south", "west")
     attempts = 0
-    while len(removed) < target_removed and attempts < 8:
-        side = sides[(side_index + attempts) % len(sides)]
+    while len(removed) < target_removed and attempts < 32:
+        side = sides[min(attempts // 8, len(sides) - 1)]
         sequence = [
             point
             for point in _side_points(rect, side, include_corners=False)
             if point in walls
         ]
-        remaining = target_removed - len(removed)
-        if sequence:
-            length = min(len(sequence), max(1, min(3, remaining)))
-            start = rng.randint(0, max(0, len(sequence) - length))
-            _remove_points(walls, removed, sequence[start : start + length])
+        if not sequence:
+            attempts += 1
+            continue
+        boundary_removed = set(_side_points(rect, side, include_corners=False)) & removed
+        adjacent = [
+            point
+            for point in sequence
+            if any(neighbor in boundary_removed for neighbor in _neighbors(point))
+        ]
+        candidates = adjacent or sequence
+        point = candidates[rng.randrange(len(candidates))]
+        walls.remove(point)
+        removed.add(point)
         attempts += 1
 
-    target_outer_retained = 0.62 if severity == "heavy" else 0.72
     attempts = 0
     while (
-        len(walls & set(intact.outer_points)) / max(1, len(intact.outer_points))
-        > target_outer_retained
-        and attempts < 12
+        len(walls & set(intact.outer_points)) > target_outer_count
+        and attempts < 24
     ):
-        side = sides[(side_index + attempts) % len(sides)]
+        side = sides[min(attempts // 6, len(sides) - 1)]
         sequence = [
             point
             for point in _side_points(rect, side, include_corners=False)
             if point in walls
         ]
-        if sequence:
-            excess = (
-                len(walls & set(intact.outer_points))
-                - round(len(intact.outer_points) * target_outer_retained)
-            )
-            length = min(len(sequence), max(1, min(2, excess)))
-            start = rng.randint(0, max(0, len(sequence) - length))
-            _remove_points(walls, removed, sequence[start : start + length])
+        if not sequence:
+            attempts += 1
+            continue
+        boundary_removed = set(_side_points(rect, side, include_corners=False)) & removed
+        adjacent = [
+            point
+            for point in sequence
+            if any(neighbor in boundary_removed for neighbor in _neighbors(point))
+        ]
+        point = (adjacent or sequence)[rng.randrange(len(adjacent or sequence))]
+        walls.remove(point)
+        removed.add(point)
         attempts += 1
 
 
@@ -760,7 +850,12 @@ def _damage_corner(
     intensity: float,
 ) -> None:
     left, top, right, bottom = rect
-    length = 2 if intensity <= 1.0 else 3
+    if intensity < 0.70:
+        length = 1
+    elif intensity < 0.90:
+        length = 2
+    else:
+        length = 3
     if corner == "north_west":
         points = [(left + offset, top) for offset in range(length)]
         points += [(left, top + offset) for offset in range(1, length)]
@@ -881,6 +976,71 @@ def _assign_heights(
     return heights
 
 
+def _apply_window_sill_hints(
+    *,
+    intact: _IntactPlan,
+    walls: set[PointTuple],
+    heights: dict[PointTuple, int],
+    removed: set[PointTuple],
+    entrance: PointTuple,
+    rng: random.Random,
+) -> tuple[PointTuple, ...]:
+    """Lower selected preserved facade cells to suggest window sills.
+
+    The current vertical format stores one solid height per wall tile, so these
+    hints are intentionally not true openings. They preserve a low wall cell
+    between taller facade cells and can later be upgraded by a voxel occupancy
+    layer without changing the building plan.
+    """
+    maximum = {
+        BuildingArchetype.SMALL_HOUSE: 1,
+        BuildingArchetype.LONG_HOUSE: 2,
+        BuildingArchetype.BARN: 0,
+        BuildingArchetype.WAREHOUSE: 1,
+        BuildingArchetype.OUTPOST_BUILDING: 1,
+    }[intact.archetype]
+    if maximum <= 0:
+        return ()
+
+    candidates: list[PointTuple] = []
+    for point in sorted(walls & set(intact.outer_points)):
+        if point in intact.corners or point == entrance:
+            continue
+        if _distance_to_points(point, removed, maximum=3) <= 2:
+            continue
+        if abs(point[0] - entrance[0]) + abs(point[1] - entrance[1]) <= 2:
+            continue
+        x, y = point
+        horizontal = (x - 1, y) in walls and (x + 1, y) in walls
+        vertical = (x, y - 1) in walls and (x, y + 1) in walls
+        if not horizontal and not vertical:
+            continue
+        if heights.get(point, 0) < 2:
+            continue
+        candidates.append(point)
+
+    if not candidates:
+        return ()
+    rng.shuffle(candidates)
+    selected: list[PointTuple] = []
+    for point in candidates:
+        if any(
+            abs(point[0] - existing[0]) + abs(point[1] - existing[1]) < 4
+            for existing in selected
+        ):
+            continue
+        selected.append(point)
+        if len(selected) >= maximum:
+            break
+
+    for point in selected:
+        heights[point] = 1
+        for neighbor in _neighbors(point):
+            if neighbor in heights:
+                heights[neighbor] = min(heights[neighbor], 2)
+    return tuple(sorted(selected))
+
+
 def _build_wall_runs(
     walls: set[PointTuple],
     roles: dict[PointTuple, str],
@@ -926,13 +1086,30 @@ def _build_metrics(
     heights: dict[PointTuple, int],
     removed: set[PointTuple],
     wall_runs: tuple[WallRun, ...],
+    window_sill_hints: tuple[PointTuple, ...],
+    severity: str,
 ) -> ArchitectureMetrics:
     intact_count = len(intact.wall_roles)
     outer_intact = len(intact.outer_points)
     surviving_outer = len(walls & set(intact.outer_points))
+    inner_points = {
+        point
+        for point, role in intact.wall_roles.items()
+        if role == "inner_wall"
+    }
+    surviving_inner = len(walls & inner_points)
     destroyed_ratio = 1.0 - len(walls) / max(1, intact_count)
     outer_retained = surviving_outer / max(1, outer_intact)
+    inner_retained = (
+        surviving_inner / len(inner_points)
+        if len(inner_points) >= 4
+        else 1.0
+    )
     components = _components(walls)
+    largest_component_ratio = (
+        max((len(component) for component in components), default=0)
+        / max(1, len(walls))
+    )
     isolated = sum(1 for component in components if len(component) == 1)
     retained_corners = len(walls & set(intact.corners))
     longest = max((len(run.points) for run in wall_runs), default=1)
@@ -947,19 +1124,27 @@ def _build_metrics(
         ),
         default=0,
     )
-    target_destroyed = 0.40
-    target_outer = 0.58
+    target_destroyed, target_outer = _SEVERITY_TARGETS.get(
+        severity,
+        _SEVERITY_TARGETS["moderate"],
+    )
+    left, top, right, bottom = rect
+    footprint_area = (right - left + 1) * (bottom - top + 1)
+    planned_floor_tiles = footprint_area - len(walls)
     score = 100.0
-    score -= abs(destroyed_ratio - target_destroyed) * 85.0
-    score -= abs(outer_retained - target_outer) * 70.0
-    score += min(longest, 8) * 3.0
-    score += retained_corners * 4.0
-    score += min(breaches, 3) * 2.0
-    score += accessible * 18.0
-    score -= max(0, len(components) - 5) * 2.5
-    score -= isolated * 30.0
+    score -= abs(destroyed_ratio - target_destroyed) * 110.0
+    score -= abs(outer_retained - target_outer) * 90.0
+    score += min(longest, 10) * 3.5
+    score += retained_corners * 5.0
+    score += min(breaches, 2) * 1.5
+    score += accessible * 20.0
+    score += largest_component_ratio * 32.0
+    score += inner_retained * 18.0
+    score -= max(0, len(components) - 1) * 8.0
+    score -= isolated * 40.0
+    score += len(window_sill_hints) * 2.0
     if removed:
-        score += min(len(removed), 12) * 0.25
+        score += min(len(removed), 8) * 0.15
     return ArchitectureMetrics(
         intact_wall_tiles=intact_count,
         surviving_wall_tiles=len(walls),
@@ -972,6 +1157,10 @@ def _build_metrics(
         entrance_or_breach_count=breaches,
         accessible_floor_ratio=accessible,
         maximum_adjacent_height_delta=max_delta,
+        largest_component_ratio=largest_component_ratio,
+        surviving_inner_wall_ratio=inner_retained,
+        window_sill_hint_count=len(window_sill_hints),
+        planned_floor_tiles=planned_floor_tiles,
         score=score,
     )
 
@@ -1065,6 +1254,24 @@ def _side_for_point(rect: RectTuple, point: PointTuple) -> str:
     if x == right:
         return "east"
     return "north"
+
+
+def _inside_boundary_neighbor(
+    rect: RectTuple,
+    point: PointTuple,
+) -> PointTuple | None:
+    """Return the footprint cell immediately inside a boundary point."""
+    left, top, right, bottom = rect
+    x, y = point
+    if y == top and top < bottom:
+        return (x, y + 1)
+    if y == bottom and top < bottom:
+        return (x, y - 1)
+    if x == left and left < right:
+        return (x + 1, y)
+    if x == right and left < right:
+        return (x - 1, y)
+    return None
 
 
 def _opposite_side(side: str) -> str:

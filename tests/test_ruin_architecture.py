@@ -30,6 +30,7 @@ def test_ruin_architecture_is_deterministic_and_readable() -> None:
 
     assert first == second
     assert architecture_plan_is_valid(first)
+    assert first.external_door not in first.wall_points
     assert first.metrics.isolated_wall_tiles == 0
     assert first.metrics.longest_straight_run >= 3
     assert first.metrics.accessible_floor_ratio >= 0.80
@@ -88,3 +89,54 @@ def test_planned_damage_heights_override_legacy_height_generation() -> None:
         assert result.rows[y][x] == expected
     assert result.summary.architecture_planned_tiles == len(plan.wall_heights)
     assert result.summary.legacy_fallback_tiles == 0
+
+
+def test_destruction_severity_preserves_more_architecture_when_lighter() -> None:
+    """Ensure lighter damage retains more walls than stronger damage."""
+    plans = {
+        severity: generate_ruin_architecture(
+            rect=(10, 10, 22, 19),
+            entrance=(16, 10),
+            site_kind="village",
+            building_id=3,
+            is_main=False,
+            orientation="east_west",
+            destruction_direction="north",
+            destruction_severity=severity,
+            resolved_seed=777,
+            site_id=2,
+        )
+        for severity in ("light", "moderate", "heavy")
+    }
+
+    assert all(architecture_plan_is_valid(plan) for plan in plans.values())
+    assert (
+        plans["light"].metrics.wall_destroyed_ratio
+        < plans["moderate"].metrics.wall_destroyed_ratio
+        < plans["heavy"].metrics.wall_destroyed_ratio
+    )
+    assert plans["light"].metrics.outer_wall_retained_ratio > 0.75
+    assert plans["light"].metrics.largest_component_ratio >= 0.72
+
+
+def test_window_sill_hints_are_low_preserved_facade_tiles() -> None:
+    """Ensure window hints remain walls and preserve valid height gradients."""
+    plan = _plan(site_kind="village")
+    heights = {(x, y): height for x, y, height in plan.wall_heights}
+
+    assert plan.to_dict()["schema_version"] == "ruin-building-architecture-v2"
+    assert plan.metrics.window_sill_hint_count == len(plan.window_sill_hints)
+    for point in plan.window_sill_hints:
+        assert heights[point] == 1
+        neighbor_heights = [
+            heights[neighbor]
+            for neighbor in (
+                (point[0], point[1] - 1),
+                (point[0] - 1, point[1]),
+                (point[0] + 1, point[1]),
+                (point[0], point[1] + 1),
+            )
+            if neighbor in heights
+        ]
+        assert neighbor_heights
+        assert max(abs(value - 1) for value in neighbor_heights) <= 1

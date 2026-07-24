@@ -394,8 +394,24 @@ def test_ruin_site_planning_is_deterministic_for_same_seed() -> None:
 
     first_metadata = first.ruin_sites_metadata()
     second_metadata = second.ruin_sites_metadata()
-    assert first_metadata["schema_version"] == "ruin-site-plan-v3"
+    assert first_metadata["schema_version"] == "ruin-site-plan-v4"
     assert first_metadata == second_metadata
+    assert first_metadata["summary"]["floor_tiles_missing"] == 0
+    for site in first_metadata["sites"]:
+        assert site["destruction_severity"] == "mixed"
+        assert sum(site["destruction_distribution"].values()) == len(
+            site["buildings"]
+        )
+        for building in site["buildings"]:
+            assert building["floor"]["missing_tiles"] == 0
+            assert (
+                building["floor"]["actual_tiles"]
+                == building["floor"]["expected_tiles"]
+            )
+            assert (
+                building["architecture"]["schema_version"]
+                == "ruin-building-architecture-v2"
+            )
     assert first.ruin_foundation_cells() == second.ruin_foundation_cells()
     runtime_data = {
         "ruin_sites": first_metadata,

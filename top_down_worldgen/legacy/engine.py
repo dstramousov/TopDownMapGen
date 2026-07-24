@@ -829,6 +829,12 @@ class MapGenerator:
             "ruin_architecture_isolated_wall_tiles": 0,
             "ruin_architecture_total_components": 0,
             "ruin_architecture_max_height_delta": 0,
+            "ruin_architecture_window_sill_hints": 0,
+            "ruin_architecture_largest_component_ratio": 0.0,
+            "ruin_architecture_inner_wall_retained_ratio": 0.0,
+            "ruin_floor_tiles_expected": 0,
+            "ruin_floor_tiles_actual": 0,
+            "ruin_floor_tiles_missing": 0,
             "ruin_foundation_cells": 0,
             "ruin_foundation_max_delta": 0,
             "settlement_profile": "disabled",
@@ -880,7 +886,7 @@ class MapGenerator:
     def terrain_guidance_metrics(self) -> dict[str, int | float | bool | str]:
         """Return terrain adaptation diagnostics."""
         metrics = dict(self._terrain_guidance_metrics)
-        metrics["schema_version"] = "terrain-guidance-report-v5"
+        metrics["schema_version"] = "terrain-guidance-report-v6"
         sample_tiles = int(metrics.pop("road_sample_tiles", 0))
         slope_sum = float(metrics.pop("road_slope_sum", 0.0))
         metrics["road_tiles_sampled"] = sample_tiles
@@ -896,6 +902,44 @@ class MapGenerator:
     def derived_config(self) -> DerivedConfig:
         """Return derived configuration."""
         return self._derived
+
+    def _ruin_building_metadata(
+        self,
+        building: RuinBuildingPlan,
+    ) -> dict[str, object]:
+        """Return one building payload with final floor coverage metrics."""
+        expected_floor = building.rect.width * building.rect.height - len(
+            building.architecture.wall_points
+        )
+        actual_floor = sum(
+            self._grid.get_tile(Point(x, y)) == TileType.RUIN_FLOOR
+            for y in range(building.rect.top, building.rect.bottom + 1)
+            for x in range(building.rect.left, building.rect.right + 1)
+        )
+        missing_floor = max(0, expected_floor - actual_floor)
+        return {
+            "id": building.building_id,
+            "rect": {
+                "left": building.rect.left,
+                "top": building.rect.top,
+                "right": building.rect.right,
+                "bottom": building.rect.bottom,
+            },
+            "foundation_elevation": building.foundation_elevation,
+            "entrance": [building.entrance.x, building.entrance.y],
+            "outside_approach": [
+                building.outside_approach.x,
+                building.outside_approach.y,
+            ],
+            "orientation": building.orientation,
+            "is_main": building.is_main,
+            "floor": {
+                "expected_tiles": expected_floor,
+                "actual_tiles": actual_floor,
+                "missing_tiles": missing_floor,
+            },
+            "architecture": building.architecture.to_dict(),
+        }
 
     def start_point(self) -> Point:
         """Return the placed start marker or its region anchor."""
@@ -930,24 +974,7 @@ class MapGenerator:
         sites: list[dict[str, object]] = []
         for site in sorted(self._ruin_sites.values(), key=lambda item: item.site_id):
             buildings = [
-                {
-                    "id": building.building_id,
-                    "rect": {
-                        "left": building.rect.left,
-                        "top": building.rect.top,
-                        "right": building.rect.right,
-                        "bottom": building.rect.bottom,
-                    },
-                    "foundation_elevation": building.foundation_elevation,
-                    "entrance": [building.entrance.x, building.entrance.y],
-                    "outside_approach": [
-                        building.outside_approach.x,
-                        building.outside_approach.y,
-                    ],
-                    "orientation": building.orientation,
-                    "is_main": building.is_main,
-                    "architecture": building.architecture.to_dict(),
-                }
+                self._ruin_building_metadata(building)
                 for building in site.buildings
             ]
             sites.append(
@@ -961,11 +988,36 @@ class MapGenerator:
                     "architectural_profile": site.architectural_profile,
                     "destruction_direction": site.destruction_direction,
                     "destruction_severity": site.destruction_severity,
+                    "destruction_distribution": {
+                        severity: sum(
+                            building.architecture.destruction_severity == severity
+                            for building in site.buildings
+                        )
+                        for severity in ("light", "moderate", "heavy")
+                    },
                     "requested_buildings": site.requested_buildings,
                     "placed_buildings": len(site.buildings),
                     "buildings": buildings,
                 }
             )
+        floor_expected = sum(
+            int(building["floor"]["expected_tiles"])
+            for site in sites
+            for building in site["buildings"]
+        )
+        floor_actual = sum(
+            int(building["floor"]["actual_tiles"])
+            for site in sites
+            for building in site["buildings"]
+        )
+        floor_missing = sum(
+            int(building["floor"]["missing_tiles"])
+            for site in sites
+            for building in site["buildings"]
+        )
+        self._terrain_guidance_metrics["ruin_floor_tiles_expected"] = floor_expected
+        self._terrain_guidance_metrics["ruin_floor_tiles_actual"] = floor_actual
+        self._terrain_guidance_metrics["ruin_floor_tiles_missing"] = floor_missing
         site_budget_used = int(
             self._terrain_guidance_metrics["settlement_site_budget_used"]
         )
@@ -978,7 +1030,7 @@ class MapGenerator:
             else {}
         )
         return {
-            "schema_version": "ruin-site-plan-v3",
+            "schema_version": "ruin-site-plan-v4",
             "settlement_profile": self._settlement_profile.value,
             "source_elevation_style": terrain_context.get(
                 "elevation_style",
@@ -1023,6 +1075,21 @@ class MapGenerator:
                 ),
                 "planned_buildings": int(
                     self._terrain_guidance_metrics["ruin_buildings_planned"]
+                ),
+                "accepted_buildings": int(
+                    self._terrain_guidance_metrics["ruin_buildings_planned"]
+                ),
+                "skipped_buildings": int(
+                    self._terrain_guidance_metrics["ruin_buildings_skipped"]
+                ),
+                "floor_tiles_expected": int(
+                    floor_expected
+                ),
+                "floor_tiles_actual": int(
+                    floor_actual
+                ),
+                "floor_tiles_missing": int(
+                    floor_missing
                 ),
                 "minimum_site_distance": float(
                     self._terrain_guidance_metrics[
@@ -1663,6 +1730,14 @@ class MapGenerator:
         self._terrain_guidance_metrics[
             "settlement_building_budget_used"
         ] = building_count
+        requested_buildings = int(
+            self._terrain_guidance_metrics["ruin_buildings_requested"]
+        )
+        self._terrain_guidance_metrics["ruin_buildings_planned"] = building_count
+        self._terrain_guidance_metrics["ruin_buildings_skipped"] = max(
+            0,
+            requested_buildings - building_count,
+        )
         outside = sum(
             1
             for site in sites
@@ -1719,6 +1794,36 @@ class MapGenerator:
             ),
             default=0,
         )
+        self._terrain_guidance_metrics[
+            "ruin_architecture_window_sill_hints"
+        ] = sum(
+            architecture.metrics.window_sill_hint_count
+            for architecture in architectures
+        )
+        self._terrain_guidance_metrics[
+            "ruin_architecture_largest_component_ratio"
+        ] = round(
+            sum(
+                architecture.metrics.largest_component_ratio
+                for architecture in architectures
+            )
+            / max(1, len(architectures)),
+            6,
+        )
+        self._terrain_guidance_metrics[
+            "ruin_architecture_inner_wall_retained_ratio"
+        ] = round(
+            sum(
+                architecture.metrics.surviving_inner_wall_ratio
+                for architecture in architectures
+            )
+            / max(1, len(architectures)),
+            6,
+        )
+        self._terrain_guidance_metrics["ruin_floor_tiles_expected"] = sum(
+            architecture.metrics.planned_floor_tiles
+            for architecture in architectures
+        )
 
     @staticmethod
     def _ruin_site_priority(kind: RuinSiteKind | None) -> int:
@@ -1754,7 +1859,7 @@ class MapGenerator:
         destruction_direction = self._rng.choice(
             ("north", "east", "south", "west")
         )
-        destruction_severity = self._site_destruction_severity(kind)
+        destruction_severity = "mixed"
         site_radius = self._site_radius(kind)
         site_center = self._best_ruin_site_center(
             region.center,
@@ -1778,6 +1883,10 @@ class MapGenerator:
 
         for building_id, (width, height, is_main) in enumerate(specifications):
             target = road_target if is_main else site_center
+            building_severity = self._building_destruction_severity(
+                kind,
+                is_main=is_main,
+            )
             building = self._plan_ruin_building(
                 building_id=building_id,
                 site_center=site_center,
@@ -1795,7 +1904,7 @@ class MapGenerator:
                 site_id=site_id,
                 site_kind=kind,
                 destruction_direction=destruction_direction,
-                destruction_severity=destruction_severity,
+                destruction_severity=building_severity,
             )
             if building is None:
                 self._increment_guidance_metric("ruin_buildings_skipped")
@@ -1873,15 +1982,28 @@ class MapGenerator:
             RuinSiteKind.OUTPOST: "compact_outpost",
         }[kind]
 
-    def _site_destruction_severity(self, kind: RuinSiteKind) -> str:
-        """Return one shared destruction severity for a semantic ruin site."""
-        heavy_probability = {
-            RuinSiteKind.ISOLATED_BUILDING: 0.35,
-            RuinSiteKind.FARMSTEAD: 0.42,
-            RuinSiteKind.VILLAGE: 0.48,
-            RuinSiteKind.OUTPOST: 0.30,
+    def _building_destruction_severity(
+        self,
+        kind: RuinSiteKind,
+        *,
+        is_main: bool,
+    ) -> str:
+        """Return an individual mostly-light destruction severity."""
+        light, moderate = {
+            RuinSiteKind.ISOLATED_BUILDING: (0.55, 0.37),
+            RuinSiteKind.FARMSTEAD: (0.60, 0.33),
+            RuinSiteKind.VILLAGE: (0.58, 0.35),
+            RuinSiteKind.OUTPOST: (0.68, 0.28),
         }[kind]
-        return "heavy" if self._rng.random() < heavy_probability else "moderate"
+        if is_main:
+            light = min(0.82, light + 0.10)
+            moderate = max(0.16, moderate - 0.07)
+        roll = self._rng.random()
+        if roll < light:
+            return "light"
+        if roll < light + moderate:
+            return "moderate"
+        return "heavy"
 
     def _site_radius(self, kind: RuinSiteKind) -> int:
         """Return local planning radius for a ruin site."""

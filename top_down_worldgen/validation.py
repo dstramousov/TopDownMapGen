@@ -2101,9 +2101,14 @@ def _ruin_sites_valid(
         "ruin-site-plan-v1",
         "ruin-site-plan-v2",
         "ruin-site-plan-v3",
+        "ruin-site-plan-v4",
     }:
         return False
-    if schema_version in {"ruin-site-plan-v2", "ruin-site-plan-v3"}:
+    if schema_version in {
+        "ruin-site-plan-v2",
+        "ruin-site-plan-v3",
+        "ruin-site-plan-v4",
+    }:
         if payload.get("settlement_profile") not in {
             "open_plain",
             "rural_plain",
@@ -2198,7 +2203,7 @@ def _ruin_sites_valid(
         site_ids.add(site_id)
         if site.get("type") not in allowed_types:
             return False
-        if schema_version == "ruin-site-plan-v3":
+        if schema_version in {"ruin-site-plan-v3", "ruin-site-plan-v4"}:
             if site.get("destruction_direction") not in {
                 "north",
                 "east",
@@ -2206,8 +2211,23 @@ def _ruin_sites_valid(
                 "west",
             }:
                 return False
-            if site.get("destruction_severity") not in {"moderate", "heavy"}:
+            allowed_site_severity = (
+                {"mixed"}
+                if schema_version == "ruin-site-plan-v4"
+                else {"moderate", "heavy"}
+            )
+            if site.get("destruction_severity") not in allowed_site_severity:
                 return False
+            if schema_version == "ruin-site-plan-v4":
+                distribution = site.get("destruction_distribution")
+                if not isinstance(distribution, dict):
+                    return False
+                if any(
+                    not isinstance(distribution.get(key), int)
+                    or distribution[key] < 0
+                    for key in ("light", "moderate", "heavy")
+                ):
+                    return False
         anchor = _point(site.get("road_anchor"))
         center = _point(site.get("center"))
         if anchor is None or center is None:
@@ -2245,7 +2265,47 @@ def _ruin_sites_valid(
                 point = _point(building.get(key))
                 if point is None or not _point_in_bounds(point, width=width, height=height):
                     return False
+            if schema_version == "ruin-site-plan-v4":
+                floor = building.get("floor")
+                if not isinstance(floor, dict):
+                    return False
+                expected = floor.get("expected_tiles")
+                actual = floor.get("actual_tiles")
+                missing = floor.get("missing_tiles")
+                if not all(
+                    isinstance(value, int) and value >= 0
+                    for value in (expected, actual, missing)
+                ):
+                    return False
+                if missing != max(0, expected - actual):
+                    return False
+        if schema_version == "ruin-site-plan-v4":
+            distribution = site["destruction_distribution"]
+            if sum(distribution.values()) != len(buildings):
+                return False
     return True
+
+
+def _connected_point_components(
+    points: set[tuple[int, int]],
+) -> list[set[tuple[int, int]]]:
+    """Return four-neighbor connected components for coordinate validation."""
+    remaining = set(points)
+    components: list[set[tuple[int, int]]] = []
+    while remaining:
+        start = remaining.pop()
+        component = {start}
+        stack = [start]
+        while stack:
+            x, y = stack.pop()
+            for neighbor in ((x, y - 1), (x - 1, y), (x + 1, y), (x, y + 1)):
+                if neighbor not in remaining:
+                    continue
+                remaining.remove(neighbor)
+                component.add(neighbor)
+                stack.append(neighbor)
+        components.append(component)
+    return components
 
 
 def _ruin_architecture_valid(
@@ -2261,7 +2321,8 @@ def _ruin_architecture_valid(
         return True
     if not isinstance(payload, dict):
         return False
-    if payload.get("schema_version") != "ruin-site-plan-v3":
+    schema_version = payload.get("schema_version")
+    if schema_version not in {"ruin-site-plan-v3", "ruin-site-plan-v4"}:
         return True
     allowed_archetypes = {
         "small_house",
@@ -2283,7 +2344,12 @@ def _ruin_architecture_valid(
             architecture = building.get("architecture")
             if not isinstance(architecture, dict):
                 return False
-            if architecture.get("schema_version") != "ruin-building-architecture-v1":
+            expected_architecture_schema = (
+                "ruin-building-architecture-v2"
+                if schema_version == "ruin-site-plan-v4"
+                else "ruin-building-architecture-v1"
+            )
+            if architecture.get("schema_version") != expected_architecture_schema:
                 return False
             if architecture.get("archetype") not in allowed_archetypes:
                 return False
@@ -2296,10 +2362,13 @@ def _ruin_architecture_valid(
                 "west",
             }:
                 return False
-            if architecture.get("destruction_severity") not in {
-                "moderate",
-                "heavy",
-            }:
+            allowed_severities = (
+                {"light", "moderate", "heavy"}
+                if schema_version == "ruin-site-plan-v4"
+                else {"moderate", "heavy"}
+            )
+            severity = architecture.get("destruction_severity")
+            if severity not in allowed_severities:
                 return False
             rect = building.get("rect")
             if not isinstance(rect, dict):
@@ -2340,6 +2409,18 @@ def _ruin_architecture_valid(
                 planned_global.add(point)
                 if tile_grid[y][x] != "#":
                     return False
+            window_sill_hints: set[tuple[int, int]] = set()
+            if schema_version == "ruin-site-plan-v4":
+                raw_hints = architecture.get("window_sill_hints")
+                if not isinstance(raw_hints, list):
+                    return False
+                for raw_hint in raw_hints:
+                    hint = _point(raw_hint)
+                    if hint is None or hint not in walls:
+                        return False
+                    if walls[hint] != 1 or hint in window_sill_hints:
+                        return False
+                    window_sill_hints.add(hint)
             if entrance in walls or tile_grid[entrance[1]][entrance[0]] == "#":
                 return False
             actual_walls = {
@@ -2383,17 +2464,30 @@ def _ruin_architecture_valid(
                 "entrance_or_breach_count",
                 "maximum_adjacent_height_delta",
             )
+            if schema_version == "ruin-site-plan-v4":
+                required_integer_metrics += (
+                    "window_sill_hint_count",
+                    "planned_floor_tiles",
+                )
             if any(
                 not isinstance(metrics.get(key), int)
                 for key in required_integer_metrics
             ):
                 return False
-            for key in (
+            numeric_metrics = [
                 "wall_destroyed_ratio",
                 "outer_wall_retained_ratio",
                 "accessible_floor_ratio",
                 "score",
-            ):
+            ]
+            if schema_version == "ruin-site-plan-v4":
+                numeric_metrics.extend(
+                    (
+                        "largest_component_ratio",
+                        "surviving_inner_wall_ratio",
+                    )
+                )
+            for key in numeric_metrics:
                 if not isinstance(metrics.get(key), (int, float)):
                     return False
             if metrics["surviving_wall_tiles"] != len(walls):
@@ -2406,14 +2500,76 @@ def _ruin_architecture_valid(
                 return False
             if metrics["entrance_or_breach_count"] < 1:
                 return False
-            if float(metrics["accessible_floor_ratio"]) < 0.80:
+            if float(metrics["accessible_floor_ratio"]) < 0.78:
                 return False
             if metrics["maximum_adjacent_height_delta"] != maximum_delta:
                 return False
-            if not 0.18 <= float(metrics["wall_destroyed_ratio"]) <= 0.68:
-                return False
-            if not 0.28 <= float(metrics["outer_wall_retained_ratio"]) <= 0.82:
-                return False
+            if schema_version == "ruin-site-plan-v3":
+                if not 0.18 <= float(metrics["wall_destroyed_ratio"]) <= 0.68:
+                    return False
+                if not 0.28 <= float(metrics["outer_wall_retained_ratio"]) <= 0.82:
+                    return False
+            else:
+                limits = {
+                    "light": (0.08, 0.24, 0.72, 0.98, 5, 0.40, 0.50),
+                    "moderate": (0.14, 0.34, 0.57, 0.92, 5, 0.38, 0.35),
+                    "heavy": (0.24, 0.46, 0.40, 0.85, 6, 0.35, 0.20),
+                }[severity]
+                (
+                    destroyed_min,
+                    destroyed_max,
+                    outer_min,
+                    outer_max,
+                    component_max,
+                    largest_min,
+                    inner_min,
+                ) = limits
+                if not destroyed_min <= float(metrics["wall_destroyed_ratio"]) <= destroyed_max:
+                    return False
+                if not outer_min <= float(metrics["outer_wall_retained_ratio"]) <= outer_max:
+                    return False
+                components = _connected_point_components(set(walls))
+                largest_ratio = max(
+                    (len(component) for component in components),
+                    default=0,
+                ) / max(1, len(walls))
+                if metrics["connected_wall_components"] != len(components):
+                    return False
+                if len(components) > component_max:
+                    return False
+                if abs(float(metrics["largest_component_ratio"]) - largest_ratio) > 1e-6:
+                    return False
+                if largest_ratio < largest_min:
+                    return False
+                if float(metrics["surviving_inner_wall_ratio"]) < inner_min:
+                    return False
+                if metrics["window_sill_hint_count"] != len(window_sill_hints):
+                    return False
+                floor = building.get("floor")
+                if not isinstance(floor, dict):
+                    return False
+                expected_floor = (right - left + 1) * (bottom - top + 1) - len(walls)
+                actual_floor = sum(
+                    tile_grid[y][x] == "R"
+                    for y in range(top, bottom + 1)
+                    for x in range(left, right + 1)
+                )
+                if metrics["planned_floor_tiles"] != expected_floor:
+                    return False
+                if floor.get("expected_tiles") != expected_floor:
+                    return False
+                if floor.get("actual_tiles") != actual_floor:
+                    return False
+                if floor.get("missing_tiles") != expected_floor - actual_floor:
+                    return False
+                if actual_floor != expected_floor:
+                    return False
+                if any(
+                    tile_grid[y][x] not in {"#", "R"}
+                    for y in range(top, bottom + 1)
+                    for x in range(left, right + 1)
+                ):
+                    return False
     actual_global = {
         (x, y)
         for y, row in enumerate(tile_grid)
