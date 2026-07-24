@@ -834,6 +834,7 @@ class RuntimeObjectPlacer:
         width = len(rows[0])
         height = len(rows)
         protected = _protected_positions(rows)
+        protected.update(_ruin_site_reserved_positions(tactical_data))
         occupied: set[tuple[int, int]] = set(protected)
         candidates = _candidate_positions(rows, protected)
         if not candidates:
@@ -1024,6 +1025,47 @@ def _protected_positions(rows: list[str]) -> set[tuple[int, int]]:
     for point in start_goal:
         protected.update(_points_within_distance(point, PROTECTED_TILE_DISTANCE_TILES))
     return protected
+
+
+def _ruin_site_reserved_positions(tactical_data: dict[str, Any]) -> set[tuple[int, int]]:
+    """Return planned building footprints reserved from runtime object placement."""
+    payload = tactical_data.get("ruin_sites")
+    if not isinstance(payload, dict):
+        return set()
+    reserved: set[tuple[int, int]] = set()
+    sites = payload.get("sites")
+    if not isinstance(sites, list):
+        return reserved
+    for site in sites:
+        if not isinstance(site, dict):
+            continue
+        buildings = site.get("buildings")
+        if not isinstance(buildings, list):
+            continue
+        for building in buildings:
+            if not isinstance(building, dict):
+                continue
+            rect = building.get("rect")
+            if not isinstance(rect, dict):
+                continue
+            try:
+                left = int(rect["left"])
+                top = int(rect["top"])
+                right = int(rect["right"])
+                bottom = int(rect["bottom"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            for y in range(top, bottom + 1):
+                for x in range(left, right + 1):
+                    reserved.add((x, y))
+            approach = building.get("outside_approach")
+            if (
+                isinstance(approach, list)
+                and len(approach) == 2
+                and all(isinstance(value, int) for value in approach)
+            ):
+                reserved.add((approach[0], approach[1]))
+    return reserved
 
 
 def _candidate_positions(

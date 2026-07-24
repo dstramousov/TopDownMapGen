@@ -59,6 +59,14 @@ class RegionKind(StrEnum):
     GOAL = "goal"
 
 
+class RuinSiteKind(StrEnum):
+    """Semantic ruin-site archetypes used by the first-pass planner."""
+
+    ISOLATED_BUILDING = "isolated_building"
+    FARMSTEAD = "farmstead"
+    VILLAGE = "village"
+    OUTPOST = "outpost"
+
 
 MIN_TUNING_SCALE = 0.0
 MAX_TUNING_SCALE = 10.0
@@ -227,6 +235,54 @@ class Rect:
         """Return rectangle center point."""
         return Point((self.left + self.right) // 2, (self.top + self.bottom) // 2)
 
+    @property
+    def width(self) -> int:
+        """Return inclusive rectangle width."""
+        return self.right - self.left + 1
+
+    @property
+    def height(self) -> int:
+        """Return inclusive rectangle height."""
+        return self.bottom - self.top + 1
+
+    def expanded(self, margin: int) -> Rect:
+        """Return a rectangle expanded by a non-negative margin."""
+        margin = max(0, margin)
+        return Rect(
+            self.left - margin,
+            self.top - margin,
+            self.right + margin,
+            self.bottom + margin,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class RuinBuildingPlan:
+    """One flat building footprint planned inside a semantic ruin site."""
+
+    building_id: int
+    rect: Rect
+    foundation_elevation: int
+    entrance: Point
+    outside_approach: Point
+    orientation: str
+    is_main: bool
+
+
+@dataclass(frozen=True, slots=True)
+class RuinSitePlan:
+    """A semantic ruin site containing one or more planned buildings."""
+
+    site_id: int
+    region_id: int
+    kind: RuinSiteKind
+    center: Point
+    road_anchor: Point
+    orientation: str
+    architectural_profile: str
+    requested_buildings: int
+    buildings: tuple[RuinBuildingPlan, ...]
+
 
 @dataclass(slots=True)
 class Region:
@@ -237,6 +293,7 @@ class Region:
     kind: RegionKind = RegionKind.FOREST
     entrances: list[Point] = field(default_factory=list)
     entrance_cursor: int = 0
+    ruin_site_kind: RuinSiteKind | None = None
 
     def connection_point(self) -> Point:
         """Return a connection point for path carving.
@@ -344,6 +401,11 @@ class DerivedConfig:
     small_ruin_count: int
     medium_ruin_count: int
     central_ruin_count: int
+    isolated_site_count: int
+    farmstead_site_count: int
+    outpost_site_count: int
+    village_site_count: int
+    ruin_building_budget: int
     loop_target_count: int
     nearest_neighbor_links: int
     connected_pocket_count: int
@@ -409,8 +471,47 @@ class DerivedConfig:
         # stay within profile-specific bounds. Larger maps get more regions, not giant ruins.
         tuning = public.generation_tuning
         region_count = cls._clamp(round(chunk_count / 4.2), 18, 140)
-        small_ruin_count = cls._clamp(round(region_count * 0.34 * tuning.ruins_scale), 0, 64)
-        medium_ruin_count = cls._clamp(round(region_count * 0.22 * tuning.ruins_scale), 0, 36)
+        ruin_area_scale = area_tiles / float(320 * 320)
+        isolated_site_count = cls._clamp(
+            round(ruin_area_scale * 6.0 * tuning.ruins_scale),
+            0,
+            96,
+        )
+        farmstead_site_count = cls._clamp(
+            round(ruin_area_scale * 2.5 * tuning.ruins_scale),
+            0,
+            40,
+        )
+        outpost_site_count = cls._clamp(
+            round(ruin_area_scale * 1.25 * tuning.ruins_scale),
+            0,
+            24,
+        )
+        village_site_count = (
+            cls._clamp(
+                max(1, round(ruin_area_scale * 1.5 * tuning.ruins_scale)),
+                1,
+                12,
+            )
+            if tuning.ruins_scale > 0.0
+            else 0
+        )
+        small_ruin_count = isolated_site_count
+        medium_ruin_count = (
+            farmstead_site_count
+            + outpost_site_count
+            + max(0, village_site_count - 1)
+        )
+        ruin_building_budget = cls._clamp(
+            round(
+                area_tiles
+                / 2500.0
+                * tuning.ruins_scale
+                * tuning.buildings_scale
+            ),
+            0,
+            320,
+        )
         loop_target_count = cls._clamp(round(region_count * 0.55), 8, 70)
         connected_pocket_count = cls._clamp(
             round(region_count * 1.75 * tuning.open_space_scale),
@@ -441,8 +542,19 @@ class DerivedConfig:
         road_width_bonus = max(-2, min(4, round(tuning.road_width_scale - 1.0)))
         road_min_width = cls._clamp(4 + road_width_bonus, 1, 10)
         road_max_width = cls._clamp(6 + road_width_bonus, road_min_width, 12)
-        settlement_min_buildings = cls._clamp(round(7 * tuning.buildings_scale), 0, 18)
-        settlement_max_buildings = cls._clamp(round(11 * tuning.buildings_scale), settlement_min_buildings, 24)
+        map_linear_scale = math.sqrt(max(0.01, ruin_area_scale))
+        base_village_min = cls._clamp(round(5 * map_linear_scale), 2, 9)
+        base_village_max = cls._clamp(round(8 * map_linear_scale), base_village_min, 14)
+        settlement_min_buildings = cls._clamp(
+            round(base_village_min * tuning.buildings_scale),
+            0,
+            18,
+        )
+        settlement_max_buildings = cls._clamp(
+            round(base_village_max * tuning.buildings_scale),
+            settlement_min_buildings,
+            24,
+        )
 
         return cls(
             chunk_cols=chunk_cols,
@@ -452,7 +564,12 @@ class DerivedConfig:
             region_count=region_count,
             small_ruin_count=small_ruin_count,
             medium_ruin_count=medium_ruin_count,
-            central_ruin_count=1,
+            central_ruin_count=village_site_count,
+            isolated_site_count=isolated_site_count,
+            farmstead_site_count=farmstead_site_count,
+            outpost_site_count=outpost_site_count,
+            village_site_count=village_site_count,
+            ruin_building_budget=ruin_building_budget,
             loop_target_count=loop_target_count,
             nearest_neighbor_links=4,
             connected_pocket_count=connected_pocket_count,
@@ -698,6 +815,8 @@ class MapGenerator:
         self._goal_region_id = 0
         self._central_region_id = 0
         self._protected_path: set[Point] = set()
+        self._ruin_sites: dict[int, RuinSitePlan] = {}
+        self._planned_ruin_rects: list[Rect] = []
         self._connectivity_repair_metrics: dict[str, int] = {
             "components_before": 0,
             "components_after": 0,
@@ -713,6 +832,25 @@ class MapGenerator:
             "region_candidates_rejected_steep": 0,
             "region_steep_fallbacks": 0,
             "ruin_regions_relocated": 0,
+            "ruin_sites_requested": 0,
+            "ruin_sites_planned": 0,
+            "ruin_sites_skipped": 0,
+            "ruin_sites_isolated": 0,
+            "ruin_sites_farmstead": 0,
+            "ruin_sites_village": 0,
+            "ruin_sites_outpost": 0,
+            "ruin_buildings_requested": 0,
+            "ruin_buildings_planned": 0,
+            "ruin_buildings_skipped": 0,
+            "ruin_candidates_evaluated": 0,
+            "ruin_candidates_rejected_edge": 0,
+            "ruin_candidates_rejected_overlap": 0,
+            "ruin_candidates_rejected_negative": 0,
+            "ruin_candidates_rejected_not_flat": 0,
+            "ruin_candidates_rejected_buffer": 0,
+            "ruin_candidates_rejected_approach": 0,
+            "ruin_foundation_cells": 0,
+            "ruin_foundation_max_delta": 0,
             "guided_road_routes": 0,
             "fallback_road_routes": 0,
             "road_sample_tiles": 0,
@@ -791,6 +929,76 @@ class MapGenerator:
         """
         return list(self._edges)
 
+    def ruin_sites_metadata(self) -> dict[str, object]:
+        """Return JSON-serializable semantic ruin-site metadata."""
+        sites: list[dict[str, object]] = []
+        for site in sorted(self._ruin_sites.values(), key=lambda item: item.site_id):
+            buildings = [
+                {
+                    "id": building.building_id,
+                    "rect": {
+                        "left": building.rect.left,
+                        "top": building.rect.top,
+                        "right": building.rect.right,
+                        "bottom": building.rect.bottom,
+                    },
+                    "foundation_elevation": building.foundation_elevation,
+                    "entrance": [building.entrance.x, building.entrance.y],
+                    "outside_approach": [
+                        building.outside_approach.x,
+                        building.outside_approach.y,
+                    ],
+                    "orientation": building.orientation,
+                    "is_main": building.is_main,
+                }
+                for building in site.buildings
+            ]
+            sites.append(
+                {
+                    "id": site.site_id,
+                    "region_id": site.region_id,
+                    "type": site.kind.value,
+                    "center": [site.center.x, site.center.y],
+                    "road_anchor": [site.road_anchor.x, site.road_anchor.y],
+                    "orientation": site.orientation,
+                    "architectural_profile": site.architectural_profile,
+                    "requested_buildings": site.requested_buildings,
+                    "placed_buildings": len(site.buildings),
+                    "buildings": buildings,
+                }
+            )
+        return {
+            "schema_version": "ruin-site-plan-v1",
+            "sites": sites,
+            "summary": {
+                "requested_sites": int(self._terrain_guidance_metrics["ruin_sites_requested"]),
+                "planned_sites": int(self._terrain_guidance_metrics["ruin_sites_planned"]),
+                "skipped_sites": int(self._terrain_guidance_metrics["ruin_sites_skipped"]),
+                "requested_buildings": int(
+                    self._terrain_guidance_metrics["ruin_buildings_requested"]
+                ),
+                "planned_buildings": int(
+                    self._terrain_guidance_metrics["ruin_buildings_planned"]
+                ),
+                "foundation_rule": "one_exact_natural_level_per_building",
+                "road_anchor_policy": "one_semantic_anchor_per_site",
+            },
+        }
+
+    def ruin_foundation_cells(self) -> list[dict[str, int]]:
+        """Return explicit elevation cells that lock planned building foundations."""
+        cells: dict[Point, int] = {}
+        for site in self._ruin_sites.values():
+            for building in site.buildings:
+                for point in self._building_foundation_points(building):
+                    if self._grid.is_inside(point):
+                        cells[point] = building.foundation_elevation
+        self._terrain_guidance_metrics["ruin_foundation_cells"] = len(cells)
+        return [
+            {"x": point.x, "y": point.y, "level": level}
+            for point, level in sorted(cells.items(), key=lambda item: (item[0].y, item[0].x))
+        ]
+
     def generate(self) -> MapGrid:
         """Generate map.
 
@@ -817,7 +1025,7 @@ class MapGenerator:
             ("fill_forest", self._fill_forest),
             ("place_regions", self._place_regions_evenly),
             ("assign_region_kinds", self._assign_region_kinds),
-            ("relocate_ruins", self._relocate_ruin_regions_to_flat_ground),
+            ("plan_ruin_sites", self._plan_ruin_sites),
             ("build_region_graph", self._build_region_graph),
             ("carve_regions", self._carve_regions),
             ("carve_roads", self._carve_graph_roads),
@@ -1037,14 +1245,17 @@ class MapGenerator:
         return steep_fallback
 
     def _assign_region_kinds(self) -> None:
-        LOGGER.info("Stage 3: assign region kinds")
+        LOGGER.info("Stage 3: assign region kinds and ruin-site archetypes")
         farthest = self._find_farthest_pair_excluding({self._central_region_id})
         self._start_region_id = farthest.a
         self._goal_region_id = farthest.b
 
         self._regions[self._start_region_id].kind = RegionKind.START
         self._regions[self._goal_region_id].kind = RegionKind.GOAL
-        self._regions[self._central_region_id].kind = RegionKind.CENTRAL_RUIN_CLEARING
+        central_region = self._regions[self._central_region_id]
+        central_region.kind = RegionKind.CENTRAL_RUIN_CLEARING
+        if self._derived.village_site_count > 0:
+            central_region.ruin_site_kind = RuinSiteKind.VILLAGE
 
         free_ids = [
             region.region_id
@@ -1057,66 +1268,617 @@ class MapGenerator:
         ]
         self._rng.shuffle(free_ids)
 
+        medium_kinds = (
+            [RuinSiteKind.VILLAGE] * max(0, self._derived.village_site_count - 1)
+            + [RuinSiteKind.FARMSTEAD] * self._derived.farmstead_site_count
+            + [RuinSiteKind.OUTPOST] * self._derived.outpost_site_count
+        )
+        self._rng.shuffle(medium_kinds)
         cursor = 0
-        medium_ids = free_ids[cursor: cursor + self._derived.medium_ruin_count]
-        cursor += self._derived.medium_ruin_count
-        small_ids = free_ids[cursor: cursor + self._derived.small_ruin_count]
+        for site_kind in medium_kinds:
+            if cursor >= len(free_ids):
+                break
+            region = self._regions[free_ids[cursor]]
+            cursor += 1
+            region.kind = RegionKind.MEDIUM_RUIN
+            region.ruin_site_kind = site_kind
 
-        for region_id in medium_ids:
-            self._regions[region_id].kind = RegionKind.MEDIUM_RUIN
-
-        for region_id in small_ids:
-            self._regions[region_id].kind = RegionKind.SMALL_RUIN
+        for _ in range(self._derived.isolated_site_count):
+            if cursor >= len(free_ids):
+                break
+            region = self._regions[free_ids[cursor]]
+            cursor += 1
+            region.kind = RegionKind.SMALL_RUIN
+            region.ruin_site_kind = RuinSiteKind.ISOLATED_BUILDING
 
         for region in self._regions:
             LOGGER.info(
-                "  Region %02d kind=%s center=(%03d,%03d)",
+                "  Region %02d kind=%s site=%s center=(%03d,%03d)",
                 region.region_id,
                 region.kind.value,
+                region.ruin_site_kind.value if region.ruin_site_kind else "none",
                 region.center.x,
                 region.center.y,
             )
 
-    def _relocate_ruin_regions_to_flat_ground(self) -> None:
-        """Move ruin regions locally when a significantly flatter footprint exists."""
+    def _plan_ruin_sites(self) -> None:
+        """Plan semantic ruin sites before roads and terrain carving."""
+        LOGGER.info("Stage 4: plan semantic ruin sites on flat foundations")
+        ruin_regions = [
+            region for region in self._regions if region.ruin_site_kind is not None
+        ]
+        ruin_regions.sort(
+            key=lambda region: (
+                self._ruin_site_priority(region.ruin_site_kind),
+                region.region_id,
+            ),
+        )
+        self._terrain_guidance_metrics["ruin_sites_requested"] = len(ruin_regions)
+        requested_buildings = self._allocate_site_building_counts(ruin_regions)
+
+        for site_id, region in enumerate(ruin_regions):
+            plan = self._plan_ruin_site(
+                region,
+                site_id,
+                requested=requested_buildings.get(region.region_id, 0),
+            )
+            if plan is None:
+                skipped_kind = region.ruin_site_kind
+                self._increment_guidance_metric("ruin_sites_skipped")
+                if region.kind != RegionKind.CENTRAL_RUIN_CLEARING:
+                    region.kind = RegionKind.FOREST
+                    region.ruin_site_kind = None
+                LOGGER.warning(
+                    "  Ruin site skipped region=%02d type=%s",
+                    region.region_id,
+                    skipped_kind.value if skipped_kind else "none",
+                )
+                continue
+
+            self._ruin_sites[region.region_id] = plan
+            region.entrances = [plan.road_anchor]
+            self._increment_guidance_metric("ruin_sites_planned")
+            self._increment_guidance_metric(f"ruin_sites_{plan.kind.value.split('_')[0]}")
+            LOGGER.info(
+                "  Ruin site %02d region=%02d type=%s buildings=%s/%s "
+                "anchor=(%03d,%03d)",
+                plan.site_id,
+                region.region_id,
+                plan.kind.value,
+                len(plan.buildings),
+                plan.requested_buildings,
+                plan.road_anchor.x,
+                plan.road_anchor.y,
+            )
+
+        LOGGER.info(
+            "Stage 4 complete: sites=%s buildings=%s",
+            len(self._ruin_sites),
+            int(self._terrain_guidance_metrics["ruin_buildings_planned"]),
+        )
+
+    @staticmethod
+    def _ruin_site_priority(kind: RuinSiteKind | None) -> int:
+        """Return planning priority for one site archetype."""
+        priorities = {
+            RuinSiteKind.VILLAGE: 0,
+            RuinSiteKind.FARMSTEAD: 1,
+            RuinSiteKind.OUTPOST: 2,
+            RuinSiteKind.ISOLATED_BUILDING: 3,
+        }
+        return priorities.get(kind, 99)
+
+    def _plan_ruin_site(
+        self,
+        region: Region,
+        site_id: int,
+        *,
+        requested: int,
+    ) -> RuinSitePlan | None:
+        """Plan one site and all buildings that fit valid flat footprints."""
+        kind = region.ruin_site_kind
+        if kind is None:
+            return None
+        self._terrain_guidance_metrics["ruin_buildings_requested"] = (
+            int(self._terrain_guidance_metrics["ruin_buildings_requested"]) + requested
+        )
+        if requested <= 0:
+            return None
+
+        orientation = self._rng.choice(("east_west", "north_south"))
+        road_direction = self._rng.choice(((0, -1), (1, 0), (0, 1), (-1, 0)))
+        profile = self._site_architectural_profile(kind)
+        site_radius = self._site_radius(kind)
+        site_center = self._best_ruin_site_center(
+            region.center,
+            search_radius=site_radius + 8,
+        )
+        if site_center != region.center:
+            self._increment_guidance_metric("ruin_regions_relocated")
+            region.center = site_center
+
+        specifications = self._building_specifications(
+            kind,
+            requested=requested,
+            orientation=orientation,
+        )
+        buildings: list[RuinBuildingPlan] = []
+        site_rects: list[Rect] = []
+        road_target = Point(
+            site_center.x + road_direction[0] * (site_radius + 8),
+            site_center.y + road_direction[1] * (site_radius + 8),
+        )
+
+        for building_id, (width, height, is_main) in enumerate(specifications):
+            target = road_target if is_main else site_center
+            building = self._plan_ruin_building(
+                building_id=building_id,
+                site_center=site_center,
+                site_radius=site_radius,
+                width=width,
+                height=height,
+                orientation=orientation,
+                target=target,
+                is_main=is_main,
+                existing_site_rects=site_rects,
+                exhaustive=kind in {RuinSiteKind.VILLAGE, RuinSiteKind.FARMSTEAD},
+                reserve_site_center=(
+                    kind == RuinSiteKind.VILLAGE and requested >= 4
+                ),
+            )
+            if building is None:
+                self._increment_guidance_metric("ruin_buildings_skipped")
+                continue
+            buildings.append(building)
+            site_rects.append(building.rect)
+            self._planned_ruin_rects.append(building.rect)
+            self._increment_guidance_metric("ruin_buildings_planned")
+
+        if not buildings:
+            return None
+
+        main_building = next(
+            (building for building in buildings if building.is_main),
+            buildings[0],
+        )
+        return RuinSitePlan(
+            site_id=site_id,
+            region_id=region.region_id,
+            kind=kind,
+            center=site_center,
+            road_anchor=main_building.outside_approach,
+            orientation=orientation,
+            architectural_profile=profile,
+            requested_buildings=requested,
+            buildings=tuple(buildings),
+        )
+
+    def _allocate_site_building_counts(
+        self,
+        regions: list[Region],
+    ) -> dict[int, int]:
+        """Allocate the area-scaled building budget across semantic ruin sites."""
+        counts = {region.region_id: 0 for region in regions}
+        budget = self._derived.ruin_building_budget
+        if budget <= 0:
+            return counts
+
+        ordered = sorted(
+            regions,
+            key=lambda region: (
+                self._ruin_site_priority(region.ruin_site_kind),
+                region.region_id,
+            ),
+        )
+        for region in ordered:
+            if budget <= 0:
+                break
+            counts[region.region_id] = 1
+            budget -= 1
+
+        minimums = {
+            RuinSiteKind.VILLAGE: 5,
+            RuinSiteKind.FARMSTEAD: 3,
+            RuinSiteKind.OUTPOST: 2,
+            RuinSiteKind.ISOLATED_BUILDING: 1,
+        }
+        capacities = {
+            RuinSiteKind.VILLAGE: 14,
+            RuinSiteKind.FARMSTEAD: 6,
+            RuinSiteKind.OUTPOST: 4,
+            RuinSiteKind.ISOLATED_BUILDING: 1,
+        }
+        for region in ordered:
+            kind = region.ruin_site_kind
+            target = minimums.get(kind, 1)
+            while budget > 0 and counts[region.region_id] < target:
+                counts[region.region_id] += 1
+                budget -= 1
+
+        weighted = [
+            region
+            for region in ordered
+            for _ in range(
+                3
+                if region.ruin_site_kind == RuinSiteKind.VILLAGE
+                else 2
+                if region.ruin_site_kind == RuinSiteKind.FARMSTEAD
+                else 1
+            )
+        ]
+        while budget > 0:
+            progress = False
+            for region in weighted:
+                kind = region.ruin_site_kind
+                capacity = capacities.get(kind, 1)
+                if counts[region.region_id] >= capacity:
+                    continue
+                counts[region.region_id] += 1
+                budget -= 1
+                progress = True
+                if budget <= 0:
+                    break
+            if not progress:
+                break
+        return counts
+
+    @staticmethod
+    def _site_architectural_profile(kind: RuinSiteKind) -> str:
+        """Return the shared architecture profile for a site archetype."""
+        return {
+            RuinSiteKind.ISOLATED_BUILDING: "isolated_rural",
+            RuinSiteKind.FARMSTEAD: "rural_cluster",
+            RuinSiteKind.VILLAGE: "village_street",
+            RuinSiteKind.OUTPOST: "compact_outpost",
+        }[kind]
+
+    def _site_radius(self, kind: RuinSiteKind) -> int:
+        """Return local planning radius for a ruin site."""
+        return {
+            RuinSiteKind.ISOLATED_BUILDING: 10,
+            RuinSiteKind.FARMSTEAD: 16,
+            RuinSiteKind.OUTPOST: 14,
+            RuinSiteKind.VILLAGE: self._derived.central_clearing_radius + 8,
+        }[kind]
+
+    def _best_ruin_site_center(self, center: Point, *, search_radius: int) -> Point:
+        """Return a stable nearby center with good flat-ground availability."""
         if self._guidance is None:
-            return
-        for region in self._regions:
-            if region.kind not in {
-                RegionKind.SMALL_RUIN,
-                RegionKind.MEDIUM_RUIN,
-                RegionKind.CENTRAL_RUIN_CLEARING,
-            }:
-                continue
-            radius = {
-                RegionKind.SMALL_RUIN: 7,
-                RegionKind.MEDIUM_RUIN: 11,
-                RegionKind.CENTRAL_RUIN_CLEARING: min(14, self._derived.central_clearing_radius),
-            }[region.kind]
-            current_score = self._guidance.footprint_score(region.center.x, region.center.y, radius)
-            search_radius = 16 if region.kind != RegionKind.CENTRAL_RUIN_CLEARING else 24
-            other_centers = tuple(
-                other.center for other in self._regions if other.region_id != region.region_id
+            return center
+        best = center
+        best_score = self._guidance.footprint_score(center.x, center.y, 4)
+        for _ in range(48):
+            candidate = Point(
+                self._clamp_int(
+                    center.x + self._rng.randint(-search_radius, search_radius),
+                    8,
+                    self._grid.width - 9,
+                ),
+                self._clamp_int(
+                    center.y + self._rng.randint(-search_radius, search_radius),
+                    8,
+                    self._grid.height - 9,
+                ),
             )
-            candidate = self._best_guided_candidate(
-                left=max(10, region.center.x - search_radius),
-                right=min(self._grid.width - 11, region.center.x + search_radius),
-                top=max(10, region.center.y - search_radius),
-                bottom=min(self._grid.height - 11, region.center.y + search_radius),
-                radius=radius,
-                attempts=36,
-                existing=other_centers,
-                minimum_distance=10,
-            )
-            if candidate is None:
+            score = self._guidance.footprint_score(candidate.x, candidate.y, 4)
+            if score > best_score:
+                best = candidate
+                best_score = score
+        return best
+
+    def _building_specifications(
+        self,
+        kind: RuinSiteKind,
+        *,
+        requested: int,
+        orientation: str,
+    ) -> list[tuple[int, int, bool]]:
+        """Build related but non-identical dimensions for one ruin site."""
+        output: list[tuple[int, int, bool]] = []
+        for index in range(requested):
+            is_main = index == 0
+            if kind == RuinSiteKind.ISOLATED_BUILDING:
+                width = self._rng.randint(8, 13)
+                height = self._rng.randint(6, 10)
+            elif kind == RuinSiteKind.FARMSTEAD:
+                width = self._rng.randint(10, 15) if is_main else self._rng.randint(6, 10)
+                height = self._rng.randint(7, 11) if is_main else self._rng.randint(5, 8)
+            elif kind == RuinSiteKind.OUTPOST:
+                width = self._rng.randint(11, 16) if is_main else self._rng.randint(7, 10)
+                height = self._rng.randint(8, 12) if is_main else self._rng.randint(6, 8)
+            else:
+                width = self._rng.randint(11, 15) if is_main else self._rng.randint(7, 13)
+                height = self._rng.randint(8, 12) if is_main else self._rng.randint(6, 10)
+            if orientation == "north_south" and width > height:
+                width, height = height, width
+            elif orientation == "east_west" and height > width:
+                width, height = height, width
+            output.append((width, height, is_main))
+        return output
+
+    def _plan_ruin_building(
+        self,
+        *,
+        building_id: int,
+        site_center: Point,
+        site_radius: int,
+        width: int,
+        height: int,
+        orientation: str,
+        target: Point,
+        is_main: bool,
+        existing_site_rects: list[Rect],
+        exhaustive: bool,
+        reserve_site_center: bool,
+    ) -> RuinBuildingPlan | None:
+        """Find one exact flat building footprint with a valid approach tile."""
+        centers = self._ruin_building_candidate_centers(
+            site_center,
+            site_radius=site_radius,
+            attempts=96 if is_main else 72,
+            exhaustive=exhaustive,
+        )
+        for candidate_width, candidate_height in self._building_size_variants(
+            width,
+            height,
+            is_main=is_main,
+            orientation=orientation,
+        ):
+            for center in centers:
+                self._increment_guidance_metric("ruin_candidates_evaluated")
+                rect = self._rect_around_exact(
+                    center,
+                    candidate_width,
+                    candidate_height,
+                )
+                if rect is None:
+                    self._increment_guidance_metric("ruin_candidates_rejected_edge")
+                    continue
+                if reserve_site_center and self._rect_contains(rect.expanded(3), site_center):
+                    self._increment_guidance_metric("ruin_candidates_rejected_overlap")
+                    continue
+                if self._rect_overlaps_any(rect.expanded(2), existing_site_rects):
+                    self._increment_guidance_metric("ruin_candidates_rejected_overlap")
+                    continue
+                if self._rect_overlaps_any(rect.expanded(5), self._planned_ruin_rects):
+                    self._increment_guidance_metric("ruin_candidates_rejected_overlap")
+                    continue
+                foundation = self._flat_foundation_level(rect)
+                if foundation is None:
+                    continue
+                entrance = self._select_planned_entrance(
+                    rect,
+                    foundation=foundation,
+                    target=target,
+                )
+                if entrance is None:
+                    self._increment_guidance_metric("ruin_candidates_rejected_approach")
+                    continue
+                entrance_point, outside_approach = entrance
+                return RuinBuildingPlan(
+                    building_id=building_id,
+                    rect=rect,
+                    foundation_elevation=foundation,
+                    entrance=entrance_point,
+                    outside_approach=outside_approach,
+                    orientation=orientation,
+                    is_main=is_main,
+                )
+        return None
+
+    @staticmethod
+    def _building_size_variants(
+        width: int,
+        height: int,
+        *,
+        is_main: bool,
+        orientation: str,
+    ) -> list[tuple[int, int]]:
+        """Return progressively smaller dimensions for the same building role."""
+        minimum_long = 7 if is_main else 6
+        minimum_short = 6 if is_main else 5
+        variants: list[tuple[int, int]] = []
+        for shrink in (0, 2, 4, 6):
+            candidate_width = max(minimum_short, width - shrink)
+            candidate_height = max(minimum_short, height - shrink)
+            if orientation == "east_west":
+                candidate_width = max(minimum_long, candidate_width)
+                if candidate_height > candidate_width:
+                    candidate_width, candidate_height = candidate_height, candidate_width
+            else:
+                candidate_height = max(minimum_long, candidate_height)
+                if candidate_width > candidate_height:
+                    candidate_width, candidate_height = candidate_height, candidate_width
+            candidate = (candidate_width, candidate_height)
+            if candidate not in variants:
+                variants.append(candidate)
+        return variants
+
+    def _ruin_building_candidate_centers(
+        self,
+        site_center: Point,
+        *,
+        site_radius: int,
+        attempts: int,
+        exhaustive: bool,
+    ) -> list[Point]:
+        """Return stable randomized and optional systematic footprint centers."""
+        candidates = [site_center]
+        for _ in range(attempts):
+            dx = self._rng.randint(-site_radius, site_radius)
+            dy = self._rng.randint(-site_radius, site_radius)
+            if dx * dx + dy * dy > site_radius * site_radius:
                 continue
-            candidate_score = self._guidance.footprint_score(candidate.x, candidate.y, radius)
-            if candidate_score < current_score + 0.06:
+            candidates.append(Point(site_center.x + dx, site_center.y + dy))
+        if exhaustive:
+            systematic = [
+                Point(x, y)
+                for y in range(
+                    max(6, site_center.y - site_radius - 12),
+                    min(self._grid.height - 6, site_center.y + site_radius + 13),
+                    2,
+                )
+                for x in range(
+                    max(6, site_center.x - site_radius - 12),
+                    min(self._grid.width - 6, site_center.x + site_radius + 13),
+                    2,
+                )
+            ]
+            systematic.sort(key=lambda point: self._manhattan(point, site_center))
+            candidates.extend(systematic)
+        unique: list[Point] = []
+        seen: set[Point] = set()
+        for candidate in candidates:
+            if candidate in seen:
                 continue
-            region.center = candidate
-            self._terrain_guidance_metrics["ruin_regions_relocated"] = (
-                int(self._terrain_guidance_metrics["ruin_regions_relocated"]) + 1
-            )
+            seen.add(candidate)
+            unique.append(candidate)
+        return unique
+
+    def _flat_foundation_level(self, rect: Rect) -> int | None:
+        """Return the exact natural level for a valid building footprint."""
+        if self._guidance is None or self._guidance.natural_level_rows is None:
+            return 0
+        levels: set[int] = set()
+        for y in range(rect.top, rect.bottom + 1):
+            for x in range(rect.left, rect.right + 1):
+                level = self._guidance.natural_level_at(x, y)
+                if level is None:
+                    self._increment_guidance_metric("ruin_candidates_rejected_not_flat")
+                    return None
+                if level < 0:
+                    self._increment_guidance_metric("ruin_candidates_rejected_negative")
+                    return None
+                levels.add(level)
+                if len(levels) > 1:
+                    self._increment_guidance_metric("ruin_candidates_rejected_not_flat")
+                    return None
+        if not levels:
+            self._increment_guidance_metric("ruin_candidates_rejected_not_flat")
+            return None
+        foundation = next(iter(levels))
+        expanded = rect.expanded(1)
+        for y in range(expanded.top, expanded.bottom + 1):
+            for x in range(expanded.left, expanded.right + 1):
+                point = Point(x, y)
+                if not self._grid.is_inside(point):
+                    self._increment_guidance_metric("ruin_candidates_rejected_edge")
+                    return None
+                level = self._guidance.natural_level_at(x, y)
+                if level is None or level < 0 or abs(level - foundation) > 1:
+                    self._increment_guidance_metric("ruin_candidates_rejected_buffer")
+                    return None
+                if self._guidance.is_natural_barrier(x, y):
+                    self._increment_guidance_metric("ruin_candidates_rejected_buffer")
+                    return None
+        return foundation
+
+    def _select_planned_entrance(
+        self,
+        rect: Rect,
+        *,
+        foundation: int,
+        target: Point,
+    ) -> tuple[Point, Point] | None:
+        """Choose an entrance with a same-level outside approach toward a target."""
+        candidates = self._planned_entrance_candidates(rect)
+        candidates.sort(key=lambda item: self._manhattan(item[1], target))
+        for entrance, outside in candidates:
+            if not self._grid.is_inside(outside):
+                continue
+            if self._guidance is not None:
+                level = self._guidance.natural_level_at(outside.x, outside.y)
+                if level is not None and level != foundation:
+                    continue
+                if self._guidance.is_natural_barrier(outside.x, outside.y):
+                    continue
+            return entrance, outside
+        return None
+
+    @staticmethod
+    def _planned_entrance_candidates(rect: Rect) -> list[tuple[Point, Point]]:
+        """Return boundary entrances paired with one-tile outside approaches."""
+        mid_x = (rect.left + rect.right) // 2
+        mid_y = (rect.top + rect.bottom) // 2
+        quarter_x = max(1, rect.width // 4)
+        quarter_y = max(1, rect.height // 4)
+        return [
+            (Point(mid_x, rect.top), Point(mid_x, rect.top - 1)),
+            (Point(mid_x, rect.bottom), Point(mid_x, rect.bottom + 1)),
+            (Point(rect.left, mid_y), Point(rect.left - 1, mid_y)),
+            (Point(rect.right, mid_y), Point(rect.right + 1, mid_y)),
+            (
+                Point(rect.left + quarter_x, rect.top),
+                Point(rect.left + quarter_x, rect.top - 1),
+            ),
+            (
+                Point(rect.right - quarter_x, rect.bottom),
+                Point(rect.right - quarter_x, rect.bottom + 1),
+            ),
+            (
+                Point(rect.left, rect.bottom - quarter_y),
+                Point(rect.left - 1, rect.bottom - quarter_y),
+            ),
+            (
+                Point(rect.right, rect.top + quarter_y),
+                Point(rect.right + 1, rect.top + quarter_y),
+            ),
+        ]
+
+    def _building_foundation_points(self, building: RuinBuildingPlan) -> set[Point]:
+        """Return all terrain points that must remain on the foundation level."""
+        points = {
+            Point(x, y)
+            for y in range(building.rect.top, building.rect.bottom + 1)
+            for x in range(building.rect.left, building.rect.right + 1)
+        }
+        points.add(building.entrance)
+        points.add(building.outside_approach)
+        return points
+
+    def _rect_around_exact(self, center: Point, width: int, height: int) -> Rect | None:
+        """Build an exact inclusive rectangle or return None near map edges."""
+        left = center.x - (width - 1) // 2
+        top = center.y - (height - 1) // 2
+        rect = Rect(left, top, left + width - 1, top + height - 1)
+        if (
+            rect.left < 4
+            or rect.top < 4
+            or rect.right > self._grid.width - 5
+            or rect.bottom > self._grid.height - 5
+        ):
+            return None
+        return rect
+
+    @staticmethod
+    def _rect_contains(rect: Rect, point: Point) -> bool:
+        """Return whether a rectangle contains a point."""
+        return rect.left <= point.x <= rect.right and rect.top <= point.y <= rect.bottom
+
+    @staticmethod
+    def _rects_overlap(first: Rect, second: Rect) -> bool:
+        """Return whether two inclusive rectangles overlap."""
+        return not (
+            first.right < second.left
+            or second.right < first.left
+            or first.bottom < second.top
+            or second.bottom < first.top
+        )
+
+    def _rect_overlaps_any(self, rect: Rect, others: Iterable[Rect]) -> bool:
+        """Return whether a rectangle overlaps any rectangle in an iterable."""
+        return any(self._rects_overlap(rect, other) for other in others)
+
+    def _increment_guidance_metric(self, key: str, amount: int = 1) -> None:
+        """Increment one integer terrain-guidance metric."""
+        self._terrain_guidance_metrics[key] = int(
+            self._terrain_guidance_metrics.get(key, 0)
+        ) + amount
+
+    @staticmethod
+    def _clamp_int(value: int, minimum: int, maximum: int) -> int:
+        """Clamp an integer to an inclusive range."""
+        return max(minimum, min(value, maximum))
 
     def _build_region_graph(self) -> None:
         LOGGER.info("Stage 4: build connected region graph")
@@ -1168,12 +1930,8 @@ class MapGenerator:
     def _carve_regions(self) -> None:
         LOGGER.info("Stage 5: carve region contents")
         for region in self._regions:
-            if region.kind == RegionKind.CENTRAL_RUIN_CLEARING:
-                self._carve_central_ruin_clearing(region)
-            elif region.kind == RegionKind.SMALL_RUIN:
-                self._carve_small_ruin(region)
-            elif region.kind == RegionKind.MEDIUM_RUIN:
-                self._carve_medium_ruin(region)
+            if region.region_id in self._ruin_sites:
+                self._carve_planned_ruin_site(region)
             else:
                 self._carve_forest_clearing(region)
 
@@ -1185,80 +1943,53 @@ class MapGenerator:
         LOGGER.info("  Forest clearing region=%02d radius=%s", region.region_id, radius)
         self._carve_circle(region.center, radius, TileType.GRASS)
 
-    def _carve_small_ruin(self, region: Region) -> None:
-        radius = self._rng.randint(4, 7)
-        self._carve_circle(region.center, radius, TileType.GRASS)
-        rect = self._rect_around(
-            region.center,
-            self._rng.randint(self._derived.small_ruin_min_width, self._derived.small_ruin_max_width),
-            self._rng.randint(self._derived.small_ruin_min_height, self._derived.small_ruin_max_height),
-        )
-        LOGGER.info("  Small ruin region=%02d rect=%s", region.region_id, rect)
-        if self._guidance is not None and self._guidance.footprint_level_delta(region.center.x, region.center.y, 7) > 2:
-            self._terrain_guidance_metrics["ruin_bad_footprints"] = int(self._terrain_guidance_metrics["ruin_bad_footprints"]) + 1
-        self._carve_ruin_building(rect, region, self._rng.randint(1, 2))
-
-    def _carve_medium_ruin(self, region: Region) -> None:
-        radius = self._rng.randint(8, 12)
-        self._carve_circle(region.center, radius, TileType.GRASS)
-        rect = self._rect_around(
-            region.center,
-            self._rng.randint(self._derived.medium_ruin_min_width, self._derived.medium_ruin_max_width),
-            self._rng.randint(self._derived.medium_ruin_min_height, self._derived.medium_ruin_max_height),
-        )
-        LOGGER.info("  Medium ruin region=%02d rect=%s", region.region_id, rect)
-        if self._guidance is not None and self._guidance.footprint_level_delta(region.center.x, region.center.y, 11) > 2:
-            self._terrain_guidance_metrics["ruin_bad_footprints"] = int(self._terrain_guidance_metrics["ruin_bad_footprints"]) + 1
-        self._carve_ruin_building(rect, region, self._rng.randint(2, 4))
-        self._add_internal_ruin_walls(rect)
-
-    def _carve_central_ruin_clearing(self, region: Region) -> None:
-        radius = self._derived.central_clearing_radius
-        building_count = self._rng.randint(
-            self._derived.settlement_min_buildings,
-            self._derived.settlement_max_buildings,
-        )
+    def _carve_planned_ruin_site(self, region: Region) -> None:
+        """Carve one previously planned semantic ruin site."""
+        site = self._ruin_sites[region.region_id]
         LOGGER.info(
-            "  Central ruin clearing region=%02d radius=%s buildings=%s",
-            region.region_id,
-            radius,
-            building_count,
+            "  Carve ruin site=%02d type=%s buildings=%s profile=%s",
+            site.site_id,
+            site.kind.value,
+            len(site.buildings),
+            site.architectural_profile,
         )
-        self._carve_circle(region.center, radius, TileType.GRASS)
-
-        building_centers = [region.center]
-        for _ in range(building_count - 1):
-            for _attempt in range(50):
-                dx = self._rng.randint(-radius + 4, radius - 4)
-                dy = self._rng.randint(-radius + 4, radius - 4)
-                if dx * dx + dy * dy <= (radius - 3) * (radius - 3):
-                    candidate = Point(region.center.x + dx, region.center.y + dy)
-                    if (
-                        self._guidance is not None
-                        and self._guidance.footprint_score(candidate.x, candidate.y, 6) < 0.42
-                    ):
-                        continue
-                    building_centers.append(candidate)
-                    break
+        if site.kind == RuinSiteKind.VILLAGE:
+            self._carve_circle(site.center, 3, TileType.GRASS)
+        elif len(site.buildings) > 1:
+            self._carve_circle(site.center, 2, TileType.GRASS)
 
         all_entrances: list[Point] = []
-        for index, center in enumerate(building_centers):
-            rect = self._rect_around(
-                center,
-                self._rng.randint(8, 15),
-                self._rng.randint(7, 12),
+        for building in site.buildings:
+            self._carve_rect(building.rect.expanded(2), TileType.GRASS)
+            temp_region = Region(region.region_id, building.rect.center)
+            self._carve_ruin_building(
+                building.rect,
+                temp_region,
+                entrance_count=1,
+                planned_entrances=(building.entrance,),
             )
-            LOGGER.info("    Central building %02d rect=%s", index, rect)
-            temp_region = Region(region.region_id, center)
-            self._carve_ruin_building(rect, temp_region, self._rng.randint(1, 3))
+            if site.kind != RuinSiteKind.ISOLATED_BUILDING:
+                self._add_internal_ruin_walls(building.rect)
             all_entrances.extend(temp_region.entrances)
 
-        region.entrances = all_entrances or [region.center]
+        region.entrances = [site.road_anchor]
+        if not all_entrances:
+            region.entrances = [site.center]
 
-        for first, second in zip(building_centers, building_centers[1:]):
-            self._carve_old_road(first, second, is_loop=False)
+    def _carve_rect(self, rect: Rect, tile_type: TileType) -> None:
+        """Carve an inclusive rectangle clipped to the map."""
+        for y in range(max(0, rect.top), min(self._grid.height, rect.bottom + 1)):
+            for x in range(max(0, rect.left), min(self._grid.width, rect.right + 1)):
+                self._set_tile(Point(x, y), tile_type)
 
-    def _carve_ruin_building(self, rect: Rect, region: Region, entrance_count: int) -> None:
+    def _carve_ruin_building(
+        self,
+        rect: Rect,
+        region: Region,
+        entrance_count: int,
+        planned_entrances: Iterable[Point] | None = None,
+    ) -> None:
+        """Carve one simple building using planned or legacy entrances."""
         for y in range(rect.top, rect.bottom + 1):
             for x in range(rect.left, rect.right + 1):
                 point = Point(x, y)
@@ -1266,7 +1997,11 @@ class MapGenerator:
                 self._set_tile(point, TileType.RUIN_WALL if is_wall else TileType.RUIN_FLOOR)
 
         self._damage_ruin_edges(rect)
-        entrances = self._ruin_entrances(rect, entrance_count)
+        entrances = (
+            list(planned_entrances)
+            if planned_entrances is not None
+            else self._ruin_entrances(rect, entrance_count)
+        )
         region.entrances.extend(entrances)
 
         for entrance in entrances:
@@ -1284,14 +2019,32 @@ class MapGenerator:
                 if self._rng.random() < 0.14:
                     self._set_tile(Point(x, y), TileType.RUIN_FLOOR)
 
-        for corner in (
-            Point(rect.left, rect.top),
-            Point(rect.right, rect.top),
-            Point(rect.left, rect.bottom),
-            Point(rect.right, rect.bottom),
-        ):
+        corner_fragments = (
+            (
+                Point(rect.left, rect.top),
+                Point(rect.left + 1, rect.top),
+                Point(rect.left, rect.top + 1),
+            ),
+            (
+                Point(rect.right, rect.top),
+                Point(rect.right - 1, rect.top),
+                Point(rect.right, rect.top + 1),
+            ),
+            (
+                Point(rect.left, rect.bottom),
+                Point(rect.left + 1, rect.bottom),
+                Point(rect.left, rect.bottom - 1),
+            ),
+            (
+                Point(rect.right, rect.bottom),
+                Point(rect.right - 1, rect.bottom),
+                Point(rect.right, rect.bottom - 1),
+            ),
+        )
+        for fragment in corner_fragments:
             if self._rng.random() < 0.45:
-                self._carve_circle(corner, 1, TileType.RUIN_FLOOR)
+                for point in fragment:
+                    self._set_tile(point, TileType.RUIN_FLOOR)
 
     def _add_internal_ruin_walls(self, rect: Rect) -> None:
         if rect.right - rect.left < 8 or rect.bottom - rect.top < 7:
@@ -4161,6 +4914,13 @@ def main() -> int:
                     start=generator.start_point(),
                     tactical_data=tactical_data,
                 ).build()
+                foundation_cells = generator.ruin_foundation_cells()
+                tactical_data["ruin_sites"] = generator.ruin_sites_metadata()
+                tactical_data["elevation"] = {
+                    "default": 0,
+                    "cells": foundation_cells,
+                    "source": "ruin_site_foundations_v1",
+                }
                 tactical_data["connectivity_repair"] = generator.connectivity_repair_metrics()
                 tactical_data["terrain_guidance"] = generator.terrain_guidance_metrics()
                 TacticalExporter.export(tactical_data, tactical_out)

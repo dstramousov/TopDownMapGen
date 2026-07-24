@@ -234,6 +234,8 @@ class TacticalOptimizer:
             "optimization": debug_data.get("optimization", {}),
             "connectivity_repair": debug_data.get("connectivity_repair", {}),
             "terrain_guidance": debug_data.get("terrain_guidance", {}),
+            "ruin_sites": debug_data.get("ruin_sites", {}),
+            "elevation": debug_data.get("elevation", {}),
         }
 
     def _summary(

@@ -310,6 +310,16 @@ def build_validation_report(
             height=height,
         ),
         "elevation_levels_valid": _elevation_levels_valid(runtime_data),
+        "ruin_sites_valid": _ruin_sites_valid(
+            runtime_data,
+            width=width,
+            height=height,
+        ),
+        "ruin_site_foundations_flat": _ruin_site_foundations_flat(
+            runtime_data,
+            width=width,
+            height=height,
+        ),
         "places_non_empty": bool(_places(runtime_data)),
         "places_have_unique_ids": _places_have_unique_ids(runtime_data),
         "places_have_valid_types": _places_have_valid_types(runtime_data),
@@ -2063,6 +2073,129 @@ def _elevation_cells(runtime_data: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(elevation, dict):
         return []
     return _dict_list(elevation.get("cells"))
+
+
+def _ruin_sites_valid(
+    runtime_data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    """Return whether optional ruin-site planner metadata is structurally valid."""
+    payload = runtime_data.get("ruin_sites")
+    if payload is None:
+        return True
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("schema_version") != "ruin-site-plan-v1":
+        return False
+    sites = payload.get("sites")
+    if not isinstance(sites, list):
+        return False
+    allowed_types = {"isolated_building", "farmstead", "village", "outpost"}
+    site_ids: set[int] = set()
+    for site in sites:
+        if not isinstance(site, dict):
+            return False
+        site_id = site.get("id")
+        if not isinstance(site_id, int) or site_id in site_ids:
+            return False
+        site_ids.add(site_id)
+        if site.get("type") not in allowed_types:
+            return False
+        anchor = _point(site.get("road_anchor"))
+        center = _point(site.get("center"))
+        if anchor is None or center is None:
+            return False
+        if not _point_in_bounds(anchor, width=width, height=height):
+            return False
+        if not _point_in_bounds(center, width=width, height=height):
+            return False
+        buildings = site.get("buildings")
+        if not isinstance(buildings, list) or not buildings:
+            return False
+        building_ids: set[int] = set()
+        for building in buildings:
+            if not isinstance(building, dict):
+                return False
+            building_id = building.get("id")
+            if not isinstance(building_id, int) or building_id in building_ids:
+                return False
+            building_ids.add(building_id)
+            rect = building.get("rect")
+            if not isinstance(rect, dict):
+                return False
+            coordinates = [rect.get(key) for key in ("left", "top", "right", "bottom")]
+            if not all(isinstance(value, int) for value in coordinates):
+                return False
+            left, top, right, bottom = coordinates
+            if left > right or top > bottom:
+                return False
+            if not (0 <= left <= right < width and 0 <= top <= bottom < height):
+                return False
+            foundation = building.get("foundation_elevation")
+            if not isinstance(foundation, int) or foundation < 0:
+                return False
+            for key in ("entrance", "outside_approach"):
+                point = _point(building.get(key))
+                if point is None or not _point_in_bounds(point, width=width, height=height):
+                    return False
+    return True
+
+
+def _ruin_site_foundations_flat(
+    runtime_data: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    """Return whether every planned building remains on its foundation level."""
+    payload = runtime_data.get("ruin_sites")
+    if payload is None:
+        return True
+    if not isinstance(payload, dict):
+        return False
+    elevation = runtime_data.get("elevation")
+    if not isinstance(elevation, dict):
+        return False
+    try:
+        default_level = int(elevation.get("default", 0))
+    except (TypeError, ValueError):
+        return False
+    levels: dict[tuple[int, int], int] = {}
+    for cell in _elevation_cells(runtime_data):
+        point = _point_from_xy(cell)
+        if point is None:
+            return False
+        try:
+            levels[point] = int(cell.get("level"))
+        except (TypeError, ValueError):
+            return False
+    for site in _dict_list(payload.get("sites")):
+        for building in _dict_list(site.get("buildings")):
+            rect = building.get("rect")
+            if not isinstance(rect, dict):
+                return False
+            try:
+                left = int(rect["left"])
+                top = int(rect["top"])
+                right = int(rect["right"])
+                bottom = int(rect["bottom"])
+                foundation = int(building["foundation_elevation"])
+            except (KeyError, TypeError, ValueError):
+                return False
+            if not (0 <= left <= right < width and 0 <= top <= bottom < height):
+                return False
+            for y in range(top, bottom + 1):
+                for x in range(left, right + 1):
+                    if levels.get((x, y), default_level) != foundation:
+                        return False
+            approach = _point(building.get("outside_approach"))
+            if approach is None:
+                return False
+            if levels.get(approach, default_level) != foundation:
+                return False
+    return True
 
 
 def _runtime_object_points(item: dict[str, Any]) -> list[tuple[int, int]]:

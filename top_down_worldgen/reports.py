@@ -201,7 +201,26 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                     f"  кандидатов регионов: {evaluated}, отклонено крутых: {rejected}, "
                     f"fallback: {int(terrain_guidance.get('region_steep_fallbacks', 0))}"
                 ),
-                f"  перемещено руин на ровные площадки: {int(terrain_guidance.get('ruin_regions_relocated', 0))}",
+                (
+                    "  ruin sites: "
+                    f"{int(terrain_guidance.get('ruin_sites_planned', 0))}/"
+                    f"{int(terrain_guidance.get('ruin_sites_requested', 0))}, "
+                    f"пропущено: {int(terrain_guidance.get('ruin_sites_skipped', 0))}"
+                ),
+                (
+                    "  здания руин: "
+                    f"{int(terrain_guidance.get('ruin_buildings_planned', 0))}/"
+                    f"{int(terrain_guidance.get('ruin_buildings_requested', 0))}, "
+                    f"foundation cells: {int(terrain_guidance.get('ruin_foundation_cells', 0))}"
+                ),
+                (
+                    "  типы sites: "
+                    f"деревни={int(terrain_guidance.get('ruin_sites_village', 0))}, "
+                    f"хутора={int(terrain_guidance.get('ruin_sites_farmstead', 0))}, "
+                    f"посты={int(terrain_guidance.get('ruin_sites_outpost', 0))}, "
+                    f"одиночные={int(terrain_guidance.get('ruin_sites_isolated', 0))}"
+                ),
+                f"  перемещено центров sites: {int(terrain_guidance.get('ruin_regions_relocated', 0))}",
                 f"  маршрутов по рельефу: {guided_routes}, fallback: {fallback_routes}",
                 f"  средний локальный уклон дорог: {average_road_slope:.4f}",
                 f"  тайлов дорог на крутых участках: {steep_road_tiles}",
@@ -213,7 +232,13 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                 f"  сохранено естественных барьеров от дорог: {int(terrain_guidance.get('path_barrier_tiles_skipped', 0))}",
                 f"  отклонено неподходящих болотных зон: {int(terrain_guidance.get('wetland_candidates_rejected', 0))}",
                 f"  отклонено неподходящих лесных зон: {int(terrain_guidance.get('forest_candidates_rejected', 0))}",
-                f"  руин с плохим footprint: {int(terrain_guidance.get('ruin_bad_footprints', 0))}",
+                (
+                    "  отклонено building candidates: "
+                    f"не плоские={int(terrain_guidance.get('ruin_candidates_rejected_not_flat', 0))}, "
+                    f"ниже 0={int(terrain_guidance.get('ruin_candidates_rejected_negative', 0))}, "
+                    f"buffer={int(terrain_guidance.get('ruin_candidates_rejected_buffer', 0))}, "
+                    f"overlap={int(terrain_guidance.get('ruin_candidates_rejected_overlap', 0))}"
+                ),
             ]
         )
 
