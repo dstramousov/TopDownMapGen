@@ -248,6 +248,8 @@ def _build_region_sections(
     cover_values = bytearray()
     concealment_values = bytearray()
     structure_height_values = bytearray()
+    structure_type_values = bytearray()
+    structure_micro_mask_values: list[int] = []
     vegetation_type_values = bytearray()
     vegetation_height_values = bytearray()
     for y in range(origin_y, origin_y + region_height):
@@ -267,6 +269,8 @@ def _build_region_sections(
             cover_values.append(_quantize_unit(source.cover_rows[y][x]))
             concealment_values.append(_quantize_unit(source.concealment_rows[y][x]))
             structure_height_values.append(source.structure_height_rows[y][x])
+            structure_type_values.append(source.structure_type_rows[y][x])
+            structure_micro_mask_values.append(source.structure_micro_mask_rows[y][x])
             vegetation_type_values.append(source.vegetation_type_rows[y][x])
             vegetation_height_values.append(source.vegetation_height_rows[y][x])
     common = {
@@ -346,6 +350,22 @@ def _build_region_sections(
             bytes(structure_height_values),
             tile_count,
             1,
+            **common,
+        ),
+        _section(
+            SectionType.STRUCTURE_TYPE_U8,
+            REGIONAL_GRID_FLAGS,
+            bytes(structure_type_values),
+            tile_count,
+            1,
+            **common,
+        ),
+        _section(
+            SectionType.STRUCTURE_MICRO_MASK_U16,
+            REGIONAL_GRID_FLAGS,
+            struct.pack(f"<{tile_count}H", *structure_micro_mask_values),
+            tile_count,
+            2,
             **common,
         ),
         _section(

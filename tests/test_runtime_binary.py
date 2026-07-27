@@ -32,7 +32,7 @@ def test_runtime_binary_roundtrip_and_determinism(tmp_path: Path) -> None:
     assert len(
         container.sections_of_type(int(SectionType.STRUCTURE_HEIGHT_U8))
     ) == 1
-    assert container.header.format_minor == 2
+    assert container.header.format_minor == 3
     assert len(
         container.sections_of_type(int(SectionType.VEGETATION_TYPE_U8))
     ) == 1
@@ -153,7 +153,7 @@ def _source(*, width: int, height: int) -> RuntimeBinarySource:
         generator_version="0.0.113",
         pipeline_version="pipeline-v1",
         profile="test",
-        map_schema="map-package-map-v13",
+        map_schema="map-package-map-v14",
         package_schema="map-package-v1",
         terrain_rows=terrain_rows,
         movement_rows=movement_rows,
@@ -168,6 +168,14 @@ def _source(*, width: int, height: int) -> RuntimeBinarySource:
                 2 if terrain_rows[y][x] == "ruin_wall_blocker" else 0
                 for x in range(width)
             ]
+            for y in range(height)
+        ],
+        structure_type_rows=[
+            [1 if terrain_rows[y][x] == "ruin_wall_blocker" else 0 for x in range(width)]
+            for y in range(height)
+        ],
+        structure_micro_mask_rows=[
+            [65535 if terrain_rows[y][x] == "ruin_wall_blocker" else 0 for x in range(width)]
             for y in range(height)
         ],
         vegetation_type_rows=[

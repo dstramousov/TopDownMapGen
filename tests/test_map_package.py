@@ -54,6 +54,12 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     structure_height = json.loads(
         outputs.map_package_structure_height.read_text(encoding="utf-8"),
     )
+    structure_type = json.loads(
+        outputs.map_package_structure_type.read_text(encoding="utf-8"),
+    )
+    structure_micro_geometry = json.loads(
+        outputs.map_package_structure_micro_geometry.read_text(encoding="utf-8"),
+    )
     vegetation_type = json.loads(
         outputs.map_package_vegetation_type.read_text(encoding="utf-8"),
     )
@@ -98,7 +104,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
     )
 
-    assert package_index["schema_version"] == "map-package-map-v13"
+    assert package_index["schema_version"] == "map-package-map-v14"
     assert package_index["dimensions"]["width_tiles"] == 2
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
@@ -106,7 +112,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["runtime_grids"] == "runtime_grids.json"
     assert package_index["runtime_binary"]["path"] == "map_runtime.vxmap"
     assert package_index["runtime_binary"]["format"] == "vxmap-runtime-v1"
-    assert package_index["runtime_binary"]["format_minor"] == 2
+    assert package_index["runtime_binary"]["format_minor"] == 3
     assert len(package_index["runtime_binary"]["build_id"]) == 32
     assert outputs.map_package_runtime_binary.exists()
     assert package_index["world_graph"] == "world_graph.json"
@@ -119,6 +125,10 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["layers"]["terrain"] == "layers/terrain.json"
     assert package_index["layers"]["structure_height"] == (
         "layers/structure_height.json"
+    )
+    assert package_index["layers"]["structure_type"] == "layers/structure_type.json"
+    assert package_index["layers"]["structure_micro_geometry"] == (
+        "layers/structure_micro_geometry.json"
     )
     assert package_index["layers"]["vegetation_type"] == (
         "layers/vegetation_type.json"
@@ -145,6 +155,10 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert structure_height["units"] == "logical_levels_above_ground"
     assert structure_height["ground_reference"] == "elevation_plus_one"
     assert structure_height["rows"] == [[0, 0], [0, 0]]
+    assert structure_type["schema_version"] == "structure-type-layer-v1"
+    assert structure_type["rows"] == [[0, 0], [0, 0]]
+    assert structure_micro_geometry["division"] == 4
+    assert structure_micro_geometry["cells"] == []
     assert vegetation_type["schema_version"] == "vegetation-type-layer-v1"
     assert vegetation_type["rows"] == [[0, 0], [0, 0]]
     assert vegetation_type["dictionary"]["1"] == "tree"

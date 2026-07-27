@@ -71,6 +71,7 @@ def materialize_fortress_shell(
 
     mutable_rows = [list(row) for row in rows]
     structure_heights: list[list[int]] = []
+    structure_types: list[list[int | str]] = []
     wall_tiles = 0
     tower_tiles = 0
     gate_tiles = 0
@@ -83,6 +84,7 @@ def materialize_fortress_shell(
             if value == PLAN_WALL:
                 mutable_rows[y][x] = "#"
                 structure_heights.append([x, y, FORTRESS_WALL_HEIGHT])
+                structure_types.append([x, y, "fortress_wall"])
                 wall_tiles += 1
             elif value == PLAN_TOWER:
                 mutable_rows[y][x] = "#"
@@ -96,14 +98,17 @@ def materialize_fortress_shell(
                     else FORTRESS_TOWER_HEIGHT
                 )
                 structure_heights.append([x, y, height_value])
+                structure_types.append([x, y, "fortress_tower"])
                 tower_tiles += 1
             elif value == PLAN_GATE:
                 mutable_rows[y][x] = "R"
+                structure_types.append([x, y, "fortress_gate"])
                 gate_tiles += 1
             elif value == PLAN_COURTYARD:
                 if mutable_rows[y][x] != "R":
                     courtyard_replaced_tiles += 1
                 mutable_rows[y][x] = "R"
+                structure_types.append([x, y, "fortress_floor"])
                 courtyard_floor_tiles += 1
 
     courtyard_foreign_tiles_remaining = sum(
@@ -132,6 +137,7 @@ def materialize_fortress_shell(
         "courtyard_replaced_tiles": courtyard_replaced_tiles,
         "courtyard_foreign_tiles_remaining": courtyard_foreign_tiles_remaining,
         "structure_heights": structure_heights,
+        "structure_types": structure_types,
     }
 
     updated_site_report = dict(site_report)

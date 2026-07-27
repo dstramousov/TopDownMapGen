@@ -28,6 +28,8 @@ from top_down_worldgen.manifest import (
     PLACES_SCHEMA_VERSION,
     START_GOAL_LAYER_SCHEMA_VERSION,
     STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION,
+    STRUCTURE_TYPE_LAYER_SCHEMA_VERSION,
+    STRUCTURE_MICRO_GEOMETRY_LAYER_SCHEMA_VERSION,
     TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
@@ -38,6 +40,12 @@ from top_down_worldgen.manifest import (
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.runtime_binary import RuntimeBinarySource, write_runtime_binary
 from top_down_worldgen.structure_height import build_structure_height
+from top_down_worldgen.structure_geometry import (
+    MICRO_DIVISION,
+    STRUCTURE_TYPE_NAMES,
+    build_structure_geometry,
+    sparse_micro_cells,
+)
 from top_down_worldgen.vegetation_geometry import (
     VEGETATION_TYPE_NAMES,
     build_vegetation_geometry,
@@ -217,6 +225,41 @@ def write_map_package(
         },
         outputs.map_package_structure_height,
     )
+    structure_geometry = build_structure_geometry(
+        terrain_rows=terrain_rows,
+        fortress_plan=runtime_data.get("fortress_plan"),
+    )
+    write_json(
+        {
+            "schema_version": STRUCTURE_TYPE_LAYER_SCHEMA_VERSION,
+            "kind": "structure_type",
+            "width": width,
+            "height": height,
+            "format": "uint8_rows",
+            "default": 0,
+            "dictionary": {str(key): value for key, value in STRUCTURE_TYPE_NAMES.items()},
+            "rows": structure_geometry.type_rows,
+            "summary": structure_geometry.summary,
+        },
+        outputs.map_package_structure_type,
+    )
+    write_json(
+        {
+            "schema_version": STRUCTURE_MICRO_GEOMETRY_LAYER_SCHEMA_VERSION,
+            "kind": "structure_micro_geometry",
+            "width": width,
+            "height": height,
+            "division": MICRO_DIVISION,
+            "subtile_size_px": tile_size_px // MICRO_DIVISION,
+            "format": "sparse_uint16_masks",
+            "default_mask": 0,
+            "full_mask": 65535,
+            "cells": sparse_micro_cells(structure_geometry),
+            "summary": {"cells": structure_geometry.summary["micro_cells"]},
+        },
+        outputs.map_package_structure_micro_geometry,
+    )
+
     LOGGER.info(
         "Ruin structure height walls=%s components=%s heights=%s/%s/%s "
         "average=%.3f max_adjacent_delta=%s planned=%s fallback=%s",
@@ -421,6 +464,8 @@ def write_map_package(
             ),
             elevation_rows=final_elevation_rows,
             structure_height_rows=structure_height.rows,
+            structure_type_rows=structure_geometry.type_rows,
+            structure_micro_mask_rows=structure_geometry.mask_rows,
             vegetation_type_rows=vegetation_geometry.type_rows,
             vegetation_height_rows=vegetation_geometry.height_rows,
             start=points.get("start"),
@@ -471,6 +516,8 @@ def write_map_package(
                 "collision": "layers/collision.json",
                 "elevation": "layers/elevation.json",
                 "structure_height": "layers/structure_height.json",
+                "structure_type": "layers/structure_type.json",
+                "structure_micro_geometry": "layers/structure_micro_geometry.json",
                 "vegetation_type": "layers/vegetation_type.json",
                 "vegetation_height": "layers/vegetation_height.json",
                 "start_goal": "layers/start_goal.json",

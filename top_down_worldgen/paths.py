@@ -57,6 +57,8 @@ class OutputPaths:
     map_package_collision: Path
     map_package_elevation: Path
     map_package_structure_height: Path
+    map_package_structure_type: Path
+    map_package_structure_micro_geometry: Path
     map_package_vegetation_type: Path
     map_package_vegetation_height: Path
     map_package_start_goal: Path
@@ -157,6 +159,12 @@ class OutputPaths:
             map_package_elevation=map_package_layers_dir / "elevation.json",
             map_package_structure_height=(
                 map_package_layers_dir / "structure_height.json"
+            ),
+            map_package_structure_type=(
+                map_package_layers_dir / "structure_type.json"
+            ),
+            map_package_structure_micro_geometry=(
+                map_package_layers_dir / "structure_micro_geometry.json"
             ),
             map_package_vegetation_type=(
                 map_package_layers_dir / "vegetation_type.json"

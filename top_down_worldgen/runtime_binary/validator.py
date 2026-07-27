@@ -65,6 +65,8 @@ def validate_runtime_binary(path: Path, source: RuntimeBinarySource) -> None:
         int(SectionType.COVER_GRID_U8),
         int(SectionType.CONCEALMENT_GRID_U8),
         int(SectionType.STRUCTURE_HEIGHT_U8),
+        int(SectionType.STRUCTURE_TYPE_U8),
+        int(SectionType.STRUCTURE_MICRO_MASK_U16),
         int(SectionType.VEGETATION_TYPE_U8),
         int(SectionType.VEGETATION_HEIGHT_U8),
     }
@@ -291,6 +293,12 @@ def _validate_region_values(
     structure_height_payload = container.payload(
         sections[int(SectionType.STRUCTURE_HEIGHT_U8)],
     )
+    structure_type_payload = container.payload(
+        sections[int(SectionType.STRUCTURE_TYPE_U8)],
+    )
+    structure_micro_mask_payload = container.payload(
+        sections[int(SectionType.STRUCTURE_MICRO_MASK_U16)],
+    )
     vegetation_type_payload = container.payload(
         sections[int(SectionType.VEGETATION_TYPE_U8)],
     )
@@ -310,6 +318,11 @@ def _validate_region_values(
         raise ValueError("runtime normalized grid size mismatch")
     if len(structure_height_payload) != tile_count:
         raise ValueError("runtime structure-height grid size mismatch")
+    if len(structure_type_payload) != tile_count:
+        raise ValueError("runtime structure-type grid size mismatch")
+    if len(structure_micro_mask_payload) != tile_count * 2:
+        raise ValueError("runtime structure-micro-mask grid size mismatch")
+    structure_micro_masks = struct.unpack(f"<{tile_count}H", structure_micro_mask_payload)
     if len(vegetation_type_payload) != tile_count:
         raise ValueError("runtime vegetation-type grid size mismatch")
     if len(vegetation_height_payload) != tile_count:
@@ -359,6 +372,10 @@ def _validate_region_values(
                 != source.structure_height_rows[y][x]
             ):
                 raise ValueError("runtime structure-height grid differs from source")
+            if structure_type_payload[local_index] != source.structure_type_rows[y][x]:
+                raise ValueError("runtime structure-type grid differs from source")
+            if structure_micro_masks[local_index] != source.structure_micro_mask_rows[y][x]:
+                raise ValueError("runtime structure-micro-mask grid differs from source")
             if (
                 vegetation_type_payload[local_index]
                 != source.vegetation_type_rows[y][x]

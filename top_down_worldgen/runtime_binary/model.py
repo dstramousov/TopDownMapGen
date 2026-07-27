@@ -57,6 +57,8 @@ class RuntimeBinarySource:
     concealment_rows: list[list[int | float]]
     elevation_rows: list[list[int]]
     structure_height_rows: list[list[int]]
+    structure_type_rows: list[list[int]]
+    structure_micro_mask_rows: list[list[int]]
     vegetation_type_rows: list[list[int]]
     vegetation_height_rows: list[list[int]]
     start: dict[str, int] | None
