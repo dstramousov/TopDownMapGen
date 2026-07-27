@@ -148,3 +148,36 @@ def test_public_config_reads_separate_reed_densities(tmp_path: Path) -> None:
 
     assert config.shore_reed_density == 0.75
     assert config.puddle_reed_density == 0.25
+
+
+def test_public_config_reads_lake_island_fortress_settings(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "seed": 42,
+                "map_width_tiles": 440,
+                "map_height_tiles": 400,
+                "chunk_width_tiles": 16,
+                "chunk_height_tiles": 16,
+                "biome_profile": "forest_ruins",
+                "elevation": {"style": "flatland"},
+                "fortress": {
+                    "enabled": True,
+                    "archetype": "lake_island",
+                    "max_count": 3,
+                    "lake_island": {"enabled": True},
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    config = PublicConfig.from_file(config_path)
+
+    assert config.fortress.enabled is True
+    assert config.fortress.archetype == "lake_island"
+    assert config.fortress.max_count == 1
+    assert config.fortress.lake_island.enabled is True

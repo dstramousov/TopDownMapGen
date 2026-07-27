@@ -1,9 +1,9 @@
 {
   "seed": "random",
-  "map_width_tiles": 400,
+  "map_width_tiles": 440,
   "map_height_tiles": 400,
-  "chunk_width_tiles": 16,
-  "chunk_height_tiles": 16,
+  "chunk_width_tiles": 8,
+  "chunk_height_tiles": 8,
   "biome_profile": "forest_ruins",
   "objective_profile": "clear_map",
   "generation_tuning": {
@@ -31,5 +31,14 @@
   "hydrology": {
     "shore_reed_density": 0.16,
     "puddle_reed_density": 0.2
-  }
+  },
+  "fortress": {
+    "enabled": true,
+    "archetype": "lake_island",
+    "max_count": 1,
+    "lake_island": {
+      "enabled": true
+    }
+  },
+  "_comment_chunk": "440x400 requires an 8x8 divisor; legacy engine rejects partial chunks"
 }

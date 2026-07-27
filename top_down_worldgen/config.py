@@ -26,6 +26,91 @@ DEFAULT_RECLAIMED_BUSH_MAX_ELEVATION = 17
 SUPPORTED_ELEVATION_STYLES = frozenset(
     {"super_flatland", "flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
 )
+SUPPORTED_FORTRESS_ARCHETYPES = frozenset({"auto", "lake_island"})
+
+
+@dataclass(frozen=True, slots=True)
+class LakeIslandFortressConfig:
+    """Configuration for the lake-island fortress archetype."""
+
+    enabled: bool = True
+
+    @classmethod
+    def from_raw(cls, value: Any) -> "LakeIslandFortressConfig":
+        """Build lake-island fortress settings from raw config data.
+
+        Args:
+            value: Raw fortress.lake_island config value.
+
+        Returns:
+            Sanitized lake-island fortress settings.
+        """
+        if not isinstance(value, dict):
+            return cls()
+        return cls(enabled=_sanitize_bool(value.get("enabled"), default=True))
+
+    def to_dict(self) -> dict[str, bool]:
+        """Return JSON-serializable lake-island settings."""
+        return {"enabled": self.enabled}
+
+
+@dataclass(frozen=True, slots=True)
+class FortressConfig:
+    """Public procedural fortress configuration."""
+
+    enabled: bool = False
+    archetype: str = "auto"
+    max_count: int = 1
+    lake_island: LakeIslandFortressConfig = field(
+        default_factory=LakeIslandFortressConfig,
+    )
+
+    @classmethod
+    def from_raw(cls, value: Any) -> "FortressConfig":
+        """Build fortress settings from an optional config object.
+
+        Args:
+            value: Raw fortress config value.
+
+        Returns:
+            Sanitized fortress settings.
+        """
+        if not isinstance(value, dict):
+            return cls()
+        archetype = str(value.get("archetype", "auto")).strip().lower()
+        if archetype not in SUPPORTED_FORTRESS_ARCHETYPES:
+            LOGGER.warning(
+                "Unknown fortress.archetype=%s; falling back to auto",
+                archetype,
+            )
+            archetype = "auto"
+        max_count = _sanitize_nonnegative_int(
+            value.get("max_count", 1),
+            key="fortress.max_count",
+            default=1,
+        )
+        if max_count > 1:
+            LOGGER.warning(
+                "fortress.max_count=%s exceeds the current limit; clamping to 1",
+                max_count,
+            )
+        return cls(
+            enabled=_sanitize_bool(value.get("enabled"), default=False),
+            archetype=archetype,
+            max_count=min(1, max_count),
+            lake_island=LakeIslandFortressConfig.from_raw(
+                value.get("lake_island"),
+            ),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return JSON-serializable fortress settings."""
+        return {
+            "enabled": self.enabled,
+            "archetype": self.archetype,
+            "max_count": self.max_count,
+            "lake_island": self.lake_island.to_dict(),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,6 +245,7 @@ class PublicConfig:
     objective_profile: str = "clear_map"
     elevation_style: str = DEFAULT_ELEVATION_STYLE
     generation_tuning: GenerationTuning = field(default_factory=GenerationTuning)
+    fortress: FortressConfig = field(default_factory=FortressConfig)
     shore_reed_density: float = DEFAULT_SHORE_REED_DENSITY
     puddle_reed_density: float = DEFAULT_PUDDLE_REED_DENSITY
 
@@ -196,6 +282,7 @@ class PublicConfig:
                 objective_profile=objective_profile,
                 elevation_style=_sanitize_elevation_style(data),
                 generation_tuning=GenerationTuning.from_raw(data.get("generation_tuning")),
+                fortress=FortressConfig.from_raw(data.get("fortress")),
                 shore_reed_density=_sanitize_reed_density(data, key="shore_reed_density", legacy_key="reed_density", default=DEFAULT_SHORE_REED_DENSITY),
                 puddle_reed_density=_sanitize_reed_density(data, key="puddle_reed_density", legacy_key=None, default=DEFAULT_PUDDLE_REED_DENSITY),
             )
@@ -211,6 +298,7 @@ class PublicConfig:
                     "objective_profile": config.objective_profile,
                     "elevation_style": config.elevation_style,
                     "generation_tuning": config.generation_tuning.to_dict(),
+                    "fortress": config.fortress.to_dict(),
                     "shore_reed_density": config.shore_reed_density,
                     "puddle_reed_density": config.puddle_reed_density,
                 },
@@ -268,14 +356,33 @@ def _sanitize_reed_density(
 
 def _sanitize_nonnegative_int(value: Any, *, key: str, default: int) -> int:
     """Return a non-negative integer config value."""
+    label = key if "." in key else f"generation_tuning.{key}"
     try:
         parsed = int(value)
     except (TypeError, ValueError):
-        LOGGER.warning("Invalid generation_tuning.%s=%r; using %s", key, value, default)
+        LOGGER.warning("Invalid %s=%r; using %s", label, value, default)
         return default
     if parsed < 0:
-        LOGGER.warning("generation_tuning.%s=%s is negative; clamping", key, parsed)
+        LOGGER.warning("%s=%s is negative; clamping", label, parsed)
     return max(0, parsed)
+
+
+def _sanitize_bool(value: Any, *, default: bool) -> bool:
+    """Return a conservative boolean value from public config data."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int) and value in {0, 1}:
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "yes", "on", "1"}:
+            return True
+        if normalized in {"false", "no", "off", "0"}:
+            return False
+    LOGGER.warning("Invalid boolean config value=%r; using %s", value, default)
+    return default
 
 
 def _sanitize_elevation_style(data: dict[str, Any]) -> str:

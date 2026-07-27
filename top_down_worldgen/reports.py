@@ -9,7 +9,7 @@ from .constants import WALKABLE_SYMBOLS
 from .paths import OutputPaths
 from .utils.json_io import read_json
 
-REPORT_SCHEMA_VERSION = "world-summary-report-v1"
+REPORT_SCHEMA_VERSION = "world-summary-report-v2"
 WORLD_DENSITY_REPORT_SCHEMA_VERSION = "world-density-report-v1"
 ELEVATION_DENSITY_REPORT_SCHEMA_VERSION = "elevation-density-report-v1"
 
@@ -92,6 +92,7 @@ def build_world_reports(
         "world_structure": structure,
         "terrain_guidance": _dict(runtime_data.get("terrain_guidance")),
         "ruin_wall_provenance": _dict(runtime_data.get("ruin_wall_provenance")),
+        "fortress_site": _dict(runtime_data.get("fortress_site")),
         "render": {
             "enabled": render_enabled,
             "layers": rendered_layers,
@@ -129,6 +130,7 @@ def format_console_summary(summary: dict[str, Any]) -> str:
     overall = _dict(summary.get("overall"))
     terrain_guidance = _dict(summary.get("terrain_guidance"))
     ruin_wall_provenance = _dict(summary.get("ruin_wall_provenance"))
+    fortress_site = _dict(summary.get("fortress_site"))
 
     terrain = _dict(density.get("terrain"))
     collision = _dict(density.get("collision"))
@@ -181,6 +183,46 @@ def format_console_summary(summary: dict[str, Any]) -> str:
         wet = _dict(standing_water.get("wet_lowland_total"))
         lines.append(f"  {'стоячая вода:':<22}{float(water.get('percent', 0.0)):>6.1f}%")
         lines.append(f"  {'влажные низины:':<22}{float(wet.get('percent', 0.0)):>6.1f}%")
+
+    if fortress_site:
+        fortress_summary = _dict(fortress_site.get("summary"))
+        requirements = _dict(fortress_site.get("requirements"))
+        selected_site = _dict(fortress_site.get("selected_site"))
+        lines.extend(
+            [
+                "",
+                "Крепость:",
+                (
+                    "  lake-island site: "
+                    f"{fortress_site.get('status', 'unknown')} "
+                    "(elevation="
+                    f"{fortress_site.get('source_elevation_style', 'unknown')})"
+                ),
+                (
+                    "  озёрных компонентов: "
+                    f"{int(fortress_summary.get('lake_components', 0))}, "
+                    "подходящих="
+                    f"{int(fortress_summary.get('eligible_components', 0))}"
+                ),
+                (
+                    "  плановый размер: крепость="
+                    f"{int(requirements.get('fortress_span_tiles', 0))}, "
+                    "остров="
+                    f"{int(requirements.get('island_span_tiles', 0))}, "
+                    "водное кольцо>="
+                    f"{int(requirements.get('water_ring_tiles', 0))}"
+                ),
+            ]
+        )
+        if selected_site:
+            center = _dict(selected_site.get("center"))
+            lines.append(
+                "  выбранный центр: "
+                f"({int(center.get('x', 0))}, {int(center.get('y', 0))}), "
+                f"озеро={int(selected_site.get('lake_area_tiles', 0))} тайлов, "
+                "доступное водное кольцо="
+                f"{int(selected_site.get('available_water_ring_tiles', 0))}"
+            )
     if slope_bands:
         steep = float(_dict(slope_bands.get("steep")).get("percent", 0.0))
         cliff = float(_dict(slope_bands.get("cliff")).get("percent", 0.0))
@@ -606,6 +648,7 @@ def _build_debug_files(*, outputs: OutputPaths, render_enabled: bool) -> dict[st
         "world_summary": outputs.world_summary_report,
         "terrain_island_report": outputs.terrain_island_report,
         "terrain_guidance_report": outputs.terrain_guidance_report,
+        "fortress_site_report": outputs.fortress_site_report,
         "generation_log": outputs.log_file,
         "full_world_preview": outputs.output_dir / "full_world_preview.png",
         "elevation_preview": outputs.output_dir / "elevation_preview.png",

@@ -26,3 +26,7 @@ def test_pipeline_artifacts_include_vegetation_geometry(tmp_path: Path) -> None:
     assert by_kind["map_package:vegetation_visual"].schema_version == (
         "vegetation-visual-report-v6"
     )
+    assert by_kind["fortress_site_report"].path == outputs.fortress_site_report
+    assert by_kind["fortress_site_report"].schema_version == (
+        "fortress-site-report-v1"
+    )

@@ -19,6 +19,7 @@ from .manifest import (
     ELEVATION_TRANSITIONS_SCHEMA_VERSION,
     ELEVATION_DENSITY_REPORT_SCHEMA_VERSION,
     ENGINE_CONFIG_SCHEMA_VERSION,
+    FORTRESS_SITE_REPORT_SCHEMA_VERSION,
     GAMEPLAY_LAYER_SCHEMA_VERSION,
     GAMEPLAY_ZONES_SCHEMA_VERSION,
     MAP_PACKAGE_MAP_SCHEMA_VERSION,
@@ -67,6 +68,7 @@ from .tactical.elevation import (
     build_natural_geography_model,
 )
 from .tactical.fallback import FallbackPositionBuilder
+from .tactical.fortress_site import analyze_lake_island_fortress_site
 from .tactical.geography_guidance import write_geography_guidance
 from .tactical.grid import attach_tile_grid
 from .tactical.places import attach_places
@@ -168,6 +170,7 @@ class WorldgenPipeline:
                     "objective_profile": config.objective_profile,
                     "elevation_style": config.elevation_style,
                     "generation_tuning": config.generation_tuning.to_dict(),
+                    "fortress": config.fortress.to_dict(),
                 },
             )
 
@@ -201,7 +204,13 @@ class WorldgenPipeline:
                 elevation_style=config.elevation_style,
                 geography_draft=geography_draft,
             )
+            fortress_site_report = analyze_lake_island_fortress_site(
+                elevation_rows=natural_geography.elevation_rows,
+                elevation_style=config.elevation_style,
+                fortress_config=config.fortress,
+            )
             write_geography_guidance(natural_geography, outputs.geography_guidance)
+            write_json(fortress_site_report, outputs.fortress_site_report)
             natural_levels = [
                 level
                 for row in natural_geography.elevation_rows
@@ -215,6 +224,12 @@ class WorldgenPipeline:
                     "natural_min_level": min(natural_levels, default=0),
                     "natural_max_level": max(natural_levels, default=0),
                     "guidance_path": outputs.geography_guidance,
+                    "fortress_site_status": fortress_site_report.get("status"),
+                    "fortress_site_candidates": fortress_site_report.get(
+                        "summary",
+                        {},
+                    ).get("eligible_components", 0),
+                    "fortress_site_report": outputs.fortress_site_report,
                 },
             )
 
@@ -270,6 +285,8 @@ class WorldgenPipeline:
                     runtime_data,
                     debug_data,
                 )
+                runtime_data["fortress_site"] = fortress_site_report
+                debug_data["fortress_site"] = fortress_site_report
             with timed_stage(LOGGER, "tactical.attach_runtime_layers"):
                 runtime_data = attach_tile_grid(runtime_data, rows)
                 runtime_data = attach_runtime_layers(
@@ -765,6 +782,13 @@ class WorldgenPipeline:
                 False,
                 True,
                 TERRAIN_GUIDANCE_REPORT_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.fortress_site_report,
+                "fortress_site_report",
+                False,
+                True,
+                FORTRESS_SITE_REPORT_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.object_catalog,
