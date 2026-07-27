@@ -238,3 +238,71 @@ def test_fortress_shell_materializes_blockers_gate_and_heights() -> None:
     assert entries[(2, 2)] == FORTRESS_GATE_TOWER_HEIGHT
     assert entries[(20, 20)] == FORTRESS_TOWER_HEIGHT
     assert result.site_report["fortress_plan"]["materialized_to_terrain"] is True
+
+
+def test_fortress_scale_is_25_percent_larger_on_440_by_400() -> None:
+    elevation_rows = _lake_grid(width=440, height=400, margin=40)
+    report = analyze_lake_island_fortress_site(
+        elevation_rows=elevation_rows,
+        elevation_style="flatland",
+        fortress_config=_enabled_config(),
+    )
+
+    assert report["requirements"]["fortress_span_tiles"] == 50
+    assert report["requirements"]["island_span_tiles"] == 66
+
+
+def test_shallow_fortress_approach_reaches_mainland_with_gate_width_path() -> None:
+    from top_down_worldgen.tactical.fortress_approach import (
+        APPROACH_PATH,
+        APPROACH_SHALLOW,
+        materialize_shallow_fortress_approach,
+    )
+
+    width = 80
+    height = 60
+    levels = [[0 for _ in range(width)] for _ in range(height)]
+    island_mask = [[0 for _ in range(width)] for _ in range(height)]
+    for y in range(10, 50):
+        for x in range(20, 60):
+            levels[y][x] = -3
+    for y in range(22, 39):
+        for x in range(30, 47):
+            levels[y][x] = 1
+            island_mask[y][x] = 2
+    runtime_data = {
+        "elevation": {"default": 0, "cells": [], "summary": {}},
+        "elevation_generation_report": {
+            "summary": {},
+            "geography": {
+                "grids": {
+                    "geographic_level_grid": {"rows": [list(row) for row in levels]},
+                    "runtime_level_grid": {"rows": [list(row) for row in levels]},
+                    "slope_grid": {"rows": [[0] * width for _ in range(height)]},
+                },
+            },
+        },
+    }
+    site_report = {
+        "selected_site": {"center": {"x": 38, "y": 30}},
+        "fortress_plan": {
+            "gate_center": {"x": 30, "y": 30},
+            "gate_width_tiles": 5,
+        },
+    }
+
+    result = materialize_shallow_fortress_approach(
+        rows=["+" * width for _ in range(height)],
+        runtime_data=runtime_data,
+        site_report=site_report,
+        island_mask_rows=island_mask,
+        seed=42,
+    )
+
+    flat = [value for row in result.approach_rows for value in row]
+    assert APPROACH_SHALLOW in flat
+    assert APPROACH_PATH in flat
+    assert result.site_report["fortress_approach"]["gate_width_tiles"] == 5
+    assert result.site_report["fortress_approach"]["shallow_width_tiles"] == 11
+    assert result.path_tiles > 0
+    assert any("." in row for row in result.rows)

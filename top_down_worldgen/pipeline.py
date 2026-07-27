@@ -68,6 +68,7 @@ from .tactical.elevation import (
     build_natural_geography_model,
 )
 from .tactical.fallback import FallbackPositionBuilder
+from .tactical.fortress_approach import materialize_shallow_fortress_approach
 from .tactical.fortress_materialize import materialize_fortress_shell
 from .tactical.fortress_island import (
     materialize_lake_island,
@@ -336,6 +337,7 @@ class WorldgenPipeline:
             debug_data["terrain_island_repair"] = terrain_island_repair.report
             fortress_island = None
             fortress_plan = None
+            fortress_approach = None
             with timed_stage(LOGGER, "tactical.attach_places_and_elevation"):
                 runtime_data = attach_places(runtime_data)
                 runtime_data = attach_next_gen_elevation(
@@ -379,11 +381,30 @@ class WorldgenPipeline:
                     debug_data["fortress_site"] = fortress_site_report
                     write_json(fortress_site_report, outputs.fortress_site_report)
                     if fortress_plan.plan_rows:
+                        fortress_approach = materialize_shallow_fortress_approach(
+                            rows=rows,
+                            runtime_data=runtime_data,
+                            site_report=fortress_site_report,
+                            island_mask_rows=fortress_island.mask_rows,
+                            seed=config.resolved_seed,
+                        )
+                        rows = fortress_approach.rows
+                        runtime_data = fortress_approach.runtime_data
+                        fortress_site_report = fortress_approach.site_report
+                        debug_data["fortress_site"] = fortress_site_report
+                        write_json(fortress_site_report, outputs.fortress_site_report)
+                        preview_grids = runtime_data.get(
+                            "elevation_generation_report", {}
+                        ).get("geography", {}).get("grids", {})
+                        preview_rows = preview_grids.get(
+                            "geographic_level_grid", {}
+                        ).get("rows", [])
                         render_fortress_plan_preview(
                             path=outputs.fortress_plan_preview,
                             elevation_rows=preview_rows,
                             island_mask_rows=fortress_island.mask_rows,
                             plan_rows=fortress_plan.plan_rows,
+                            approach_rows=fortress_approach.approach_rows,
                         )
             if (
                 fortress_island is not None

@@ -48,6 +48,10 @@ def apply_elevation_hydrology(
                 counts["deep_water"] += 1
                 by_level[str(level)] = by_level.get(str(level), 0) + 1
             elif level == -1:
+                if tile == ".":
+                    counts["wet_shore"] += 1
+                    by_level[str(level)] = by_level.get(str(level), 0) + 1
+                    continue
                 if tile == "T":
                     counts["tree_tiles_removed"] += 1
                 chars[x] = WET_SHORE_TILE
