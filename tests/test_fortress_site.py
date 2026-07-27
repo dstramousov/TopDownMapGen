@@ -364,6 +364,62 @@ def test_fortress_interior_plan_contains_keep_houses_paths_and_trees() -> None:
     assert report["materialized_to_terrain"] is False
 
 
+
+
+def test_fortress_interior_degrades_when_houses_do_not_fit() -> None:
+    from top_down_worldgen.tactical.fortress_interior import (
+        INTERIOR_KEEP_FLOOR,
+        INTERIOR_KEEP_WALL,
+        INTERIOR_PATH,
+        build_fortress_interior_plan,
+    )
+    from top_down_worldgen.tactical.fortress_plan import (
+        PLAN_COURTYARD,
+        PLAN_GATE,
+        PLAN_WALL,
+    )
+
+    width = 48
+    height = 48
+    plan_rows = [[0 for _ in range(width)] for _ in range(height)]
+    for y in range(10, 39):
+        for x in range(10, 39):
+            plan_rows[y][x] = PLAN_COURTYARD
+    for x in range(10, 39):
+        plan_rows[10][x] = PLAN_WALL
+        plan_rows[38][x] = PLAN_WALL
+    for y in range(10, 39):
+        plan_rows[y][10] = PLAN_WALL
+        plan_rows[y][38] = PLAN_WALL
+    for x in range(23, 26):
+        plan_rows[38][x] = PLAN_GATE
+
+    site_report = {
+        "policy": {},
+        "fortress_plan": {
+            "center": {"x": 24, "y": 24},
+            "gate_center": {"x": 24, "y": 38},
+            "fortress_span_tiles": 32,
+        },
+    }
+
+    result = build_fortress_interior_plan(
+        runtime_data={},
+        site_report=site_report,
+        plan_rows=plan_rows,
+        seed=9069957925987520693,
+    )
+
+    flat = [value for row in result.interior_rows for value in row]
+    assert INTERIOR_KEEP_WALL in flat
+    assert INTERIOR_KEEP_FLOOR in flat
+    assert INTERIOR_PATH in flat
+    report = result.site_report["fortress_interior_plan"]
+    assert report["status"] in {"planned", "degraded"}
+    assert report["house_count"] <= report["requested_house_count"]
+    if report["status"] == "degraded":
+        assert report["degradation_reason"] == "insufficient_courtyard_space"
+
 def test_fortress_interior_plan_is_deterministic() -> None:
     from top_down_worldgen.tactical.fortress_interior import build_fortress_interior_plan
     from top_down_worldgen.tactical.fortress_plan import PLAN_COURTYARD, PLAN_GATE, PLAN_WALL

@@ -141,8 +141,9 @@ def build_fortress_interior_plan(
     )
 
     counts = _count_values(interior_rows)
+    degraded = len(houses) < house_target
     report = {
-        "status": "planned",
+        "status": "degraded" if degraded else "planned",
         "algorithm": "courtyard_keep_houses_trees_v1",
         "seed": seed,
         "keep": {
@@ -170,6 +171,9 @@ def build_fortress_interior_plan(
         ],
         "house_count": len(houses),
         "requested_house_count": house_target,
+        "degradation_reason": (
+            "insufficient_courtyard_space" if degraded else None
+        ),
         "tree_count": tree_count,
         "requested_tree_count": tree_target,
         "path_width_tiles": path_width,
@@ -346,8 +350,6 @@ def _place_houses(
                 door=door,
             )
         )
-    if len(houses) < 2:
-        raise ValueError("Fortress interior could not place at least two houses")
     return houses
 
 
