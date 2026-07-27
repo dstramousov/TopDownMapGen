@@ -1,5 +1,5 @@
 {
-  "seed": 4444,
+  "seed": "random",
   "map_width_tiles": 320,
   "map_height_tiles": 320,
   "chunk_width_tiles": 16,
