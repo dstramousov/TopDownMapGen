@@ -223,6 +223,16 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                 "доступное водное кольцо="
                 f"{int(selected_site.get('available_water_ring_tiles', 0))}"
             )
+        materialization = _dict(fortress_site.get("island_materialization"))
+        if materialization:
+            entrance = _dict(materialization.get("entrance_anchor"))
+            lines.append(
+                "  остров: "
+                f"{int(materialization.get('island_tiles', 0))} тайлов, "
+                f"изменено высот={int(materialization.get('changed_tiles', 0))}, "
+                "вход="
+                f"({int(entrance.get('x', 0))}, {int(entrance.get('y', 0))})"
+            )
     if slope_bands:
         steep = float(_dict(slope_bands.get("steep")).get("percent", 0.0))
         cliff = float(_dict(slope_bands.get("cliff")).get("percent", 0.0))
@@ -649,6 +659,8 @@ def _build_debug_files(*, outputs: OutputPaths, render_enabled: bool) -> dict[st
         "terrain_island_report": outputs.terrain_island_report,
         "terrain_guidance_report": outputs.terrain_guidance_report,
         "fortress_site_report": outputs.fortress_site_report,
+        "fortress_island_preview": outputs.fortress_island_preview,
+        "fortress_plan_preview": outputs.fortress_plan_preview,
         "generation_log": outputs.log_file,
         "full_world_preview": outputs.output_dir / "full_world_preview.png",
         "elevation_preview": outputs.output_dir / "elevation_preview.png",

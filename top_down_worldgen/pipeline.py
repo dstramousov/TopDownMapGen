@@ -68,6 +68,14 @@ from .tactical.elevation import (
     build_natural_geography_model,
 )
 from .tactical.fallback import FallbackPositionBuilder
+from .tactical.fortress_island import (
+    materialize_lake_island,
+    render_fortress_island_preview,
+)
+from .tactical.fortress_plan import (
+    build_lake_island_fortress_plan,
+    render_fortress_plan_preview,
+)
 from .tactical.fortress_site import analyze_lake_island_fortress_site
 from .tactical.geography_guidance import write_geography_guidance
 from .tactical.grid import attach_tile_grid
@@ -335,6 +343,45 @@ class WorldgenPipeline:
                     geography_draft=geography_draft,
                     natural_geography=natural_geography,
                 )
+                fortress_island = materialize_lake_island(
+                    runtime_data=runtime_data,
+                    site_report=fortress_site_report,
+                    seed=config.resolved_seed,
+                    elevation_style=config.elevation_style,
+                )
+                runtime_data = fortress_island.runtime_data
+                fortress_site_report = fortress_island.site_report
+                debug_data["fortress_site"] = fortress_site_report
+                write_json(fortress_site_report, outputs.fortress_site_report)
+                if fortress_island.mask_rows:
+                    preview_grids = runtime_data.get(
+                        "elevation_generation_report", {}
+                    ).get("geography", {}).get("grids", {})
+                    preview_rows = preview_grids.get(
+                        "geographic_level_grid", {}
+                    ).get("rows", [])
+                    render_fortress_island_preview(
+                        path=outputs.fortress_island_preview,
+                        elevation_rows=preview_rows,
+                        mask_rows=fortress_island.mask_rows,
+                    )
+                    fortress_plan = build_lake_island_fortress_plan(
+                        runtime_data=runtime_data,
+                        site_report=fortress_site_report,
+                        island_mask_rows=fortress_island.mask_rows,
+                        seed=config.resolved_seed,
+                    )
+                    runtime_data = fortress_plan.runtime_data
+                    fortress_site_report = fortress_plan.site_report
+                    debug_data["fortress_site"] = fortress_site_report
+                    write_json(fortress_site_report, outputs.fortress_site_report)
+                    if fortress_plan.plan_rows:
+                        render_fortress_plan_preview(
+                            path=outputs.fortress_plan_preview,
+                            elevation_rows=preview_rows,
+                            island_mask_rows=fortress_island.mask_rows,
+                            plan_rows=fortress_plan.plan_rows,
+                        )
             geography_grids = runtime_data.get("elevation_generation_report", {}).get("geography", {}).get("grids", {})
             elevation_rows = geography_grids.get("geographic_level_grid", {}).get("rows", [])
             with timed_stage(LOGGER, "tactical.apply_hydrology"):
