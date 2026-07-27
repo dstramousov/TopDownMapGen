@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .fortress_plan import PLAN_GATE, PLAN_TOWER, PLAN_WALL
+from .fortress_plan import PLAN_COURTYARD, PLAN_GATE, PLAN_TOWER, PLAN_WALL
 
 FORTRESS_WALL_HEIGHT = 6
 FORTRESS_TOWER_HEIGHT = 10
@@ -20,6 +20,9 @@ class FortressMaterializationResult:
     wall_tiles: int
     tower_tiles: int
     gate_tiles: int
+    courtyard_floor_tiles: int
+    courtyard_replaced_tiles: int
+    courtyard_foreign_tiles_remaining: int
 
 
 def materialize_fortress_shell(
@@ -55,6 +58,9 @@ def materialize_fortress_shell(
             wall_tiles=0,
             tower_tiles=0,
             gate_tiles=0,
+            courtyard_floor_tiles=0,
+            courtyard_replaced_tiles=0,
+            courtyard_foreign_tiles_remaining=0,
         )
     height = len(rows)
     width = len(rows[0]) if rows else 0
@@ -68,6 +74,8 @@ def materialize_fortress_shell(
     wall_tiles = 0
     tower_tiles = 0
     gate_tiles = 0
+    courtyard_floor_tiles = 0
+    courtyard_replaced_tiles = 0
 
     gate_tower_centers = _gate_tower_centers(site_report)
     for y, plan_row in enumerate(plan_rows):
@@ -92,12 +100,25 @@ def materialize_fortress_shell(
             elif value == PLAN_GATE:
                 mutable_rows[y][x] = "R"
                 gate_tiles += 1
+            elif value == PLAN_COURTYARD:
+                if mutable_rows[y][x] != "R":
+                    courtyard_replaced_tiles += 1
+                mutable_rows[y][x] = "R"
+                courtyard_floor_tiles += 1
+
+    courtyard_foreign_tiles_remaining = sum(
+        1
+        for y, plan_row in enumerate(plan_rows)
+        for x, value in enumerate(plan_row)
+        if value == PLAN_COURTYARD and mutable_rows[y][x] != "R"
+    )
 
     materialization = {
         "status": "materialized",
         "terrain_encoding": {
             "wall_and_tower": "ruin_wall_blocker",
             "gate": "ruin_floor",
+            "courtyard": "ruin_floor",
         },
         "height_levels_above_ground": {
             "wall": FORTRESS_WALL_HEIGHT,
@@ -107,6 +128,9 @@ def materialize_fortress_shell(
         "wall_tiles": wall_tiles,
         "tower_tiles": tower_tiles,
         "gate_tiles": gate_tiles,
+        "courtyard_floor_tiles": courtyard_floor_tiles,
+        "courtyard_replaced_tiles": courtyard_replaced_tiles,
+        "courtyard_foreign_tiles_remaining": courtyard_foreign_tiles_remaining,
         "structure_heights": structure_heights,
     }
 
@@ -130,6 +154,9 @@ def materialize_fortress_shell(
         wall_tiles=wall_tiles,
         tower_tiles=tower_tiles,
         gate_tiles=gate_tiles,
+        courtyard_floor_tiles=courtyard_floor_tiles,
+        courtyard_replaced_tiles=courtyard_replaced_tiles,
+        courtyard_foreign_tiles_remaining=courtyard_foreign_tiles_remaining,
     )
 
 

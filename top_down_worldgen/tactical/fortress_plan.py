@@ -305,13 +305,13 @@ def render_fortress_plan_preview(
             elif interior == 1:
                 color = (188, 165, 111)
             elif plan == PLAN_GATE:
-                color = (208, 153, 64)
+                color = (184, 145, 210)
             elif plan == PLAN_TOWER:
-                color = (105, 99, 92)
+                color = (72, 38, 96)
             elif plan == PLAN_WALL:
-                color = (129, 122, 111)
+                color = (104, 58, 135)
             elif plan == PLAN_COURTYARD:
-                color = (116, 151, 83)
+                color = (205, 180, 222)
             elif approach == 2:
                 color = (173, 150, 100)
             elif approach == 1:

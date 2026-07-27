@@ -87,75 +87,98 @@ def build_fortress_interior_plan(
     rng = Random(seed ^ 0x1A7E_1260_5EED)
     interior_rows = [[INTERIOR_NONE for _ in range(width)] for _ in range(height)]
 
-    keep_radius = _clamp(round(fortress_span * 0.115), 5, 7)
-    keep_center = _find_keep_center(
+    requested_keep_radius = _clamp(round(fortress_span * 0.115), 5, 7)
+    keep_placement = _find_keep_placement(
         plan_rows=plan_rows,
         center=center,
         gate=gate,
-        radius=keep_radius,
+        requested_radius=requested_keep_radius,
         fortress_span=fortress_span,
-    )
-    keep_door = _draw_keep(
-        interior_rows=interior_rows,
-        center=keep_center,
-        radius=keep_radius,
-        gate=gate,
     )
 
     house_target = rng.randint(2, 3)
-    houses = _place_houses(
-        plan_rows=plan_rows,
-        interior_rows=interior_rows,
-        keep_center=keep_center,
-        keep_radius=keep_radius,
-        fortress_center=center,
-        target_count=house_target,
-        rng=rng,
-    )
-
+    tree_target = rng.randint(4, 10)
     path_width = _clamp(round(fortress_span * 0.045), 2, 3)
-    _draw_path(
-        interior_rows=interior_rows,
-        plan_rows=plan_rows,
-        start=gate,
-        end=keep_door,
-        radius=max(0, path_width // 2),
-    )
-    for house in houses:
+    houses: list[_House] = []
+    tree_count = 0
+    keep_report: dict[str, Any]
+    degradation_reasons: list[str] = []
+
+    if keep_placement is None:
+        keep_report = {
+            "status": "skipped",
+            "shape": "round",
+            "requested_radius_tiles": requested_keep_radius,
+            "reason": "insufficient_courtyard_space",
+        }
+        degradation_reasons.append("keep_not_placed")
+    else:
+        keep_center, keep_radius, keep_margin, search_scope = keep_placement
+        keep_door = _draw_keep(
+            interior_rows=interior_rows,
+            center=keep_center,
+            radius=keep_radius,
+            gate=gate,
+        )
+        houses = _place_houses(
+            plan_rows=plan_rows,
+            interior_rows=interior_rows,
+            keep_center=keep_center,
+            keep_radius=keep_radius,
+            fortress_center=center,
+            target_count=house_target,
+            rng=rng,
+        )
         _draw_path(
             interior_rows=interior_rows,
             plan_rows=plan_rows,
-            start=house.door,
-            end=_nearest_path_point(interior_rows, house.door),
-            radius=0,
+            start=gate,
+            end=keep_door,
+            radius=max(0, path_width // 2),
         )
+        for house in houses:
+            _draw_path(
+                interior_rows=interior_rows,
+                plan_rows=plan_rows,
+                start=house.door,
+                end=_nearest_path_point(interior_rows, house.door),
+                radius=0,
+            )
+        tree_count = _place_trees(
+            plan_rows=plan_rows,
+            interior_rows=interior_rows,
+            keep_center=keep_center,
+            keep_radius=keep_radius,
+            target_count=tree_target,
+            rng=rng,
+        )
+        if keep_radius < requested_keep_radius:
+            degradation_reasons.append("keep_radius_reduced")
+        if len(houses) < house_target:
+            degradation_reasons.append("insufficient_house_space")
 
-    tree_target = rng.randint(4, 10)
-    tree_count = _place_trees(
-        plan_rows=plan_rows,
-        interior_rows=interior_rows,
-        keep_center=keep_center,
-        keep_radius=keep_radius,
-        target_count=tree_target,
-        rng=rng,
-    )
-
-    counts = _count_values(interior_rows)
-    degraded = len(houses) < house_target
-    report = {
-        "status": "degraded" if degraded else "planned",
-        "algorithm": "courtyard_keep_houses_trees_v1",
-        "seed": seed,
-        "keep": {
+        keep_report = {
+            "status": "planned",
             "shape": "round",
             "center": {"x": keep_center[0], "y": keep_center[1]},
+            "requested_radius_tiles": requested_keep_radius,
             "radius_tiles": keep_radius,
             "diameter_tiles": keep_radius * 2 + 1,
+            "clearance_margin_tiles": keep_margin,
+            "search_scope": search_scope,
             "height_levels_above_ground": 16,
             "door": {"x": keep_door[0], "y": keep_door[1]},
-            "wall_tiles": counts[INTERIOR_KEEP_WALL],
-            "floor_tiles": counts[INTERIOR_KEEP_FLOOR],
-        },
+        }
+
+    counts = _count_values(interior_rows)
+    keep_report["wall_tiles"] = counts[INTERIOR_KEEP_WALL]
+    keep_report["floor_tiles"] = counts[INTERIOR_KEEP_FLOOR]
+    degraded = bool(degradation_reasons)
+    report = {
+        "status": "degraded" if degraded else "planned",
+        "algorithm": "courtyard_keep_houses_trees_v2",
+        "seed": seed,
+        "keep": keep_report,
         "houses": [
             {
                 "bounds": {
@@ -171,9 +194,8 @@ def build_fortress_interior_plan(
         ],
         "house_count": len(houses),
         "requested_house_count": house_target,
-        "degradation_reason": (
-            "insufficient_courtyard_space" if degraded else None
-        ),
+        "degradation_reason": degradation_reasons[0] if degraded else None,
+        "degradation_reasons": degradation_reasons,
         "tree_count": tree_count,
         "requested_tree_count": tree_target,
         "path_width_tiles": path_width,
@@ -218,14 +240,15 @@ def _empty_result(
     )
 
 
-def _find_keep_center(
+def _find_keep_placement(
     *,
     plan_rows: list[list[int]],
     center: tuple[int, int],
     gate: tuple[int, int],
-    radius: int,
+    requested_radius: int,
     fortress_span: int,
-) -> tuple[int, int]:
+) -> tuple[tuple[int, int], int, int, str] | None:
+    """Find an adaptive keep placement without failing the whole map."""
     dx = center[0] - gate[0]
     dy = center[1] - gate[1]
     length = hypot(dx, dy) or 1.0
@@ -234,22 +257,42 @@ def _find_keep_center(
         round(center[0] + dx / length * offset),
         round(center[1] + dy / length * offset),
     )
-    candidates: list[tuple[float, tuple[int, int]]] = []
-    search_radius = max(4, round(fortress_span * 0.16))
-    for y in range(target[1] - search_radius, target[1] + search_radius + 1):
-        for x in range(target[0] - search_radius, target[0] + search_radius + 1):
-            if not _disk_fits_courtyard(
-                plan_rows=plan_rows,
-                center=(x, y),
-                radius=radius + 2,
-            ):
-                continue
-            score = hypot(x - target[0], y - target[1])
-            candidates.append((score, (x, y)))
-    if not candidates:
-        raise ValueError("No valid courtyard location for the central keep")
-    candidates.sort(key=lambda item: item[0])
-    return candidates[0][1]
+    local_search_radius = max(4, round(fortress_span * 0.16))
+    height = len(plan_rows)
+    width = len(plan_rows[0])
+
+    local_bounds = (
+        max(0, target[0] - local_search_radius),
+        min(width - 1, target[0] + local_search_radius),
+        max(0, target[1] - local_search_radius),
+        min(height - 1, target[1] + local_search_radius),
+    )
+    search_scopes = (
+        ("preferred_area", local_bounds),
+        ("full_courtyard", (0, width - 1, 0, height - 1)),
+    )
+
+    for keep_radius in range(requested_radius, 2, -1):
+        for margin in (2, 1, 0):
+            for scope_name, bounds in search_scopes:
+                min_x, max_x, min_y, max_y = bounds
+                candidates: list[tuple[float, tuple[int, int]]] = []
+                for y in range(min_y, max_y + 1):
+                    for x in range(min_x, max_x + 1):
+                        if not _disk_fits_courtyard(
+                            plan_rows=plan_rows,
+                            center=(x, y),
+                            radius=keep_radius + margin,
+                        ):
+                            continue
+                        score = hypot(x - target[0], y - target[1])
+                        candidates.append((score, (x, y)))
+                if candidates:
+                    candidates.sort(
+                        key=lambda item: (item[0], item[1][1], item[1][0])
+                    )
+                    return candidates[0][1], keep_radius, margin, scope_name
+    return None
 
 
 def _draw_keep(
