@@ -17,6 +17,7 @@ from .fortress_island import (
 )
 
 SHALLOW_LEVEL = -1
+PATH_LEVEL = 0
 APPROACH_OUTSIDE = 0
 APPROACH_SHALLOW = 1
 APPROACH_PATH = 2
@@ -108,13 +109,17 @@ def materialize_shallow_fortress_approach(
         for x, value in enumerate(approach_row):
             if value == APPROACH_OUTSIDE:
                 continue
-            if value >= APPROACH_SHALLOW and geographic_rows[y][x] < 0:
+            if value == APPROACH_SHALLOW and geographic_rows[y][x] < 0:
                 if geographic_rows[y][x] != SHALLOW_LEVEL or runtime_rows[y][x] != SHALLOW_LEVEL:
                     changed_tiles += 1
                 geographic_rows[y][x] = SHALLOW_LEVEL
                 runtime_rows[y][x] = SHALLOW_LEVEL
                 shallow_tiles += 1
-            if value == APPROACH_PATH:
+            elif value == APPROACH_PATH:
+                if geographic_rows[y][x] != PATH_LEVEL or runtime_rows[y][x] != PATH_LEVEL:
+                    changed_tiles += 1
+                geographic_rows[y][x] = PATH_LEVEL
+                runtime_rows[y][x] = PATH_LEVEL
                 mutable_rows[y][x] = "."
                 path_tiles += 1
 
@@ -149,6 +154,8 @@ def materialize_shallow_fortress_approach(
         "gate_width_tiles": gate_width,
         "shallow_width_tiles": shallow_width,
         "shallow_level": SHALLOW_LEVEL,
+        "path_level": PATH_LEVEL,
+        "path_terrain": "old_overgrown_road",
         "changed_tiles": changed_tiles,
         "shallow_tiles": shallow_tiles,
         "path_tiles": path_tiles,
@@ -223,6 +230,64 @@ def _find_mainland_landing(
                 if best is None or candidate < best:
                     best = candidate
             break
+    if best is not None:
+        return best[1], best[2]
+    return _nearest_mainland_landing(
+        levels=levels,
+        island_mask_rows=island_mask_rows,
+        center=center,
+        gate=gate,
+    )
+
+
+def _nearest_mainland_landing(
+    *,
+    levels: list[list[int]],
+    island_mask_rows: list[list[int]],
+    center: tuple[int, int],
+    gate: tuple[int, int],
+) -> tuple[int, int] | None:
+    """Find the nearest outward land cell when directional rays miss land."""
+    height = len(levels)
+    width = len(levels[0]) if levels else 0
+    outward_x = gate[0] - center[0]
+    outward_y = gate[1] - center[1]
+    outward_length = hypot(outward_x, outward_y) or 1.0
+    best: tuple[float, int, int] | None = None
+    for y in range(height):
+        for x in range(width):
+            if island_mask_rows[y][x] != MASK_OUTSIDE or levels[y][x] < 0:
+                continue
+            dx = x - gate[0]
+            dy = y - gate[1]
+            distance = hypot(dx, dy)
+            if distance < 2.0:
+                continue
+            direction_dot = (dx * outward_x + dy * outward_y) / (
+                distance * outward_length
+            )
+            if direction_dot < 0.15:
+                continue
+            water_samples = 0
+            sample_count = max(2, round(distance))
+            blocked_by_island = False
+            for step in range(1, sample_count):
+                t = step / sample_count
+                sample_x = round(gate[0] + dx * t)
+                sample_y = round(gate[1] + dy * t)
+                if not (0 <= sample_x < width and 0 <= sample_y < height):
+                    blocked_by_island = True
+                    break
+                if island_mask_rows[sample_y][sample_x] != MASK_OUTSIDE:
+                    continue
+                if levels[sample_y][sample_x] < 0:
+                    water_samples += 1
+            if blocked_by_island or water_samples == 0:
+                continue
+            angular_penalty = (1.0 - direction_dot) * 12.0
+            candidate = (distance + angular_penalty, x, y)
+            if best is None or candidate < best:
+                best = candidate
     return None if best is None else (best[1], best[2])
 
 

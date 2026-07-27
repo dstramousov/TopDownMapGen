@@ -70,6 +70,7 @@ from .tactical.elevation import (
 from .tactical.fallback import FallbackPositionBuilder
 from .tactical.fortress_approach import materialize_shallow_fortress_approach
 from .tactical.fortress_interior import build_fortress_interior_plan
+from .tactical.fortress_interior_materialize import materialize_fortress_interior
 from .tactical.fortress_materialize import materialize_fortress_shell
 from .tactical.fortress_island import (
     materialize_lake_island,
@@ -440,6 +441,18 @@ class WorldgenPipeline:
                 fortress_site_report = fortress_shell.site_report
                 debug_data["fortress_site"] = fortress_site_report
                 write_json(fortress_site_report, outputs.fortress_site_report)
+                if fortress_interior is not None and fortress_interior.interior_rows:
+                    interior_materialization = materialize_fortress_interior(
+                        rows=rows,
+                        runtime_data=runtime_data,
+                        site_report=fortress_site_report,
+                        interior_rows=fortress_interior.interior_rows,
+                    )
+                    rows = interior_materialization.rows
+                    runtime_data = interior_materialization.runtime_data
+                    fortress_site_report = interior_materialization.site_report
+                    debug_data["fortress_site"] = fortress_site_report
+                    write_json(fortress_site_report, outputs.fortress_site_report)
             geography_grids = runtime_data.get("elevation_generation_report", {}).get("geography", {}).get("grids", {})
             elevation_rows = geography_grids.get("geographic_level_grid", {}).get("rows", [])
             with timed_stage(LOGGER, "tactical.apply_hydrology"):

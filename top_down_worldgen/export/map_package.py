@@ -254,8 +254,15 @@ def write_map_package(
             "format": "sparse_uint16_masks",
             "default_mask": 0,
             "full_mask": 65535,
+            "bit_order": "row_major_top_left_lsb",
+            "occupancy_rule": "bit_set_means_vertical_structure_solid",
+            "floor_rule": "floor_structure_types_use_zero_mask_and_render_as_tile_surfaces",
             "cells": sparse_micro_cells(structure_geometry),
-            "summary": {"cells": structure_geometry.summary["micro_cells"]},
+            "summary": {
+                "cells": structure_geometry.summary["micro_cells"],
+                "full_cells": structure_geometry.summary["full_micro_cells"],
+                "partial_cells": structure_geometry.summary["partial_micro_cells"],
+            },
         },
         outputs.map_package_structure_micro_geometry,
     )

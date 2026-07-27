@@ -317,6 +317,11 @@ def test_shallow_fortress_approach_reaches_mainland_with_gate_width_path() -> No
     assert result.site_report["fortress_approach"]["shallow_width_tiles"] == 11
     assert result.path_tiles > 0
     assert any("." in row for row in result.rows)
+    levels = result.runtime_data["elevation_generation_report"]["geography"]["grids"]["geographic_level_grid"]["rows"]
+    for y, row in enumerate(result.approach_rows):
+        for x, value in enumerate(row):
+            if value == APPROACH_PATH:
+                assert levels[y][x] == 0
 
 
 def test_fortress_interior_plan_contains_keep_houses_paths_and_trees() -> None:
@@ -566,3 +571,83 @@ def test_fortress_interior_plan_is_deterministic() -> None:
 
     assert first.interior_rows == second.interior_rows
     assert first.site_report == second.site_report
+
+
+def test_fortress_interior_materialization_exports_keep_and_houses() -> None:
+    from top_down_worldgen.tactical.fortress_interior import (
+        INTERIOR_HOUSE_FLOOR,
+        INTERIOR_HOUSE_WALL,
+        INTERIOR_KEEP_FLOOR,
+        INTERIOR_KEEP_WALL,
+        INTERIOR_PATH,
+        INTERIOR_TREE,
+    )
+    from top_down_worldgen.tactical.fortress_interior_materialize import (
+        materialize_fortress_interior,
+    )
+
+    interior_rows = [[0 for _ in range(6)] for _ in range(6)]
+    interior_rows[1][1] = INTERIOR_KEEP_WALL
+    interior_rows[1][2] = INTERIOR_KEEP_FLOOR
+    interior_rows[2][1] = INTERIOR_HOUSE_WALL
+    interior_rows[2][2] = INTERIOR_HOUSE_FLOOR
+    interior_rows[3][1] = INTERIOR_PATH
+    interior_rows[3][2] = INTERIOR_TREE
+    site_report = {
+        "policy": {},
+        "fortress_plan": {
+            "materialization": {
+                "structure_heights": [],
+                "structure_types": [],
+            },
+        },
+        "fortress_interior_plan": {},
+    }
+
+    result = materialize_fortress_interior(
+        rows=["R" * 6 for _ in range(6)],
+        runtime_data={},
+        site_report=site_report,
+        interior_rows=interior_rows,
+    )
+
+    assert result.rows[1][1] == "#"
+    assert result.rows[1][2] == "R"
+    assert result.rows[2][1] == "#"
+    assert result.rows[2][2] == "R"
+    assert result.rows[3][1] == "R"
+    assert result.rows[3][2] == "T"
+    materialization = result.site_report["fortress_plan"]["materialization"]
+    assert [1, 1, 16] in materialization["structure_heights"]
+    assert [1, 1, "fortress_keep"] in materialization["structure_types"]
+    assert [1, 2, "fortress_building"] in materialization["structure_types"]
+    assert result.site_report["fortress_interior_plan"]["materialized_to_terrain"] is True
+
+
+def test_fortress_approach_falls_back_to_nearest_outward_land() -> None:
+    from top_down_worldgen.tactical.fortress_approach import (
+        _find_mainland_landing,
+    )
+    from top_down_worldgen.tactical.fortress_island import MASK_OUTSIDE
+
+    size = 30
+    levels = [[-2 for _ in range(size)] for _ in range(size)]
+    island_mask = [[MASK_OUTSIDE for _ in range(size)] for _ in range(size)]
+    for y in range(10, 20):
+        for x in range(10, 20):
+            island_mask[y][x] = 1
+            levels[y][x] = 1
+    # Land exists outward from the gate, but not on the narrow ray fan.
+    for y in range(4, 8):
+        for x in range(22, 27):
+            levels[y][x] = 0
+
+    landing = _find_mainland_landing(
+        levels=levels,
+        island_mask_rows=island_mask,
+        center=(15, 15),
+        gate=(19, 11),
+    )
+
+    assert landing is not None
+    assert levels[landing[1]][landing[0]] == 0
