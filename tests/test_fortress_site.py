@@ -306,3 +306,103 @@ def test_shallow_fortress_approach_reaches_mainland_with_gate_width_path() -> No
     assert result.site_report["fortress_approach"]["shallow_width_tiles"] == 11
     assert result.path_tiles > 0
     assert any("." in row for row in result.rows)
+
+
+def test_fortress_interior_plan_contains_keep_houses_paths_and_trees() -> None:
+    from top_down_worldgen.tactical.fortress_interior import (
+        INTERIOR_HOUSE_FLOOR,
+        INTERIOR_HOUSE_WALL,
+        INTERIOR_KEEP_FLOOR,
+        INTERIOR_KEEP_WALL,
+        INTERIOR_PATH,
+        INTERIOR_TREE,
+        build_fortress_interior_plan,
+    )
+    from top_down_worldgen.tactical.fortress_plan import PLAN_COURTYARD, PLAN_GATE, PLAN_WALL
+
+    width = 100
+    height = 100
+    plan_rows = [[0 for _ in range(width)] for _ in range(height)]
+    for y in range(20, 81):
+        for x in range(20, 81):
+            plan_rows[y][x] = PLAN_COURTYARD
+    for x in range(20, 81):
+        plan_rows[20][x] = PLAN_WALL
+        plan_rows[80][x] = PLAN_WALL
+    for y in range(20, 81):
+        plan_rows[y][20] = PLAN_WALL
+        plan_rows[y][80] = PLAN_WALL
+    for x in range(48, 53):
+        plan_rows[80][x] = PLAN_GATE
+
+    site_report = {
+        "policy": {},
+        "fortress_plan": {
+            "center": {"x": 50, "y": 50},
+            "gate_center": {"x": 50, "y": 80},
+            "fortress_span_tiles": 50,
+        },
+    }
+    result = build_fortress_interior_plan(
+        runtime_data={},
+        site_report=site_report,
+        plan_rows=plan_rows,
+        seed=42,
+    )
+
+    flat = [value for row in result.interior_rows for value in row]
+    assert INTERIOR_KEEP_WALL in flat
+    assert INTERIOR_KEEP_FLOOR in flat
+    assert INTERIOR_HOUSE_WALL in flat
+    assert INTERIOR_HOUSE_FLOOR in flat
+    assert INTERIOR_PATH in flat
+    assert INTERIOR_TREE in flat
+    assert 2 <= result.house_count <= 3
+    assert 4 <= result.tree_count <= 10
+    report = result.site_report["fortress_interior_plan"]
+    assert report["keep"]["height_levels_above_ground"] == 16
+    assert report["materialized_to_terrain"] is False
+
+
+def test_fortress_interior_plan_is_deterministic() -> None:
+    from top_down_worldgen.tactical.fortress_interior import build_fortress_interior_plan
+    from top_down_worldgen.tactical.fortress_plan import PLAN_COURTYARD, PLAN_GATE, PLAN_WALL
+
+    width = 90
+    height = 90
+    plan_rows = [[0 for _ in range(width)] for _ in range(height)]
+    for y in range(15, 76):
+        for x in range(15, 76):
+            plan_rows[y][x] = PLAN_COURTYARD
+    for x in range(15, 76):
+        plan_rows[15][x] = PLAN_WALL
+        plan_rows[75][x] = PLAN_WALL
+    for y in range(15, 76):
+        plan_rows[y][15] = PLAN_WALL
+        plan_rows[y][75] = PLAN_WALL
+    for x in range(43, 48):
+        plan_rows[75][x] = PLAN_GATE
+
+    site_report = {
+        "policy": {},
+        "fortress_plan": {
+            "center": {"x": 45, "y": 45},
+            "gate_center": {"x": 45, "y": 75},
+            "fortress_span_tiles": 50,
+        },
+    }
+    first = build_fortress_interior_plan(
+        runtime_data={},
+        site_report=site_report,
+        plan_rows=plan_rows,
+        seed=123,
+    )
+    second = build_fortress_interior_plan(
+        runtime_data={},
+        site_report=site_report,
+        plan_rows=plan_rows,
+        seed=123,
+    )
+
+    assert first.interior_rows == second.interior_rows
+    assert first.site_report == second.site_report

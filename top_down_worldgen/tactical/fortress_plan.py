@@ -255,6 +255,7 @@ def render_fortress_plan_preview(
     island_mask_rows: list[list[int]],
     plan_rows: list[list[int]],
     approach_rows: list[list[int]] | None = None,
+    interior_rows: list[list[int]] | None = None,
 ) -> None:
     """Render island and fortress shell plan preview.
 
@@ -264,6 +265,7 @@ def render_fortress_plan_preview(
         island_mask_rows: Island classification mask.
         plan_rows: Fortress plan classification grid.
         approach_rows: Optional shallow-approach classification grid.
+        interior_rows: Optional fortress interior classification grid.
     """
     height = len(elevation_rows)
     width = len(elevation_rows[0]) if elevation_rows else 0
@@ -281,9 +283,28 @@ def render_fortress_plan_preview(
                 and x < len(approach_rows[y])
                 else 0
             )
+            interior = (
+                interior_rows[y][x]
+                if interior_rows is not None
+                and y < len(interior_rows)
+                and x < len(interior_rows[y])
+                else 0
+            )
             mask = island_mask_rows[y][x]
             level = elevation_rows[y][x]
-            if plan == PLAN_GATE:
+            if interior == 2:
+                color = (75, 70, 66)
+            elif interior == 3:
+                color = (151, 143, 126)
+            elif interior == 4:
+                color = (112, 82, 62)
+            elif interior == 5:
+                color = (176, 139, 94)
+            elif interior == 6:
+                color = (47, 91, 43)
+            elif interior == 1:
+                color = (188, 165, 111)
+            elif plan == PLAN_GATE:
                 color = (208, 153, 64)
             elif plan == PLAN_TOWER:
                 color = (105, 99, 92)

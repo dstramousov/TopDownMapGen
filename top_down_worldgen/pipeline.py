@@ -69,6 +69,7 @@ from .tactical.elevation import (
 )
 from .tactical.fallback import FallbackPositionBuilder
 from .tactical.fortress_approach import materialize_shallow_fortress_approach
+from .tactical.fortress_interior import build_fortress_interior_plan
 from .tactical.fortress_materialize import materialize_fortress_shell
 from .tactical.fortress_island import (
     materialize_lake_island,
@@ -337,6 +338,7 @@ class WorldgenPipeline:
             debug_data["terrain_island_repair"] = terrain_island_repair.report
             fortress_island = None
             fortress_plan = None
+            fortress_interior = None
             fortress_approach = None
             with timed_stage(LOGGER, "tactical.attach_places_and_elevation"):
                 runtime_data = attach_places(runtime_data)
@@ -381,6 +383,16 @@ class WorldgenPipeline:
                     debug_data["fortress_site"] = fortress_site_report
                     write_json(fortress_site_report, outputs.fortress_site_report)
                     if fortress_plan.plan_rows:
+                        fortress_interior = build_fortress_interior_plan(
+                            runtime_data=runtime_data,
+                            site_report=fortress_site_report,
+                            plan_rows=fortress_plan.plan_rows,
+                            seed=config.resolved_seed,
+                        )
+                        runtime_data = fortress_interior.runtime_data
+                        fortress_site_report = fortress_interior.site_report
+                        debug_data["fortress_site"] = fortress_site_report
+                        write_json(fortress_site_report, outputs.fortress_site_report)
                         fortress_approach = materialize_shallow_fortress_approach(
                             rows=rows,
                             runtime_data=runtime_data,
@@ -405,6 +417,11 @@ class WorldgenPipeline:
                             island_mask_rows=fortress_island.mask_rows,
                             plan_rows=fortress_plan.plan_rows,
                             approach_rows=fortress_approach.approach_rows,
+                            interior_rows=(
+                                fortress_interior.interior_rows
+                                if fortress_interior is not None
+                                else None
+                            ),
                         )
             if (
                 fortress_island is not None
