@@ -2576,7 +2576,30 @@ def _ruin_architecture_valid(
         for x, symbol in enumerate(row)
         if symbol == "#"
     }
+    actual_global -= _fortress_structure_points(runtime_data)
     return actual_global == planned_global
+
+
+def _fortress_structure_points(runtime_data: dict[str, Any]) -> set[tuple[int, int]]:
+    plan = runtime_data.get("fortress_plan")
+    if not isinstance(plan, dict):
+        return set()
+    materialization = plan.get("materialization")
+    if not isinstance(materialization, dict):
+        return set()
+    entries = materialization.get("structure_heights")
+    if not isinstance(entries, list):
+        return set()
+    return {
+        (item[0], item[1])
+        for item in entries
+        if (
+            isinstance(item, list)
+            and len(item) == 3
+            and isinstance(item[0], int)
+            and isinstance(item[1], int)
+        )
+    }
 
 
 def _ruin_site_foundations_flat(

@@ -9,12 +9,14 @@ def analyze_ruin_wall_provenance(
     *,
     rows: list[str],
     ruin_sites: Any,
+    fortress_plan: Any = None,
 ) -> dict[str, Any]:
     """Report whether ruin-wall tiles belong to planned building footprints.
 
     Args:
         rows: Final semantic terrain rows.
         ruin_sites: Optional ruin-site planner metadata.
+        fortress_plan: Optional fortress materialization metadata.
 
     Returns:
         JSON-serializable provenance report.
@@ -26,6 +28,8 @@ def analyze_ruin_wall_provenance(
         for x, symbol in enumerate(row)
         if symbol == RUIN_WALL_SYMBOL
     }
+    fortress_points = _fortress_wall_points(fortress_plan)
+    ruin_wall_points -= fortress_points
     outside = sorted(
         ruin_wall_points - planned_points,
         key=lambda point: (point[1], point[0]),
@@ -44,6 +48,7 @@ def analyze_ruin_wall_provenance(
             "total_ruin_wall_tiles": len(ruin_wall_points),
             "inside_planned_buildings": inside_count,
             "outside_planned_buildings": len(outside),
+            "fortress_wall_tiles_excluded": len(fortress_points),
             "artificial_connectivity_blockers_created": 0,
         },
         "outside_points": [
@@ -86,4 +91,25 @@ def _planned_building_points(ruin_sites: Any) -> set[tuple[int, int]]:
             for y in range(top, bottom + 1):
                 for x in range(left, right + 1):
                     points.add((x, y))
+    return points
+
+
+def _fortress_wall_points(fortress_plan: Any) -> set[tuple[int, int]]:
+    if not isinstance(fortress_plan, dict):
+        return set()
+    materialization = fortress_plan.get("materialization")
+    if not isinstance(materialization, dict):
+        return set()
+    entries = materialization.get("structure_heights")
+    if not isinstance(entries, list):
+        return set()
+    points: set[tuple[int, int]] = set()
+    for item in entries:
+        if (
+            isinstance(item, list)
+            and len(item) == 3
+            and isinstance(item[0], int)
+            and isinstance(item[1], int)
+        ):
+            points.add((item[0], item[1]))
     return points

@@ -9,7 +9,8 @@ from dataclasses import dataclass
 RUIN_FLOOR = "ruin_floor"
 RUIN_WALL = "ruin_wall_blocker"
 _MIN_HEIGHT = 1
-_MAX_HEIGHT = 3
+_MAX_RUIN_HEIGHT = 3
+_MAX_HEIGHT = 255
 _NO_COMPONENT = -1
 _NEIGHBORS: tuple[tuple[int, int], ...] = (
     (0, -1),
@@ -25,7 +26,7 @@ class StructureHeightSummary:
 
     ruin_floor_tiles: int
     ruin_wall_tiles: int
-    height_counts: tuple[int, int, int, int]
+    height_counts: tuple[int, ...]
     connected_wall_components: int
     average_wall_height: float
     maximum_adjacent_height_delta: int
@@ -42,10 +43,7 @@ class StructureHeightSummary:
         return {
             "ruin_floor_tiles": self.ruin_floor_tiles,
             "ruin_wall_tiles": self.ruin_wall_tiles,
-            "height_0": self.height_counts[0],
-            "height_1": self.height_counts[1],
-            "height_2": self.height_counts[2],
-            "height_3": self.height_counts[3],
+            **{f"height_{index}": count for index, count in enumerate(self.height_counts) if count},
             "connected_wall_components": self.connected_wall_components,
             "average_wall_height": round(self.average_wall_height, 6),
             "maximum_adjacent_height_delta": (
@@ -74,6 +72,7 @@ def build_structure_height(
     collision_rows: list[str],
     resolved_seed: int,
     ruin_sites: object | None = None,
+    fortress_plan: object | None = None,
 ) -> StructureHeightResult:
     """Build deterministic ruined-wall heights from final terrain.
 
@@ -85,6 +84,7 @@ def build_structure_height(
         collision_rows: Final zero/one collision rows.
         resolved_seed: Concrete generation seed.
         ruin_sites: Optional semantic architecture metadata.
+        fortress_plan: Optional fortress shell metadata.
 
     Returns:
         Generated height rows and validation summary.
@@ -108,6 +108,7 @@ def build_structure_height(
     component_ids = [[_NO_COMPONENT for _ in range(width)] for _ in range(height)]
     components = _find_components(terrain_rows, component_ids)
     planned_heights = _planned_architecture_heights(ruin_sites)
+    fortress_heights = _fortress_structure_heights(fortress_plan)
 
     for component_id, component in enumerate(components):
         _assign_component_heights(
@@ -123,10 +124,18 @@ def build_structure_height(
             raise ValueError("planned structure height is outside the map")
         if terrain_rows[y][x] != RUIN_WALL:
             raise ValueError("planned structure height does not reference a ruin wall")
-        if not _MIN_HEIGHT <= value <= _MAX_HEIGHT:
+        if not _MIN_HEIGHT <= value <= _MAX_RUIN_HEIGHT:
             raise ValueError("planned structure height is outside the supported range")
         rows[y][x] = value
         architecture_planned_tiles += 1
+    for (x, y), value in fortress_heights.items():
+        if not (0 <= x < width and 0 <= y < height):
+            raise ValueError("fortress structure height is outside the map")
+        if terrain_rows[y][x] != RUIN_WALL:
+            raise ValueError("fortress structure height does not reference a wall")
+        if not _MIN_HEIGHT <= value <= _MAX_HEIGHT:
+            raise ValueError("fortress structure height is outside uint8 range")
+        rows[y][x] = value
 
     _validate_invariants(terrain_rows, collision_rows, rows)
     summary = _build_summary(
@@ -176,6 +185,27 @@ def _planned_architecture_heights(ruin_sites: object | None) -> dict[tuple[int, 
                 output[point] = value
     return output
 
+
+
+def _fortress_structure_heights(fortress_plan: object | None) -> dict[tuple[int, int], int]:
+    """Return explicit fortress shell heights from materialization metadata."""
+    if not isinstance(fortress_plan, dict):
+        return {}
+    materialization = fortress_plan.get("materialization")
+    if not isinstance(materialization, dict):
+        return {}
+    entries = materialization.get("structure_heights")
+    if not isinstance(entries, list):
+        return {}
+    output: dict[tuple[int, int], int] = {}
+    for item in entries:
+        if not isinstance(item, list) or len(item) != 3:
+            raise ValueError("invalid fortress structure-height entry")
+        x, y, value = item
+        if not all(isinstance(part, int) for part in (x, y, value)):
+            raise ValueError("invalid fortress structure-height value")
+        output[(x, y)] = value
+    return output
 
 def _find_components(
     terrain_rows: list[list[str]],
@@ -269,7 +299,7 @@ def _assign_component_heights(
             "ruin_structure_height_v1",
         ) % 100
         delta = -1 if roll < 24 else 1 if roll >= 82 else 0
-        rows[y][x] = max(_MIN_HEIGHT, min(_MAX_HEIGHT, base_height + delta))
+        rows[y][x] = max(_MIN_HEIGHT, min(_MAX_RUIN_HEIGHT, base_height + delta))
 
     for _ in range(2):
         updated = [row[:] for row in rows]
@@ -291,8 +321,8 @@ def _assign_component_heights(
             if all(neighbor < value for neighbor in neighbors):
                 value = max(_MIN_HEIGHT, value - 1)
             elif all(neighbor > value for neighbor in neighbors):
-                value = min(_MAX_HEIGHT, value + 1)
-            updated[y][x] = max(_MIN_HEIGHT, min(_MAX_HEIGHT, value))
+                value = min(_MAX_RUIN_HEIGHT, value + 1)
+            updated[y][x] = max(_MIN_HEIGHT, min(_MAX_RUIN_HEIGHT, value))
         rows[:] = updated
 
     for x, y in component:
@@ -415,7 +445,7 @@ def _build_summary(
     component_count: int,
     architecture_planned_tiles: int,
 ) -> StructureHeightSummary:
-    counts = [0, 0, 0, 0]
+    counts = [0 for _ in range(_MAX_HEIGHT + 1)]
     ruin_floor_tiles = 0
     ruin_wall_tiles = 0
     wall_height_total = 0

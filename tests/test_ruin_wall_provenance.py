@@ -32,6 +32,7 @@ def test_ruin_wall_provenance_detects_hash_outside_buildings() -> None:
         "total_ruin_wall_tiles": 3,
         "inside_planned_buildings": 2,
         "outside_planned_buildings": 1,
+        "fortress_wall_tiles_excluded": 0,
         "artificial_connectivity_blockers_created": 0,
     }
     assert report["outside_points"] == [{"x": 4, "y": 2}]

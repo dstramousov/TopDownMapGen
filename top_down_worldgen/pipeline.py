@@ -68,6 +68,7 @@ from .tactical.elevation import (
     build_natural_geography_model,
 )
 from .tactical.fallback import FallbackPositionBuilder
+from .tactical.fortress_materialize import materialize_fortress_shell
 from .tactical.fortress_island import (
     materialize_lake_island,
     render_fortress_island_preview,
@@ -333,6 +334,8 @@ class WorldgenPipeline:
             runtime_data = attach_tile_grid(runtime_data, rows)
             runtime_data["terrain_island_repair"] = terrain_island_repair.report
             debug_data["terrain_island_repair"] = terrain_island_repair.report
+            fortress_island = None
+            fortress_plan = None
             with timed_stage(LOGGER, "tactical.attach_places_and_elevation"):
                 runtime_data = attach_places(runtime_data)
                 runtime_data = attach_next_gen_elevation(
@@ -382,6 +385,23 @@ class WorldgenPipeline:
                             island_mask_rows=fortress_island.mask_rows,
                             plan_rows=fortress_plan.plan_rows,
                         )
+            if (
+                fortress_island is not None
+                and fortress_plan is not None
+                and fortress_island.mask_rows
+                and fortress_plan.plan_rows
+            ):
+                fortress_shell = materialize_fortress_shell(
+                    rows=rows,
+                    runtime_data=runtime_data,
+                    site_report=fortress_site_report,
+                    plan_rows=fortress_plan.plan_rows,
+                )
+                rows = fortress_shell.rows
+                runtime_data = fortress_shell.runtime_data
+                fortress_site_report = fortress_shell.site_report
+                debug_data["fortress_site"] = fortress_site_report
+                write_json(fortress_site_report, outputs.fortress_site_report)
             geography_grids = runtime_data.get("elevation_generation_report", {}).get("geography", {}).get("grids", {})
             elevation_rows = geography_grids.get("geographic_level_grid", {}).get("rows", [])
             with timed_stage(LOGGER, "tactical.apply_hydrology"):
@@ -454,6 +474,7 @@ class WorldgenPipeline:
             ruin_wall_provenance = analyze_ruin_wall_provenance(
                 rows=rows,
                 ruin_sites=runtime_data.get("ruin_sites"),
+                fortress_plan=runtime_data.get("fortress_plan"),
             )
             runtime_data["ruin_wall_provenance"] = ruin_wall_provenance
             debug_data["ruin_wall_provenance"] = ruin_wall_provenance

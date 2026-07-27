@@ -184,3 +184,52 @@ def test_lake_island_fortress_plan_has_round_towers_and_gate() -> None:
     assert PLAN_WALL in flat
     assert plan.tower_count >= 6
     assert plan.site_report["fortress_plan"]["materialized_to_terrain"] is False
+
+
+
+def test_fortress_shell_materializes_blockers_gate_and_heights() -> None:
+    from top_down_worldgen.tactical.fortress_materialize import (
+        FORTRESS_GATE_TOWER_HEIGHT,
+        FORTRESS_TOWER_HEIGHT,
+        FORTRESS_WALL_HEIGHT,
+        materialize_fortress_shell,
+    )
+    from top_down_worldgen.tactical.fortress_plan import (
+        PLAN_GATE,
+        PLAN_TOWER,
+        PLAN_WALL,
+    )
+
+    rows = ["+" * 25 for _ in range(25)]
+    plan_rows = [[0 for _ in range(25)] for _ in range(25)]
+    plan_rows[1][1] = PLAN_WALL
+    plan_rows[2][2] = PLAN_TOWER
+    plan_rows[20][20] = PLAN_TOWER
+    plan_rows[3][3] = PLAN_GATE
+    site_report = {
+        "fortress_plan": {
+            "gate_center": {"x": 3, "y": 3},
+            "gate_tower_centers": [{"x": 2, "y": 2}],
+            "materialized_to_terrain": False,
+        },
+    }
+
+    result = materialize_fortress_shell(
+        rows=rows,
+        runtime_data={},
+        site_report=site_report,
+        plan_rows=plan_rows,
+    )
+
+    assert result.rows[1][1] == "#"
+    assert result.rows[2][2] == "#"
+    assert result.rows[20][20] == "#"
+    assert result.rows[3][3] == "R"
+    entries = {
+        (x, y): height
+        for x, y, height in result.site_report["fortress_plan"]["materialization"]["structure_heights"]
+    }
+    assert entries[(1, 1)] == FORTRESS_WALL_HEIGHT
+    assert entries[(2, 2)] == FORTRESS_GATE_TOWER_HEIGHT
+    assert entries[(20, 20)] == FORTRESS_TOWER_HEIGHT
+    assert result.site_report["fortress_plan"]["materialized_to_terrain"] is True

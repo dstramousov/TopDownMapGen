@@ -199,6 +199,7 @@ def write_map_package(
         collision_rows=final_collision_rows,
         resolved_seed=resolved_seed,
         ruin_sites=runtime_data.get("ruin_sites"),
+        fortress_plan=runtime_data.get("fortress_plan"),
     )
     write_json(
         {
@@ -209,7 +210,7 @@ def write_map_package(
             "format": "uint8_rows",
             "units": "logical_levels_above_ground",
             "ground_reference": "elevation_plus_one",
-            "range": [0, 3],
+            "range": [0, 255],
             "default": 0,
             "rows": structure_height.rows,
             "summary": structure_height.summary.to_dict(),

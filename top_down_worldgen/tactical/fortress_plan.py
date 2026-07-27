@@ -169,6 +169,9 @@ def build_lake_island_fortress_plan(
         "tower_count": tower_count,
         "gate_center": {"x": gate_center[0], "y": gate_center[1]},
         "gate_width_tiles": gate_half_width * 2 + 1,
+        "gate_tower_centers": [
+            {"x": point[0], "y": point[1]} for point in gate_towers
+        ],
         "wall_tiles": counts[PLAN_WALL],
         "tower_tiles": counts[PLAN_TOWER],
         "gate_tiles": counts[PLAN_GATE],

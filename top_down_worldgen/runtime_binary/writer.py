@@ -680,8 +680,8 @@ def _validate_source(source: RuntimeBinarySource) -> None:
             raise ValueError("runtime elevation exceeds i16")
     for y, row in enumerate(source.structure_height_rows):
         for x, value in enumerate(row):
-            if value < 0 or value > 3:
-                raise ValueError("runtime structure height exceeds u8 v1 contract")
+            if value < 0 or value > 255:
+                raise ValueError("runtime structure height exceeds u8 contract")
             terrain = source.terrain_rows[y][x]
             if terrain == "ruin_wall_blocker":
                 if value == 0:
