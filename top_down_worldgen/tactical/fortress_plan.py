@@ -28,6 +28,25 @@ class FortressPlanResult:
     tower_count: int
 
 
+@dataclass(frozen=True, slots=True)
+class _Tower:
+    """Planned round tower."""
+
+    center: tuple[int, int]
+    radius: int
+    kind: str
+
+
+@dataclass(frozen=True, slots=True)
+class _Segment:
+    """Planned wall segment."""
+
+    start: tuple[int, int]
+    end: tuple[int, int]
+    kind: str
+    bend: float
+
+
 def build_lake_island_fortress_plan(
     *,
     runtime_data: dict[str, Any],
@@ -35,7 +54,7 @@ def build_lake_island_fortress_plan(
     island_mask_rows: list[list[int]],
     seed: int,
 ) -> FortressPlanResult:
-    """Build an outer fortress wall, round towers, and one main gate.
+    """Build a mixed straight/curved fortress shell with round towers.
 
     Args:
         runtime_data: Tactical runtime data.
@@ -84,93 +103,123 @@ def build_lake_island_fortress_plan(
     if fortress_span < 16:
         raise ValueError("Fortress span is too small")
 
-    rng = Random(seed ^ 0xF047_1220_91A7)
+    rng = Random(seed ^ 0xF047_1240_91A7)
+    composition = rng.choice(("compact_mixed", "curved_courtyard"))
     gate_angle = atan2(gate_y - center_y, gate_x - center_x)
-    vertex_count = _clamp(round(fortress_span / 6), 6, 10)
-    base_radius = fortress_span * 0.43
-    vertices = _build_vertices(
-        center_x=center_x,
-        center_y=center_y,
-        base_radius=base_radius,
-        vertex_count=vertex_count,
+    anchors = _build_architectural_anchors(
+        center=(center_x, center_y),
+        fortress_span=fortress_span,
         gate_angle=gate_angle,
+        composition=composition,
         rng=rng,
     )
-    vertices = [
+    anchors = [
         _pull_inside_island(
             point=point,
             center=(center_x, center_y),
             island_mask_rows=island_mask_rows,
             minimum_mask=2,
         )
-        for point in vertices
+        for point in anchors
     ]
 
+    segments = _build_segments(
+        anchors=anchors,
+        center=(center_x, center_y),
+        composition=composition,
+        rng=rng,
+    )
+    perimeter = _sample_perimeter(segments)
     plan_rows = [[PLAN_OUTSIDE for _ in range(width)] for _ in range(height)]
-    _fill_polygon(plan_rows=plan_rows, vertices=vertices, value=PLAN_COURTYARD)
-    wall_thickness = max(1, round(fortress_span * 0.045))
-    for start, end in zip(vertices, vertices[1:] + vertices[:1], strict=True):
-        _draw_thick_line(
+    _fill_polygon(plan_rows=plan_rows, vertices=perimeter, value=PLAN_COURTYARD)
+
+    wall_radius = max(1, round(fortress_span * 0.035))
+    for segment in segments:
+        _draw_segment(
             plan_rows=plan_rows,
-            start=start,
-            end=end,
-            radius=wall_thickness,
-            value=PLAN_WALL,
+            segment=segment,
+            center=(center_x, center_y),
+            radius=wall_radius,
         )
 
-    tower_radius = _clamp(round(fortress_span * 0.085), 3, 7)
-    tower_indices = _select_tower_vertices(vertices=vertices, gate_angle=gate_angle, center=(center_x, center_y))
-    for index in tower_indices:
-        _draw_round_tower(
-            plan_rows=plan_rows,
-            center=vertices[index],
-            outer_radius=tower_radius,
-            wall_thickness=max(1, wall_thickness),
-        )
-
-    gate_center = _nearest_wall_point(
-        vertices=vertices,
+    gate_center, gate_tangent = _nearest_segment_point(
+        segments=segments,
         target=(gate_x, gate_y),
+        center=(center_x, center_y),
     )
     gate_half_width = max(1, round(fortress_span * 0.045))
-    _cut_gate(
-        plan_rows=plan_rows,
+    gate_radius = _clamp(round(fortress_span * 0.075), 3, 5)
+    gate_towers = _make_gate_towers(
         gate_center=gate_center,
-        fortress_center=(center_x, center_y),
+        tangent=gate_tangent,
+        radius=gate_radius,
         half_width=gate_half_width,
     )
 
-    gate_tower_radius = max(3, tower_radius - 1)
-    gate_towers = _gate_tower_centers(
+    towers = _select_architectural_towers(
+        anchors=anchors,
+        center=(center_x, center_y),
+        fortress_span=fortress_span,
         gate_center=gate_center,
-        fortress_center=(center_x, center_y),
-        offset=gate_half_width + gate_tower_radius,
+        gate_towers=gate_towers,
+        composition=composition,
+        rng=rng,
     )
-    for tower_center in gate_towers:
+    towers.extend(gate_towers)
+
+    for tower in towers:
         _draw_round_tower(
             plan_rows=plan_rows,
-            center=tower_center,
-            outer_radius=gate_tower_radius,
-            wall_thickness=max(1, wall_thickness),
+            center=tower.center,
+            outer_radius=tower.radius,
+            wall_thickness=max(1, wall_radius),
         )
 
-    _validate_plan(plan_rows=plan_rows, island_mask_rows=island_mask_rows)
+    _cut_gate(
+        plan_rows=plan_rows,
+        gate_center=gate_center,
+        tangent=gate_tangent,
+        half_width=gate_half_width,
+    )
+
+    _validate_plan(
+        plan_rows=plan_rows,
+        island_mask_rows=island_mask_rows,
+        towers=towers,
+    )
     counts = _count_plan(plan_rows)
-    tower_count = len(tower_indices) + 2
     plan_report = {
         "status": "planned",
-        "algorithm": "irregular_polygon_round_towers_v1",
+        "algorithm": "architectural_nodes_mixed_walls_v2",
+        "composition": composition,
         "seed": seed,
         "center": {"x": center_x, "y": center_y},
         "fortress_span_tiles": fortress_span,
-        "vertex_count": vertex_count,
-        "wall_thickness_tiles": wall_thickness * 2 + 1,
-        "tower_radius_tiles": tower_radius,
-        "tower_count": tower_count,
+        "anchor_count": len(anchors),
+        "wall_thickness_tiles": wall_radius * 2 + 1,
+        "segments": [
+            {
+                "start": {"x": segment.start[0], "y": segment.start[1]},
+                "end": {"x": segment.end[0], "y": segment.end[1]},
+                "kind": segment.kind,
+                "bend": round(segment.bend, 3),
+            }
+            for segment in segments
+        ],
+        "tower_count": len(towers),
+        "towers": [
+            {
+                "center": {"x": tower.center[0], "y": tower.center[1]},
+                "radius_tiles": tower.radius,
+                "kind": tower.kind,
+            }
+            for tower in towers
+        ],
         "gate_center": {"x": gate_center[0], "y": gate_center[1]},
         "gate_width_tiles": gate_half_width * 2 + 1,
         "gate_tower_centers": [
-            {"x": point[0], "y": point[1]} for point in gate_towers
+            {"x": tower.center[0], "y": tower.center[1], "radius_tiles": tower.radius}
+            for tower in gate_towers
         ],
         "wall_tiles": counts[PLAN_WALL],
         "tower_tiles": counts[PLAN_TOWER],
@@ -195,7 +244,7 @@ def build_lake_island_fortress_plan(
         wall_tiles=counts[PLAN_WALL],
         tower_tiles=counts[PLAN_TOWER],
         gate_tiles=counts[PLAN_GATE],
-        tower_count=tower_count,
+        tower_count=len(towers),
     )
 
 
@@ -248,29 +297,231 @@ def render_fortress_plan_preview(
     image.save(path)
 
 
-def _build_vertices(
+def _build_architectural_anchors(
     *,
-    center_x: int,
-    center_y: int,
-    base_radius: float,
-    vertex_count: int,
+    center: tuple[int, int],
+    fortress_span: int,
     gate_angle: float,
+    composition: str,
     rng: Random,
 ) -> list[tuple[int, int]]:
-    phase = gate_angle + pi
-    vertices: list[tuple[int, int]] = []
-    for index in range(vertex_count):
-        angle = phase + 2.0 * pi * index / vertex_count
-        radius = base_radius * rng.uniform(0.88, 1.08)
-        x_scale = rng.uniform(0.92, 1.06)
-        y_scale = rng.uniform(0.92, 1.06)
-        vertices.append(
+    count = rng.randint(5, 7) if composition == "compact_mixed" else rng.randint(6, 8)
+    gaps = [rng.uniform(0.72, 1.28) for _ in range(count)]
+    scale = 2.0 * pi / sum(gaps)
+    angles: list[float] = []
+    angle = gate_angle + pi + rng.uniform(-0.18, 0.18)
+    for gap in gaps:
+        angles.append(angle)
+        angle += gap * scale
+
+    base = fortress_span * 0.40
+    x_stretch = rng.uniform(0.92, 1.12)
+    y_stretch = rng.uniform(0.88, 1.08)
+    anchors: list[tuple[int, int]] = []
+    for index, angle in enumerate(angles):
+        radius = base * rng.uniform(0.82, 1.10)
+        if composition == "compact_mixed" and index % 3 == 0:
+            radius *= rng.uniform(0.88, 0.96)
+        anchors.append(
             (
-                round(center_x + cos(angle) * radius * x_scale),
-                round(center_y + sin(angle) * radius * y_scale),
+                round(center[0] + cos(angle) * radius * x_stretch),
+                round(center[1] + sin(angle) * radius * y_stretch),
             )
         )
-    return vertices
+    return anchors
+
+
+def _build_segments(
+    *,
+    anchors: list[tuple[int, int]],
+    center: tuple[int, int],
+    composition: str,
+    rng: Random,
+) -> list[_Segment]:
+    curve_probability = 0.30 if composition == "compact_mixed" else 0.52
+    segments: list[_Segment] = []
+    for start, end in zip(anchors, anchors[1:] + anchors[:1], strict=True):
+        length = hypot(end[0] - start[0], end[1] - start[1])
+        if length >= 11 and rng.random() < curve_probability:
+            kind = "gentle_curve"
+            bend = rng.uniform(0.10, 0.22) * (-1.0 if rng.random() < 0.25 else 1.0)
+        else:
+            kind = "straight"
+            bend = 0.0
+        segments.append(_Segment(start=start, end=end, kind=kind, bend=bend))
+    if all(segment.kind == "straight" for segment in segments):
+        longest = max(range(len(segments)), key=lambda i: hypot(
+            segments[i].end[0] - segments[i].start[0],
+            segments[i].end[1] - segments[i].start[1],
+        ))
+        old = segments[longest]
+        segments[longest] = _Segment(old.start, old.end, "gentle_curve", 0.14)
+    return segments
+
+
+def _sample_perimeter(segments: list[_Segment]) -> list[tuple[int, int]]:
+    points: list[tuple[int, int]] = []
+    for segment in segments:
+        sampled = _sample_segment(segment)
+        if points and sampled and sampled[0] == points[-1]:
+            sampled = sampled[1:]
+        points.extend(sampled)
+    return points
+
+
+def _sample_segment(segment: _Segment) -> list[tuple[int, int]]:
+    x1, y1 = segment.start
+    x2, y2 = segment.end
+    length = max(1.0, hypot(x2 - x1, y2 - y1))
+    steps = max(2, round(length * 1.5))
+    if segment.kind == "straight":
+        return [
+            (round(x1 + (x2 - x1) * t / steps), round(y1 + (y2 - y1) * t / steps))
+            for t in range(steps + 1)
+        ]
+    midpoint_x = (x1 + x2) / 2.0
+    midpoint_y = (y1 + y2) / 2.0
+    normal_x = -(y2 - y1) / length
+    normal_y = (x2 - x1) / length
+    control_x = midpoint_x + normal_x * length * segment.bend
+    control_y = midpoint_y + normal_y * length * segment.bend
+    points: list[tuple[int, int]] = []
+    for step in range(steps + 1):
+        t = step / steps
+        inv = 1.0 - t
+        x = inv * inv * x1 + 2.0 * inv * t * control_x + t * t * x2
+        y = inv * inv * y1 + 2.0 * inv * t * control_y + t * t * y2
+        point = (round(x), round(y))
+        if not points or points[-1] != point:
+            points.append(point)
+    return points
+
+
+def _draw_segment(
+    *,
+    plan_rows: list[list[int]],
+    segment: _Segment,
+    center: tuple[int, int],
+    radius: int,
+) -> None:
+    del center
+    for point in _sample_segment(segment):
+        _fill_disk(plan_rows=plan_rows, center=point, radius=radius, value=PLAN_WALL)
+
+
+def _nearest_segment_point(
+    *,
+    segments: list[_Segment],
+    target: tuple[int, int],
+    center: tuple[int, int],
+) -> tuple[tuple[int, int], tuple[float, float]]:
+    best_point = segments[0].start
+    best_tangent = (1.0, 0.0)
+    best_distance = float("inf")
+    for segment in segments:
+        points = _sample_segment(segment)
+        for first, second in zip(points, points[1:], strict=False):
+            point = _project_to_segment(target=target, start=first, end=second)
+            distance = hypot(point[0] - target[0], point[1] - target[1])
+            outward = (point[0] - center[0], point[1] - center[1])
+            if distance < best_distance and outward != (0, 0):
+                best_distance = distance
+                best_point = point
+                tangent_length = hypot(second[0] - first[0], second[1] - first[1]) or 1.0
+                best_tangent = (
+                    (second[0] - first[0]) / tangent_length,
+                    (second[1] - first[1]) / tangent_length,
+                )
+    return best_point, best_tangent
+
+
+def _make_gate_towers(
+    *,
+    gate_center: tuple[int, int],
+    tangent: tuple[float, float],
+    radius: int,
+    half_width: int,
+) -> list[_Tower]:
+    offset = radius + half_width + 1
+    return [
+        _Tower(
+            center=(
+                round(gate_center[0] + tangent[0] * offset),
+                round(gate_center[1] + tangent[1] * offset),
+            ),
+            radius=radius,
+            kind="gate_round",
+        ),
+        _Tower(
+            center=(
+                round(gate_center[0] - tangent[0] * offset),
+                round(gate_center[1] - tangent[1] * offset),
+            ),
+            radius=radius,
+            kind="gate_round",
+        ),
+    ]
+
+
+def _select_architectural_towers(
+    *,
+    anchors: list[tuple[int, int]],
+    center: tuple[int, int],
+    fortress_span: int,
+    gate_center: tuple[int, int],
+    gate_towers: list[_Tower],
+    composition: str,
+    rng: Random,
+) -> list[_Tower]:
+    target_total = rng.randint(4, 6) if composition == "compact_mixed" else rng.randint(3, 5)
+    target_regular = max(2, target_total - len(gate_towers))
+    candidates: list[tuple[float, int]] = []
+    for index, current in enumerate(anchors):
+        previous = anchors[index - 1]
+        following = anchors[(index + 1) % len(anchors)]
+        turn = abs(_turn_angle(previous, current, following))
+        distance_from_gate = hypot(current[0] - gate_center[0], current[1] - gate_center[1])
+        score = turn * 3.0 + distance_from_gate / max(1.0, fortress_span)
+        candidates.append((score + rng.uniform(-0.15, 0.15), index))
+    candidates.sort(reverse=True)
+
+    towers: list[_Tower] = []
+    for _, index in candidates:
+        if len(towers) >= target_regular:
+            break
+        center_point = anchors[index]
+        radius = _clamp(round(fortress_span * rng.uniform(0.075, 0.105)), 3, 5)
+        tower = _Tower(center=center_point, radius=radius, kind="corner_round")
+        if _tower_conflicts(tower, towers + gate_towers, clearance=1):
+            continue
+        towers.append(tower)
+
+    if len(towers) < 2:
+        for point in anchors:
+            tower = _Tower(center=point, radius=3, kind="corner_round")
+            if not _tower_conflicts(tower, towers + gate_towers, clearance=1):
+                towers.append(tower)
+            if len(towers) >= 2:
+                break
+    return towers
+
+
+def _turn_angle(
+    previous: tuple[int, int],
+    current: tuple[int, int],
+    following: tuple[int, int],
+) -> float:
+    first = atan2(previous[1] - current[1], previous[0] - current[0])
+    second = atan2(following[1] - current[1], following[0] - current[0])
+    return abs((second - first + pi) % (2.0 * pi) - pi)
+
+
+def _tower_conflicts(tower: _Tower, existing: list[_Tower], clearance: int) -> bool:
+    return any(
+        hypot(tower.center[0] - other.center[0], tower.center[1] - other.center[1])
+        < tower.radius + other.radius + clearance
+        for other in existing
+    )
 
 
 def _pull_inside_island(
@@ -291,7 +542,7 @@ def _pull_inside_island(
             return x, y
         x = round((x * 3 + center_x) / 4)
         y = round((y * 3 + center_y) / 4)
-    raise ValueError("Unable to place fortress vertex inside island")
+    raise ValueError("Unable to place fortress anchor inside island")
 
 
 def _fill_polygon(
@@ -319,23 +570,6 @@ def _fill_polygon(
                 plan_rows[y][x] = value
 
 
-def _draw_thick_line(
-    *,
-    plan_rows: list[list[int]],
-    start: tuple[int, int],
-    end: tuple[int, int],
-    radius: int,
-    value: int,
-) -> None:
-    x1, y1 = start
-    x2, y2 = end
-    steps = max(abs(x2 - x1), abs(y2 - y1), 1)
-    for step in range(steps + 1):
-        x = round(x1 + (x2 - x1) * step / steps)
-        y = round(y1 + (y2 - y1) * step / steps)
-        _fill_disk(plan_rows=plan_rows, center=(x, y), radius=radius, value=value)
-
-
 def _draw_round_tower(
     *,
     plan_rows: list[list[int]],
@@ -356,35 +590,20 @@ def _draw_round_tower(
                 plan_rows[y][x] = PLAN_COURTYARD
 
 
-def _select_tower_vertices(
+def _cut_gate(
     *,
-    vertices: list[tuple[int, int]],
-    gate_angle: float,
-    center: tuple[int, int],
-) -> list[int]:
-    selected: list[int] = []
-    for index, (x, y) in enumerate(vertices):
-        angle = atan2(y - center[1], x - center[0])
-        delta = abs(_angle_delta(angle, gate_angle))
-        if delta > 0.42:
-            selected.append(index)
-    return selected
-
-
-def _nearest_wall_point(
-    *,
-    vertices: list[tuple[int, int]],
-    target: tuple[int, int],
-) -> tuple[int, int]:
-    best_point = vertices[0]
-    best_distance = float("inf")
-    for start, end in zip(vertices, vertices[1:] + vertices[:1], strict=True):
-        point = _project_to_segment(target=target, start=start, end=end)
-        distance = hypot(point[0] - target[0], point[1] - target[1])
-        if distance < best_distance:
-            best_distance = distance
-            best_point = point
-    return best_point
+    plan_rows: list[list[int]],
+    gate_center: tuple[int, int],
+    tangent: tuple[float, float],
+    half_width: int,
+) -> None:
+    normal = (-tangent[1], tangent[0])
+    for lateral in range(-half_width, half_width + 1):
+        for depth in range(-4, 5):
+            x = round(gate_center[0] + tangent[0] * lateral + normal[0] * depth)
+            y = round(gate_center[1] + tangent[1] * lateral + normal[1] * depth)
+            if 0 <= y < len(plan_rows) and 0 <= x < len(plan_rows[0]):
+                plan_rows[y][x] = PLAN_GATE
 
 
 def _project_to_segment(
@@ -401,45 +620,6 @@ def _project_to_segment(
     ratio = ((target[0] - start[0]) * dx + (target[1] - start[1]) * dy) / denominator
     ratio = max(0.0, min(1.0, ratio))
     return round(start[0] + ratio * dx), round(start[1] + ratio * dy)
-
-
-def _cut_gate(
-    *,
-    plan_rows: list[list[int]],
-    gate_center: tuple[int, int],
-    fortress_center: tuple[int, int],
-    half_width: int,
-) -> None:
-    outward_x = gate_center[0] - fortress_center[0]
-    outward_y = gate_center[1] - fortress_center[1]
-    length = hypot(outward_x, outward_y) or 1.0
-    tangent_x = -outward_y / length
-    tangent_y = outward_x / length
-    normal_x = outward_x / length
-    normal_y = outward_y / length
-    for lateral in range(-half_width, half_width + 1):
-        for depth in range(-3, 4):
-            x = round(gate_center[0] + tangent_x * lateral + normal_x * depth)
-            y = round(gate_center[1] + tangent_y * lateral + normal_y * depth)
-            if 0 <= y < len(plan_rows) and 0 <= x < len(plan_rows[0]):
-                plan_rows[y][x] = PLAN_GATE
-
-
-def _gate_tower_centers(
-    *,
-    gate_center: tuple[int, int],
-    fortress_center: tuple[int, int],
-    offset: int,
-) -> tuple[tuple[int, int], tuple[int, int]]:
-    outward_x = gate_center[0] - fortress_center[0]
-    outward_y = gate_center[1] - fortress_center[1]
-    length = hypot(outward_x, outward_y) or 1.0
-    tangent_x = -outward_y / length
-    tangent_y = outward_x / length
-    return (
-        (round(gate_center[0] + tangent_x * offset), round(gate_center[1] + tangent_y * offset)),
-        (round(gate_center[0] - tangent_x * offset), round(gate_center[1] - tangent_y * offset)),
-    )
 
 
 def _fill_disk(
@@ -463,6 +643,7 @@ def _validate_plan(
     *,
     plan_rows: list[list[int]],
     island_mask_rows: list[list[int]],
+    towers: list[_Tower],
 ) -> None:
     gate_tiles = 0
     wall_or_tower_tiles = 0
@@ -478,6 +659,9 @@ def _validate_plan(
         raise ValueError("Fortress plan has no main gate")
     if wall_or_tower_tiles < 32:
         raise ValueError("Fortress shell is unexpectedly small")
+    for index, tower in enumerate(towers):
+        if _tower_conflicts(tower, towers[:index], clearance=0):
+            raise ValueError("Fortress tower footprints overlap")
 
 
 def _count_plan(plan_rows: list[list[int]]) -> dict[int, int]:
@@ -486,10 +670,6 @@ def _count_plan(plan_rows: list[list[int]]) -> dict[int, int]:
         for value in row:
             counts[value] += 1
     return counts
-
-
-def _angle_delta(first: float, second: float) -> float:
-    return (first - second + pi) % (2.0 * pi) - pi
 
 
 def _clamp(value: int, minimum: int, maximum: int) -> int:

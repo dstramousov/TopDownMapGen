@@ -182,7 +182,12 @@ def test_lake_island_fortress_plan_has_round_towers_and_gate() -> None:
     assert PLAN_GATE in flat
     assert PLAN_TOWER in flat
     assert PLAN_WALL in flat
-    assert plan.tower_count >= 6
+    assert 4 <= plan.tower_count <= 7
+    report = plan.site_report["fortress_plan"]
+    assert report["algorithm"] == "architectural_nodes_mixed_walls_v2"
+    assert {segment["kind"] for segment in report["segments"]} <= {"straight", "gentle_curve"}
+    centers = [tower["center"] for tower in report["towers"]]
+    assert len({(item["x"], item["y"]) for item in centers}) == len(centers)
     assert plan.site_report["fortress_plan"]["materialized_to_terrain"] is False
 
 
