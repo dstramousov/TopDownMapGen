@@ -208,6 +208,8 @@ def _overlay_ruin_site_masks(
             for a, b in zip(run, run[1:])
         )
         endpoints = _ruin_run_endpoints(runs)
+        severity = _ruin_damage_severity(architecture)
+        building_masks: dict[tuple[int, int], int] = {}
         for x, y in wall_points:
             if not _grid_point_has_type(type_rows, x, y, ruin_wall_id):
                 continue
@@ -217,8 +219,15 @@ def _overlay_ruin_site_masks(
                 segments=segments,
                 wall_points=wall_points,
             )
-            if (x, y) in endpoints:
-                mask = _chip_ruin_endpoint(mask=mask, x=x, y=y)
+            if mask:
+                building_masks[(x, y)] = mask
+        _damage_ruin_micro_plan(
+            masks=building_masks,
+            runs=runs,
+            endpoints=endpoints,
+            severity=severity,
+        )
+        for (x, y), mask in building_masks.items():
             if mask:
                 mask_rows[y][x] = mask
 
@@ -319,11 +328,153 @@ def _ruin_wall_tile_mask(
     return mask
 
 
-def _chip_ruin_endpoint(*, mask: int, x: int, y: int) -> int:
+
+def _ruin_damage_severity(architecture: dict[str, object]) -> str:
+    """Return a supported micro-damage severity for one ruin building."""
+    raw = architecture.get("destruction_severity")
+    if isinstance(raw, str) and raw in {"light", "moderate", "heavy"}:
+        return raw
+    return "moderate"
+
+
+def _damage_ruin_micro_plan(
+    *,
+    masks: dict[tuple[int, int], int],
+    runs: tuple[tuple[tuple[int, int], ...], ...],
+    endpoints: set[tuple[int, int]],
+    severity: str,
+) -> None:
+    """Apply deterministic, connected-looking damage to one ruin micro plan."""
+    if not masks:
+        return
+    endpoint_depth = {"light": 1, "moderate": 2, "heavy": 3}[severity]
+    corner_depth = {"light": 0, "moderate": 1, "heavy": 2}[severity]
+    breach_count = {"light": 0, "moderate": 1, "heavy": 2}[severity]
+
+    for point in sorted(endpoints):
+        mask = masks.get(point)
+        if mask is None:
+            continue
+        masks[point] = _chip_ruin_endpoint(
+            mask=mask,
+            x=point[0],
+            y=point[1],
+            depth=endpoint_depth,
+        )
+
+    if corner_depth:
+        for point in sorted(_ruin_corner_points(runs)):
+            mask = masks.get(point)
+            if mask is None:
+                continue
+            masks[point] = _chip_ruin_corner(
+                mask=mask,
+                x=point[0],
+                y=point[1],
+                depth=corner_depth,
+            )
+
+    candidates = _ruin_breach_candidates(runs)
+    if breach_count and candidates:
+        seed = sum((x * 73) ^ (y * 151) for x, y in masks)
+        ordered = sorted(candidates, key=lambda p: ((p[0] * 97) ^ (p[1] * 193) ^ seed, p))
+        for point in ordered[:breach_count]:
+            mask = masks.get(point)
+            if mask is None:
+                continue
+            damaged = _cut_ruin_breach(mask=mask, x=point[0], y=point[1])
+            if damaged:
+                masks[point] = damaged
+
+    _remove_isolated_micro_bits(masks)
+
+
+def _ruin_corner_points(
+    runs: tuple[tuple[tuple[int, int], ...], ...],
+) -> set[tuple[int, int]]:
+    """Return points where horizontal and vertical wall runs meet."""
+    horizontal: set[tuple[int, int]] = set()
+    vertical: set[tuple[int, int]] = set()
+    for run in runs:
+        for a, b in zip(run, run[1:]):
+            target = horizontal if a[1] == b[1] else vertical
+            target.update((a, b))
+    return horizontal & vertical
+
+
+def _ruin_breach_candidates(
+    runs: tuple[tuple[tuple[int, int], ...], ...],
+) -> set[tuple[int, int]]:
+    """Return interior points of long straight wall runs suitable for breaches."""
+    candidates: set[tuple[int, int]] = set()
+    for run in runs:
+        if len(run) < 5:
+            continue
+        candidates.update(run[2:-2])
+    return candidates
+
+
+def _chip_ruin_corner(*, mask: int, x: int, y: int, depth: int) -> int:
+    """Cut a deterministic staircase from one ruin corner tile."""
+    corners = (0, 3, 12, 15)
+    corner = corners[((x * 43) ^ (y * 89)) & 3]
+    paths = {
+        0: (0, 1, 4, 5),
+        3: (3, 2, 7, 6),
+        12: (12, 13, 8, 9),
+        15: (15, 14, 11, 10),
+    }
+    damaged = mask
+    for bit_index in paths[corner][: depth + 1]:
+        damaged &= ~(1 << bit_index)
+    return damaged or mask
+
+
+def _cut_ruin_breach(*, mask: int, x: int, y: int) -> int:
+    """Cut an asymmetric local breach while retaining part of the wall tile."""
+    horizontal = bool(mask & 0x0FF0) and not bool(mask & 0x6666 == 0x6666)
+    patterns = (0x0660, 0x0990) if horizontal else (0x0222, 0x4444)
+    remove = patterns[((x * 29) ^ (y * 61)) & 1]
+    damaged = mask & ~remove
+    return damaged if damaged else mask
+
+
+def _remove_isolated_micro_bits(masks: dict[tuple[int, int], int]) -> None:
+    """Remove singleton micro voxels that have no orthogonal neighbour."""
+    occupied: set[tuple[int, int]] = set()
+    for (tile_x, tile_y), mask in masks.items():
+        for sy in range(MICRO_DIVISION):
+            for sx in range(MICRO_DIVISION):
+                bit = sy * MICRO_DIVISION + sx
+                if mask & (1 << bit):
+                    occupied.add((tile_x * MICRO_DIVISION + sx, tile_y * MICRO_DIVISION + sy))
+    isolated = {
+        point
+        for point in occupied
+        if not any(
+            (point[0] + dx, point[1] + dy) in occupied
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+        )
+    }
+    for micro_x, micro_y in isolated:
+        tile_x, sx = divmod(micro_x, MICRO_DIVISION)
+        tile_y, sy = divmod(micro_y, MICRO_DIVISION)
+        key = (tile_x, tile_y)
+        masks[key] &= ~(1 << (sy * MICRO_DIVISION + sx))
+
+
+def _chip_ruin_endpoint(*, mask: int, x: int, y: int, depth: int = 1) -> int:
     """Remove one deterministic edge subtile from a broken wall endpoint."""
-    candidates = (0, 3, 12, 15)
-    bit_index = candidates[((x * 31) ^ (y * 17)) & 3]
-    chipped = mask & ~(1 << bit_index)
+    candidates = (
+        (0, 1, 4),
+        (3, 2, 7),
+        (12, 13, 8),
+        (15, 14, 11),
+    )
+    path = candidates[((x * 31) ^ (y * 17)) & 3]
+    chipped = mask
+    for bit_index in path[: max(1, min(depth, len(path)))]:
+        chipped &= ~(1 << bit_index)
     return chipped or mask
 
 def _overlay_fortress_wall_masks(

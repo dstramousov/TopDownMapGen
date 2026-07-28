@@ -193,3 +193,79 @@ def test_ruin_site_wall_runs_are_rasterized_as_one_micro_plan() -> None:
     assert result.mask_rows[3][4] == 0x6666
     assert result.mask_rows[2][4] not in {0, FULL_MICRO_MASK}
     assert result.mask_rows[2][2] != result.mask_rows[2][3]
+
+
+def test_ruin_micro_damage_severity_changes_long_wall_shape() -> None:
+    terrain = [["grass" for _ in range(10)] for _ in range(5)]
+    points = [[x, 2] for x in range(1, 9)]
+    for x, y in points:
+        terrain[y][x] = "ruin_wall_blocker"
+
+    def build(severity: str):
+        return build_structure_geometry(
+            terrain_rows=terrain,
+            fortress_plan=None,
+            ruin_sites={
+                "sites": [
+                    {
+                        "buildings": [
+                            {
+                                "architecture": {
+                                    "destruction_severity": severity,
+                                    "wall_runs": [{"points": points}],
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+        )
+
+    light = build("light")
+    heavy = build("heavy")
+
+    assert light.mask_rows[2] != heavy.mask_rows[2]
+    assert sum(mask.bit_count() for mask in heavy.mask_rows[2]) < sum(
+        mask.bit_count() for mask in light.mask_rows[2]
+    )
+    assert all(mask != 0 for mask in heavy.mask_rows[2][1:9])
+
+
+def test_ruin_micro_damage_does_not_leave_singleton_subtiles() -> None:
+    terrain = [["grass" for _ in range(8)] for _ in range(8)]
+    points = ((2, 2), (3, 2), (4, 2), (4, 3), (4, 4), (4, 5))
+    for x, y in points:
+        terrain[y][x] = "ruin_wall_blocker"
+    geometry = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan=None,
+        ruin_sites={
+            "sites": [
+                {
+                    "buildings": [
+                        {
+                            "architecture": {
+                                "destruction_severity": "heavy",
+                                "wall_runs": [
+                                    {"points": [[2, 2], [3, 2], [4, 2]]},
+                                    {"points": [[4, 2], [4, 3], [4, 4], [4, 5]]},
+                                ],
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+    )
+    occupied = set()
+    for y, row in enumerate(geometry.mask_rows):
+        for x, mask in enumerate(row):
+            for sy in range(MICRO_DIVISION):
+                for sx in range(MICRO_DIVISION):
+                    if mask & (1 << (sy * MICRO_DIVISION + sx)):
+                        occupied.add((x * MICRO_DIVISION + sx, y * MICRO_DIVISION + sy))
+    assert occupied
+    assert all(
+        any((x + dx, y + dy) in occupied for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+        for x, y in occupied
+    )
