@@ -37,6 +37,7 @@ def build_structure_geometry(
     *,
     terrain_rows: list[list[str]],
     fortress_plan: object | None,
+    ruin_sites: object | None = None,
 ) -> StructureGeometry:
     """Build structure type and 4x4 occupancy layers from current map data."""
     height = len(terrain_rows)
@@ -65,6 +66,7 @@ def build_structure_geometry(
         [FULL_MICRO_MASK if value in solid_type_ids else 0 for value in row]
         for row in type_rows
     ]
+    _overlay_linear_structure_masks(type_rows=type_rows, mask_rows=mask_rows)
     _overlay_fortress_wall_masks(
         type_rows=type_rows,
         mask_rows=mask_rows,
@@ -130,6 +132,50 @@ def _overlay_fortress_types(
             type_rows[y][x] = type_id
 
 
+
+def _overlay_linear_structure_masks(
+    *,
+    type_rows: list[list[int]],
+    mask_rows: list[list[int]],
+) -> None:
+    """Rasterize non-round walls as thin connected 4x4 micro geometry."""
+    linear_type_ids = {
+        _NAME_TO_ID["ruin_wall"],
+        _NAME_TO_ID["fortress_keep"],
+        _NAME_TO_ID["fortress_building"],
+        _NAME_TO_ID["building_wall"],
+    }
+    height = len(type_rows)
+    width = len(type_rows[0]) if type_rows else 0
+    for y, row in enumerate(type_rows):
+        for x, type_id in enumerate(row):
+            if type_id not in linear_type_ids:
+                continue
+            connected = {
+                "north": y > 0 and type_rows[y - 1][x] == type_id,
+                "south": y + 1 < height and type_rows[y + 1][x] == type_id,
+                "west": x > 0 and type_rows[y][x - 1] == type_id,
+                "east": x + 1 < width and type_rows[y][x + 1] == type_id,
+            }
+            mask_rows[y][x] = _connected_wall_mask(connected)
+
+
+def _connected_wall_mask(connected: dict[str, bool]) -> int:
+    """Return a two-subtile-thick connected wall mask for one base tile."""
+    occupied: set[tuple[int, int]] = {(1, 1), (2, 1), (1, 2), (2, 2)}
+    if connected["north"]:
+        occupied.update({(1, 0), (2, 0)})
+    if connected["south"]:
+        occupied.update({(1, 3), (2, 3)})
+    if connected["west"]:
+        occupied.update({(0, 1), (0, 2)})
+    if connected["east"]:
+        occupied.update({(3, 1), (3, 2)})
+    mask = 0
+    for subtile_x, subtile_y in occupied:
+        mask |= 1 << (subtile_y * MICRO_DIVISION + subtile_x)
+    return mask
+
 def _overlay_fortress_wall_masks(
     *,
     type_rows: list[list[int]],
@@ -145,7 +191,7 @@ def _overlay_fortress_wall_masks(
     thickness = fortress_plan.get("wall_thickness_tiles", 3)
     if not isinstance(thickness, int):
         thickness = 3
-    half_width = max(0.5, thickness / 2.0)
+    half_width = max(0.25, thickness / (2.0 * MICRO_DIVISION))
     segments = _parse_wall_segments(raw_segments)
     if not segments:
         return

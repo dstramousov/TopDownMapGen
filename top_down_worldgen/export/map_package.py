@@ -228,6 +228,7 @@ def write_map_package(
     structure_geometry = build_structure_geometry(
         terrain_rows=terrain_rows,
         fortress_plan=runtime_data.get("fortress_plan"),
+        ruin_sites=runtime_data.get("ruin_sites"),
     )
     write_json(
         {
