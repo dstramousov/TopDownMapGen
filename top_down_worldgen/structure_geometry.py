@@ -67,6 +67,11 @@ def build_structure_geometry(
         for row in type_rows
     ]
     _overlay_linear_structure_masks(type_rows=type_rows, mask_rows=mask_rows)
+    _overlay_ruin_site_masks(
+        type_rows=type_rows,
+        mask_rows=mask_rows,
+        ruin_sites=ruin_sites,
+    )
     _overlay_fortress_wall_masks(
         type_rows=type_rows,
         mask_rows=mask_rows,
@@ -175,6 +180,151 @@ def _connected_wall_mask(connected: dict[str, bool]) -> int:
     for subtile_x, subtile_y in occupied:
         mask |= 1 << (subtile_y * MICRO_DIVISION + subtile_x)
     return mask
+
+
+def _overlay_ruin_site_masks(
+    *,
+    type_rows: list[list[int]],
+    mask_rows: list[list[int]],
+    ruin_sites: object | None,
+) -> None:
+    """Rasterize each planned ruin building on one shared micro grid."""
+    buildings = _iter_ruin_buildings(ruin_sites)
+    if not buildings:
+        return
+
+    ruin_wall_id = _NAME_TO_ID["ruin_wall"]
+    for building in buildings:
+        architecture = building.get("architecture")
+        if not isinstance(architecture, dict):
+            continue
+        runs = _parse_ruin_wall_runs(architecture.get("wall_runs"))
+        if not runs:
+            continue
+        wall_points = {point for run in runs for point in run}
+        segments = tuple(
+            (float(a[0]), float(a[1]), float(b[0]), float(b[1]))
+            for run in runs
+            for a, b in zip(run, run[1:])
+        )
+        endpoints = _ruin_run_endpoints(runs)
+        for x, y in wall_points:
+            if not _grid_point_has_type(type_rows, x, y, ruin_wall_id):
+                continue
+            mask = _ruin_wall_tile_mask(
+                x=x,
+                y=y,
+                segments=segments,
+                wall_points=wall_points,
+            )
+            if (x, y) in endpoints:
+                mask = _chip_ruin_endpoint(mask=mask, x=x, y=y)
+            if mask:
+                mask_rows[y][x] = mask
+
+
+def _iter_ruin_buildings(ruin_sites: object | None) -> list[dict[str, object]]:
+    """Return valid building dictionaries from ruin-site metadata."""
+    if not isinstance(ruin_sites, dict):
+        return []
+    sites = ruin_sites.get("sites")
+    if not isinstance(sites, list):
+        return []
+    result: list[dict[str, object]] = []
+    for site in sites:
+        if not isinstance(site, dict):
+            continue
+        buildings = site.get("buildings")
+        if not isinstance(buildings, list):
+            continue
+        result.extend(item for item in buildings if isinstance(item, dict))
+    return result
+
+
+def _parse_ruin_wall_runs(raw_runs: object) -> tuple[tuple[tuple[int, int], ...], ...]:
+    """Parse architecture wall runs into deterministic point sequences."""
+    if not isinstance(raw_runs, list):
+        return ()
+    parsed: list[tuple[tuple[int, int], ...]] = []
+    for raw_run in raw_runs:
+        if not isinstance(raw_run, dict):
+            continue
+        raw_points = raw_run.get("points")
+        if not isinstance(raw_points, list):
+            continue
+        points: list[tuple[int, int]] = []
+        for raw_point in raw_points:
+            if (
+                isinstance(raw_point, list)
+                and len(raw_point) == 2
+                and isinstance(raw_point[0], int)
+                and isinstance(raw_point[1], int)
+            ):
+                points.append((raw_point[0], raw_point[1]))
+        if points:
+            parsed.append(tuple(points))
+    return tuple(parsed)
+
+
+def _ruin_run_endpoints(
+    runs: tuple[tuple[tuple[int, int], ...], ...],
+) -> set[tuple[int, int]]:
+    """Return run endpoints that are not shared with another run."""
+    counts: dict[tuple[int, int], int] = {}
+    for run in runs:
+        for point in {run[0], run[-1]}:
+            counts[point] = counts.get(point, 0) + 1
+    return {point for point, count in counts.items() if count == 1}
+
+
+def _grid_point_has_type(
+    type_rows: list[list[int]],
+    x: int,
+    y: int,
+    expected_type: int,
+) -> bool:
+    """Return whether one world point is in bounds and has the expected type."""
+    return (
+        0 <= y < len(type_rows)
+        and 0 <= x < len(type_rows[y])
+        and type_rows[y][x] == expected_type
+    )
+
+
+def _ruin_wall_tile_mask(
+    *,
+    x: int,
+    y: int,
+    segments: tuple[tuple[float, float, float, float], ...],
+    wall_points: set[tuple[int, int]],
+) -> int:
+    """Rasterize a two-subtile ruin wall using building-wide geometry."""
+    half_width = 0.26
+    mask = 0
+    for subtile_y in range(MICRO_DIVISION):
+        for subtile_x in range(MICRO_DIVISION):
+            sample_x = x - 0.5 + (subtile_x + 0.5) / MICRO_DIVISION
+            sample_y = y - 0.5 + (subtile_y + 0.5) / MICRO_DIVISION
+            touches_segment = any(
+                _point_segment_distance(sample_x, sample_y, *segment) <= half_width
+                for segment in segments
+            )
+            touches_point = any(
+                hypot(sample_x - point_x, sample_y - point_y) <= half_width
+                for point_x, point_y in wall_points
+                if abs(point_x - x) <= 1 and abs(point_y - y) <= 1
+            )
+            if touches_segment or touches_point:
+                mask |= 1 << (subtile_y * MICRO_DIVISION + subtile_x)
+    return mask
+
+
+def _chip_ruin_endpoint(*, mask: int, x: int, y: int) -> int:
+    """Remove one deterministic edge subtile from a broken wall endpoint."""
+    candidates = (0, 3, 12, 15)
+    bit_index = candidates[((x * 31) ^ (y * 17)) & 3]
+    chipped = mask & ~(1 << bit_index)
+    return chipped or mask
 
 def _overlay_fortress_wall_masks(
     *,

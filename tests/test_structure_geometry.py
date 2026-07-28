@@ -159,3 +159,37 @@ def test_fortress_keep_outline_uses_connected_micro_masks() -> None:
         for x, y, _name in entries
     )
     assert result.mask_rows[2][2] == 0
+
+
+def test_ruin_site_wall_runs_are_rasterized_as_one_micro_plan() -> None:
+    terrain = [["grass" for _ in range(8)] for _ in range(7)]
+    points = ((2, 2), (3, 2), (4, 2), (4, 3), (4, 4))
+    for x, y in points:
+        terrain[y][x] = "ruin_wall_blocker"
+    ruin_sites = {
+        "sites": [
+            {
+                "buildings": [
+                    {
+                        "architecture": {
+                            "wall_runs": [
+                                {"points": [[2, 2], [3, 2], [4, 2]]},
+                                {"points": [[4, 2], [4, 3], [4, 4]]},
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+
+    result = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan=None,
+        ruin_sites=ruin_sites,
+    )
+
+    assert result.mask_rows[2][3] == 0x0FF0
+    assert result.mask_rows[3][4] == 0x6666
+    assert result.mask_rows[2][4] not in {0, FULL_MICRO_MASK}
+    assert result.mask_rows[2][2] != result.mask_rows[2][3]
