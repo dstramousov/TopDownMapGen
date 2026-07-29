@@ -518,9 +518,10 @@ def _overlay_fortress_shell_masks(
         for point in _sample_wall_path_points(path)
         if 0 <= point[0] < micro_width and 0 <= point[1] < micro_height
     }
+    wall_brush_radius = _fortress_wall_brush_radius(towers)
     wall_points = _expand_micro_points(
         centerline_points,
-        radius=2,
+        radius=wall_brush_radius,
         width=micro_width,
         height=micro_height,
     )
@@ -640,6 +641,23 @@ def _expand_micro_points(
         if 0 <= x + dx < width and 0 <= y + dy < height
     }
 
+
+
+def _fortress_wall_brush_radius(
+    towers: tuple[tuple[float, float, float], ...],
+) -> int:
+    """Return a wall half-thickness derived from tower diameter.
+
+    The target wall thickness is approximately half of the representative
+    tower diameter, leaving enough room for a future outer parapet, a walking
+    surface, and an inner edge.
+    """
+    if not towers:
+        return 2
+    radii = sorted(radius for _x, _y, radius in towers)
+    representative_radius = radii[len(radii) // 2]
+    desired_thickness = max(6, round(representative_radius * MICRO_DIVISION))
+    return min(16, max(3, round((desired_thickness - 1) / 2)))
 
 def _rasterize_tower_disks(
     *,

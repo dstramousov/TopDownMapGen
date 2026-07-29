@@ -367,6 +367,41 @@ def test_curved_fortress_wall_uses_one_continuous_micro_band() -> None:
     assert max(row_counts.values()) > min(row_counts.values())
 
 
+def test_fortress_wall_thickness_scales_from_tower_diameter() -> None:
+    terrain = [["grass" for _ in range(20)] for _ in range(20)]
+    geometry = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan={
+            "segments": [
+                {
+                    "start": {"x": 3, "y": 10},
+                    "end": {"x": 16, "y": 10},
+                    "kind": "straight",
+                    "bend": 0.0,
+                }
+            ],
+            "towers": [
+                {
+                    "center": {"x": 16, "y": 10},
+                    "radius_tiles": 3,
+                    "kind": "corner_round",
+                }
+            ],
+            "materialization": {"structure_types": []},
+        },
+    )
+
+    wall_id = next(
+        type_id
+        for type_id, name in STRUCTURE_TYPE_NAMES.items()
+        if name == "fortress_wall"
+    )
+    points = _test_micro_points(geometry, type_id=wall_id)
+    sample_x = 8 * MICRO_DIVISION + 1
+    ys = {y for x, y in points if x == sample_x}
+    assert len(ys) >= 11
+
+
 def test_round_tower_body_is_symmetric_and_not_deformed_by_wall() -> None:
     terrain = [["grass" for _ in range(17)] for _ in range(13)]
     geometry = build_structure_geometry(
