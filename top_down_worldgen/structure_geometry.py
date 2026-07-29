@@ -24,6 +24,18 @@ STRUCTURE_TYPE_NAMES: dict[int, str] = {
 _NAME_TO_ID = {name: value for value, name in STRUCTURE_TYPE_NAMES.items()}
 
 
+
+
+@dataclass(frozen=True, slots=True)
+class _FortressWallPath:
+    """One planned fortress wall centerline segment."""
+
+    start_x: float
+    start_y: float
+    end_x: float
+    end_y: float
+    bend: float
+
 @dataclass(frozen=True, slots=True)
 class StructureGeometry:
     """Logical structure classification and per-tile micro occupancy."""
@@ -478,7 +490,7 @@ def _overlay_fortress_shell_masks(
     mask_rows: list[list[int]],
     fortress_plan: object | None,
 ) -> None:
-    """Rasterize one connected fortress shell on a shared 4x4 micro grid."""
+    """Rasterize fortress walls and towers from one global micro plan."""
     if not isinstance(fortress_plan, dict):
         return
     raw_segments = fortress_plan.get("segments", [])
@@ -488,85 +500,188 @@ def _overlay_fortress_shell_masks(
     if not isinstance(raw_towers, list):
         raw_towers = []
 
-    segments = _parse_wall_segments(raw_segments)
+    wall_paths = _parse_wall_paths(raw_segments)
     towers = _parse_shell_towers(raw_towers)
-    if not segments and not towers:
+    if not wall_paths and not towers:
         return
 
-    wall_half_width = 2.0 / MICRO_DIVISION
-    gate = _parse_gate_opening(fortress_plan, segments=segments)
-    shell_type_ids = {
-        _NAME_TO_ID["fortress_wall"],
-        _NAME_TO_ID["fortress_tower"],
+    height = len(type_rows)
+    width = len(type_rows[0]) if type_rows else 0
+    if width == 0 or height == 0:
+        return
+    micro_width = width * MICRO_DIVISION
+    micro_height = height * MICRO_DIVISION
+
+    centerline_points = {
+        point
+        for path in wall_paths
+        for point in _sample_wall_path_points(path)
+        if 0 <= point[0] < micro_width and 0 <= point[1] < micro_height
     }
-    for y, row in enumerate(type_rows):
-        for x, type_id in enumerate(row):
-            if type_id not in shell_type_ids:
+    wall_points = _expand_micro_points(
+        centerline_points,
+        radius=2,
+        width=micro_width,
+        height=micro_height,
+    )
+    tower_points = _rasterize_tower_disks(
+        towers=towers,
+        width=micro_width,
+        height=micro_height,
+    )
+    wall_points.difference_update(tower_points)
+
+    sampled_segments = tuple(
+        segment
+        for path in wall_paths
+        for segment in _sample_wall_path(path)
+    )
+    gate = _parse_gate_opening(fortress_plan, segments=sampled_segments)
+    if gate is not None:
+        wall_points = {
+            point
+            for point in wall_points
+            if not _inside_gate_opening(
+                sample_x=_micro_sample_coordinate(point[0]),
+                sample_y=_micro_sample_coordinate(point[1]),
+                gate=gate,
+            )
+        }
+
+    wall_masks = [[0 for _ in range(width)] for _ in range(height)]
+    tower_masks = [[0 for _ in range(width)] for _ in range(height)]
+    _pack_micro_points(wall_points, wall_masks)
+    _pack_micro_points(tower_points, tower_masks)
+
+    wall_id = _NAME_TO_ID["fortress_wall"]
+    tower_id = _NAME_TO_ID["fortress_tower"]
+    gate_id = _NAME_TO_ID["fortress_gate"]
+    shell_ids = {wall_id, tower_id, gate_id}
+    for y in range(height):
+        for x in range(width):
+            original_type = type_rows[y][x]
+            if original_type in shell_ids:
+                type_rows[y][x] = 0
+                mask_rows[y][x] = 0
+            if original_type == gate_id:
                 continue
-            mask_rows[y][x] = _fortress_shell_tile_mask(
-                x=x,
-                y=y,
-                segments=segments,
-                towers=towers,
-                wall_half_width=wall_half_width,
-                gate=gate,
-            )
+            tower_mask = tower_masks[y][x]
+            wall_mask = wall_masks[y][x]
+            if tower_mask:
+                type_rows[y][x] = tower_id
+                mask_rows[y][x] = tower_mask
+            elif wall_mask:
+                type_rows[y][x] = wall_id
+                mask_rows[y][x] = wall_mask
 
 
-def _fortress_shell_tile_mask(
+def _sample_wall_path_points(
+    path: _FortressWallPath,
+) -> tuple[tuple[int, int], ...]:
+    """Return a dense ordered micro-grid centerline for one wall path."""
+    dx = path.end_x - path.start_x
+    dy = path.end_y - path.start_y
+    length = max(0.25, hypot(dx, dy))
+    steps = max(1, int(length * MICRO_DIVISION * 2))
+    midpoint_x = (path.start_x + path.end_x) / 2.0
+    midpoint_y = (path.start_y + path.end_y) / 2.0
+    normal_x = -dy / length
+    normal_y = dx / length
+    control_x = midpoint_x + normal_x * length * path.bend
+    control_y = midpoint_y + normal_y * length * path.bend
+    result: list[tuple[int, int]] = []
+    for step in range(steps + 1):
+        t = step / steps
+        inv = 1.0 - t
+        world_x = (
+            inv * inv * path.start_x
+            + 2.0 * inv * t * control_x
+            + t * t * path.end_x
+        )
+        world_y = (
+            inv * inv * path.start_y
+            + 2.0 * inv * t * control_y
+            + t * t * path.end_y
+        )
+        point = (_world_to_micro(world_x), _world_to_micro(world_y))
+        if not result or result[-1] != point:
+            result.append(point)
+    return tuple(result)
+
+
+def _world_to_micro(value: float) -> int:
+    """Convert a tile-center world coordinate to a micro-grid index."""
+    return round((value + 0.375) * MICRO_DIVISION)
+
+
+def _micro_sample_coordinate(index: int) -> float:
+    """Return the world coordinate of one micro-grid sample center."""
+    return index / MICRO_DIVISION - 0.375
+
+
+def _expand_micro_points(
+    points: set[tuple[int, int]],
     *,
-    x: int,
-    y: int,
-    segments: tuple[tuple[float, float, float, float], ...],
-    towers: tuple[tuple[float, float, float, float], ...],
-    wall_half_width: float,
-    gate: tuple[float, float, float, float, float] | None,
-) -> int:
-    """Return one packed mask from the shared wall, tower, and gate plan."""
-    mask = 0
-    for subtile_y in range(MICRO_DIVISION):
-        for subtile_x in range(MICRO_DIVISION):
-            sample_x = x - 0.5 + (subtile_x + 0.5) / MICRO_DIVISION
-            sample_y = y - 0.5 + (subtile_y + 0.5) / MICRO_DIVISION
-            distances = tuple(
-                (
-                    hypot(sample_x - center_x, sample_y - center_y),
-                    inner_radius,
-                    outer_radius,
-                )
-                for center_x, center_y, inner_radius, outer_radius in towers
-            )
-            inside_outer_tower = any(
-                distance <= outer_radius
-                for distance, _inner_radius, outer_radius in distances
-            )
-            tower_solid = any(
-                inner_radius < distance <= outer_radius
-                for distance, inner_radius, outer_radius in distances
-            )
-            wall_solid = (
-                not inside_outer_tower
-                and any(
-                    _point_segment_distance(sample_x, sample_y, *segment)
-                    <= wall_half_width
-                    for segment in segments
-                )
-            )
-            if (tower_solid or wall_solid) and not _inside_gate_opening(
-                sample_x=sample_x,
-                sample_y=sample_y,
-                gate=gate,
-            ):
-                mask |= 1 << (subtile_y * MICRO_DIVISION + subtile_x)
-    return mask
+    radius: int,
+    width: int,
+    height: int,
+) -> set[tuple[int, int]]:
+    """Expand centerline points by one constant-radius circular brush."""
+    offsets = tuple(
+        (dx, dy)
+        for dy in range(-radius, radius + 1)
+        for dx in range(-radius, radius + 1)
+        if dx * dx + dy * dy <= radius * radius
+    )
+    return {
+        (x + dx, y + dy)
+        for x, y in points
+        for dx, dy in offsets
+        if 0 <= x + dx < width and 0 <= y + dy < height
+    }
+
+
+def _rasterize_tower_disks(
+    *,
+    towers: tuple[tuple[float, float, float], ...],
+    width: int,
+    height: int,
+) -> set[tuple[int, int]]:
+    """Rasterize independent circular tower bodies on the global micro grid."""
+    occupied: set[tuple[int, int]] = set()
+    for center_x, center_y, radius in towers:
+        micro_radius = int(radius * MICRO_DIVISION) + 2
+        center_micro_x = _world_to_micro(center_x)
+        center_micro_y = _world_to_micro(center_y)
+        for micro_y in range(center_micro_y - micro_radius, center_micro_y + micro_radius + 1):
+            if not 0 <= micro_y < height:
+                continue
+            sample_y = _micro_sample_coordinate(micro_y)
+            for micro_x in range(center_micro_x - micro_radius, center_micro_x + micro_radius + 1):
+                if not 0 <= micro_x < width:
+                    continue
+                sample_x = _micro_sample_coordinate(micro_x)
+                if hypot(sample_x - center_x, sample_y - center_y) <= radius:
+                    occupied.add((micro_x, micro_y))
+    return occupied
+
+
+def _pack_micro_points(
+    points: set[tuple[int, int]],
+    rows: list[list[int]],
+) -> None:
+    """Pack global micro-grid points into per-tile uint16 masks."""
+    for micro_x, micro_y in points:
+        tile_x, subtile_x = divmod(micro_x, MICRO_DIVISION)
+        tile_y, subtile_y = divmod(micro_y, MICRO_DIVISION)
+        rows[tile_y][tile_x] |= 1 << (subtile_y * MICRO_DIVISION + subtile_x)
 
 
 def _parse_shell_towers(
     towers: list[object],
-) -> tuple[tuple[float, float, float, float], ...]:
-    """Parse round towers with a wall thickness equal to two subtiles."""
-    parsed: list[tuple[float, float, float, float]] = []
-    wall_width = 4.0 / MICRO_DIVISION
+) -> tuple[tuple[float, float, float], ...]:
+    """Parse tower centers and exact outer radii in tile coordinates."""
+    parsed: list[tuple[float, float, float]] = []
     for item in towers:
         if not isinstance(item, dict):
             continue
@@ -578,9 +693,7 @@ def _parse_shell_towers(
         center_y = center.get("y")
         if not isinstance(center_x, int) or not isinstance(center_y, int):
             continue
-        outer_radius = max(1.0, float(radius) + 0.35)
-        inner_radius = max(0.25, outer_radius - wall_width)
-        parsed.append((float(center_x), float(center_y), inner_radius, outer_radius))
+        parsed.append((float(center_x), float(center_y), max(1.0, float(radius))))
     return tuple(parsed)
 
 
@@ -637,10 +750,9 @@ def _inside_gate_opening(
     return abs(along) <= half_width and abs(across) <= 1.0
 
 
-def _parse_wall_segments(
-    raw_segments: list[object],
-) -> tuple[tuple[float, float, float, float], ...]:
-    parsed: list[tuple[float, float, float, float]] = []
+def _parse_wall_paths(raw_segments: list[object]) -> tuple[_FortressWallPath, ...]:
+    """Parse straight and curved wall centerlines from fortress metadata."""
+    parsed: list[_FortressWallPath] = []
     for item in raw_segments:
         if not isinstance(item, dict):
             continue
@@ -651,8 +763,54 @@ def _parse_wall_segments(
         values = (start.get("x"), start.get("y"), end.get("x"), end.get("y"))
         if not all(isinstance(value, int) for value in values):
             continue
-        parsed.append(tuple(float(value) for value in values))
+        bend = item.get("bend", 0.0)
+        if not isinstance(bend, (int, float)):
+            bend = 0.0
+        parsed.append(
+            _FortressWallPath(
+                start_x=float(values[0]),
+                start_y=float(values[1]),
+                end_x=float(values[2]),
+                end_y=float(values[3]),
+                bend=float(bend),
+            )
+        )
     return tuple(parsed)
+
+
+def _sample_wall_path(
+    path: _FortressWallPath,
+) -> tuple[tuple[float, float, float, float], ...]:
+    """Approximate one wall centerline with quarter-tile line segments."""
+    dx = path.end_x - path.start_x
+    dy = path.end_y - path.start_y
+    length = max(0.25, hypot(dx, dy))
+    steps = max(1, int(length * MICRO_DIVISION * 2))
+    midpoint_x = (path.start_x + path.end_x) / 2.0
+    midpoint_y = (path.start_y + path.end_y) / 2.0
+    normal_x = -dy / length
+    normal_y = dx / length
+    control_x = midpoint_x + normal_x * length * path.bend
+    control_y = midpoint_y + normal_y * length * path.bend
+    points: list[tuple[float, float]] = []
+    for step in range(steps + 1):
+        t = step / steps
+        inv = 1.0 - t
+        x = (
+            inv * inv * path.start_x
+            + 2.0 * inv * t * control_x
+            + t * t * path.end_x
+        )
+        y = (
+            inv * inv * path.start_y
+            + 2.0 * inv * t * control_y
+            + t * t * path.end_y
+        )
+        points.append((x, y))
+    return tuple(
+        (first[0], first[1], second[0], second[1])
+        for first, second in zip(points, points[1:], strict=False)
+    )
 
 
 def _point_segment_distance(

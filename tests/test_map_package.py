@@ -107,7 +107,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
     )
 
-    assert package_index["schema_version"] == "map-package-map-v25"
+    assert package_index["schema_version"] == "map-package-map-v26"
     assert package_index["dimensions"]["width_tiles"] == 2
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
@@ -166,7 +166,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert structure_micro_geometry["division"] == 4
     assert structure_micro_geometry["cells"] == []
     assert structure_top_geometry["schema_version"] == (
-        "structure-top-geometry-layer-v5"
+        "structure-top-geometry-layer-v6"
     )
     assert structure_top_geometry["cells"] == []
     assert vegetation_type["schema_version"] == "vegetation-type-layer-v1"

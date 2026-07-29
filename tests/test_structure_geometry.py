@@ -71,7 +71,7 @@ def test_round_fortress_tower_uses_partial_micro_masks() -> None:
     ]
     assert any(0 < mask < FULL_MICRO_MASK for mask in tower_masks)
     assert result.summary["partial_micro_cells"] > 0
-    assert result.summary["full_micro_cells"] == 0
+    assert result.summary["full_micro_cells"] > 0
 
 
 def test_round_tower_micro_mask_bit_order_is_top_left_lsb() -> None:
@@ -308,11 +308,15 @@ def test_fortress_shell_does_not_continue_wall_through_tower_interior() -> None:
         },
     )
 
-    assert result.mask_rows[3][4] != FULL_MICRO_MASK
-    assert result.mask_rows[3][5] == 0
+    assert result.type_rows[3][4] == next(
+        type_id
+        for type_id, name in STRUCTURE_TYPE_NAMES.items()
+        if name == "fortress_tower"
+    )
+    assert result.mask_rows[3][5] == FULL_MICRO_MASK
 
 
-def test_fortress_top_geometry_has_walkway_and_parapet() -> None:
+def test_fortress_top_geometry_is_disabled_during_shell_rewrite() -> None:
     terrain = [["grass" for _ in range(8)] for _ in range(8)]
     fortress_plan = {
         "segments": [
@@ -328,82 +332,125 @@ def test_fortress_top_geometry_has_walkway_and_parapet() -> None:
         fortress_plan=fortress_plan,
     )
     top = build_structure_top_geometry(geometry)
-    assert top.summary["walkway_subtiles"] > 0
-    assert top.summary["parapet_subtiles"] == 0
-    assert top.summary["crenellation_subtiles"] > 0
-    assert any(mask for row in top.walkway_rows for mask in row)
-    assert any(mask for row in top.crenellation_rows for mask in row)
-    for y in range(8):
-        for x in range(8):
-            assert top.parapet_rows[y][x] & ~top.walkway_rows[y][x] == 0
-            assert top.crenellation_rows[y][x] & ~top.walkway_rows[y][x] == 0
+
+    assert top.summary["temporarily_disabled"] == 1
+    assert not any(mask for row in top.walkway_rows for mask in row)
+    assert not any(mask for row in top.parapet_rows for mask in row)
+    assert not any(mask for row in top.crenellation_rows for mask in row)
 
 
-def test_round_tower_top_is_closed_and_crenellated_only_on_outer_edge() -> None:
-    terrain = [["grass" for _ in range(9)] for _ in range(9)]
-    fortress_plan = {
-        "segments": [],
-        "towers": [
-            {
-                "center": {"x": 4, "y": 4},
-                "radius_tiles": 3,
-                "kind": "corner_round",
-            }
-        ],
-        "materialization": {
-            "structure_types": [
-                [x, y, "fortress_tower"]
-                for y in range(1, 8)
-                for x in range(1, 8)
-            ]
-        },
-    }
+def test_curved_fortress_wall_uses_one_continuous_micro_band() -> None:
+    terrain = [["grass" for _ in range(16)] for _ in range(16)]
     geometry = build_structure_geometry(
         terrain_rows=terrain,
-        fortress_plan=fortress_plan,
+        fortress_plan={
+            "segments": [
+                {
+                    "start": {"x": 2, "y": 8},
+                    "end": {"x": 13, "y": 8},
+                    "kind": "gentle_curve",
+                    "bend": 0.22,
+                }
+            ],
+            "towers": [],
+            "materialization": {"structure_types": []},
+        },
     )
-    top = build_structure_top_geometry(geometry)
 
-    center_bit = 1 << (2 * 4 + 2)
-    assert top.walkway_rows[4][4] & center_bit
-    assert not (top.crenellation_rows[4][4] & center_bit)
-    assert top.summary["tower_roof_subtiles"] > 0
-    assert top.summary["tower_crenellation_subtiles"] > 0
-    assert top.summary["wall_crenellation_subtiles"] == 0
+    occupied = _test_micro_points(geometry)
+    assert occupied
+    assert len(_test_cardinal_components(occupied)) == 1
+    row_counts = {
+        y: sum(1 for _x, point_y in occupied if point_y == y)
+        for y in {point_y for _x, point_y in occupied}
+    }
+    assert max(row_counts.values()) > min(row_counts.values())
 
-    tower_type = next(
+
+def test_round_tower_body_is_symmetric_and_not_deformed_by_wall() -> None:
+    terrain = [["grass" for _ in range(17)] for _ in range(13)]
+    geometry = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan={
+            "segments": [
+                {
+                    "start": {"x": 1, "y": 6},
+                    "end": {"x": 8, "y": 6},
+                    "kind": "straight",
+                    "bend": 0.0,
+                }
+            ],
+            "towers": [
+                {
+                    "center": {"x": 9, "y": 6},
+                    "radius_tiles": 3,
+                    "kind": "corner_round",
+                }
+            ],
+            "materialization": {"structure_types": []},
+        },
+    )
+
+    tower_id = next(
         type_id
         for type_id, name in STRUCTURE_TYPE_NAMES.items()
         if name == "fortress_tower"
     )
-    tower_points = set()
-    crenellation_points = set()
-    for tile_y, row in enumerate(geometry.type_rows):
-        for tile_x, type_id in enumerate(row):
-            if type_id != tower_type:
-                continue
-            for subtile_y in range(4):
-                for subtile_x in range(4):
-                    bit = 1 << (subtile_y * 4 + subtile_x)
-                    if top.walkway_rows[tile_y][tile_x] & bit:
-                        tower_points.add((tile_x * 4 + subtile_x, tile_y * 4 + subtile_y))
-                    if top.crenellation_rows[tile_y][tile_x] & bit:
-                        crenellation_points.add(
-                            (tile_x * 4 + subtile_x, tile_y * 4 + subtile_y)
-                        )
+    points = _test_micro_points(geometry, type_id=tower_id)
+    axis_x_twice = 2 * 9 * MICRO_DIVISION + 3
+    reflected = {(axis_x_twice - x, y) for x, y in points}
+    assert points == reflected
+    assert any(
+        x in {9 * MICRO_DIVISION + 1, 9 * MICRO_DIVISION + 2}
+        and y in {6 * MICRO_DIVISION + 1, 6 * MICRO_DIVISION + 2}
+        for x, y in points
+    )
 
-    exterior = _test_exterior_points(tower_points)
-    outer_ring = {
-        point
-        for point in tower_points
-        if any(
-            (point[0] + dx, point[1] + dy) in exterior
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
-        )
-    }
-    assert crenellation_points <= outer_ring
-    expected = (len(outer_ring) // 4) * 2 + min(len(outer_ring) % 4, 2)
-    assert len(crenellation_points) == expected
+
+def _test_micro_points(
+    geometry,
+    *,
+    type_id: int | None = None,
+) -> set[tuple[int, int]]:
+    points: set[tuple[int, int]] = set()
+    for tile_y, row in enumerate(geometry.mask_rows):
+        for tile_x, mask in enumerate(row):
+            if type_id is not None and geometry.type_rows[tile_y][tile_x] != type_id:
+                continue
+            for subtile_y in range(MICRO_DIVISION):
+                for subtile_x in range(MICRO_DIVISION):
+                    bit = 1 << (subtile_y * MICRO_DIVISION + subtile_x)
+                    if mask & bit:
+                        points.add(
+                            (
+                                tile_x * MICRO_DIVISION + subtile_x,
+                                tile_y * MICRO_DIVISION + subtile_y,
+                            )
+                        )
+    return points
+
+
+def _test_cardinal_components(
+    points: set[tuple[int, int]],
+) -> list[set[tuple[int, int]]]:
+    remaining = set(points)
+    components: list[set[tuple[int, int]]] = []
+    while remaining:
+        seed = next(iter(remaining))
+        component = {seed}
+        stack = [seed]
+        remaining.remove(seed)
+        while stack:
+            x, y = stack.pop()
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                neighbor = (x + dx, y + dy)
+                if neighbor not in remaining:
+                    continue
+                remaining.remove(neighbor)
+                component.add(neighbor)
+                stack.append(neighbor)
+        components.append(component)
+    return components
 
 
 def _test_exterior_points(occupied: set[tuple[int, int]]) -> set[tuple[int, int]]:
@@ -426,88 +473,3 @@ def _test_exterior_points(occupied: set[tuple[int, int]]) -> set[tuple[int, int]
             exterior.add(neighbor)
             queue.append(neighbor)
     return exterior
-
-
-def test_tower_crenellations_leave_wall_connection_clearance() -> None:
-    terrain = [["grass" for _ in range(12)] for _ in range(9)]
-    fortress_plan = {
-        "segments": [
-            {"start": {"x": 1, "y": 4}, "end": {"x": 5, "y": 4}}
-        ],
-        "towers": [
-            {
-                "center": {"x": 6, "y": 4},
-                "radius_tiles": 3,
-                "kind": "corner_round",
-            }
-        ],
-        "materialization": {
-            "structure_types": (
-                [[x, 4, "fortress_wall"] for x in range(1, 6)]
-                + [
-                    [x, y, "fortress_tower"]
-                    for y in range(1, 8)
-                    for x in range(3, 10)
-                ]
-            )
-        },
-    }
-    geometry = build_structure_geometry(
-        terrain_rows=terrain,
-        fortress_plan=fortress_plan,
-    )
-    top = build_structure_top_geometry(geometry)
-
-    assert top.summary["tower_connection_clearance_subtiles"] > 0
-    assert top.summary["wall_connection_clearance_subtiles"] > 0
-
-
-def test_wall_crenellations_use_only_world_facing_edge() -> None:
-    terrain = [["grass" for _ in range(12)] for _ in range(12)]
-    wall_tiles = []
-    for x in range(2, 10):
-        wall_tiles.append([x, 2, "fortress_wall"])
-        wall_tiles.append([x, 9, "fortress_wall"])
-    for y in range(3, 9):
-        wall_tiles.append([2, y, "fortress_wall"])
-        wall_tiles.append([9, y, "fortress_wall"])
-    fortress_plan = {
-        "segments": [
-            {"start": {"x": 2, "y": 2}, "end": {"x": 9, "y": 2}},
-            {"start": {"x": 9, "y": 2}, "end": {"x": 9, "y": 9}},
-            {"start": {"x": 9, "y": 9}, "end": {"x": 2, "y": 9}},
-            {"start": {"x": 2, "y": 9}, "end": {"x": 2, "y": 2}},
-        ],
-        "towers": [],
-        "materialization": {"structure_types": wall_tiles},
-    }
-    geometry = build_structure_geometry(
-        terrain_rows=terrain,
-        fortress_plan=fortress_plan,
-    )
-    top = build_structure_top_geometry(geometry)
-
-    crenellation_points = set()
-    for tile_y, row in enumerate(top.crenellation_rows):
-        for tile_x, mask in enumerate(row):
-            for subtile_y in range(MICRO_DIVISION):
-                for subtile_x in range(MICRO_DIVISION):
-                    bit = 1 << (subtile_y * MICRO_DIVISION + subtile_x)
-                    if mask & bit:
-                        crenellation_points.add(
-                            (
-                                tile_x * MICRO_DIVISION + subtile_x,
-                                tile_y * MICRO_DIVISION + subtile_y,
-                            )
-                        )
-
-    center_x = center_y = 6 * MICRO_DIVISION
-    assert crenellation_points
-    assert all(
-        abs(x - center_x) >= 12 or abs(y - center_y) >= 12
-        for x, y in crenellation_points
-    )
-    assert not any(
-        8 < abs(x - center_x) < 12 and 8 < abs(y - center_y) < 12
-        for x, y in crenellation_points
-    )

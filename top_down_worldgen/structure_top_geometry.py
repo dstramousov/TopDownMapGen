@@ -23,99 +23,29 @@ class StructureTopGeometry:
 def build_structure_top_geometry(
     geometry: StructureGeometry,
 ) -> StructureTopGeometry:
-    """Build fortress roof, inner parapet, and outer crenellation masks."""
+    """Return empty top layers while the fortress shell is being rebuilt."""
     height = len(geometry.type_rows)
     width = len(geometry.type_rows[0]) if geometry.type_rows else 0
     walkway_rows = [[0 for _ in range(width)] for _ in range(height)]
     parapet_rows = [[0 for _ in range(width)] for _ in range(height)]
     crenellation_rows = [[0 for _ in range(width)] for _ in range(height)]
-
-    wall_id = _NAME_TO_ID["fortress_wall"]
-    tower_id = _NAME_TO_ID["fortress_tower"]
-    wall_points = _collect_points(geometry, {wall_id})
-    tower_points = _collect_points(geometry, {tower_id})
-    tower_components = _components(tower_points)
-    tower_roof_components = [
-        _fill_component_holes(component) for component in tower_components
-    ]
-    tower_roofs = set().union(*tower_roof_components) if tower_roof_components else set()
-    top_surface = wall_points | tower_roofs
-
-    exterior = _exterior_empty_points(top_surface)
-    outer_boundary = {
-        point
-        for point in top_surface
-        if any(
-            (point[0] + dx, point[1] + dy) in exterior
-            for dx, dy in _CARDINAL_NEIGHBORS
-        )
-    }
-    inner_boundary = {
-        point
-        for point in top_surface
-        if any(
-            (point[0] + dx, point[1] + dy) not in top_surface
-            and (point[0] + dx, point[1] + dy) not in exterior
-            for dx, dy in _CARDINAL_NEIGHBORS
-        )
-    }
-
-    tower_crenellations: set[tuple[int, int]] = set()
-    tower_connection_clearance: set[tuple[int, int]] = set()
-    for tower_roof in tower_roof_components:
-        ring = _ordered_outer_ring(tower_roof)
-        excluded = _connection_clearance_points(ring, wall_points)
-        tower_connection_clearance.update(excluded)
-        tower_crenellations.update(
-            _select_grouped_crenellations(ring, excluded=excluded)
-        )
-
-    if top_surface:
-        fortress_center = _point_centroid(top_surface)
-        wall_outer_boundary = _outward_wall_boundary(
-            wall_points=wall_points,
-            top_surface=top_surface,
-            fortress_center=fortress_center,
-        )
-    else:
-        wall_outer_boundary = set()
-    wall_crenellations: set[tuple[int, int]] = set()
-    wall_connection_clearance = _points_near(wall_outer_boundary, tower_roofs)
-    for component in _components(wall_outer_boundary):
-        ordered = _ordered_boundary_component(component)
-        wall_crenellations.update(
-            _select_grouped_crenellations(
-                ordered,
-                excluded=wall_connection_clearance,
-            )
-        )
-    crenellations = wall_crenellations | tower_crenellations
-
-    _pack_points(top_surface, walkway_rows)
-    _pack_points(inner_boundary, parapet_rows)
-    _pack_points(crenellations, crenellation_rows)
     return StructureTopGeometry(
         walkway_rows=walkway_rows,
         parapet_rows=parapet_rows,
         crenellation_rows=crenellation_rows,
         summary={
-            "walkway_subtiles": len(top_surface),
-            "parapet_subtiles": len(inner_boundary),
-            "crenellation_subtiles": len(crenellations),
-            "tower_crenellation_subtiles": len(tower_crenellations),
-            "wall_crenellation_subtiles": len(wall_crenellations),
-            "tower_connection_clearance_subtiles": len(
-                tower_connection_clearance
-            ),
-            "wall_connection_clearance_subtiles": len(
-                wall_connection_clearance
-            ),
-            "walkway_cells": sum(bool(mask) for row in walkway_rows for mask in row),
-            "parapet_cells": sum(bool(mask) for row in parapet_rows for mask in row),
-            "crenellation_cells": sum(
-                bool(mask) for row in crenellation_rows for mask in row
-            ),
-            "tower_roof_subtiles": len(tower_roofs),
+            "walkway_subtiles": 0,
+            "parapet_subtiles": 0,
+            "crenellation_subtiles": 0,
+            "tower_crenellation_subtiles": 0,
+            "wall_crenellation_subtiles": 0,
+            "tower_connection_clearance_subtiles": 0,
+            "wall_connection_clearance_subtiles": 0,
+            "walkway_cells": 0,
+            "parapet_cells": 0,
+            "crenellation_cells": 0,
+            "tower_roof_subtiles": 0,
+            "temporarily_disabled": 1,
         },
     )
 
