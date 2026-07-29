@@ -2,6 +2,7 @@ from top_down_worldgen.structure_top_geometry import build_structure_top_geometr
 from top_down_worldgen.structure_geometry import (
     FULL_MICRO_MASK,
     MICRO_DIVISION,
+    STRUCTURE_TYPE_NAMES,
     build_structure_geometry,
     sparse_micro_cells,
 )
@@ -367,4 +368,60 @@ def test_round_tower_top_is_closed_and_crenellated_only_on_outer_edge() -> None:
     assert top.walkway_rows[4][4] & center_bit
     assert not (top.crenellation_rows[4][4] & center_bit)
     assert top.summary["tower_roof_subtiles"] > 0
-    assert top.summary["crenellation_subtiles"] > 0
+    assert top.summary["tower_crenellation_subtiles"] > 0
+    assert top.summary["wall_crenellation_subtiles"] == 0
+
+    tower_type = next(
+        type_id
+        for type_id, name in STRUCTURE_TYPE_NAMES.items()
+        if name == "fortress_tower"
+    )
+    tower_points = set()
+    crenellation_points = set()
+    for tile_y, row in enumerate(geometry.type_rows):
+        for tile_x, type_id in enumerate(row):
+            if type_id != tower_type:
+                continue
+            for subtile_y in range(4):
+                for subtile_x in range(4):
+                    bit = 1 << (subtile_y * 4 + subtile_x)
+                    if top.walkway_rows[tile_y][tile_x] & bit:
+                        tower_points.add((tile_x * 4 + subtile_x, tile_y * 4 + subtile_y))
+                    if top.crenellation_rows[tile_y][tile_x] & bit:
+                        crenellation_points.add(
+                            (tile_x * 4 + subtile_x, tile_y * 4 + subtile_y)
+                        )
+
+    exterior = _test_exterior_points(tower_points)
+    outer_ring = {
+        point
+        for point in tower_points
+        if any(
+            (point[0] + dx, point[1] + dy) in exterior
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+        )
+    }
+    assert crenellation_points <= outer_ring
+    assert abs(len(crenellation_points) * 2 - len(outer_ring)) <= 1
+
+
+def _test_exterior_points(occupied: set[tuple[int, int]]) -> set[tuple[int, int]]:
+    """Return empty points connected to the outside of a test bounding box."""
+    min_x = min(x for x, _y in occupied) - 1
+    max_x = max(x for x, _y in occupied) + 1
+    min_y = min(y for _x, y in occupied) - 1
+    max_y = max(y for _x, y in occupied) + 1
+    exterior = {(min_x, min_y)}
+    queue = [(min_x, min_y)]
+    while queue:
+        x, y = queue.pop()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            neighbor = (x + dx, y + dy)
+            nx, ny = neighbor
+            if not (min_x <= nx <= max_x and min_y <= ny <= max_y):
+                continue
+            if neighbor in occupied or neighbor in exterior:
+                continue
+            exterior.add(neighbor)
+            queue.append(neighbor)
+    return exterior

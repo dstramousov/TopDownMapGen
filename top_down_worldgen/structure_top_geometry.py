@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+from math import atan2
 from dataclasses import dataclass
 
 from .structure_geometry import MICRO_DIVISION, STRUCTURE_TYPE_NAMES, StructureGeometry
@@ -33,7 +34,11 @@ def build_structure_top_geometry(
     tower_id = _NAME_TO_ID["fortress_tower"]
     wall_points = _collect_points(geometry, {wall_id})
     tower_points = _collect_points(geometry, {tower_id})
-    tower_roofs = _fill_component_holes(tower_points)
+    tower_components = _components(tower_points)
+    tower_roof_components = [
+        _fill_component_holes(component) for component in tower_components
+    ]
+    tower_roofs = set().union(*tower_roof_components) if tower_roof_components else set()
     top_surface = wall_points | tower_roofs
 
     exterior = _exterior_empty_points(top_surface)
@@ -54,9 +59,19 @@ def build_structure_top_geometry(
             for dx, dy in _CARDINAL_NEIGHBORS
         )
     }
-    crenellations = {
-        point for point in outer_boundary if (point[0] + point[1]) % 2 == 0
+
+    tower_crenellations: set[tuple[int, int]] = set()
+    for tower_roof in tower_roof_components:
+        ring = _ordered_outer_ring(tower_roof)
+        tower_crenellations.update(ring[::2])
+
+    wall_outer_boundary = outer_boundary - tower_roofs
+    wall_crenellations = {
+        point
+        for point in wall_outer_boundary
+        if (point[0] + point[1]) % 2 == 0
     }
+    crenellations = wall_crenellations | tower_crenellations
 
     _pack_points(top_surface, walkway_rows)
     _pack_points(inner_boundary, parapet_rows)
@@ -69,6 +84,8 @@ def build_structure_top_geometry(
             "walkway_subtiles": len(top_surface),
             "parapet_subtiles": len(inner_boundary),
             "crenellation_subtiles": len(crenellations),
+            "tower_crenellation_subtiles": len(tower_crenellations),
+            "wall_crenellation_subtiles": len(wall_crenellations),
             "walkway_cells": sum(bool(mask) for row in walkway_rows for mask in row),
             "parapet_cells": sum(bool(mask) for row in parapet_rows for mask in row),
             "crenellation_cells": sum(
@@ -121,6 +138,43 @@ def _collect_points(
                         )
     return points
 
+
+
+def _components(points: set[tuple[int, int]]) -> list[set[tuple[int, int]]]:
+    """Return deterministic cardinally connected point components."""
+    components: list[set[tuple[int, int]]] = []
+    remaining = set(points)
+    while remaining:
+        seed = min(remaining, key=lambda point: (point[1], point[0]))
+        component = _flood_component(seed, remaining)
+        remaining.difference_update(component)
+        components.append(component)
+    return components
+
+
+def _ordered_outer_ring(points: set[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Return a clockwise outer boundary order for a round tower roof."""
+    exterior = _exterior_empty_points(points)
+    boundary = [
+        point
+        for point in points
+        if any(
+            (point[0] + dx, point[1] + dy) in exterior
+            for dx, dy in _CARDINAL_NEIGHBORS
+        )
+    ]
+    if not boundary:
+        return []
+
+    center_x = sum(point[0] for point in points) / len(points)
+    center_y = sum(point[1] for point in points) / len(points)
+    return sorted(
+        boundary,
+        key=lambda point: (
+            atan2(point[1] - center_y, point[0] - center_x),
+            (point[0] - center_x) ** 2 + (point[1] - center_y) ** 2,
+        ),
+    )
 
 def _fill_component_holes(points: set[tuple[int, int]]) -> set[tuple[int, int]]:
     filled = set(points)

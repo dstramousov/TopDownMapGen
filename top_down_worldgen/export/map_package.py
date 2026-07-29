@@ -287,7 +287,7 @@ def write_map_package(
             "walkway_rule": "walkway_mask_is_flat_roof_or_combat_walkway",
             "parapet_rule": "parapet_mask_is_inner_raised_edge",
             "crenellation_rule": (
-                "crenellation_mask_is_outer_one_subtile_merlon_with_one_subtile_gap"
+                "crenellation_mask_is_ordered_outer_ring_alternating_merlon_and_gap"
             ),
             "overlay_rule": "raised_masks_overlay_walkway_mask",
             "cells": sparse_top_cells(structure_top),

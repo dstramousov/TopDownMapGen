@@ -1223,3 +1223,10 @@
 - Reworked fortress top geometry into a full tower roof, an inner parapet, and a dedicated outer crenellation mask.
 - Added one-subtile merlons with one-subtile gaps along the exterior contour of fortress walls and round towers.
 - Added `STRUCTURE_CRENELLATION_MASK_U16` to VXMAP and bumped the runtime format to v1.5.
+
+## v0.0.141 -> v0.0.142
+
+- Rebuilt round-tower crenellations as one ordered outer roof ring per tower.
+- Thinned each tower ring strictly one merlon on, one gap off instead of using a global checkerboard.
+- Kept tower roofs solid and excluded all inner roof edges from crenellation generation.
+- Bumped public schemas for the corrected top-geometry semantics.
