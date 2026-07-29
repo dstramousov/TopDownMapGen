@@ -70,7 +70,15 @@ def build_structure_top_geometry(
             _select_grouped_crenellations(ring, excluded=excluded)
         )
 
-    wall_outer_boundary = outer_boundary - tower_roofs
+    if top_surface:
+        fortress_center = _point_centroid(top_surface)
+        wall_outer_boundary = _outward_wall_boundary(
+            wall_points=wall_points,
+            top_surface=top_surface,
+            fortress_center=fortress_center,
+        )
+    else:
+        wall_outer_boundary = set()
     wall_crenellations: set[tuple[int, int]] = set()
     wall_connection_clearance = _points_near(wall_outer_boundary, tower_roofs)
     for component in _components(wall_outer_boundary):
@@ -155,6 +163,42 @@ def _collect_points(
     return points
 
 
+
+
+def _point_centroid(
+    points: set[tuple[int, int]],
+) -> tuple[float, float]:
+    """Return the arithmetic center of a non-empty point set."""
+    if not points:
+        raise ValueError("Cannot calculate centroid of an empty point set")
+    return (
+        sum(point[0] for point in points) / len(points),
+        sum(point[1] for point in points) / len(points),
+    )
+
+
+def _outward_wall_boundary(
+    *,
+    wall_points: set[tuple[int, int]],
+    top_surface: set[tuple[int, int]],
+    fortress_center: tuple[float, float],
+) -> set[tuple[int, int]]:
+    """Return only wall-edge subtiles facing away from the fortress center."""
+    center_x, center_y = fortress_center
+    outward: set[tuple[int, int]] = set()
+    for point in wall_points:
+        point_distance = (point[0] - center_x) ** 2 + (point[1] - center_y) ** 2
+        for dx, dy in _CARDINAL_NEIGHBORS:
+            neighbor = (point[0] + dx, point[1] + dy)
+            if neighbor in top_surface:
+                continue
+            neighbor_distance = (neighbor[0] - center_x) ** 2 + (
+                neighbor[1] - center_y
+            ) ** 2
+            if neighbor_distance > point_distance:
+                outward.add(point)
+                break
+    return outward
 
 def _components(points: set[tuple[int, int]]) -> list[set[tuple[int, int]]]:
     """Return deterministic cardinally connected point components."""

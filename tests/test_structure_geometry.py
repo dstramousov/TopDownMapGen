@@ -460,3 +460,54 @@ def test_tower_crenellations_leave_wall_connection_clearance() -> None:
 
     assert top.summary["tower_connection_clearance_subtiles"] > 0
     assert top.summary["wall_connection_clearance_subtiles"] > 0
+
+
+def test_wall_crenellations_use_only_world_facing_edge() -> None:
+    terrain = [["grass" for _ in range(12)] for _ in range(12)]
+    wall_tiles = []
+    for x in range(2, 10):
+        wall_tiles.append([x, 2, "fortress_wall"])
+        wall_tiles.append([x, 9, "fortress_wall"])
+    for y in range(3, 9):
+        wall_tiles.append([2, y, "fortress_wall"])
+        wall_tiles.append([9, y, "fortress_wall"])
+    fortress_plan = {
+        "segments": [
+            {"start": {"x": 2, "y": 2}, "end": {"x": 9, "y": 2}},
+            {"start": {"x": 9, "y": 2}, "end": {"x": 9, "y": 9}},
+            {"start": {"x": 9, "y": 9}, "end": {"x": 2, "y": 9}},
+            {"start": {"x": 2, "y": 9}, "end": {"x": 2, "y": 2}},
+        ],
+        "towers": [],
+        "materialization": {"structure_types": wall_tiles},
+    }
+    geometry = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan=fortress_plan,
+    )
+    top = build_structure_top_geometry(geometry)
+
+    crenellation_points = set()
+    for tile_y, row in enumerate(top.crenellation_rows):
+        for tile_x, mask in enumerate(row):
+            for subtile_y in range(MICRO_DIVISION):
+                for subtile_x in range(MICRO_DIVISION):
+                    bit = 1 << (subtile_y * MICRO_DIVISION + subtile_x)
+                    if mask & bit:
+                        crenellation_points.add(
+                            (
+                                tile_x * MICRO_DIVISION + subtile_x,
+                                tile_y * MICRO_DIVISION + subtile_y,
+                            )
+                        )
+
+    center_x = center_y = 6 * MICRO_DIVISION
+    assert crenellation_points
+    assert all(
+        abs(x - center_x) >= 12 or abs(y - center_y) >= 12
+        for x, y in crenellation_points
+    )
+    assert not any(
+        8 < abs(x - center_x) < 12 and 8 < abs(y - center_y) < 12
+        for x, y in crenellation_points
+    )
