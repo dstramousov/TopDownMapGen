@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections import deque
-from math import atan2
 from dataclasses import dataclass
+from math import atan2
 
 from .structure_geometry import MICRO_DIVISION, STRUCTURE_TYPE_NAMES, StructureGeometry
 
@@ -61,16 +61,26 @@ def build_structure_top_geometry(
     }
 
     tower_crenellations: set[tuple[int, int]] = set()
+    tower_connection_clearance: set[tuple[int, int]] = set()
     for tower_roof in tower_roof_components:
         ring = _ordered_outer_ring(tower_roof)
-        tower_crenellations.update(ring[::2])
+        excluded = _connection_clearance_points(ring, wall_points)
+        tower_connection_clearance.update(excluded)
+        tower_crenellations.update(
+            _select_grouped_crenellations(ring, excluded=excluded)
+        )
 
     wall_outer_boundary = outer_boundary - tower_roofs
-    wall_crenellations = {
-        point
-        for point in wall_outer_boundary
-        if (point[0] + point[1]) % 2 == 0
-    }
+    wall_crenellations: set[tuple[int, int]] = set()
+    wall_connection_clearance = _points_near(wall_outer_boundary, tower_roofs)
+    for component in _components(wall_outer_boundary):
+        ordered = _ordered_boundary_component(component)
+        wall_crenellations.update(
+            _select_grouped_crenellations(
+                ordered,
+                excluded=wall_connection_clearance,
+            )
+        )
     crenellations = wall_crenellations | tower_crenellations
 
     _pack_points(top_surface, walkway_rows)
@@ -86,6 +96,12 @@ def build_structure_top_geometry(
             "crenellation_subtiles": len(crenellations),
             "tower_crenellation_subtiles": len(tower_crenellations),
             "wall_crenellation_subtiles": len(wall_crenellations),
+            "tower_connection_clearance_subtiles": len(
+                tower_connection_clearance
+            ),
+            "wall_connection_clearance_subtiles": len(
+                wall_connection_clearance
+            ),
             "walkway_cells": sum(bool(mask) for row in walkway_rows for mask in row),
             "parapet_cells": sum(bool(mask) for row in parapet_rows for mask in row),
             "crenellation_cells": sum(
@@ -175,6 +191,119 @@ def _ordered_outer_ring(points: set[tuple[int, int]]) -> list[tuple[int, int]]:
             (point[0] - center_x) ** 2 + (point[1] - center_y) ** 2,
         ),
     )
+
+
+def _select_grouped_crenellations(
+    ordered_points: list[tuple[int, int]],
+    *,
+    excluded: set[tuple[int, int]],
+    merlon_run: int = 2,
+    gap_run: int = 2,
+) -> set[tuple[int, int]]:
+    """Select grouped merlons from an ordered defensive edge."""
+    if merlon_run <= 0 or gap_run <= 0:
+        raise ValueError("merlon and gap runs must be positive")
+    period = merlon_run + gap_run
+    return {
+        point
+        for index, point in enumerate(ordered_points)
+        if index % period < merlon_run and point not in excluded
+    }
+
+
+def _connection_clearance_points(
+    ring: list[tuple[int, int]],
+    wall_points: set[tuple[int, int]],
+    *,
+    radius: int = 2,
+) -> set[tuple[int, int]]:
+    """Return ring points reserved for wall-to-tower walkway openings."""
+    if not ring or not wall_points:
+        return set()
+    contact_indexes = [
+        index
+        for index, point in enumerate(ring)
+        if _has_nearby_point(point, wall_points, distance=1)
+    ]
+    excluded: set[tuple[int, int]] = set()
+    ring_size = len(ring)
+    for index in contact_indexes:
+        for offset in range(-radius, radius + 1):
+            excluded.add(ring[(index + offset) % ring_size])
+    return excluded
+
+
+def _points_near(
+    points: set[tuple[int, int]],
+    targets: set[tuple[int, int]],
+    *,
+    distance: int = 1,
+) -> set[tuple[int, int]]:
+    """Return points within Chebyshev distance of any target point."""
+    if not points or not targets:
+        return set()
+    return {
+        point
+        for point in points
+        if _has_nearby_point(point, targets, distance=distance)
+    }
+
+
+def _has_nearby_point(
+    point: tuple[int, int],
+    targets: set[tuple[int, int]],
+    *,
+    distance: int,
+) -> bool:
+    """Return whether a target exists within the requested square radius."""
+    x, y = point
+    return any(
+        (x + dx, y + dy) in targets
+        for dy in range(-distance, distance + 1)
+        for dx in range(-distance, distance + 1)
+    )
+
+
+def _ordered_boundary_component(
+    points: set[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    """Return a deterministic path-like order for one wall-edge component."""
+    if not points:
+        return []
+    neighbors = {
+        point: sorted(
+            (
+                (point[0] + dx, point[1] + dy)
+                for dx, dy in _CARDINAL_NEIGHBORS
+                if (point[0] + dx, point[1] + dy) in points
+            ),
+            key=lambda value: (value[1], value[0]),
+        )
+        for point in points
+    }
+    endpoints = [point for point, adjacent in neighbors.items() if len(adjacent) == 1]
+    if endpoints and all(len(adjacent) <= 2 for adjacent in neighbors.values()):
+        current = min(endpoints, key=lambda point: (point[1], point[0]))
+        previous: tuple[int, int] | None = None
+        ordered: list[tuple[int, int]] = []
+        while current is not None:
+            ordered.append(current)
+            candidates = [
+                neighbor
+                for neighbor in neighbors[current]
+                if neighbor != previous
+            ]
+            next_point = candidates[0] if candidates else None
+            previous, current = current, next_point
+        return ordered
+
+    min_x = min(point[0] for point in points)
+    max_x = max(point[0] for point in points)
+    min_y = min(point[1] for point in points)
+    max_y = max(point[1] for point in points)
+    if max_x - min_x >= max_y - min_y:
+        return sorted(points, key=lambda point: (point[0], point[1]))
+    return sorted(points, key=lambda point: (point[1], point[0]))
 
 def _fill_component_holes(points: set[tuple[int, int]]) -> set[tuple[int, int]]:
     filled = set(points)

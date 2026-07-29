@@ -1230,3 +1230,10 @@
 - Thinned each tower ring strictly one merlon on, one gap off instead of using a global checkerboard.
 - Kept tower roofs solid and excluded all inner roof edges from crenellation generation.
 - Bumped public schemas for the corrected top-geometry semantics.
+
+## v0.0.142 -> v0.0.143
+
+- Укрупнён ритм зубцов: два подтайла мерлона чередуются с двумя подтайлами промежутка.
+- На стыках стен с круглыми башнями оставляются свободные сектора для прохода на башенную площадку.
+- Зубцы прямых стен теперь раскладываются последовательно по компонентам наружной кромки, а не глобальной шахматной маской.
+- Схема верхней геометрии обновлена до `structure-top-geometry-layer-v4`.

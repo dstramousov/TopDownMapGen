@@ -402,7 +402,8 @@ def test_round_tower_top_is_closed_and_crenellated_only_on_outer_edge() -> None:
         )
     }
     assert crenellation_points <= outer_ring
-    assert abs(len(crenellation_points) * 2 - len(outer_ring)) <= 1
+    expected = (len(outer_ring) // 4) * 2 + min(len(outer_ring) % 4, 2)
+    assert len(crenellation_points) == expected
 
 
 def _test_exterior_points(occupied: set[tuple[int, int]]) -> set[tuple[int, int]]:
@@ -425,3 +426,37 @@ def _test_exterior_points(occupied: set[tuple[int, int]]) -> set[tuple[int, int]
             exterior.add(neighbor)
             queue.append(neighbor)
     return exterior
+
+
+def test_tower_crenellations_leave_wall_connection_clearance() -> None:
+    terrain = [["grass" for _ in range(12)] for _ in range(9)]
+    fortress_plan = {
+        "segments": [
+            {"start": {"x": 1, "y": 4}, "end": {"x": 5, "y": 4}}
+        ],
+        "towers": [
+            {
+                "center": {"x": 6, "y": 4},
+                "radius_tiles": 3,
+                "kind": "corner_round",
+            }
+        ],
+        "materialization": {
+            "structure_types": (
+                [[x, 4, "fortress_wall"] for x in range(1, 6)]
+                + [
+                    [x, y, "fortress_tower"]
+                    for y in range(1, 8)
+                    for x in range(3, 10)
+                ]
+            )
+        },
+    }
+    geometry = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan=fortress_plan,
+    )
+    top = build_structure_top_geometry(geometry)
+
+    assert top.summary["tower_connection_clearance_subtiles"] > 0
+    assert top.summary["wall_connection_clearance_subtiles"] > 0
