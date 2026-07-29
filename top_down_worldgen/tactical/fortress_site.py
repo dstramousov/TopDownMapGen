@@ -15,9 +15,9 @@ SUPPORTED_ELEVATION_STYLES = frozenset({
 })
 DEEP_WATER_MAX_LEVEL = -2
 SIZE_PROFILES = {
-    "small": (0.085, 20, 64),
-    "medium": (0.125, 28, 96),
-    "huge": (0.18, 40, 136),
+    "small": (0.10, 20, 64),
+    "medium": (0.16, 28, 96),
+    "huge": (0.24, 40, 136),
 }
 MIN_ISLAND_MARGIN_TILES = 6
 ISLAND_MARGIN_RATIO = 0.15

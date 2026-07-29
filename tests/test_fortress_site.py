@@ -259,8 +259,25 @@ def test_small_fortress_scale_on_440_by_400() -> None:
         fortress_config=_enabled_config(),
     )
 
-    assert report["requirements"]["fortress_span_tiles"] == 34
-    assert report["requirements"]["island_span_tiles"] == 46
+    assert report["requirements"]["fortress_span_tiles"] == 40
+    assert report["requirements"]["island_span_tiles"] == 52
+
+
+def test_fortress_size_profiles_are_visibly_distinct_on_304_map() -> None:
+    elevation_rows = _lake_grid(width=304, height=304, margin=40)
+
+    spans: dict[str, int] = {}
+    for size in ("small", "medium", "huge"):
+        report = analyze_lake_island_fortress_site(
+            elevation_rows=elevation_rows,
+            elevation_style="normal",
+            fortress_config=FortressConfig.from_raw(
+                {"enabled": True, "archetype": "any", "size": size}
+            ),
+        )
+        spans[size] = report["requirements"]["fortress_span_tiles"]
+
+    assert spans == {"small": 30, "medium": 49, "huge": 73}
 
 
 def test_shallow_fortress_approach_reaches_mainland_with_gate_width_path() -> None:

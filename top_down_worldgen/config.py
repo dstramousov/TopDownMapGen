@@ -70,11 +70,10 @@ class FortressConfig:
 
         size = str(value.get("size", "medium")).strip().lower()
         if size not in SUPPORTED_FORTRESS_SIZES:
-            LOGGER.warning(
-                "Unknown fortress.size=%s; falling back to medium",
-                size,
+            expected = ", ".join(sorted(SUPPORTED_FORTRESS_SIZES))
+            raise ValueError(
+                f"Invalid fortress.size={size!r}. Expected one of: {expected}"
             )
-            size = "medium"
 
         enabled = _sanitize_bool(value.get("enabled"), default=False)
         legacy_lake = value.get("lake_island")

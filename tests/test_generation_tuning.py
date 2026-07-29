@@ -1,4 +1,6 @@
 import json
+
+import pytest
 from pathlib import Path
 
 from top_down_worldgen.config import GenerationTuning, PublicConfig
@@ -179,3 +181,31 @@ def test_public_config_reads_lake_island_fortress_settings(
     assert config.fortress.enabled is True
     assert config.fortress.archetype == "island"
     assert config.fortress.size == "huge"
+
+
+def test_public_config_rejects_unknown_fortress_size(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "seed": 42,
+                "map_width_tiles": 304,
+                "map_height_tiles": 304,
+                "chunk_width_tiles": 16,
+                "chunk_height_tiles": 16,
+                "biome_profile": "forest_ruins",
+                "fortress": {
+                    "enabled": True,
+                    "archetype": "any",
+                    "size": "big",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"Invalid fortress\.size='big'.*huge, medium, small",
+    ):
+        PublicConfig.from_file(config_path)
