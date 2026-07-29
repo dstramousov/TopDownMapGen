@@ -72,12 +72,7 @@ def build_structure_geometry(
         mask_rows=mask_rows,
         ruin_sites=ruin_sites,
     )
-    _overlay_fortress_wall_masks(
-        type_rows=type_rows,
-        mask_rows=mask_rows,
-        fortress_plan=fortress_plan,
-    )
-    _overlay_round_tower_masks(
+    _overlay_fortress_shell_masks(
         type_rows=type_rows,
         mask_rows=mask_rows,
         fortress_plan=fortress_plan,
@@ -477,39 +472,169 @@ def _chip_ruin_endpoint(*, mask: int, x: int, y: int, depth: int = 1) -> int:
         chipped &= ~(1 << bit_index)
     return chipped or mask
 
-def _overlay_fortress_wall_masks(
+def _overlay_fortress_shell_masks(
     *,
     type_rows: list[list[int]],
     mask_rows: list[list[int]],
     fortress_plan: object | None,
 ) -> None:
-    """Rasterize fortress wall center lines into 4x4 solid masks."""
+    """Rasterize one connected fortress shell on a shared 4x4 micro grid."""
     if not isinstance(fortress_plan, dict):
         return
-    raw_segments = fortress_plan.get("segments")
+    raw_segments = fortress_plan.get("segments", [])
+    raw_towers = fortress_plan.get("towers", [])
     if not isinstance(raw_segments, list):
-        return
-    thickness = fortress_plan.get("wall_thickness_tiles", 3)
-    if not isinstance(thickness, int):
-        thickness = 3
-    half_width = max(0.25, thickness / (2.0 * MICRO_DIVISION))
+        raw_segments = []
+    if not isinstance(raw_towers, list):
+        raw_towers = []
+
     segments = _parse_wall_segments(raw_segments)
-    if not segments:
+    towers = _parse_shell_towers(raw_towers)
+    if not segments and not towers:
         return
 
-    fortress_wall_id = _NAME_TO_ID["fortress_wall"]
+    wall_half_width = 2.0 / MICRO_DIVISION
+    gate = _parse_gate_opening(fortress_plan, segments=segments)
+    shell_type_ids = {
+        _NAME_TO_ID["fortress_wall"],
+        _NAME_TO_ID["fortress_tower"],
+    }
     for y, row in enumerate(type_rows):
         for x, type_id in enumerate(row):
-            if type_id != fortress_wall_id:
+            if type_id not in shell_type_ids:
                 continue
-            mask = _wall_tile_mask(
+            mask_rows[y][x] = _fortress_shell_tile_mask(
                 x=x,
                 y=y,
                 segments=segments,
-                half_width=half_width,
+                towers=towers,
+                wall_half_width=wall_half_width,
+                gate=gate,
             )
-            if mask:
-                mask_rows[y][x] = mask
+
+
+def _fortress_shell_tile_mask(
+    *,
+    x: int,
+    y: int,
+    segments: tuple[tuple[float, float, float, float], ...],
+    towers: tuple[tuple[float, float, float, float], ...],
+    wall_half_width: float,
+    gate: tuple[float, float, float, float, float] | None,
+) -> int:
+    """Return one packed mask from the shared wall, tower, and gate plan."""
+    mask = 0
+    for subtile_y in range(MICRO_DIVISION):
+        for subtile_x in range(MICRO_DIVISION):
+            sample_x = x - 0.5 + (subtile_x + 0.5) / MICRO_DIVISION
+            sample_y = y - 0.5 + (subtile_y + 0.5) / MICRO_DIVISION
+            distances = tuple(
+                (
+                    hypot(sample_x - center_x, sample_y - center_y),
+                    inner_radius,
+                    outer_radius,
+                )
+                for center_x, center_y, inner_radius, outer_radius in towers
+            )
+            inside_outer_tower = any(
+                distance <= outer_radius
+                for distance, _inner_radius, outer_radius in distances
+            )
+            tower_solid = any(
+                inner_radius < distance <= outer_radius
+                for distance, inner_radius, outer_radius in distances
+            )
+            wall_solid = (
+                not inside_outer_tower
+                and any(
+                    _point_segment_distance(sample_x, sample_y, *segment)
+                    <= wall_half_width
+                    for segment in segments
+                )
+            )
+            if (tower_solid or wall_solid) and not _inside_gate_opening(
+                sample_x=sample_x,
+                sample_y=sample_y,
+                gate=gate,
+            ):
+                mask |= 1 << (subtile_y * MICRO_DIVISION + subtile_x)
+    return mask
+
+
+def _parse_shell_towers(
+    towers: list[object],
+) -> tuple[tuple[float, float, float, float], ...]:
+    """Parse round towers with a wall thickness equal to two subtiles."""
+    parsed: list[tuple[float, float, float, float]] = []
+    wall_width = 4.0 / MICRO_DIVISION
+    for item in towers:
+        if not isinstance(item, dict):
+            continue
+        center = item.get("center")
+        radius = item.get("radius_tiles")
+        if not isinstance(center, dict) or not isinstance(radius, int):
+            continue
+        center_x = center.get("x")
+        center_y = center.get("y")
+        if not isinstance(center_x, int) or not isinstance(center_y, int):
+            continue
+        outer_radius = max(1.0, float(radius) + 0.35)
+        inner_radius = max(0.25, outer_radius - wall_width)
+        parsed.append((float(center_x), float(center_y), inner_radius, outer_radius))
+    return tuple(parsed)
+
+
+def _parse_gate_opening(
+    fortress_plan: dict[str, object],
+    *,
+    segments: tuple[tuple[float, float, float, float], ...],
+) -> tuple[float, float, float, float, float] | None:
+    """Return gate center, tangent, and half width in tile coordinates."""
+    center = fortress_plan.get("gate_center")
+    width = fortress_plan.get("gate_width_tiles")
+    if not isinstance(center, dict) or not isinstance(width, int) or width <= 0:
+        return None
+    center_x = center.get("x")
+    center_y = center.get("y")
+    if not isinstance(center_x, int) or not isinstance(center_y, int):
+        return None
+    if not segments:
+        return None
+    nearest = min(
+        segments,
+        key=lambda segment: _point_segment_distance(
+            float(center_x), float(center_y), *segment
+        ),
+    )
+    dx = nearest[2] - nearest[0]
+    dy = nearest[3] - nearest[1]
+    length = hypot(dx, dy)
+    if length <= 0.0:
+        return None
+    return (
+        float(center_x),
+        float(center_y),
+        dx / length,
+        dy / length,
+        max(0.5, width / 2.0 - 0.25),
+    )
+
+
+def _inside_gate_opening(
+    *,
+    sample_x: float,
+    sample_y: float,
+    gate: tuple[float, float, float, float, float] | None,
+) -> bool:
+    """Return whether a sample belongs to the intentional gate corridor."""
+    if gate is None:
+        return False
+    center_x, center_y, tangent_x, tangent_y, half_width = gate
+    offset_x = sample_x - center_x
+    offset_y = sample_y - center_y
+    along = offset_x * tangent_x + offset_y * tangent_y
+    across = -offset_x * tangent_y + offset_y * tangent_x
+    return abs(along) <= half_width and abs(across) <= 1.0
 
 
 def _parse_wall_segments(
@@ -530,26 +655,6 @@ def _parse_wall_segments(
     return tuple(parsed)
 
 
-def _wall_tile_mask(
-    *,
-    x: int,
-    y: int,
-    segments: tuple[tuple[float, float, float, float], ...],
-    half_width: float,
-) -> int:
-    mask = 0
-    for subtile_y in range(MICRO_DIVISION):
-        for subtile_x in range(MICRO_DIVISION):
-            sample_x = x - 0.5 + (subtile_x + 0.5) / MICRO_DIVISION
-            sample_y = y - 0.5 + (subtile_y + 0.5) / MICRO_DIVISION
-            if any(
-                _point_segment_distance(sample_x, sample_y, *segment) <= half_width
-                for segment in segments
-            ):
-                mask |= 1 << (subtile_y * MICRO_DIVISION + subtile_x)
-    return mask
-
-
 def _point_segment_distance(
     px: float,
     py: float,
@@ -568,101 +673,3 @@ def _point_segment_distance(
     nearest_x = x0 + t * dx
     nearest_y = y0 + t * dy
     return hypot(px - nearest_x, py - nearest_y)
-
-
-def _overlay_round_tower_masks(
-    *,
-    type_rows: list[list[int]],
-    mask_rows: list[list[int]],
-    fortress_plan: object | None,
-) -> None:
-    """Replace full fortress-tower masks with sampled round wall masks."""
-    if not isinstance(fortress_plan, dict):
-        return
-    towers = fortress_plan.get("towers")
-    if not isinstance(towers, list):
-        return
-
-    wall_thickness_tiles = fortress_plan.get("wall_thickness_tiles", 3)
-    if not isinstance(wall_thickness_tiles, int):
-        wall_thickness_tiles = 3
-    wall_radius = max(1, (wall_thickness_tiles - 1) // 2)
-    parsed_towers = _parse_towers(towers, wall_radius=wall_radius)
-    if not parsed_towers:
-        return
-
-    fortress_tower_id = _NAME_TO_ID["fortress_tower"]
-    for y, row in enumerate(type_rows):
-        for x, type_id in enumerate(row):
-            if type_id != fortress_tower_id:
-                continue
-            mask = _round_tower_tile_mask(x=x, y=y, towers=parsed_towers)
-            if mask:
-                mask_rows[y][x] = mask
-
-
-def _parse_towers(
-    towers: list[object],
-    *,
-    wall_radius: int,
-) -> tuple[tuple[float, float, float, float], ...]:
-    parsed: list[tuple[float, float, float, float]] = []
-    for item in towers:
-        if not isinstance(item, dict):
-            continue
-        center = item.get("center")
-        radius = item.get("radius_tiles")
-        if not isinstance(center, dict) or not isinstance(radius, int):
-            continue
-        center_x = center.get("x")
-        center_y = center.get("y")
-        if not isinstance(center_x, int) or not isinstance(center_y, int):
-            continue
-        outer_radius = float(radius) + 0.35
-        inner_radius = float(max(1, radius - wall_radius - 1))
-        parsed.append((float(center_x), float(center_y), inner_radius, outer_radius))
-    return tuple(parsed)
-
-
-def _round_tower_tile_mask(
-    *,
-    x: int,
-    y: int,
-    towers: tuple[tuple[float, float, float, float], ...],
-) -> int:
-    mask = 0
-    for subtile_y in range(MICRO_DIVISION):
-        for subtile_x in range(MICRO_DIVISION):
-            if _subtile_overlaps_tower_ring(
-                tile_x=x,
-                tile_y=y,
-                subtile_x=subtile_x,
-                subtile_y=subtile_y,
-                towers=towers,
-            ):
-                bit_index = subtile_y * MICRO_DIVISION + subtile_x
-                mask |= 1 << bit_index
-    return mask
-
-
-def _subtile_overlaps_tower_ring(
-    *,
-    tile_x: int,
-    tile_y: int,
-    subtile_x: int,
-    subtile_y: int,
-    towers: tuple[tuple[float, float, float, float], ...],
-) -> bool:
-    """Return whether sampled points in one subtile touch any tower ring."""
-    base_x = tile_x - 0.5 + subtile_x / MICRO_DIVISION
-    base_y = tile_y - 0.5 + subtile_y / MICRO_DIVISION
-    sample_offsets = (0.125, 0.5, 0.875)
-    for center_x, center_y, inner_radius, outer_radius in towers:
-        for offset_y in sample_offsets:
-            sample_y = base_y + offset_y / MICRO_DIVISION
-            for offset_x in sample_offsets:
-                sample_x = base_x + offset_x / MICRO_DIVISION
-                distance = hypot(sample_x - center_x, sample_y - center_y)
-                if inner_radius < distance <= outer_radius:
-                    return True
-    return False

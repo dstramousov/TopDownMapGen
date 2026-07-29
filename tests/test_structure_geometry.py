@@ -1,3 +1,4 @@
+from top_down_worldgen.structure_top_geometry import build_structure_top_geometry
 from top_down_worldgen.structure_geometry import (
     FULL_MICRO_MASK,
     MICRO_DIVISION,
@@ -69,7 +70,7 @@ def test_round_fortress_tower_uses_partial_micro_masks() -> None:
     ]
     assert any(0 < mask < FULL_MICRO_MASK for mask in tower_masks)
     assert result.summary["partial_micro_cells"] > 0
-    assert result.summary["full_micro_cells"] > 0
+    assert result.summary["full_micro_cells"] == 0
 
 
 def test_round_tower_micro_mask_bit_order_is_top_left_lsb() -> None:
@@ -269,3 +270,101 @@ def test_ruin_micro_damage_does_not_leave_singleton_subtiles() -> None:
         any((x + dx, y + dy) in occupied for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
         for x, y in occupied
     )
+
+
+def test_fortress_shell_does_not_continue_wall_through_tower_interior() -> None:
+    terrain = [["grass" for _ in range(11)] for _ in range(7)]
+    entries = []
+    for y in range(1, 6):
+        for x in range(3, 8):
+            distance_squared = (x - 5) ** 2 + (y - 3) ** 2
+            if 1 < distance_squared <= 9:
+                terrain[y][x] = "ruin_wall_blocker"
+                entries.append([x, y, "fortress_tower"])
+    for x in range(1, 5):
+        terrain[3][x] = "ruin_wall_blocker"
+        entries.append([x, 3, "fortress_wall"])
+
+    result = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan={
+            "segments": [
+                {
+                    "start": {"x": 1, "y": 3},
+                    "end": {"x": 5, "y": 3},
+                    "kind": "straight",
+                    "bend": 0.0,
+                }
+            ],
+            "towers": [
+                {
+                    "center": {"x": 5, "y": 3},
+                    "radius_tiles": 3,
+                    "kind": "corner_round",
+                }
+            ],
+            "materialization": {"structure_types": entries},
+        },
+    )
+
+    assert result.mask_rows[3][4] != FULL_MICRO_MASK
+    assert result.mask_rows[3][5] == 0
+
+
+def test_fortress_top_geometry_has_walkway_and_parapet() -> None:
+    terrain = [["grass" for _ in range(8)] for _ in range(8)]
+    fortress_plan = {
+        "segments": [
+            {"start": {"x": 1, "y": 3}, "end": {"x": 6, "y": 3}}
+        ],
+        "towers": [],
+        "materialization": {
+            "structure_types": [[x, 3, "fortress_wall"] for x in range(1, 7)]
+        },
+    }
+    geometry = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan=fortress_plan,
+    )
+    top = build_structure_top_geometry(geometry)
+    assert top.summary["walkway_subtiles"] > 0
+    assert top.summary["parapet_subtiles"] == 0
+    assert top.summary["crenellation_subtiles"] > 0
+    assert any(mask for row in top.walkway_rows for mask in row)
+    assert any(mask for row in top.crenellation_rows for mask in row)
+    for y in range(8):
+        for x in range(8):
+            assert top.parapet_rows[y][x] & ~top.walkway_rows[y][x] == 0
+            assert top.crenellation_rows[y][x] & ~top.walkway_rows[y][x] == 0
+
+
+def test_round_tower_top_is_closed_and_crenellated_only_on_outer_edge() -> None:
+    terrain = [["grass" for _ in range(9)] for _ in range(9)]
+    fortress_plan = {
+        "segments": [],
+        "towers": [
+            {
+                "center": {"x": 4, "y": 4},
+                "radius_tiles": 3,
+                "kind": "corner_round",
+            }
+        ],
+        "materialization": {
+            "structure_types": [
+                [x, y, "fortress_tower"]
+                for y in range(1, 8)
+                for x in range(1, 8)
+            ]
+        },
+    }
+    geometry = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan=fortress_plan,
+    )
+    top = build_structure_top_geometry(geometry)
+
+    center_bit = 1 << (2 * 4 + 2)
+    assert top.walkway_rows[4][4] & center_bit
+    assert not (top.crenellation_rows[4][4] & center_bit)
+    assert top.summary["tower_roof_subtiles"] > 0
+    assert top.summary["crenellation_subtiles"] > 0

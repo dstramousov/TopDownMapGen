@@ -1200,3 +1200,26 @@
 - Неизвестное значение `fortress.size` больше не заменяется молча на `medium`: конфигурация завершается понятной ошибкой со списком допустимых значений.
 - Добавлены тесты фактических размеров `30/49/73` тайла для карты `304x304`.
 - Версия проекта поднята до `0.0.138`.
+
+
+## v0.0.138 -> v0.0.139
+
+- Внешние стены и круглые башни крепости теперь растеризуются как единый связный микроплан 4x4.
+- Толщина тела стены зафиксирована в два подтайла, а сегменты больше не продолжаются внутрь башенных колец.
+- Проём ворот вырезается на общей микросетке, чтобы соседние сегменты не закрывали проход.
+- Версия проекта поднята до `0.0.139`.
+
+
+## v0.0.139 -> v0.0.140
+
+- Added fortress combat-walkway and parapet top geometry on the shared 4x4 micro grid.
+- Widened fortress wall and tower bodies to support one-subtile parapets around a two-subtile walkway.
+- Added `layers/structure_top_geometry.json` with sparse walkway/parapet masks.
+- Added VXMAP regional sections `STRUCTURE_WALKWAY_MASK_U16` and `STRUCTURE_PARAPET_MASK_U16`.
+- Bumped VXMAP format minor to 4 and public schemas for the new contract.
+
+## v0.0.140 -> v0.0.141
+
+- Reworked fortress top geometry into a full tower roof, an inner parapet, and a dedicated outer crenellation mask.
+- Added one-subtile merlons with one-subtile gaps along the exterior contour of fortress walls and round towers.
+- Added `STRUCTURE_CRENELLATION_MASK_U16` to VXMAP and bumped the runtime format to v1.5.

@@ -122,7 +122,7 @@ def write_runtime_binary(
         validate_time_ms=validate_time_ms,
     )
     LOGGER.info(
-        "Runtime binary path=%s format=vxmap-runtime-v1.2 regions=%sx%s "
+        "Runtime binary path=%s format=vxmap-runtime-v1.5 regions=%sx%s "
         "sections=%s strings=%s terrain_types=%s file_size=%s "
         "write_ms=%.3f validate_ms=%.3f build_id=%s",
         path,
@@ -250,6 +250,9 @@ def _build_region_sections(
     structure_height_values = bytearray()
     structure_type_values = bytearray()
     structure_micro_mask_values: list[int] = []
+    structure_walkway_mask_values: list[int] = []
+    structure_parapet_mask_values: list[int] = []
+    structure_crenellation_mask_values: list[int] = []
     vegetation_type_values = bytearray()
     vegetation_height_values = bytearray()
     for y in range(origin_y, origin_y + region_height):
@@ -271,6 +274,15 @@ def _build_region_sections(
             structure_height_values.append(source.structure_height_rows[y][x])
             structure_type_values.append(source.structure_type_rows[y][x])
             structure_micro_mask_values.append(source.structure_micro_mask_rows[y][x])
+            structure_walkway_mask_values.append(
+                source.structure_walkway_mask_rows[y][x]
+            )
+            structure_parapet_mask_values.append(
+                source.structure_parapet_mask_rows[y][x]
+            )
+            structure_crenellation_mask_values.append(
+                source.structure_crenellation_mask_rows[y][x]
+            )
             vegetation_type_values.append(source.vegetation_type_rows[y][x])
             vegetation_height_values.append(source.vegetation_height_rows[y][x])
     common = {
@@ -364,6 +376,30 @@ def _build_region_sections(
             SectionType.STRUCTURE_MICRO_MASK_U16,
             REGIONAL_GRID_FLAGS,
             struct.pack(f"<{tile_count}H", *structure_micro_mask_values),
+            tile_count,
+            2,
+            **common,
+        ),
+        _section(
+            SectionType.STRUCTURE_WALKWAY_MASK_U16,
+            REGIONAL_GRID_FLAGS,
+            struct.pack(f"<{tile_count}H", *structure_walkway_mask_values),
+            tile_count,
+            2,
+            **common,
+        ),
+        _section(
+            SectionType.STRUCTURE_PARAPET_MASK_U16,
+            REGIONAL_GRID_FLAGS,
+            struct.pack(f"<{tile_count}H", *structure_parapet_mask_values),
+            tile_count,
+            2,
+            **common,
+        ),
+        _section(
+            SectionType.STRUCTURE_CRENELLATION_MASK_U16,
+            REGIONAL_GRID_FLAGS,
+            struct.pack(f"<{tile_count}H", *structure_crenellation_mask_values),
             tile_count,
             2,
             **common,

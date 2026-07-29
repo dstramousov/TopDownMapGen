@@ -32,7 +32,7 @@ def test_runtime_binary_roundtrip_and_determinism(tmp_path: Path) -> None:
     assert len(
         container.sections_of_type(int(SectionType.STRUCTURE_HEIGHT_U8))
     ) == 1
-    assert container.header.format_minor == 3
+    assert container.header.format_minor == 5
     assert len(
         container.sections_of_type(int(SectionType.VEGETATION_TYPE_U8))
     ) == 1
@@ -56,12 +56,21 @@ def test_runtime_binary_splits_edge_regions(tmp_path: Path) -> None:
         container.sections_of_type(int(SectionType.STRUCTURE_HEIGHT_U8))
     ) == 4
     assert len(
+        container.sections_of_type(int(SectionType.STRUCTURE_WALKWAY_MASK_U16))
+    ) == 4
+    assert len(
+        container.sections_of_type(int(SectionType.STRUCTURE_PARAPET_MASK_U16))
+    ) == 4
+    assert len(
+        container.sections_of_type(int(SectionType.STRUCTURE_CRENELLATION_MASK_U16))
+    ) == 4
+    assert len(
         container.sections_of_type(int(SectionType.VEGETATION_TYPE_U8))
     ) == 4
     assert len(
         container.sections_of_type(int(SectionType.VEGETATION_HEIGHT_U8))
     ) == 4
-    assert result.file_size < 300_000
+    assert result.file_size < 360_000
 
 
 def test_runtime_binary_reader_accepts_legacy_minor_zero(tmp_path: Path) -> None:
@@ -173,6 +182,11 @@ def _source(*, width: int, height: int) -> RuntimeBinarySource:
         structure_type_rows=[
             [1 if terrain_rows[y][x] == "ruin_wall_blocker" else 0 for x in range(width)]
             for y in range(height)
+        ],
+        structure_walkway_mask_rows=[[0 for _ in range(width)] for _ in range(height)],
+        structure_parapet_mask_rows=[[0 for _ in range(width)] for _ in range(height)],
+        structure_crenellation_mask_rows=[
+            [0 for _ in range(width)] for _ in range(height)
         ],
         structure_micro_mask_rows=[
             [65535 if terrain_rows[y][x] == "ruin_wall_blocker" else 0 for x in range(width)]

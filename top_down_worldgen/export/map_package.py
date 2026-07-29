@@ -30,6 +30,7 @@ from top_down_worldgen.manifest import (
     STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION,
     STRUCTURE_TYPE_LAYER_SCHEMA_VERSION,
     STRUCTURE_MICRO_GEOMETRY_LAYER_SCHEMA_VERSION,
+    STRUCTURE_TOP_GEOMETRY_LAYER_SCHEMA_VERSION,
     TERRAIN_LAYER_SCHEMA_VERSION,
     TILE_GRID_LAYER_SCHEMA_VERSION,
     TILE_TYPES_CATALOG_SCHEMA_VERSION,
@@ -40,6 +41,10 @@ from top_down_worldgen.manifest import (
 from top_down_worldgen.paths import OutputPaths
 from top_down_worldgen.runtime_binary import RuntimeBinarySource, write_runtime_binary
 from top_down_worldgen.structure_height import build_structure_height
+from top_down_worldgen.structure_top_geometry import (
+    build_structure_top_geometry,
+    sparse_top_cells,
+)
 from top_down_worldgen.structure_geometry import (
     MICRO_DIVISION,
     STRUCTURE_TYPE_NAMES,
@@ -267,6 +272,30 @@ def write_map_package(
         },
         outputs.map_package_structure_micro_geometry,
     )
+    structure_top = build_structure_top_geometry(structure_geometry)
+    write_json(
+        {
+            "schema_version": STRUCTURE_TOP_GEOMETRY_LAYER_SCHEMA_VERSION,
+            "kind": "structure_top_geometry",
+            "width": width,
+            "height": height,
+            "division": MICRO_DIVISION,
+            "subtile_size_px": tile_size_px // MICRO_DIVISION,
+            "format": "sparse_triple_uint16_masks",
+            "bit_order": "row_major_top_left_lsb",
+            "height_reference": "top_of_structure_height",
+            "walkway_rule": "walkway_mask_is_flat_roof_or_combat_walkway",
+            "parapet_rule": "parapet_mask_is_inner_raised_edge",
+            "crenellation_rule": (
+                "crenellation_mask_is_outer_one_subtile_merlon_with_one_subtile_gap"
+            ),
+            "overlay_rule": "raised_masks_overlay_walkway_mask",
+            "cells": sparse_top_cells(structure_top),
+            "summary": structure_top.summary,
+        },
+        outputs.map_package_structure_top_geometry,
+    )
+
 
     LOGGER.info(
         "Ruin structure height walls=%s components=%s heights=%s/%s/%s "
@@ -474,6 +503,9 @@ def write_map_package(
             structure_height_rows=structure_height.rows,
             structure_type_rows=structure_geometry.type_rows,
             structure_micro_mask_rows=structure_geometry.mask_rows,
+            structure_walkway_mask_rows=structure_top.walkway_rows,
+            structure_parapet_mask_rows=structure_top.parapet_rows,
+            structure_crenellation_mask_rows=structure_top.crenellation_rows,
             vegetation_type_rows=vegetation_geometry.type_rows,
             vegetation_height_rows=vegetation_geometry.height_rows,
             start=points.get("start"),
@@ -526,6 +558,7 @@ def write_map_package(
                 "structure_height": "layers/structure_height.json",
                 "structure_type": "layers/structure_type.json",
                 "structure_micro_geometry": "layers/structure_micro_geometry.json",
+                "structure_top_geometry": "layers/structure_top_geometry.json",
                 "vegetation_type": "layers/vegetation_type.json",
                 "vegetation_height": "layers/vegetation_height.json",
                 "start_goal": "layers/start_goal.json",

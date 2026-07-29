@@ -59,6 +59,9 @@ class RuntimeBinarySource:
     structure_height_rows: list[list[int]]
     structure_type_rows: list[list[int]]
     structure_micro_mask_rows: list[list[int]]
+    structure_walkway_mask_rows: list[list[int]]
+    structure_parapet_mask_rows: list[list[int]]
+    structure_crenellation_mask_rows: list[list[int]]
     vegetation_type_rows: list[list[int]]
     vegetation_height_rows: list[list[int]]
     start: dict[str, int] | None
