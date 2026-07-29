@@ -9,11 +9,16 @@ from top_down_worldgen.config import FortressConfig
 
 
 REPORT_SCHEMA_VERSION = "fortress-site-report-v1"
-SUPPORTED_ELEVATION_STYLES = frozenset({"flatland"})
+SUPPORTED_ELEVATION_STYLES = frozenset({
+    "super_flatland", "flatland", "rolling_hills", "normal",
+    "rugged", "mountainous", "plateau",
+})
 DEEP_WATER_MAX_LEVEL = -2
-MIN_FORTRESS_SPAN_TILES = 24
-MAX_FORTRESS_SPAN_TILES = 96
-FORTRESS_SPAN_RATIO = 0.125
+SIZE_PROFILES = {
+    "small": (0.085, 20, 64),
+    "medium": (0.125, 28, 96),
+    "huge": (0.18, 40, 136),
+}
 MIN_ISLAND_MARGIN_TILES = 6
 ISLAND_MARGIN_RATIO = 0.15
 MIN_WATER_RING_TILES = 6
@@ -87,7 +92,9 @@ def analyze_lake_island_fortress_site(
     """
     height = len(elevation_rows)
     width = len(elevation_rows[0]) if elevation_rows else 0
-    requirements = _requirements(width=width, height=height)
+    requirements = _requirements(
+        width=width, height=height, size=fortress_config.size
+    )
     base_report = _base_report(
         width=width,
         height=height,
@@ -115,7 +122,38 @@ def analyze_lake_island_fortress_site(
     accepted = [candidate for candidate in candidate_reports if candidate["accepted"]]
     selected = accepted[0] if accepted else None
 
-    base_report["status"] = "selected" if selected is not None else "not_found"
+    resolved_placement = "island"
+    fallback_reason = None
+    selected_site = (
+        _selected_site(selected, requirements=requirements)
+        if selected is not None
+        else None
+    )
+    if fortress_config.archetype == "any":
+        selected_site = _select_inland_site(
+            elevation_rows, requirements=requirements
+        )
+        resolved_placement = "inland"
+    elif selected_site is None:
+        selected_site = _select_shore_site(
+            elevation_rows, components=components, requirements=requirements
+        )
+        if selected_site is not None:
+            resolved_placement = "shore"
+            fallback_reason = "no_suitable_island_water_body"
+        else:
+            selected_site = _select_inland_site(
+                elevation_rows, requirements=requirements
+            )
+            resolved_placement = "inland"
+            fallback_reason = "no_water_body"
+
+    base_report["status"] = "selected" if selected_site is not None else "not_found"
+    base_report["requested_archetype"] = fortress_config.archetype
+    base_report["resolved_placement"] = (
+        resolved_placement if selected_site is not None else None
+    )
+    base_report["fallback_reason"] = fallback_reason
     base_report["summary"] = {
         "water_tiles": water_tiles,
         "water_percent": _percent(water_tiles, width * height),
@@ -125,22 +163,17 @@ def analyze_lake_island_fortress_site(
             selected["component_id"] if selected is not None else None
         ),
     }
-    base_report["selected_site"] = (
-        _selected_site(selected, requirements=requirements)
-        if selected is not None
-        else None
-    )
+    base_report["selected_site"] = selected_site
     base_report["candidates"] = candidate_reports[:MAX_REPORTED_CANDIDATES]
     return base_report
 
 
-def _requirements(*, width: int, height: int) -> FortressSiteRequirements:
+def _requirements(
+    *, width: int, height: int, size: str
+) -> FortressSiteRequirements:
     short_side = min(width, height)
-    fortress_span = _clamp(
-        round(short_side * FORTRESS_SPAN_RATIO),
-        MIN_FORTRESS_SPAN_TILES,
-        MAX_FORTRESS_SPAN_TILES,
-    )
+    ratio, minimum, maximum = SIZE_PROFILES[size]
+    fortress_span = _clamp(round(short_side * ratio), minimum, maximum)
     island_margin = max(
         MIN_ISLAND_MARGIN_TILES,
         round(fortress_span * ISLAND_MARGIN_RATIO),
@@ -191,6 +224,7 @@ def _base_report(
         "policy": {
             "phase": "site_selection_only",
             "supported_elevation_styles": sorted(SUPPORTED_ELEVATION_STYLES),
+            "placement_priority": ["island", "shore", "inland"],
             "water_levels": [-5, -4, -3, -2],
             "selection": "highest_clearance_then_area",
             "map_edge_components_allowed": True,
@@ -216,12 +250,10 @@ def _disabled_reason(
     width: int,
     height: int,
 ) -> str | None:
-    if not fortress_config.enabled or fortress_config.max_count == 0:
+    if not fortress_config.enabled:
         return "disabled"
-    if fortress_config.archetype not in {"auto", "lake_island"}:
+    if fortress_config.archetype not in {"island", "any"}:
         return "archetype_not_requested"
-    if not fortress_config.lake_island.enabled:
-        return "lake_island_disabled"
     if elevation_style not in SUPPORTED_ELEVATION_STYLES:
         return "unsupported_elevation_style"
     if width <= 0 or height <= 0:
@@ -448,6 +480,92 @@ def _selected_site(
         "estimated_bridge_length_tiles": candidate[
             "estimated_bridge_length_tiles"
         ],
+        "planned_fortress_span_tiles": requirements.fortress_span_tiles,
+        "planned_island_span_tiles": requirements.island_span_tiles,
+        "required_water_ring_tiles": requirements.water_ring_tiles,
+    }
+
+
+def _select_shore_site(
+    elevation_rows: list[list[int]],
+    *,
+    components: list[_LakeComponent],
+    requirements: FortressSiteRequirements,
+) -> dict[str, Any] | None:
+    height = len(elevation_rows)
+    width = len(elevation_rows[0]) if elevation_rows else 0
+    margin = requirements.island_radius_tiles + 2
+    best: tuple[float, int, int, int] | None = None
+    for component in components:
+        for x, y in component.points:
+            for nx, ny in _neighbors(x, y):
+                if not (margin <= nx < width - margin and margin <= ny < height - margin):
+                    continue
+                if elevation_rows[ny][nx] < 0:
+                    continue
+                slope = _local_relief(elevation_rows, nx, ny, requirements.island_radius_tiles)
+                score = slope * 20.0 + abs(elevation_rows[ny][nx])
+                candidate = (score, nx, ny, component.component_id)
+                if best is None or candidate < best:
+                    best = candidate
+    if best is None:
+        return None
+    _, x, y, component_id = best
+    return _generic_selected_site(
+        x=x, y=y, placement="shore", requirements=requirements,
+        component_id=component_id,
+    )
+
+
+def _select_inland_site(
+    elevation_rows: list[list[int]],
+    *,
+    requirements: FortressSiteRequirements,
+) -> dict[str, Any] | None:
+    height = len(elevation_rows)
+    width = len(elevation_rows[0]) if elevation_rows else 0
+    margin = requirements.island_radius_tiles + 2
+    if width <= margin * 2 or height <= margin * 2:
+        return None
+    step = max(2, requirements.fortress_span_tiles // 8)
+    best: tuple[float, int, int] | None = None
+    for y in range(margin, height - margin, step):
+        for x in range(margin, width - margin, step):
+            if elevation_rows[y][x] < 0:
+                continue
+            relief = _local_relief(elevation_rows, x, y, requirements.island_radius_tiles)
+            level = elevation_rows[y][x]
+            score = relief * 12.0 - level * 1.5
+            candidate = (score, x, y)
+            if best is None or candidate < best:
+                best = candidate
+    if best is None:
+        return None
+    _, x, y = best
+    return _generic_selected_site(
+        x=x, y=y, placement="inland", requirements=requirements, component_id=None
+    )
+
+
+def _local_relief(
+    rows: list[list[int]], x: int, y: int, radius: int
+) -> int:
+    sample_radius = max(2, radius // 2)
+    values: list[int] = []
+    for sy in range(y - sample_radius, y + sample_radius + 1, max(1, sample_radius // 3)):
+        for sx in range(x - sample_radius, x + sample_radius + 1, max(1, sample_radius // 3)):
+            values.append(rows[sy][sx])
+    return max(values) - min(values) if values else 0
+
+
+def _generic_selected_site(
+    *, x: int, y: int, placement: str,
+    requirements: FortressSiteRequirements, component_id: int | None,
+) -> dict[str, Any]:
+    return {
+        "archetype": placement,
+        "component_id": component_id,
+        "center": {"x": x, "y": y},
         "planned_fortress_span_tiles": requirements.fortress_span_tiles,
         "planned_island_span_tiles": requirements.island_span_tiles,
         "required_water_ring_tiles": requirements.water_ring_tiles,

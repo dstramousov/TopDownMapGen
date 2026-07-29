@@ -166,9 +166,8 @@ def test_public_config_reads_lake_island_fortress_settings(
                 "elevation": {"style": "flatland"},
                 "fortress": {
                     "enabled": True,
-                    "archetype": "lake_island",
-                    "max_count": 3,
-                    "lake_island": {"enabled": True},
+                    "archetype": "island",
+                    "size": "huge",
                 },
             },
         ),
@@ -178,6 +177,5 @@ def test_public_config_reads_lake_island_fortress_settings(
     config = PublicConfig.from_file(config_path)
 
     assert config.fortress.enabled is True
-    assert config.fortress.archetype == "lake_island"
-    assert config.fortress.max_count == 1
-    assert config.fortress.lake_island.enabled is True
+    assert config.fortress.archetype == "island"
+    assert config.fortress.size == "huge"

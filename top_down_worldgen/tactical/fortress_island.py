@@ -52,7 +52,7 @@ def materialize_lake_island(
     Returns:
         Updated runtime data, report, mask, and materialization metrics.
     """
-    if site_report.get("status") != "selected" or elevation_style != "flatland":
+    if site_report.get("status") != "selected":
         return FortressIslandResult(
             runtime_data=runtime_data,
             site_report=site_report,
@@ -122,6 +122,7 @@ def materialize_lake_island(
         center_y=center_y,
     )
 
+    placement = str(site_report.get("resolved_placement", "island"))
     changed_tiles = 0
     island_tiles = 0
     shoreline_tiles = 0
@@ -130,7 +131,13 @@ def materialize_lake_island(
         for x, mask in enumerate(mask_row):
             if mask == MASK_OUTSIDE:
                 continue
-            level = _level_for_mask(mask)
+            level = (
+                _level_for_mask(mask)
+                if placement == "island"
+                else _terrain_fitted_level(
+                    geographic_rows, x=x, y=y, mask=mask
+                )
+            )
             island_tiles += 1
             if mask == MASK_SHORELINE:
                 shoreline_tiles += 1
@@ -165,7 +172,8 @@ def materialize_lake_island(
 
     materialization = {
         "status": "materialized",
-        "algorithm": "deterministic_irregular_ellipse_v1",
+        "algorithm": "deterministic_irregular_ellipse_v2",
+        "resolved_placement": placement,
         "seed": seed,
         "center": {"x": center_x, "y": center_y},
         "radius_tiles": radius,
@@ -328,6 +336,23 @@ def _choose_entrance_anchor(
     if best is None:
         return None
     return {"x": best[1], "y": best[2]}
+
+
+def _terrain_fitted_level(
+    rows: list[list[int]], *, x: int, y: int, mask: int
+) -> int:
+    """Return a locally fitted construction level for shore/inland sites."""
+    height = len(rows)
+    width = len(rows[0]) if rows else 0
+    values: list[int] = []
+    for ny in range(max(0, y - 1), min(height, y + 2)):
+        for nx in range(max(0, x - 1), min(width, x + 2)):
+            if rows[ny][nx] >= 0:
+                values.append(rows[ny][nx])
+    base = round(sum(values) / len(values)) if values else max(0, rows[y][x])
+    if mask == MASK_CORE:
+        return base + 1
+    return base
 
 
 def _level_for_mask(mask: int) -> int:

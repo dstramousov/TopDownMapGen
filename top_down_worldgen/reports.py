@@ -193,7 +193,7 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                 "",
                 "Крепость:",
                 (
-                    "  lake-island site: "
+                    "  место крепости: "
                     f"{fortress_site.get('status', 'unknown')} "
                     "(elevation="
                     f"{fortress_site.get('source_elevation_style', 'unknown')})"
@@ -207,10 +207,8 @@ def format_console_summary(summary: dict[str, Any]) -> str:
                 (
                     "  плановый размер: крепость="
                     f"{int(requirements.get('fortress_span_tiles', 0))}, "
-                    "остров="
-                    f"{int(requirements.get('island_span_tiles', 0))}, "
-                    "водное кольцо>="
-                    f"{int(requirements.get('water_ring_tiles', 0))}"
+                    "площадка="
+                    f"{int(requirements.get('island_span_tiles', 0))}"
                 ),
             ]
         )

@@ -36,6 +36,52 @@ class FortressApproachResult:
     path_tiles: int
 
 
+
+def skip_fortress_approach(
+    *,
+    rows: list[str],
+    runtime_data: dict[str, Any],
+    site_report: dict[str, Any],
+    reason: str,
+) -> FortressApproachResult:
+    """Record that no dedicated fortress approach is required.
+
+    Args:
+        rows: Current ASCII terrain rows.
+        runtime_data: Tactical runtime data.
+        site_report: Fortress report.
+        reason: Stable machine-readable skip reason.
+
+    Returns:
+        Unchanged terrain and runtime data with a skipped approach report.
+    """
+    approach_report = {
+        "status": "skipped",
+        "reason": reason,
+        "changed_tiles": 0,
+        "shallow_tiles": 0,
+        "path_tiles": 0,
+        "length_tiles": 0.0,
+    }
+    updated_site_report = dict(site_report)
+    policy = dict(updated_site_report.get("policy", {}))
+    policy["phase"] = "fortress_approach_skipped"
+    updated_site_report["policy"] = policy
+    updated_site_report["fortress_approach"] = approach_report
+
+    updated_runtime = dict(runtime_data)
+    updated_runtime["fortress_site"] = updated_site_report
+    updated_runtime["fortress_approach"] = approach_report
+    return FortressApproachResult(
+        rows=rows,
+        runtime_data=updated_runtime,
+        site_report=updated_site_report,
+        approach_rows=[],
+        changed_tiles=0,
+        shallow_tiles=0,
+        path_tiles=0,
+    )
+
 def materialize_shallow_fortress_approach(
     *,
     rows: list[str],

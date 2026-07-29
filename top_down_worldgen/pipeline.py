@@ -68,7 +68,10 @@ from .tactical.elevation import (
     build_natural_geography_model,
 )
 from .tactical.fallback import FallbackPositionBuilder
-from .tactical.fortress_approach import materialize_shallow_fortress_approach
+from .tactical.fortress_approach import (
+    materialize_shallow_fortress_approach,
+    skip_fortress_approach,
+)
 from .tactical.fortress_interior import build_fortress_interior_plan
 from .tactical.fortress_interior_materialize import materialize_fortress_interior
 from .tactical.fortress_materialize import materialize_fortress_shell
@@ -394,13 +397,26 @@ class WorldgenPipeline:
                         fortress_site_report = fortress_interior.site_report
                         debug_data["fortress_site"] = fortress_site_report
                         write_json(fortress_site_report, outputs.fortress_site_report)
-                        fortress_approach = materialize_shallow_fortress_approach(
-                            rows=rows,
-                            runtime_data=runtime_data,
-                            site_report=fortress_site_report,
-                            island_mask_rows=fortress_island.mask_rows,
-                            seed=config.resolved_seed,
+                        placement = str(
+                            fortress_site_report.get(
+                                "resolved_placement", "island"
+                            )
                         )
+                        if placement == "inland":
+                            fortress_approach = skip_fortress_approach(
+                                rows=rows,
+                                runtime_data=runtime_data,
+                                site_report=fortress_site_report,
+                                reason="inland_placement",
+                            )
+                        else:
+                            fortress_approach = materialize_shallow_fortress_approach(
+                                rows=rows,
+                                runtime_data=runtime_data,
+                                site_report=fortress_site_report,
+                                island_mask_rows=fortress_island.mask_rows,
+                                seed=config.resolved_seed,
+                            )
                         rows = fortress_approach.rows
                         runtime_data = fortress_approach.runtime_data
                         fortress_site_report = fortress_approach.site_report

@@ -26,32 +26,8 @@ DEFAULT_RECLAIMED_BUSH_MAX_ELEVATION = 17
 SUPPORTED_ELEVATION_STYLES = frozenset(
     {"super_flatland", "flatland", "rolling_hills", "normal", "rugged", "mountainous", "plateau"},
 )
-SUPPORTED_FORTRESS_ARCHETYPES = frozenset({"auto", "lake_island"})
-
-
-@dataclass(frozen=True, slots=True)
-class LakeIslandFortressConfig:
-    """Configuration for the lake-island fortress archetype."""
-
-    enabled: bool = True
-
-    @classmethod
-    def from_raw(cls, value: Any) -> "LakeIslandFortressConfig":
-        """Build lake-island fortress settings from raw config data.
-
-        Args:
-            value: Raw fortress.lake_island config value.
-
-        Returns:
-            Sanitized lake-island fortress settings.
-        """
-        if not isinstance(value, dict):
-            return cls()
-        return cls(enabled=_sanitize_bool(value.get("enabled"), default=True))
-
-    def to_dict(self) -> dict[str, bool]:
-        """Return JSON-serializable lake-island settings."""
-        return {"enabled": self.enabled}
+SUPPORTED_FORTRESS_ARCHETYPES = frozenset({"island", "any"})
+SUPPORTED_FORTRESS_SIZES = frozenset({"small", "medium", "huge"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,15 +35,16 @@ class FortressConfig:
     """Public procedural fortress configuration."""
 
     enabled: bool = False
-    archetype: str = "auto"
-    max_count: int = 1
-    lake_island: LakeIslandFortressConfig = field(
-        default_factory=LakeIslandFortressConfig,
-    )
+    size: str = "medium"
+    archetype: str = "island"
 
     @classmethod
     def from_raw(cls, value: Any) -> "FortressConfig":
         """Build fortress settings from an optional config object.
+
+        Legacy ``auto`` and ``lake_island`` archetypes are accepted as
+        aliases for ``island``. Legacy ``max_count`` and ``lake_island``
+        fields are ignored after validation.
 
         Args:
             value: Raw fortress config value.
@@ -77,39 +54,44 @@ class FortressConfig:
         """
         if not isinstance(value, dict):
             return cls()
-        archetype = str(value.get("archetype", "auto")).strip().lower()
+
+        raw_archetype = str(value.get("archetype", "island")).strip().lower()
+        archetype = (
+            "island"
+            if raw_archetype in {"auto", "lake_island"}
+            else raw_archetype
+        )
         if archetype not in SUPPORTED_FORTRESS_ARCHETYPES:
             LOGGER.warning(
-                "Unknown fortress.archetype=%s; falling back to auto",
-                archetype,
+                "Unknown fortress.archetype=%s; falling back to island",
+                raw_archetype,
             )
-            archetype = "auto"
-        max_count = _sanitize_nonnegative_int(
-            value.get("max_count", 1),
-            key="fortress.max_count",
-            default=1,
-        )
-        if max_count > 1:
+            archetype = "island"
+
+        size = str(value.get("size", "medium")).strip().lower()
+        if size not in SUPPORTED_FORTRESS_SIZES:
             LOGGER.warning(
-                "fortress.max_count=%s exceeds the current limit; clamping to 1",
-                max_count,
+                "Unknown fortress.size=%s; falling back to medium",
+                size,
             )
-        return cls(
-            enabled=_sanitize_bool(value.get("enabled"), default=False),
-            archetype=archetype,
-            max_count=min(1, max_count),
-            lake_island=LakeIslandFortressConfig.from_raw(
-                value.get("lake_island"),
-            ),
-        )
+            size = "medium"
+
+        enabled = _sanitize_bool(value.get("enabled"), default=False)
+        legacy_lake = value.get("lake_island")
+        if isinstance(legacy_lake, dict) and not _sanitize_bool(
+            legacy_lake.get("enabled"),
+            default=True,
+        ):
+            enabled = False
+
+        return cls(enabled=enabled, size=size, archetype=archetype)
 
     def to_dict(self) -> dict[str, Any]:
         """Return JSON-serializable fortress settings."""
         return {
             "enabled": self.enabled,
+            "size": self.size,
             "archetype": self.archetype,
-            "max_count": self.max_count,
-            "lake_island": self.lake_island.to_dict(),
         }
 
 

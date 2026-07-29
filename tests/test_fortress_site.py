@@ -10,9 +10,8 @@ def _enabled_config() -> FortressConfig:
     return FortressConfig.from_raw(
         {
             "enabled": True,
-            "archetype": "lake_island",
-            "max_count": 1,
-            "lake_island": {"enabled": True},
+            "archetype": "island",
+            "size": "small",
         },
     )
 
@@ -39,8 +38,8 @@ def test_lake_island_site_selects_large_flatland_lake() -> None:
     assert report["summary"]["eligible_components"] == 1
     selected = report["selected_site"]
     assert selected is not None
-    assert selected["planned_fortress_span_tiles"] == 24
-    assert selected["planned_island_span_tiles"] == 36
+    assert selected["planned_fortress_span_tiles"] == 20
+    assert selected["planned_island_span_tiles"] == 32
     assert selected["available_water_ring_tiles"] >= 6
 
 
@@ -53,15 +52,16 @@ def test_lake_island_site_rejects_small_water_component() -> None:
         fortress_config=_enabled_config(),
     )
 
-    assert report["status"] == "not_found"
+    assert report["status"] == "selected"
     assert report["summary"]["eligible_components"] == 0
-    assert report["selected_site"] is None
+    assert report["resolved_placement"] == "shore"
+    assert report["fallback_reason"] == "no_suitable_island_water_body"
     assert report["candidates"][0]["rejection_reasons"] == [
         "area_below_minimum",
     ]
 
 
-def test_lake_island_site_is_disabled_for_super_flatland() -> None:
+def test_lake_island_site_is_supported_for_super_flatland() -> None:
     elevation_rows = _lake_grid(width=160, height=160, margin=20)
 
     report = analyze_lake_island_fortress_site(
@@ -70,8 +70,8 @@ def test_lake_island_site_is_disabled_for_super_flatland() -> None:
         fortress_config=_enabled_config(),
     )
 
-    assert report["status"] == "unsupported_elevation_style"
-    assert report["summary"]["lake_components"] == 0
+    assert report["status"] == "selected"
+    assert report["resolved_placement"] == "island"
 
 
 def test_lake_island_site_is_deterministic() -> None:
@@ -251,7 +251,7 @@ def test_fortress_shell_materializes_blockers_gate_and_heights() -> None:
     assert result.site_report["fortress_plan"]["materialized_to_terrain"] is True
 
 
-def test_fortress_scale_is_25_percent_larger_on_440_by_400() -> None:
+def test_small_fortress_scale_on_440_by_400() -> None:
     elevation_rows = _lake_grid(width=440, height=400, margin=40)
     report = analyze_lake_island_fortress_site(
         elevation_rows=elevation_rows,
@@ -259,8 +259,8 @@ def test_fortress_scale_is_25_percent_larger_on_440_by_400() -> None:
         fortress_config=_enabled_config(),
     )
 
-    assert report["requirements"]["fortress_span_tiles"] == 50
-    assert report["requirements"]["island_span_tiles"] == 66
+    assert report["requirements"]["fortress_span_tiles"] == 34
+    assert report["requirements"]["island_span_tiles"] == 46
 
 
 def test_shallow_fortress_approach_reaches_mainland_with_gate_width_path() -> None:
@@ -651,3 +651,37 @@ def test_fortress_approach_falls_back_to_nearest_outward_land() -> None:
 
     assert landing is not None
     assert levels[landing[1]][landing[0]] == 0
+
+
+def test_inland_fortress_approach_is_skipped_without_terrain_changes() -> None:
+    from top_down_worldgen.tactical.fortress_approach import (
+        skip_fortress_approach,
+    )
+
+    rows = ["++++", "++++"]
+    runtime_data = {"marker": "unchanged"}
+    site_report = {
+        "policy": {"phase": "interior_planned"},
+        "resolved_placement": "inland",
+    }
+
+    result = skip_fortress_approach(
+        rows=rows,
+        runtime_data=runtime_data,
+        site_report=site_report,
+        reason="inland_placement",
+    )
+
+    assert result.rows == rows
+    assert result.approach_rows == []
+    assert result.changed_tiles == 0
+    assert result.path_tiles == 0
+    assert result.site_report["fortress_approach"] == {
+        "status": "skipped",
+        "reason": "inland_placement",
+        "changed_tiles": 0,
+        "shallow_tiles": 0,
+        "path_tiles": 0,
+        "length_tiles": 0.0,
+    }
+    assert result.runtime_data["marker"] == "unchanged"
