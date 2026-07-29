@@ -34,7 +34,7 @@
   },
   "fortress": {
     "enabled": true,
-    "size": "big",
+    "size": "huge",
     "archetype": "any"
   },
   "_comment_chunk": "440x400 requires an 8x8 divisor; legacy engine rejects partial chunks"
