@@ -558,10 +558,10 @@ def _overlay_fortress_shell_masks(
             if original_type in shell_ids:
                 type_rows[y][x] = 0
                 mask_rows[y][x] = 0
-            if original_type == gate_id:
-                continue
             tower_mask = tower_masks[y][x]
             wall_mask = wall_masks[y][x]
+            if original_type == gate_id and not tower_mask:
+                continue
             if tower_mask:
                 type_rows[y][x] = tower_id
                 mask_rows[y][x] = tower_mask

@@ -516,3 +516,38 @@ def _test_exterior_points(occupied: set[tuple[int, int]]) -> set[tuple[int, int]
             exterior.add(neighbor)
             queue.append(neighbor)
     return exterior
+
+
+def test_gate_metadata_does_not_cut_a_tower_disk() -> None:
+    """Ensure a coarse gate tile cannot punch a hole through a tower."""
+    terrain = [["grass" for _ in range(9)] for _ in range(9)]
+    fortress_plan = {
+        "segments": [
+            {
+                "start": {"x": 1, "y": 4},
+                "end": {"x": 8, "y": 4},
+                "kind": "straight",
+                "bend": 0.0,
+            }
+        ],
+        "towers": [
+            {
+                "center": {"x": 4, "y": 4},
+                "radius_tiles": 3,
+                "kind": "gate_round",
+            }
+        ],
+        "gate_center": {"x": 4, "y": 4},
+        "gate_width_tiles": 2,
+        "materialization": {
+            "structure_types": [[4, 4, "fortress_gate"]],
+        },
+    }
+
+    result = build_structure_geometry(
+        terrain_rows=terrain,
+        fortress_plan=fortress_plan,
+    )
+
+    assert result.type_rows[4][4] == 11
+    assert result.mask_rows[4][4] == FULL_MICRO_MASK

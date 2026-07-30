@@ -116,3 +116,26 @@ def test_stale_coarse_fortress_height_is_cleared() -> None:
     )
 
     assert result.rows == [[6, 0]]
+
+
+def test_fortress_tower_top_is_flat_across_elevation_changes() -> None:
+    """Ensure one round tower has no lowered roof tiles or pits."""
+    result = build_structure_height(
+        terrain_rows=[["grass", "grass"], ["grass", "grass"]],
+        collision_rows=["00", "00"],
+        resolved_seed=1,
+        fortress_plan={
+            "materialization": {
+                "structure_heights": [[0, 0, 7], [1, 0, 10]],
+            },
+        },
+        structure_type_rows=[[11, 11], [11, 11]],
+        elevation_rows=[[0, 2], [1, 3]],
+    )
+
+    absolute_tops = {
+        [[0, 2], [1, 3]][y][x] + 1 + result.rows[y][x]
+        for y in range(2)
+        for x in range(2)
+    }
+    assert len(absolute_tops) == 1

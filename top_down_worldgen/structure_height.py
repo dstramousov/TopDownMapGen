@@ -265,10 +265,52 @@ def _apply_final_fortress_heights(
             wall_top = max(elevation_rows[y][x] + 1 + 6 for x, y in wall_tiles)
             for x, y in wall_tiles:
                 rows[y][x] = max(1, min(_MAX_HEIGHT, wall_top - elevation_rows[y][x] - 1))
-    for x, y in architecture_tiles - wall_tiles:
-        if rows[y][x] == 0:
-            rows[y][x] = 10
+    tower_tiles = architecture_tiles - wall_tiles
+    _flatten_fortress_tower_tops(
+        rows=rows,
+        tower_tiles=tower_tiles,
+        elevation_rows=elevation_rows,
+    )
     return architecture_tiles
+
+
+def _flatten_fortress_tower_tops(
+    *,
+    rows: list[list[int]],
+    tower_tiles: set[tuple[int, int]],
+    elevation_rows: list[list[int]] | None,
+) -> None:
+    """Give every connected tower one sealed, level top surface."""
+    remaining = set(tower_tiles)
+    while remaining:
+        start = min(remaining, key=lambda point: (point[1], point[0]))
+        queue: deque[tuple[int, int]] = deque([start])
+        remaining.remove(start)
+        component: list[tuple[int, int]] = []
+        while queue:
+            x, y = queue.popleft()
+            component.append((x, y))
+            for delta_x, delta_y in _NEIGHBORS:
+                neighbor = (x + delta_x, y + delta_y)
+                if neighbor in remaining:
+                    remaining.remove(neighbor)
+                    queue.append(neighbor)
+
+        if elevation_rows is None:
+            target_height = max(10, max((rows[y][x] for x, y in component), default=0))
+            for x, y in component:
+                rows[y][x] = target_height
+            continue
+
+        absolute_top = max(
+            elevation_rows[y][x] + 1 + max(10, rows[y][x])
+            for x, y in component
+        )
+        for x, y in component:
+            rows[y][x] = max(
+                1,
+                min(_MAX_HEIGHT, absolute_top - elevation_rows[y][x] - 1),
+            )
 
 
 def _clear_stale_structure_heights(
