@@ -66,6 +66,7 @@ def build_structure_geometry(
                 type_rows[y][x] = _NAME_TO_ID["ruin_floor"]
 
     _overlay_fortress_types(type_rows, fortress_plan)
+    _fill_fortress_keep_footprints(type_rows)
     solid_type_ids = {
         _NAME_TO_ID["ruin_wall"],
         _NAME_TO_ID["fortress_wall"],
@@ -145,6 +146,44 @@ def _overlay_fortress_types(
 
 
 
+def _fill_fortress_keep_footprints(type_rows: list[list[int]]) -> None:
+    """Fill enclosed keep interiors so the citadel is one solid prism."""
+    keep_id = _NAME_TO_ID["fortress_keep"]
+    keep_tiles = {
+        (x, y)
+        for y, row in enumerate(type_rows)
+        for x, value in enumerate(row)
+        if value == keep_id
+    }
+    if not keep_tiles:
+        return
+    min_x = min(x for x, _y in keep_tiles)
+    max_x = max(x for x, _y in keep_tiles)
+    min_y = min(y for _x, y in keep_tiles)
+    max_y = max(y for _x, y in keep_tiles)
+    exterior: set[tuple[int, int]] = set()
+    stack = [
+        (x, y)
+        for y in range(min_y, max_y + 1)
+        for x in range(min_x, max_x + 1)
+        if (x in {min_x, max_x} or y in {min_y, max_y})
+        and (x, y) not in keep_tiles
+    ]
+    while stack:
+        point = stack.pop()
+        if point in exterior or point in keep_tiles:
+            continue
+        x, y = point
+        if not (min_x <= x <= max_x and min_y <= y <= max_y):
+            continue
+        exterior.add(point)
+        stack.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if (x, y) not in keep_tiles and (x, y) not in exterior:
+                type_rows[y][x] = keep_id
+
+
 def _overlay_linear_structure_masks(
     *,
     type_rows: list[list[int]],
@@ -153,7 +192,6 @@ def _overlay_linear_structure_masks(
     """Rasterize non-round walls as thin connected 4x4 micro geometry."""
     linear_type_ids = {
         _NAME_TO_ID["ruin_wall"],
-        _NAME_TO_ID["fortress_keep"],
         _NAME_TO_ID["fortress_building"],
         _NAME_TO_ID["building_wall"],
     }

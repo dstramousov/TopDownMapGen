@@ -154,7 +154,7 @@ def test_ruin_walls_use_thin_connected_micro_masks() -> None:
     assert masks[1] == 0x0FF0
 
 
-def test_fortress_keep_outline_uses_connected_micro_masks() -> None:
+def test_fortress_keep_is_solid_and_uses_full_roof_footprint() -> None:
     terrain = [["grass" for _ in range(5)] for _ in range(5)]
     entries = []
     for x, y in ((1, 1), (2, 1), (3, 1), (1, 2), (3, 2), (1, 3), (2, 3), (3, 3)):
@@ -164,11 +164,9 @@ def test_fortress_keep_outline_uses_connected_micro_masks() -> None:
         terrain_rows=terrain,
         fortress_plan={"materialization": {"structure_types": entries}},
     )
-    assert all(
-        0 < result.mask_rows[y][x] < FULL_MICRO_MASK
-        for x, y, _name in entries
-    )
-    assert result.mask_rows[2][2] == 0
+    assert all(result.mask_rows[y][x] for x, y, _name in entries)
+    assert result.type_rows[2][2] == 13
+    assert result.mask_rows[2][2] == FULL_MICRO_MASK
 
 
 def test_ruin_site_wall_runs_are_rasterized_as_one_micro_plan() -> None:
@@ -324,7 +322,7 @@ def test_fortress_shell_does_not_continue_wall_through_tower_interior() -> None:
     assert result.mask_rows[3][5] == FULL_MICRO_MASK
 
 
-def test_fortress_top_geometry_is_disabled_during_shell_rewrite() -> None:
+def test_fortress_top_geometry_has_flat_roof_and_outer_crenellations() -> None:
     terrain = [["grass" for _ in range(8)] for _ in range(8)]
     fortress_plan = {
         "segments": [
@@ -341,10 +339,11 @@ def test_fortress_top_geometry_is_disabled_during_shell_rewrite() -> None:
     )
     top = build_structure_top_geometry(geometry)
 
-    assert top.summary["temporarily_disabled"] == 1
-    assert not any(mask for row in top.walkway_rows for mask in row)
-    assert not any(mask for row in top.parapet_rows for mask in row)
-    assert not any(mask for row in top.crenellation_rows for mask in row)
+    assert top.summary["temporarily_disabled"] == 0
+    assert any(mask for row in top.walkway_rows for mask in row)
+    assert any(mask for row in top.parapet_rows for mask in row)
+    assert any(mask for row in top.crenellation_rows for mask in row)
+    assert top.summary["wall_crenellation_subtiles"] > 0
 
 
 def test_curved_fortress_wall_uses_one_continuous_micro_band() -> None:

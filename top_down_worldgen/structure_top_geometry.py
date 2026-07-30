@@ -23,29 +23,89 @@ class StructureTopGeometry:
 def build_structure_top_geometry(
     geometry: StructureGeometry,
 ) -> StructureTopGeometry:
-    """Return empty top layers while the fortress shell is being rebuilt."""
+    """Build final flat fortress roofs, parapets, and outer crenellations."""
     height = len(geometry.type_rows)
     width = len(geometry.type_rows[0]) if geometry.type_rows else 0
     walkway_rows = [[0 for _ in range(width)] for _ in range(height)]
     parapet_rows = [[0 for _ in range(width)] for _ in range(height)]
     crenellation_rows = [[0 for _ in range(width)] for _ in range(height)]
+
+    wall_id = _NAME_TO_ID["fortress_wall"]
+    tower_id = _NAME_TO_ID["fortress_tower"]
+    keep_id = _NAME_TO_ID["fortress_keep"]
+    wall_points = _collect_points(geometry, {wall_id})
+    tower_points = _collect_points(geometry, {tower_id})
+    keep_points = _collect_points(geometry, {keep_id})
+    top_surface = wall_points | tower_points | keep_points
+    _pack_points(top_surface, walkway_rows)
+
+    if top_surface:
+        center = _point_centroid(top_surface)
+        exposed = {
+            point
+            for point in top_surface
+            if any(
+                (point[0] + dx, point[1] + dy) not in top_surface
+                for dx, dy in _CARDINAL_NEIGHBORS
+            )
+        }
+        _pack_points(exposed, parapet_rows)
+
+        wall_outer = _outward_wall_boundary(
+            wall_points=wall_points,
+            top_surface=top_surface,
+            fortress_center=center,
+        )
+        tower_outer: set[tuple[int, int]] = set()
+        tower_clearance: set[tuple[int, int]] = set()
+        for component in _components(tower_points):
+            ring = _ordered_outer_ring(component)
+            clearance = _connection_clearance_points(ring, wall_points, radius=2)
+            tower_clearance.update(clearance)
+            tower_outer.update(
+                _select_grouped_crenellations(ring, excluded=clearance)
+            )
+
+        keep_outer: set[tuple[int, int]] = set()
+        for component in _components(keep_points):
+            ring = _ordered_outer_ring(component)
+            keep_outer.update(_select_grouped_crenellations(ring, excluded=set()))
+
+        wall_crenellations: set[tuple[int, int]] = set()
+        for component in _components(wall_outer):
+            wall_crenellations.update(
+                _select_grouped_crenellations(
+                    _ordered_boundary_component(component),
+                    excluded=set(),
+                )
+            )
+        crenellations = wall_crenellations | tower_outer | keep_outer
+        _pack_points(crenellations, crenellation_rows)
+    else:
+        wall_crenellations = set()
+        tower_outer = set()
+        keep_outer = set()
+        tower_clearance = set()
+
     return StructureTopGeometry(
         walkway_rows=walkway_rows,
         parapet_rows=parapet_rows,
         crenellation_rows=crenellation_rows,
         summary={
-            "walkway_subtiles": 0,
-            "parapet_subtiles": 0,
-            "crenellation_subtiles": 0,
-            "tower_crenellation_subtiles": 0,
-            "wall_crenellation_subtiles": 0,
-            "tower_connection_clearance_subtiles": 0,
+            "walkway_subtiles": len(top_surface),
+            "parapet_subtiles": sum(mask.bit_count() for row in parapet_rows for mask in row),
+            "crenellation_subtiles": sum(mask.bit_count() for row in crenellation_rows for mask in row),
+            "tower_crenellation_subtiles": len(tower_outer),
+            "wall_crenellation_subtiles": len(wall_crenellations),
+            "keep_crenellation_subtiles": len(keep_outer),
+            "tower_connection_clearance_subtiles": len(tower_clearance),
             "wall_connection_clearance_subtiles": 0,
-            "walkway_cells": 0,
-            "parapet_cells": 0,
-            "crenellation_cells": 0,
-            "tower_roof_subtiles": 0,
-            "temporarily_disabled": 1,
+            "walkway_cells": sum(bool(mask) for row in walkway_rows for mask in row),
+            "parapet_cells": sum(bool(mask) for row in parapet_rows for mask in row),
+            "crenellation_cells": sum(bool(mask) for row in crenellation_rows for mask in row),
+            "tower_roof_subtiles": len(tower_points),
+            "keep_roof_subtiles": len(keep_points),
+            "temporarily_disabled": 0,
         },
     )
 

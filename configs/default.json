@@ -1,7 +1,7 @@
 {
-  "seed": 4,
-  "map_width_tiles": 304,
-  "map_height_tiles": 304,
+  "seed": "random",
+  "map_width_tiles": 400,
+  "map_height_tiles": 400,
   "chunk_width_tiles": 16,
   "chunk_height_tiles": 16,
   "biome_profile": "forest_ruins",
@@ -26,7 +26,7 @@
   },
   "_comment_elevation": "super_flatland | flatland | rolling_hills | normal | rugged | mountainous | plateau",
   "elevation": {
-    "style": "plateau"
+    "style": "rolling_hills"
   },
   "hydrology": {
     "shore_reed_density": 0.16,
@@ -34,8 +34,8 @@
   },
   "fortress": {
     "enabled": true,
-    "size": "huge",
-    "archetype": "any"
+    "size": "medium",
+    "archetype": "island"
   },
   "_comment_chunk": "440x400 requires an 8x8 divisor; legacy engine rejects partial chunks"
 }

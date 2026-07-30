@@ -246,11 +246,12 @@ def _apply_final_fortress_heights(
     """Apply final shell heights to every tile touched by micro geometry."""
     wall_type = 10
     tower_type = 11
+    keep_type = 13
     architecture_tiles = {
         (x, y)
         for y, row in enumerate(structure_type_rows)
         for x, value in enumerate(row)
-        if value in {wall_type, tower_type}
+        if value in {wall_type, tower_type, keep_type}
     }
     wall_tiles = {
         (x, y)
@@ -265,10 +266,19 @@ def _apply_final_fortress_heights(
             wall_top = max(elevation_rows[y][x] + 1 + 6 for x, y in wall_tiles)
             for x, y in wall_tiles:
                 rows[y][x] = max(1, min(_MAX_HEIGHT, wall_top - elevation_rows[y][x] - 1))
-    tower_tiles = architecture_tiles - wall_tiles
+    tower_tiles = {
+        point for point in architecture_tiles
+        if structure_type_rows[point[1]][point[0]] == tower_type
+    }
+    keep_tiles = architecture_tiles - wall_tiles - tower_tiles
     _flatten_fortress_tower_tops(
         rows=rows,
         tower_tiles=tower_tiles,
+        elevation_rows=elevation_rows,
+    )
+    _flatten_fortress_tower_tops(
+        rows=rows,
+        tower_tiles=keep_tiles,
         elevation_rows=elevation_rows,
     )
     return architecture_tiles
