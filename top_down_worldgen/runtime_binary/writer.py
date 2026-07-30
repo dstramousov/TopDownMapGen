@@ -36,6 +36,7 @@ from .strings import StringTable, build_string_table
 from .validator import validate_runtime_binary
 
 LOGGER = logging.getLogger(__name__)
+_SOLID_STRUCTURE_TYPE_IDS = frozenset({1, 10, 11, 13, 14, 20})
 _GLOBAL_SECTION_COUNT = 6
 _REGIONAL_SECTION_COUNT = 11
 
@@ -739,13 +740,23 @@ def _validate_source(source: RuntimeBinarySource) -> None:
             if value < 0 or value > 255:
                 raise ValueError("runtime structure height exceeds u8 contract")
             terrain = source.terrain_rows[y][x]
-            if terrain == "ruin_wall_blocker":
+            structure_type = source.structure_type_rows[y][x]
+            micro_mask = source.structure_micro_mask_rows[y][x]
+            is_solid_structure = structure_type in _SOLID_STRUCTURE_TYPE_IDS
+
+            if (
+                terrain == "ruin_wall_blocker"
+                and source.collision_rows[y][x] != "1"
+            ):
+                raise ValueError("runtime ruin wall is not collision-blocked")
+
+            if is_solid_structure:
                 if value == 0:
-                    raise ValueError("runtime ruin wall has zero structure height")
-                if source.collision_rows[y][x] != "1":
-                    raise ValueError("runtime ruin wall is not collision-blocked")
+                    raise ValueError("runtime solid structure has zero height")
+                if micro_mask == 0:
+                    raise ValueError("runtime solid structure has empty micro mask")
             elif value != 0:
-                raise ValueError("runtime non-ruin tile has structure height")
+                raise ValueError("runtime non-solid structure has height")
     for y, row in enumerate(source.vegetation_type_rows):
         for x, vegetation_type in enumerate(row):
             vegetation_height = source.vegetation_height_rows[y][x]

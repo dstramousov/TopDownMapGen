@@ -129,6 +129,31 @@ def test_runtime_binary_rejects_bad_magic(tmp_path: Path) -> None:
         open_runtime_container(path)
 
 
+
+def test_runtime_binary_accepts_fortress_height_on_non_ruin_terrain(
+    tmp_path: Path,
+) -> None:
+    """Ensure fortress micro geometry may carry height over ordinary terrain."""
+    source = _source(width=3, height=2)
+    source.structure_type_rows[0][0] = 10
+    source.structure_micro_mask_rows[0][0] = 0x0FF0
+    source.structure_height_rows[0][0] = 6
+
+    result = write_runtime_binary(source, tmp_path / "fortress-wall.vxmap")
+
+    assert result.file_size > 0
+
+
+def test_runtime_binary_rejects_height_without_solid_structure(
+    tmp_path: Path,
+) -> None:
+    """Ensure a height cannot exist without a solid semantic structure type."""
+    source = _source(width=3, height=2)
+    source.structure_height_rows[0][0] = 6
+
+    with pytest.raises(ValueError, match="non-solid structure has height"):
+        write_runtime_binary(source, tmp_path / "invalid-height.vxmap")
+
 def _source(*, width: int, height: int) -> RuntimeBinarySource:
     terrain_types = ("grass", "tree_blocker", "ruin_wall_blocker")
     terrain_rows = [

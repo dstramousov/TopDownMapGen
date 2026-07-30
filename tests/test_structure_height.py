@@ -76,3 +76,43 @@ def test_structure_height_rejects_passable_ruin_wall() -> None:
             collision_rows=["0"],
             resolved_seed=1,
         )
+
+
+def test_fortress_wall_top_is_flat_across_elevation_changes() -> None:
+    """Ensure wall structure levels compensate terrain into one flat top."""
+    result = build_structure_height(
+        terrain_rows=[["grass", "grass", "grass"]],
+        collision_rows=["000"],
+        resolved_seed=1,
+        structure_type_rows=[[10, 10, 10]],
+        elevation_rows=[[0, 2, 5]],
+    )
+
+    absolute_tops = [
+        elevation + 1 + height
+        for elevation, height in zip(
+            [0, 2, 5],
+            result.rows[0],
+            strict=True,
+        )
+    ]
+    assert len(set(absolute_tops)) == 1
+    assert result.rows[0] == [11, 9, 6]
+
+
+def test_stale_coarse_fortress_height_is_cleared() -> None:
+    """Ensure old shell metadata cannot leave height outside final geometry."""
+    result = build_structure_height(
+        terrain_rows=[["grass", "grass"]],
+        collision_rows=["00"],
+        resolved_seed=1,
+        fortress_plan={
+            "materialization": {
+                "structure_heights": [[0, 0, 6], [1, 0, 6]],
+            },
+        },
+        structure_type_rows=[[10, 0]],
+        elevation_rows=[[0, 0]],
+    )
+
+    assert result.rows == [[6, 0]]

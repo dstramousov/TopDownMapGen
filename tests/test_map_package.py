@@ -107,7 +107,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
     )
 
-    assert package_index["schema_version"] == "map-package-map-v27"
+    assert package_index["schema_version"] == "map-package-map-v28"
     assert package_index["dimensions"]["width_tiles"] == 2
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
@@ -157,7 +157,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert movement["costs_by_type"]["grass"] == 1
     assert collision["format"] == "boolean_rows"
     assert collision["rows"] == ["00", "00"]
-    assert structure_height["schema_version"] == "structure-height-layer-v3"
+    assert structure_height["schema_version"] == "structure-height-layer-v4"
     assert structure_height["units"] == "logical_levels_above_ground"
     assert structure_height["ground_reference"] == "elevation_plus_one"
     assert structure_height["rows"] == [[0, 0], [0, 0]]

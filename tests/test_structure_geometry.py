@@ -129,8 +129,16 @@ def test_fortress_wall_uses_partial_micro_masks_and_gate_is_open() -> None:
         fortress_plan=fortress_plan,
     )
 
-    wall_masks = [result.mask_rows[2][x] for x in (1, 2, 3, 5, 6)]
-    assert any(0 < mask < FULL_MICRO_MASK for mask in wall_masks)
+    occupied = {
+        (tile_x * MICRO_DIVISION + subtile_x, tile_y * MICRO_DIVISION + subtile_y)
+        for tile_y, row in enumerate(result.mask_rows)
+        for tile_x, mask in enumerate(row)
+        for subtile_y in range(MICRO_DIVISION)
+        for subtile_x in range(MICRO_DIVISION)
+        if mask & (1 << (subtile_y * MICRO_DIVISION + subtile_x))
+    }
+    cross_section = {micro_y for micro_x, micro_y in occupied if micro_x == 9}
+    assert len(cross_section) == 6
     assert result.mask_rows[2][4] == 0
 
 

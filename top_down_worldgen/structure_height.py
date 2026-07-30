@@ -73,6 +73,8 @@ def build_structure_height(
     resolved_seed: int,
     ruin_sites: object | None = None,
     fortress_plan: object | None = None,
+    structure_type_rows: list[list[int]] | None = None,
+    elevation_rows: list[list[int]] | None = None,
 ) -> StructureHeightResult:
     """Build deterministic ruined-wall heights from final terrain.
 
@@ -85,6 +87,8 @@ def build_structure_height(
         resolved_seed: Concrete generation seed.
         ruin_sites: Optional semantic architecture metadata.
         fortress_plan: Optional fortress shell metadata.
+        structure_type_rows: Optional final semantic structure type grid.
+        elevation_rows: Optional final elevation grid used to flatten wall tops.
 
     Returns:
         Generated height rows and validation summary.
@@ -103,6 +107,16 @@ def build_structure_height(
         for row in collision_rows
     ):
         raise ValueError("structure-height collision rows have invalid dimensions")
+    if structure_type_rows is not None and (
+        len(structure_type_rows) != height
+        or any(len(row) != width for row in structure_type_rows)
+    ):
+        raise ValueError("structure-height type rows have invalid dimensions")
+    if elevation_rows is not None and (
+        len(elevation_rows) != height
+        or any(len(row) != width for row in elevation_rows)
+    ):
+        raise ValueError("structure-height elevation rows have invalid dimensions")
 
     rows = [[0 for _ in range(width)] for _ in range(height)]
     component_ids = [[_NO_COMPONENT for _ in range(width)] for _ in range(height)]
@@ -131,13 +145,29 @@ def build_structure_height(
     for (x, y), value in fortress_heights.items():
         if not (0 <= x < width and 0 <= y < height):
             raise ValueError("fortress structure height is outside the map")
-        if terrain_rows[y][x] != RUIN_WALL:
-            raise ValueError("fortress structure height does not reference a wall")
         if not _MIN_HEIGHT <= value <= _MAX_HEIGHT:
             raise ValueError("fortress structure height is outside uint8 range")
         rows[y][x] = value
 
-    _validate_invariants(terrain_rows, collision_rows, rows)
+    architecture_tiles: set[tuple[int, int]] = set()
+    if structure_type_rows is not None:
+        architecture_tiles = _apply_final_fortress_heights(
+            rows=rows,
+            structure_type_rows=structure_type_rows,
+            elevation_rows=elevation_rows,
+        )
+        _clear_stale_structure_heights(
+            rows=rows,
+            structure_type_rows=structure_type_rows,
+        )
+
+    _validate_invariants(
+        terrain_rows,
+        collision_rows,
+        rows,
+        architecture_tiles=architecture_tiles,
+        structure_type_rows=structure_type_rows,
+    )
     summary = _build_summary(
         terrain_rows=terrain_rows,
         collision_rows=collision_rows,
@@ -206,6 +236,53 @@ def _fortress_structure_heights(fortress_plan: object | None) -> dict[tuple[int,
             raise ValueError("invalid fortress structure-height value")
         output[(x, y)] = value
     return output
+
+def _apply_final_fortress_heights(
+    *,
+    rows: list[list[int]],
+    structure_type_rows: list[list[int]],
+    elevation_rows: list[list[int]] | None,
+) -> set[tuple[int, int]]:
+    """Apply final shell heights to every tile touched by micro geometry."""
+    wall_type = 10
+    tower_type = 11
+    architecture_tiles = {
+        (x, y)
+        for y, row in enumerate(structure_type_rows)
+        for x, value in enumerate(row)
+        if value in {wall_type, tower_type}
+    }
+    wall_tiles = {
+        (x, y)
+        for x, y in architecture_tiles
+        if structure_type_rows[y][x] == wall_type
+    }
+    if wall_tiles:
+        if elevation_rows is None:
+            for x, y in wall_tiles:
+                rows[y][x] = 6
+        else:
+            wall_top = max(elevation_rows[y][x] + 1 + 6 for x, y in wall_tiles)
+            for x, y in wall_tiles:
+                rows[y][x] = max(1, min(_MAX_HEIGHT, wall_top - elevation_rows[y][x] - 1))
+    for x, y in architecture_tiles - wall_tiles:
+        if rows[y][x] == 0:
+            rows[y][x] = 10
+    return architecture_tiles
+
+
+def _clear_stale_structure_heights(
+    *,
+    rows: list[list[int]],
+    structure_type_rows: list[list[int]],
+) -> None:
+    """Clear heights left behind by superseded coarse structure plans."""
+    solid_structure_types = {1, 10, 11, 13, 14, 20}
+    for y, row in enumerate(rows):
+        for x, value in enumerate(row):
+            if value and structure_type_rows[y][x] not in solid_structure_types:
+                rows[y][x] = 0
+
 
 def _find_components(
     terrain_rows: list[list[str]],
@@ -421,18 +498,35 @@ def _validate_invariants(
     terrain_rows: list[list[str]],
     collision_rows: list[str],
     rows: list[list[int]],
+    *,
+    architecture_tiles: set[tuple[int, int]] | None = None,
+    structure_type_rows: list[list[int]] | None = None,
 ) -> None:
+    architecture_tiles = architecture_tiles or set()
+    solid_structure_types = {1, 10, 11, 13, 14, 20}
     for y, terrain_row in enumerate(terrain_rows):
         for x, terrain in enumerate(terrain_row):
             value = rows[y][x]
             if not 0 <= value <= _MAX_HEIGHT:
                 raise ValueError("structure height is outside the uint8 contract")
+
+            if structure_type_rows is not None:
+                structure_type = structure_type_rows[y][x]
+                if structure_type in solid_structure_types:
+                    if not _MIN_HEIGHT <= value <= _MAX_HEIGHT:
+                        raise ValueError("solid structure has no visible height")
+                elif value != 0:
+                    raise ValueError("non-solid structure has a non-zero height")
+                if structure_type == 1 and collision_rows[y][x] != "1":
+                    raise ValueError("ruin wall is not blocked in collision grid")
+                continue
+
             if terrain == RUIN_WALL:
                 if not _MIN_HEIGHT <= value <= _MAX_HEIGHT:
                     raise ValueError("ruin wall has no visible structure height")
                 if collision_rows[y][x] != "1":
                     raise ValueError("ruin wall is not blocked in collision grid")
-            elif value != 0:
+            elif value != 0 and (x, y) not in architecture_tiles:
                 raise ValueError("non-wall tile has a non-zero structure height")
 
 

@@ -512,18 +512,17 @@ def _overlay_fortress_shell_masks(
     micro_width = width * MICRO_DIVISION
     micro_height = height * MICRO_DIVISION
 
-    centerline_points = {
-        point
+    sampled_segments = tuple(
+        segment
         for path in wall_paths
-        for point in _sample_wall_path_points(path)
-        if 0 <= point[0] < micro_width and 0 <= point[1] < micro_height
-    }
-    wall_brush_radius = _fortress_wall_brush_radius(towers)
-    wall_points = _expand_micro_points(
-        centerline_points,
-        radius=wall_brush_radius,
-        width=micro_width,
-        height=micro_height,
+        for segment in _sample_wall_path(path)
+    )
+    wall_width_subtiles = _fortress_wall_width_subtiles(towers)
+    wall_points = _rasterize_wall_band(
+        segments=sampled_segments,
+        width_subtiles=wall_width_subtiles,
+        micro_width=micro_width,
+        micro_height=micro_height,
     )
     tower_points = _rasterize_tower_disks(
         towers=towers,
@@ -532,11 +531,6 @@ def _overlay_fortress_shell_masks(
     )
     wall_points.difference_update(tower_points)
 
-    sampled_segments = tuple(
-        segment
-        for path in wall_paths
-        for segment in _sample_wall_path(path)
-    )
     gate = _parse_gate_opening(fortress_plan, segments=sampled_segments)
     if gate is not None:
         wall_points = {
@@ -620,44 +614,65 @@ def _micro_sample_coordinate(index: int) -> float:
     return index / MICRO_DIVISION - 0.375
 
 
-def _expand_micro_points(
-    points: set[tuple[int, int]],
+def _rasterize_wall_band(
     *,
-    radius: int,
-    width: int,
-    height: int,
+    segments: tuple[tuple[float, float, float, float], ...],
+    width_subtiles: int,
+    micro_width: int,
+    micro_height: int,
 ) -> set[tuple[int, int]]:
-    """Expand centerline points by one constant-radius circular brush."""
-    offsets = tuple(
-        (dx, dy)
-        for dy in range(-radius, radius + 1)
-        for dx in range(-radius, radius + 1)
-        if dx * dx + dy * dy <= radius * radius
-    )
-    return {
-        (x + dx, y + dy)
-        for x, y in points
-        for dx, dy in offsets
-        if 0 <= x + dx < width and 0 <= y + dy < height
-    }
+    """Rasterize a constant-width band around the complete wall centerline.
+
+    Each sampled segment contributes one capsule of the same radius. Their
+    union is the exact constant-distance band around the polyline, so bends
+    and tower connections cannot widen or narrow the wall.
+    """
+    if not segments or width_subtiles <= 0:
+        return set()
+    half_width_tiles = width_subtiles / (2.0 * MICRO_DIVISION)
+    tolerance = 1e-9
+    occupied: set[tuple[int, int]] = set()
+    for segment in segments:
+        x0, y0, x1, y1 = segment
+        minimum_x = max(
+            0,
+            _world_to_micro(min(x0, x1) - half_width_tiles) - 2,
+        )
+        maximum_x = min(
+            micro_width - 1,
+            _world_to_micro(max(x0, x1) + half_width_tiles) + 2,
+        )
+        minimum_y = max(
+            0,
+            _world_to_micro(min(y0, y1) - half_width_tiles) - 2,
+        )
+        maximum_y = min(
+            micro_height - 1,
+            _world_to_micro(max(y0, y1) + half_width_tiles) + 2,
+        )
+        for micro_y in range(minimum_y, maximum_y + 1):
+            sample_y = _micro_sample_coordinate(micro_y)
+            for micro_x in range(minimum_x, maximum_x + 1):
+                sample_x = _micro_sample_coordinate(micro_x)
+                if (
+                    _point_segment_distance(sample_x, sample_y, *segment)
+                    <= half_width_tiles + tolerance
+                ):
+                    occupied.add((micro_x, micro_y))
+    return occupied
 
 
-
-def _fortress_wall_brush_radius(
+def _fortress_wall_width_subtiles(
     towers: tuple[tuple[float, float, float], ...],
 ) -> int:
-    """Return a wall half-thickness derived from tower diameter.
-
-    The target wall thickness is approximately half of the representative
-    tower diameter, leaving enough room for a future outer parapet, a walking
-    surface, and an inner edge.
-    """
+    """Return one immutable wall width derived from tower diameter."""
     if not towers:
-        return 2
+        return 6
     radii = sorted(radius for _x, _y, radius in towers)
     representative_radius = radii[len(radii) // 2]
-    desired_thickness = max(6, round(representative_radius * MICRO_DIVISION))
-    return min(16, max(3, round((desired_thickness - 1) / 2)))
+    desired_thickness = round(representative_radius * MICRO_DIVISION)
+    return min(16, max(6, desired_thickness))
+
 
 def _rasterize_tower_disks(
     *,

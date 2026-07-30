@@ -207,12 +207,19 @@ def write_map_package(
     final_elevation_rows = _integer_rows(
         _dict(runtime_grid_items.get("height_grid")).get("rows"),
     )
+    structure_geometry = build_structure_geometry(
+        terrain_rows=terrain_rows,
+        fortress_plan=runtime_data.get("fortress_plan"),
+        ruin_sites=runtime_data.get("ruin_sites"),
+    )
     structure_height = build_structure_height(
         terrain_rows=terrain_rows,
         collision_rows=final_collision_rows,
         resolved_seed=resolved_seed,
         ruin_sites=runtime_data.get("ruin_sites"),
         fortress_plan=runtime_data.get("fortress_plan"),
+        structure_type_rows=structure_geometry.type_rows,
+        elevation_rows=final_elevation_rows,
     )
     write_json(
         {
@@ -229,11 +236,6 @@ def write_map_package(
             "summary": structure_height.summary.to_dict(),
         },
         outputs.map_package_structure_height,
-    )
-    structure_geometry = build_structure_geometry(
-        terrain_rows=terrain_rows,
-        fortress_plan=runtime_data.get("fortress_plan"),
-        ruin_sites=runtime_data.get("ruin_sites"),
     )
     write_json(
         {
