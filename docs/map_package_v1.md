@@ -33,6 +33,7 @@ unit: tile
 | `layers/collision.json` | Terrain-derived collision: `0` passable, `1` blocked. |
 | `layers/movement_costs.json` | Стоимость движения по типам тайлов. |
 | `layers/elevation.json` | Legacy-compatible elevation block из tactical map. |
+| `layers/environment_context.json` | Производный экологический контекст: moisture, macro-region profile, slope и лесная кромка/дистанция. |
 | `layers/start_goal.json` | Start/goal в tile coordinates. |
 | `runtime_grids.json` | Runtime-ready grids: movement, collision, projectile, vision, cover, concealment, height. |
 | `elevation_model.json` | Семантика уровней высоты, правила движения/LOS/projectiles. |
@@ -47,6 +48,36 @@ unit: tile
 | `catalogs/tile_types.json` | Каталог типов тайлов. |
 | `catalogs/object_types.json` | Каталог типов runtime-объектов. |
 | `render/*.json` | Render hints и render profile. |
+
+## Environment context
+
+`layers/environment_context.json` — публичный производный слой для экологически
+осмысленного rendering-а земли и флоры. Он не хранит конкретные asset IDs и не
+меняет authoritative terrain/gameplay data.
+
+Schema первой версии:
+
+```text
+environment-context-layer-v1
+```
+
+Основные grids:
+
+| Grid | Диапазон | Смысл |
+|---|---:|---|
+| `moisture` | `0..1000` | Непрерывная влажность из natural geography. |
+| `region_profile` | dictionary code | Крупный профиль региона: `dense_forest`, `woodland`, `wet_lowland`, `upland`, `open_plateau`, `open_plain`, `alpine`. |
+| `slope_band` | `0..3` | `flat`, `gentle`, `steep`, `cliff`. |
+| `forest_depth` | `0..4` | Глубина внутри semantic forest; `4` означает четыре тайла и глубже. |
+| `forest_distance` | `0..9` | Локальная дистанция до semantic forest; `9` означает девять тайлов и дальше. |
+
+`forest_depth` и `forest_distance` строятся от semantic terrain `tree_blocker`, а
+не от прореженного visual tree mask. Поэтому художественное thinning деревьев не
+разрушает экологический смысл лесного массива.
+
+Конкретные PNG/спрайты должен выбирать consumer-side `FloraResolver`. Например,
+Vox3D может смешивать профиль лесной кромки с влажным профилем возле воды, не
+заставляя генератор карты знать названия ассетов.
 
 ## Runtime grids
 

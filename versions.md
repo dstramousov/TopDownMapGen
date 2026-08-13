@@ -1295,3 +1295,13 @@
 - Возвращены парапеты и зубцы: на стенах зубцы размещаются только по внешней кромке, на башнях и keep — по наружному контуру.
 - В местах примыкания стены к башне оставлены проходы без зубцов.
 - Keep и башни выравниваются по абсолютной высоте крыши независимо от рельефа.
+
+
+## v0.0.150 -> v0.0.151
+
+- Добавлен публичный `map_package/layers/environment_context.json` со схемой `environment-context-layer-v1`.
+- В Environment Context экспортируются уже существующие geography-сигналы: `moisture`, `region_profile`, `slope_band`, а также semantic `forest_depth` и `forest_distance`.
+- Лесной контекст считается от `tree_blocker`, а не от прореженного visual tree mask; существующая логика forest-edge thinning переиспользует общий depth builder без изменения генерации.
+- `map.json` обновлён до `map-package-map-v31`, generation manifest — до `generation-manifest-v60`, validation report — до `validation-report-v36`.
+- Добавлены строгая валидация Environment Context, unit/regression tests и документация для map-package consumers.
+- Версия проекта поднята до `0.0.151`.

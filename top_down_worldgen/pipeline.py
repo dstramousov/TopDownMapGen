@@ -14,6 +14,7 @@ from .manifest import (
     ASCII_MAP_SCHEMA_VERSION,
     COLLISION_LAYER_SCHEMA_VERSION,
     ELEVATION_LAYER_SCHEMA_VERSION,
+    ENVIRONMENT_CONTEXT_LAYER_SCHEMA_VERSION,
     ELEVATION_MODEL_SCHEMA_VERSION,
     ELEVATION_FEATURES_SCHEMA_VERSION,
     ELEVATION_TRANSITIONS_SCHEMA_VERSION,
@@ -576,6 +577,7 @@ class WorldgenPipeline:
                     resolved_seed=config.resolved_seed,
                     profile=config.objective_profile,
                     generation_tuning=config.generation_tuning.to_dict(),
+                    natural_geography=natural_geography,
                 )
             metrics.update(
                 {
@@ -1043,6 +1045,13 @@ class WorldgenPipeline:
                 True,
                 False,
                 ELEVATION_LAYER_SCHEMA_VERSION,
+            ),
+            OutputArtifact(
+                outputs.map_package_environment_context,
+                "map_package:environment_context",
+                True,
+                False,
+                ENVIRONMENT_CONTEXT_LAYER_SCHEMA_VERSION,
             ),
             OutputArtifact(
                 outputs.map_package_structure_height,

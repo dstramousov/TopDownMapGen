@@ -118,6 +118,9 @@ def build_validation_report(
         ),
         "map_package_collision_exists": outputs.map_package_collision.exists(),
         "map_package_elevation_exists": outputs.map_package_elevation.exists(),
+        "map_package_environment_context_exists": (
+            outputs.map_package_environment_context.exists()
+        ),
         "map_package_start_goal_exists": outputs.map_package_start_goal.exists(),
         "map_package_gameplay_exists": _map_package_gameplay_exists(outputs),
         "map_package_objects_exist": _map_package_objects_exist(outputs),
@@ -451,6 +454,13 @@ def _build_map_package_consistency_checks(
             width=width,
             height=height,
         ),
+        "map_package_environment_context_valid": (
+            _package_environment_context_valid(
+                package,
+                width=width,
+                height=height,
+            )
+        ),
         "map_package_runtime_grids_have_required_grids": (
             _runtime_grids_have_required_grids(package)
         ),
@@ -522,6 +532,7 @@ def _failed_package_checks() -> dict[str, bool]:
     return {
         "map_package_files_have_schema_versions": False,
         "map_package_dimensions_match_layers": False,
+        "map_package_environment_context_valid": False,
         "map_package_runtime_grids_have_required_grids": False,
         "map_package_runtime_grids_match_dimensions": False,
         "map_package_markers_inside_map": False,
@@ -564,6 +575,9 @@ def _load_package_context(outputs: OutputPaths) -> dict[str, Any] | None:
                 package_dir / str(layers.get("movement_costs")),
             ),
             "elevation": _read_json_object(package_dir / str(layers.get("elevation"))),
+            "environment_context": _read_json_object(
+                package_dir / str(layers.get("environment_context")),
+            ),
             "start_goal": _read_json_object(package_dir / str(layers.get("start_goal"))),
             "markers": _read_json_object(package_dir / str(map_index.get("markers"))),
             "runtime_grids": _read_json_object(
@@ -625,6 +639,7 @@ def _package_files_have_schema_versions(package: dict[str, Any]) -> bool:
         "collision",
         "movement_costs",
         "elevation",
+        "environment_context",
         "start_goal",
         "markers",
         "runtime_grids",
@@ -657,7 +672,14 @@ def _package_dimensions_match_layers(
 ) -> bool:
     return all(
         _package_layer_dimensions_match(_json_object(package.get(key)), width=width, height=height)
-        for key in ("tile_grid", "terrain", "collision", "elevation", "start_goal")
+        for key in (
+            "tile_grid",
+            "terrain",
+            "collision",
+            "elevation",
+            "environment_context",
+            "start_goal",
+        )
     )
 
 
@@ -668,6 +690,104 @@ def _package_layer_dimensions_match(
     height: int,
 ) -> bool:
     return data.get("width") == width and data.get("height") == height
+
+
+def _package_environment_context_valid(
+    package: dict[str, Any],
+    *,
+    width: int,
+    height: int,
+) -> bool:
+    context = _json_object(package.get("environment_context"))
+    if context.get("kind") != "environment_context":
+        return False
+    grids = _json_object(context.get("grids"))
+    required_ranges = {
+        "moisture": (0, 1000),
+        "region_profile": (0, 255),
+        "slope_band": (0, 3),
+        "forest_depth": (0, 4),
+        "forest_distance": (0, 9),
+    }
+    for grid_name, (minimum, maximum) in required_ranges.items():
+        grid = _json_object(grids.get(grid_name))
+        rows = grid.get("rows")
+        if not _integer_grid_matches(
+            rows,
+            width=width,
+            height=height,
+            minimum=minimum,
+            maximum=maximum,
+        ):
+            return False
+
+    dictionaries = _json_object(context.get("dictionaries"))
+    region_dictionary = _json_object(dictionaries.get("region_profile"))
+    valid_region_codes = {
+        int(key)
+        for key in region_dictionary
+        if isinstance(key, str) and key.isdigit()
+    }
+    region_rows = _json_object(grids.get("region_profile")).get("rows")
+    if not valid_region_codes or not isinstance(region_rows, list):
+        return False
+    if any(
+        value not in valid_region_codes
+        for row in region_rows
+        if isinstance(row, list)
+        for value in row
+    ):
+        return False
+
+    terrain_rows = _json_object(package.get("terrain")).get("rows")
+    forest_depth_rows = _json_object(grids.get("forest_depth")).get("rows")
+    forest_distance_rows = _json_object(grids.get("forest_distance")).get("rows")
+    if not (
+        isinstance(terrain_rows, list)
+        and isinstance(forest_depth_rows, list)
+        and isinstance(forest_distance_rows, list)
+    ):
+        return False
+    for y in range(height):
+        terrain_row = terrain_rows[y]
+        depth_row = forest_depth_rows[y]
+        distance_row = forest_distance_rows[y]
+        if not (
+            isinstance(terrain_row, list)
+            and isinstance(depth_row, list)
+            and isinstance(distance_row, list)
+        ):
+            return False
+        for x in range(width):
+            is_forest = terrain_row[x] == "tree_blocker"
+            if (depth_row[x] > 0) != is_forest:
+                return False
+            if (distance_row[x] == 0) != is_forest:
+                return False
+    return True
+
+
+def _integer_grid_matches(
+    value: Any,
+    *,
+    width: int,
+    height: int,
+    minimum: int,
+    maximum: int,
+) -> bool:
+    if not isinstance(value, list) or len(value) != height:
+        return False
+    for row in value:
+        if not isinstance(row, list) or len(row) != width:
+            return False
+        if any(
+            not isinstance(item, int) or isinstance(item, bool)
+            or item < minimum
+            or item > maximum
+            for item in row
+        ):
+            return False
+    return True
 
 
 def _runtime_grids_have_required_grids(package: dict[str, Any]) -> bool:

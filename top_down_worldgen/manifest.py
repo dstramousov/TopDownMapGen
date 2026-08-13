@@ -8,13 +8,13 @@ from . import __version__
 from .utils.json_io import write_json
 
 
-MANIFEST_SCHEMA_VERSION = "generation-manifest-v59"
+MANIFEST_SCHEMA_VERSION = "generation-manifest-v60"
 PIPELINE_VERSION = "pipeline-v1"
 ASCII_MAP_SCHEMA_VERSION = "ascii-map-v1"
 TACTICAL_MAP_SCHEMA_VERSION = "tactical-map-v0.34"
 TACTICAL_DEBUG_SCHEMA_VERSION = "tactical-debug-v0.22"
 RAW_TACTICAL_MAP_SCHEMA_VERSION = "raw-tactical-map-v2"
-VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v35"
+VALIDATION_REPORT_SCHEMA_VERSION = "validation-report-v36"
 METRICS_SCHEMA_VERSION = "metrics-text-v1"
 ENGINE_CONFIG_SCHEMA_VERSION = "legacy-engine-config-v2"
 PNG_LAYER_SCHEMA_VERSION = "png-layer-v1"
@@ -23,12 +23,13 @@ RUNTIME_OBJECTS_SCHEMA_VERSION = "runtime-objects-v13"
 PLACES_SCHEMA_VERSION = "places-v3"
 OBJECT_CATALOG_SCHEMA_VERSION = "object-catalog-v3"
 MAP_PACKAGE_SCHEMA_VERSION = "map-package-v1"
-MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v30"
+MAP_PACKAGE_MAP_SCHEMA_VERSION = "map-package-map-v31"
 TILE_GRID_LAYER_SCHEMA_VERSION = "tile-grid-layer-v1"
 TERRAIN_LAYER_SCHEMA_VERSION = "terrain-layer-v1"
 MOVEMENT_LAYER_SCHEMA_VERSION = "movement-layer-v1"
 COLLISION_LAYER_SCHEMA_VERSION = "collision-layer-v2"
 ELEVATION_LAYER_SCHEMA_VERSION = "elevation-layer-v1"
+ENVIRONMENT_CONTEXT_LAYER_SCHEMA_VERSION = "environment-context-layer-v1"
 STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION = "structure-height-layer-v5"
 STRUCTURE_TYPE_LAYER_SCHEMA_VERSION = "structure-type-layer-v1"
 STRUCTURE_MICRO_GEOMETRY_LAYER_SCHEMA_VERSION = "structure-micro-geometry-layer-v12"
@@ -149,6 +150,7 @@ def build_manifest(
         "movement_layer": MOVEMENT_LAYER_SCHEMA_VERSION,
         "collision_layer": COLLISION_LAYER_SCHEMA_VERSION,
         "elevation_layer": ELEVATION_LAYER_SCHEMA_VERSION,
+        "environment_context_layer": ENVIRONMENT_CONTEXT_LAYER_SCHEMA_VERSION,
         "structure_height_layer": STRUCTURE_HEIGHT_LAYER_SCHEMA_VERSION,
         "structure_type_layer": STRUCTURE_TYPE_LAYER_SCHEMA_VERSION,
         "structure_micro_geometry_layer": STRUCTURE_MICRO_GEOMETRY_LAYER_SCHEMA_VERSION,

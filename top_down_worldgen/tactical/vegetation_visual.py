@@ -5,6 +5,7 @@ from hashlib import blake2b
 from collections import deque
 from typing import Any
 
+from .environment_context import build_forest_depth_rows
 from .traversal import DEFAULT_TRAVERSAL_RULES
 
 
@@ -79,7 +80,7 @@ def build_visual_vegetation(
     reclaimed_edge_bushes = 0
     reclaimed_altitude_bushes = 0
     by_level: dict[int, dict[str, int]] = {}
-    forest_edge_depths = _forest_edge_depths(terrain_rows)
+    forest_edge_depths = build_forest_depth_rows(terrain_rows)
 
     for y, terrain_row in enumerate(terrain_rows):
         output_row: list[str] = []
@@ -433,56 +434,6 @@ def _walkable_components(
         )
     )
     return components
-
-
-def _forest_edge_depths(terrain_rows: list[list[str]]) -> list[list[int]]:
-    """Return tree depth from the original forest boundary.
-
-    Args:
-        terrain_rows: Semantic terrain rows before visual thinning.
-
-    Returns:
-        Per-tile forest depth where edge trees have depth one.
-    """
-    height = len(terrain_rows)
-    width = len(terrain_rows[0]) if height else 0
-    depths = [[0 for _ in range(width)] for _ in range(height)]
-    frontier: list[tuple[int, int]] = []
-
-    for y, row in enumerate(terrain_rows):
-        for x, terrain in enumerate(row):
-            if terrain != TREE_TERRAIN:
-                continue
-            if _touches_non_tree(terrain_rows, x=x, y=y):
-                depths[y][x] = 1
-                frontier.append((x, y))
-
-    index = 0
-    while index < len(frontier):
-        x, y = frontier[index]
-        index += 1
-        depth = depths[y][x]
-        if depth >= FOREST_EDGE_DEPTH:
-            continue
-        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
-            if not (0 <= ny < height and 0 <= nx < len(terrain_rows[ny])):
-                continue
-            if terrain_rows[ny][nx] != TREE_TERRAIN or depths[ny][nx] != 0:
-                continue
-            depths[ny][nx] = depth + 1
-            frontier.append((nx, ny))
-    return depths
-
-
-def _touches_non_tree(terrain_rows: list[list[str]], *, x: int, y: int) -> bool:
-    for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
-        if ny < 0 or ny >= len(terrain_rows):
-            return True
-        if nx < 0 or nx >= len(terrain_rows[ny]):
-            return True
-        if terrain_rows[ny][nx] != TREE_TERRAIN:
-            return True
-    return False
 
 
 def _forest_edge_keep_probability(depth: int) -> float:

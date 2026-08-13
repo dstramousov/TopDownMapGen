@@ -32,6 +32,9 @@ def test_output_paths_include_map_package_paths(tmp_path: Path) -> None:
     assert outputs.map_package_terrain.as_posix().endswith(
         "map_package/layers/terrain.json",
     )
+    assert outputs.map_package_environment_context.as_posix().endswith(
+        "map_package/layers/environment_context.json",
+    )
     assert outputs.map_package_start_goal.as_posix().endswith(
         "map_package/layers/start_goal.json",
     )

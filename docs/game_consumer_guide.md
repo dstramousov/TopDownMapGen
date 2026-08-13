@@ -47,6 +47,16 @@ render/tile_render_hints.json
 render/object_render_hints.json
 ```
 
+Если renderer должен выбирать землю/флору по окружению, дополнительно загружай:
+
+```text
+layers/environment_context.json
+```
+
+Этот слой даёт moisture, крупный region profile, slope, глубину внутри леса и
+локальную дистанцию до леса. Он не содержит конкретных texture/sprite IDs:
+сопоставление environmental signals с арт-каталогом остаётся задачей renderer-а.
+
 `height_grid` не обязан означать настоящую 3D-геометрию. Это gameplay elevation contract. Renderer может использовать его как высоту колонны, как tint, как shadow layer или как сортировочный bias.
 
 ## Water and low ground

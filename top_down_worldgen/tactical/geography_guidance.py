@@ -42,7 +42,7 @@ def build_geography_guidance_payload(model: NaturalGeographyModel) -> dict[str, 
         [delta / max(1, max_slope) for delta in row]
         for row in model.slope_rows
     ]
-    terrain_profiles = _terrain_profile_items(model)
+    terrain_profiles = terrain_profile_items(model)
     initial_terrain_rows = _initial_terrain_rows(
         model,
         terrain_profiles=terrain_profiles,
@@ -88,7 +88,7 @@ def _quantize_rows(rows: list[list[float]]) -> list[list[int]]:
     ]
 
 
-def _terrain_profile_items(model: NaturalGeographyModel) -> list[dict[str, Any]]:
+def terrain_profile_items(model: NaturalGeographyModel) -> list[dict[str, Any]]:
     """Assign one deterministic terrain profile to every macro region."""
     items: list[dict[str, Any]] = []
     for index, region in enumerate(model.draft.macro_regions):

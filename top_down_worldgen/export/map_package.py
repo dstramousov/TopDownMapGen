@@ -8,6 +8,7 @@ from top_down_worldgen import __version__
 from top_down_worldgen.manifest import (
     COLLISION_LAYER_SCHEMA_VERSION,
     ELEVATION_LAYER_SCHEMA_VERSION,
+    ENVIRONMENT_CONTEXT_LAYER_SCHEMA_VERSION,
     ELEVATION_MODEL_SCHEMA_VERSION,
     ELEVATION_FEATURES_SCHEMA_VERSION,
     ELEVATION_TRANSITIONS_SCHEMA_VERSION,
@@ -39,6 +40,8 @@ from top_down_worldgen.manifest import (
     VEGETATION_VISUAL_SCHEMA_VERSION,
 )
 from top_down_worldgen.paths import OutputPaths
+from top_down_worldgen.tactical.environment_context import build_environment_context
+from top_down_worldgen.tactical.geography_draft import NaturalGeographyModel
 from top_down_worldgen.runtime_binary import RuntimeBinarySource, write_runtime_binary
 from top_down_worldgen.structure_height import build_structure_height
 from top_down_worldgen.structure_top_geometry import (
@@ -82,6 +85,7 @@ def write_map_package(
     resolved_seed: int,
     profile: str,
     generation_tuning: dict[str, Any] | None = None,
+    natural_geography: NaturalGeographyModel,
 ) -> None:
     """Write the structured map package next to legacy outputs.
 
@@ -97,6 +101,7 @@ def write_map_package(
         resolved_seed: Concrete uint64 seed used for the run.
         profile: Objective profile name.
         generation_tuning: Optional user-facing world density tuning scales.
+        natural_geography: Natural geography used to derive ecological context.
     """
     outputs.map_package_dir.mkdir(parents=True, exist_ok=True)
     outputs.map_package_layers_dir.mkdir(parents=True, exist_ok=True)
@@ -112,6 +117,10 @@ def write_map_package(
         movement_costs = _dict(map_data.get("movement_costs"))
     tile_legend = _dict(map_data.get("tile_legend"))
     terrain_rows = _terrain_rows(tile_grid, tile_legend)
+    environment_context = build_environment_context(
+        natural_geography=natural_geography,
+        terrain_rows=terrain_rows,
+    )
     points = _extract_points(tile_grid)
     collision = _build_collision_layer(
         tile_grid=tile_grid,
@@ -166,6 +175,12 @@ def write_map_package(
             "elevation": _dict(runtime_data.get("elevation")),
         },
         outputs.map_package_elevation,
+    )
+    write_json(
+        environment_context.to_payload(
+            schema_version=ENVIRONMENT_CONTEXT_LAYER_SCHEMA_VERSION,
+        ),
+        outputs.map_package_environment_context,
     )
     write_json(
         {
@@ -557,6 +572,7 @@ def write_map_package(
                 "movement_costs": "layers/movement_costs.json",
                 "collision": "layers/collision.json",
                 "elevation": "layers/elevation.json",
+                "environment_context": "layers/environment_context.json",
                 "structure_height": "layers/structure_height.json",
                 "structure_type": "layers/structure_type.json",
                 "structure_micro_geometry": "layers/structure_micro_geometry.json",
@@ -616,6 +632,7 @@ def map_package_artifact_paths(outputs: OutputPaths) -> list[Path]:
         outputs.map_package_movement_costs,
         outputs.map_package_collision,
         outputs.map_package_elevation,
+        outputs.map_package_environment_context,
         outputs.map_package_structure_height,
         outputs.map_package_vegetation_type,
         outputs.map_package_vegetation_height,

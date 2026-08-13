@@ -4,6 +4,10 @@ from pathlib import Path
 
 from top_down_worldgen.export.map_package import write_map_package
 from top_down_worldgen.paths import OutputPaths
+from top_down_worldgen.tactical.elevation import (
+    build_geography_draft,
+    build_natural_geography_model,
+)
 from top_down_worldgen.tactical.runtime_objects import (
     RUNTIME_OBJECT_TYPE_BY_NAME,
     attach_runtime_layers,
@@ -247,6 +251,11 @@ def test_validation_report_accepts_consistent_tactical_data(tmp_path: Path) -> N
         seed="test",
         resolved_seed=42,
         profile="test",
+        natural_geography=_build_test_natural_geography(
+            width=runtime_data["map"]["width"],
+            height=runtime_data["map"]["height"],
+            seed=42,
+        ),
     )
 
     report = build_validation_report(
@@ -297,6 +306,11 @@ def test_validation_report_rejects_broken_tile_counts(tmp_path: Path) -> None:
         seed="test",
         resolved_seed=42,
         profile="test",
+        natural_geography=_build_test_natural_geography(
+            width=runtime_data["map"]["width"],
+            height=runtime_data["map"]["height"],
+            seed=42,
+        ),
     )
 
     report = build_validation_report(
@@ -310,3 +324,19 @@ def test_validation_report_rejects_broken_tile_counts(tmp_path: Path) -> None:
 
     assert report["status"] == "failed"
     assert "tile_counts_match_grid" in report["errors"]
+
+def _build_test_natural_geography(*, width: int, height: int, seed: int):
+    """Build deterministic natural geography for map-package tests."""
+    draft = build_geography_draft(
+        width=width,
+        height=height,
+        seed=seed,
+        elevation_style="normal",
+    )
+    return build_natural_geography_model(
+        width=width,
+        height=height,
+        seed=seed,
+        elevation_style="normal",
+        geography_draft=draft,
+    )

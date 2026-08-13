@@ -5,6 +5,10 @@ from pathlib import Path
 
 from top_down_worldgen.export.map_package import write_map_package
 from top_down_worldgen.paths import OutputPaths
+from top_down_worldgen.tactical.elevation import (
+    build_geography_draft,
+    build_natural_geography_model,
+)
 
 
 def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
@@ -42,6 +46,11 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         seed="random",
         resolved_seed=42,
         profile="clear_map",
+        natural_geography=_build_test_natural_geography(
+            width=2,
+            height=2,
+            seed=42,
+        ),
     )
 
     package_index = json.loads(outputs.map_package_map.read_text(encoding="utf-8"))
@@ -51,6 +60,9 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_movement_costs.read_text(encoding="utf-8"),
     )
     collision = json.loads(outputs.map_package_collision.read_text(encoding="utf-8"))
+    environment_context = json.loads(
+        outputs.map_package_environment_context.read_text(encoding="utf-8"),
+    )
     structure_height = json.loads(
         outputs.map_package_structure_height.read_text(encoding="utf-8"),
     )
@@ -107,7 +119,7 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
         outputs.map_package_object_render_hints.read_text(encoding="utf-8"),
     )
 
-    assert package_index["schema_version"] == "map-package-map-v30"
+    assert package_index["schema_version"] == "map-package-map-v31"
     assert package_index["dimensions"]["width_tiles"] == 2
     assert package_index["points"]["start"] == {"x": 0, "y": 0}
     assert package_index["points"]["goal"] == {"x": 1, "y": 1}
@@ -126,6 +138,9 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert package_index["elevation_transitions"] == "elevation_transitions.json"
     assert package_index["layers"]["collision"] == "layers/collision.json"
     assert package_index["layers"]["terrain"] == "layers/terrain.json"
+    assert package_index["layers"]["environment_context"] == (
+        "layers/environment_context.json"
+    )
     assert package_index["layers"]["structure_height"] == (
         "layers/structure_height.json"
     )
@@ -157,6 +172,13 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert movement["costs_by_type"]["grass"] == 1
     assert collision["format"] == "boolean_rows"
     assert collision["rows"] == ["00", "00"]
+    assert environment_context["schema_version"] == "environment-context-layer-v1"
+    assert environment_context["kind"] == "environment_context"
+    assert environment_context["width"] == 2
+    assert environment_context["height"] == 2
+    assert environment_context["grids"]["moisture"]["scale"] == 1000
+    assert environment_context["grids"]["forest_depth"]["rows"] == [[0, 0], [0, 0]]
+    assert environment_context["grids"]["forest_distance"]["rows"] == [[9, 9], [9, 9]]
     assert structure_height["schema_version"] == "structure-height-layer-v5"
     assert structure_height["units"] == "logical_levels_above_ground"
     assert structure_height["ground_reference"] == "elevation_plus_one"
@@ -204,3 +226,19 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert "terrain" in render_profile["draw_order"]
     assert tile_render_hints["hints"]["grass"]["visual_group"] == "terrain/grass"
     assert object_render_hints["hints"]["stone_chunk"]["render_mode"] == "sprite"
+
+def _build_test_natural_geography(*, width: int, height: int, seed: int):
+    """Build deterministic natural geography for map-package tests."""
+    draft = build_geography_draft(
+        width=width,
+        height=height,
+        seed=seed,
+        elevation_style="normal",
+    )
+    return build_natural_geography_model(
+        width=width,
+        height=height,
+        seed=seed,
+        elevation_style="normal",
+        geography_draft=draft,
+    )
