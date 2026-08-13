@@ -1333,3 +1333,13 @@
 - Общая логика object-owned elevation вынесена в `runtime_object_elevation_overrides()` и переиспользуется как при первичном attach runtime objects, так и после поздних terrain passes.
 - Добавлен регрессионный тест на сочетание shore-fortress у максимальной высоты и траншеи внутри materialization mask.
 - Версия проекта поднята до `0.0.154`.
+
+
+## v0.0.154 -> v0.0.155
+
+- Добавлен отдельный renderer `examples/render_environment_context_previews.py` для визуальной проверки публичного Environment Context без изменения генерации мира.
+- Стандартный `./r` теперь создаёт девять Environment Context preview: moisture, region profile, slope, forest depth, четыре proximity-поля и сводный dominant flora influence.
+- Distance-preview явно показывают диапазоны `0..8` и `9+`, чтобы глазами проверять форму proximity-halo вокруг леса, воды, дорог и структур.
+- `environment_flora_context_preview.png` является только debug-интерпретацией и не создаёт нового authoritative biome layer и не выбирает `PlantsXXX`.
+- Debug-файлы добавлены в world summary, документация map package дополнена правилами использования preview.
+- Версия проекта поднята до `0.0.155`.

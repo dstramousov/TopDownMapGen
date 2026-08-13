@@ -97,6 +97,10 @@ run_stage "уклоны" \
     --slope-only --grid --cell-size 16 \
     --output output/slope_preview.png
 
+run_stage "Environment Context" \
+  python3 examples/render_environment_context_previews.py output \
+    --cell-size 4
+
 run_stage "изменения traversal repair" \
   python3 examples/render_traversal_repair_preview.py output \
     --cell-size 4 \
@@ -120,6 +124,6 @@ run_stage "3D-местность и проходимость" \
 
 print_summary
 printf '  общее время: %d с\n' "$((SECONDS - TOTAL_STARTED))"
-printf '  preview: 24 файла в output/ и output/geography_3d_preview/\n'
+printf '  preview: 33 файла в output/ и output/geography_3d_preview/\n'
 
 open output/

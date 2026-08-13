@@ -667,6 +667,17 @@ def _build_debug_files(*, outputs: OutputPaths, render_enabled: bool) -> dict[st
         "moisture_preview": outputs.output_dir / "moisture_preview.png",
         "water_lowland_preview": outputs.output_dir / "water_lowland_preview.png",
         "slope_preview": outputs.output_dir / "slope_preview.png",
+        "environment_moisture": outputs.output_dir / "environment_moisture.png",
+        "environment_region_profile": outputs.output_dir / "environment_region_profile.png",
+        "environment_slope": outputs.output_dir / "environment_slope.png",
+        "environment_forest_depth": outputs.output_dir / "environment_forest_depth.png",
+        "environment_forest_distance": outputs.output_dir / "environment_forest_distance.png",
+        "environment_water_distance": outputs.output_dir / "environment_water_distance.png",
+        "environment_road_distance": outputs.output_dir / "environment_road_distance.png",
+        "environment_structure_distance": outputs.output_dir / "environment_structure_distance.png",
+        "environment_flora_context_preview": (
+            outputs.output_dir / "environment_flora_context_preview.png"
+        ),
         "3d_preview_nw": outputs.output_dir / "geography_3d_preview" / "view_nw.png",
         "3d_preview_ne": outputs.output_dir / "geography_3d_preview" / "view_ne.png",
         "3d_preview_se": outputs.output_dir / "geography_3d_preview" / "view_se.png",

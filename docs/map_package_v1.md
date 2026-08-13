@@ -175,3 +175,38 @@ negative level != water
 ## Совместимость
 
 `map_package/` является основным контрактом. Legacy-файлы рядом с ним (`generated_map.txt`, `tactical_map.json`, `validation_report.json`) остаются для диагностики и обратной совместимости, но новая игра должна начинать чтение с `map_package/map.json`.
+
+
+## Environment Context debug preview
+
+Стандартный development-run `./r` дополнительно создаёт в `output/` девять
+диагностических PNG по публичному `layers/environment_context.json`:
+
+```text
+environment_moisture.png
+environment_region_profile.png
+environment_slope.png
+environment_forest_depth.png
+environment_forest_distance.png
+environment_water_distance.png
+environment_road_distance.png
+environment_structure_distance.png
+environment_flora_context_preview.png
+```
+
+Первые восемь изображений являются прямой визуализацией соответствующих public
+grids. Distance-preview показывают пояса `0..8` и отдельное значение `9+`, что
+позволяет глазами проверять форму proximity-halo вокруг леса, воды, дорог и
+структур.
+
+`environment_flora_context_preview.png` — **только диагностическая интерпретация**.
+Она показывает доминирующее визуальное влияние (`MEADOW`, `FOREST_EDGE`,
+`DEEP_FOREST`, `RIPARIAN_WETLAND`, `DRY_UPLAND`, `ROCKY_RUGGED`, `DISTURBED`) и
+не является новым authoritative biome layer, не экспортируется в map package и
+не выбирает конкретные flora assets.
+
+Renderer можно запустить отдельно:
+
+```bash
+python3 examples/render_environment_context_previews.py output --cell-size 4
+```
