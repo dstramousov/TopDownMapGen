@@ -9,6 +9,9 @@ from typing import Any
 
 from PIL import Image
 
+from .elevation import MAX_ELEVATION_LEVEL
+from .runtime_objects import runtime_object_elevation_overrides
+
 
 SHORELINE_LEVEL = 0
 INTERIOR_LEVEL = 1
@@ -135,7 +138,11 @@ def materialize_lake_island(
                 _level_for_mask(mask)
                 if placement == "island"
                 else _terrain_fitted_level(
-                    geographic_rows, x=x, y=y, mask=mask
+                    geographic_rows,
+                    x=x,
+                    y=y,
+                    mask=mask,
+                    max_level=MAX_ELEVATION_LEVEL,
                 )
             )
             island_tiles += 1
@@ -147,6 +154,11 @@ def materialize_lake_island(
                 changed_tiles += 1
             geographic_rows[y][x] = level
             runtime_rows[y][x] = level
+
+    _restore_runtime_object_elevation(
+        runtime_rows,
+        runtime_object_elevation_overrides(runtime_data.get("runtime_objects")),
+    )
 
     slope_rows = _slope_rows(geographic_rows)
     grids["geographic_level_grid"] = {"rows": geographic_rows}
@@ -339,9 +351,14 @@ def _choose_entrance_anchor(
 
 
 def _terrain_fitted_level(
-    rows: list[list[int]], *, x: int, y: int, mask: int
+    rows: list[list[int]],
+    *,
+    x: int,
+    y: int,
+    mask: int,
+    max_level: int,
 ) -> int:
-    """Return a locally fitted construction level for shore/inland sites."""
+    """Return a bounded locally fitted construction level."""
     height = len(rows)
     width = len(rows[0]) if rows else 0
     values: list[int] = []
@@ -350,9 +367,25 @@ def _terrain_fitted_level(
             if rows[ny][nx] >= 0:
                 values.append(rows[ny][nx])
     base = round(sum(values) / len(values)) if values else max(0, rows[y][x])
-    if mask == MASK_CORE:
-        return base + 1
-    return base
+    level = base + 1 if mask == MASK_CORE else base
+    return min(level, max_level)
+
+
+def _restore_runtime_object_elevation(
+    rows: list[list[int]],
+    overrides: dict[tuple[int, int], int],
+) -> None:
+    """Reapply object-owned runtime elevation after terrain shaping.
+
+    Args:
+        rows: Mutable runtime elevation grid.
+        overrides: Object-owned elevation values keyed by tile coordinate.
+    """
+    height = len(rows)
+    width = len(rows[0]) if rows else 0
+    for (x, y), level in overrides.items():
+        if 0 <= x < width and 0 <= y < height:
+            rows[y][x] = level
 
 
 def _level_for_mask(mask: int) -> int:

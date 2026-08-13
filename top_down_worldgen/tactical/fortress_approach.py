@@ -10,11 +10,13 @@ from .fortress_island import (
     _copy_int_rows,
     _refresh_mask_grid,
     _refresh_water_grid,
+    _restore_runtime_object_elevation,
     _slope_report,
     _slope_rows,
     _sparse_cells,
     _summary,
 )
+from .runtime_objects import runtime_object_elevation_overrides
 
 SHALLOW_LEVEL = -1
 PATH_LEVEL = 0
@@ -168,6 +170,11 @@ def materialize_shallow_fortress_approach(
                 runtime_rows[y][x] = PATH_LEVEL
                 mutable_rows[y][x] = "."
                 path_tiles += 1
+
+    _restore_runtime_object_elevation(
+        runtime_rows,
+        runtime_object_elevation_overrides(runtime_data.get("runtime_objects")),
+    )
 
     slope_rows = _slope_rows(geographic_rows)
     grids["geographic_level_grid"] = {"rows": geographic_rows}

@@ -137,6 +137,72 @@ def test_lake_island_materialization_builds_deterministic_island() -> None:
     assert max(max(row) for row in grids["geographic_level_grid"]["rows"]) == 2
 
 
+def test_shore_materialization_clamps_height_and_preserves_trench() -> None:
+    from top_down_worldgen.tactical.elevation import MAX_ELEVATION_LEVEL
+    from top_down_worldgen.tactical.fortress_island import materialize_lake_island
+
+    size = 48
+    center = 24
+    geographic_rows = [
+        [MAX_ELEVATION_LEVEL for _ in range(size)] for _ in range(size)
+    ]
+    runtime_rows = [list(row) for row in geographic_rows]
+    runtime_rows[center][center] = -1
+    runtime_data = {
+        "runtime_objects": [
+            {
+                "id": "trench_test",
+                "type": "trench",
+                "footprint": [[center, center]],
+            },
+        ],
+        "elevation": {
+            "default": 0,
+            "cells": [],
+            "range": [-5, MAX_ELEVATION_LEVEL],
+            "summary": {},
+        },
+        "elevation_generation_report": {
+            "summary": {},
+            "geography": {
+                "grids": {
+                    "geographic_level_grid": {"rows": geographic_rows},
+                    "runtime_level_grid": {"rows": runtime_rows},
+                    "slope_grid": {
+                        "rows": [[0 for _ in range(size)] for _ in range(size)]
+                    },
+                },
+            },
+        },
+    }
+    site_report = {
+        "status": "selected",
+        "resolved_placement": "shore",
+        "selected_site": {"center": {"x": center, "y": center}},
+        "requirements": {"island_radius_tiles": 8},
+    }
+
+    result = materialize_lake_island(
+        runtime_data=runtime_data,
+        site_report=site_report,
+        seed=42,
+        elevation_style="normal",
+    )
+
+    grids = result.runtime_data["elevation_generation_report"]["geography"]["grids"]
+    geographic = grids["geographic_level_grid"]["rows"]
+    runtime = grids["runtime_level_grid"]["rows"]
+    assert max(max(row) for row in geographic) == MAX_ELEVATION_LEVEL
+    assert max(max(row) for row in runtime) == MAX_ELEVATION_LEVEL
+    assert runtime[center][center] == -1
+    trench_cell = next(
+        cell
+        for cell in result.runtime_data["elevation"]["cells"]
+        if cell["x"] == center and cell["y"] == center
+    )
+    assert trench_cell["level"] == -1
+
+
 def test_lake_island_fortress_plan_has_round_towers_and_gate() -> None:
     from top_down_worldgen.tactical.fortress_island import materialize_lake_island
     from top_down_worldgen.tactical.fortress_plan import (

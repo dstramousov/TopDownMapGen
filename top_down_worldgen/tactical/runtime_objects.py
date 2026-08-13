@@ -1593,15 +1593,37 @@ def _attach_trench_elevation(
             existing.add((int(cell.get("x")), int(cell.get("y"))))
         except (TypeError, ValueError):
             continue
+    for (x, y), level in runtime_object_elevation_overrides(objects).items():
+        if (x, y) in existing:
+            continue
+        cells.append({"x": x, "y": y, "level": level})
+        existing.add((x, y))
+
+
+def runtime_object_elevation_overrides(
+    objects: Any,
+) -> dict[tuple[int, int], int]:
+    """Return deterministic runtime elevation overrides from world objects.
+
+    Args:
+        objects: Runtime object collection.
+
+    Returns:
+        Mapping from tile coordinates to non-default object elevation levels.
+        When multiple objects overlap, the first object keeps ownership of the tile.
+    """
+    if not isinstance(objects, list):
+        return {}
+    overrides: dict[tuple[int, int], int] = {}
     for item in objects:
+        if not isinstance(item, dict):
+            continue
         level = _object_elevation_level(item)
         if level is None or level == DEFAULT_ELEVATION_LEVEL:
             continue
-        for x, y in _object_footprint_points(item):
-            if (x, y) in existing:
-                continue
-            cells.append({"x": x, "y": y, "level": level})
-            existing.add((x, y))
+        for point in _object_footprint_points(item):
+            overrides.setdefault(point, level)
+    return overrides
 
 
 def _object_elevation_level(item: dict[str, Any]) -> int | None:
