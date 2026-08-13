@@ -54,8 +54,10 @@ layers/environment_context.json
 ```
 
 Этот слой даёт moisture, крупный region profile, slope, глубину внутри леса и
-локальную дистанцию до леса. Он не содержит конкретных texture/sprite IDs:
-сопоставление environmental signals с арт-каталогом остаётся задачей renderer-а.
+локальные proximity grids до леса, воды, дорог и structural geometry. Значение `0`
+означает нахождение на semantic source, `9` — расстояние `9+` тайлов. Он не содержит
+конкретных texture/sprite IDs: сопоставление environmental signals с арт-каталогом
+остаётся задачей renderer-а.
 
 `height_grid` не обязан означать настоящую 3D-геометрию. Это gameplay elevation contract. Renderer может использовать его как высоту колонны, как tint, как shadow layer или как сортировочный bias.
 

@@ -33,7 +33,7 @@ unit: tile
 | `layers/collision.json` | Terrain-derived collision: `0` passable, `1` blocked. |
 | `layers/movement_costs.json` | Стоимость движения по типам тайлов. |
 | `layers/elevation.json` | Legacy-compatible elevation block из tactical map. |
-| `layers/environment_context.json` | Производный экологический контекст: moisture, macro-region profile, slope и лесная кромка/дистанция. |
+| `layers/environment_context.json` | Производный экологический контекст: moisture, macro-region profile, slope, лесной контекст и proximity к воде, дорогам и структурам. |
 | `layers/start_goal.json` | Start/goal в tile coordinates. |
 | `runtime_grids.json` | Runtime-ready grids: movement, collision, projectile, vision, cover, concealment, height. |
 | `elevation_model.json` | Семантика уровней высоты, правила движения/LOS/projectiles. |
@@ -55,10 +55,10 @@ unit: tile
 осмысленного rendering-а земли и флоры. Он не хранит конкретные asset IDs и не
 меняет authoritative terrain/gameplay data.
 
-Schema первой версии:
+Текущая schema:
 
 ```text
-environment-context-layer-v1
+environment-context-layer-v2
 ```
 
 Основные grids:
@@ -70,10 +70,20 @@ environment-context-layer-v1
 | `slope_band` | `0..3` | `flat`, `gentle`, `steep`, `cliff`. |
 | `forest_depth` | `0..4` | Глубина внутри semantic forest; `4` означает четыре тайла и глубже. |
 | `forest_distance` | `0..9` | Локальная дистанция до semantic forest; `9` означает девять тайлов и дальше. |
+| `water_distance` | `0..9` | Дистанция до semantic water; `0` — вода, `9` — девять тайлов и дальше. |
+| `road_distance` | `0..9` | Дистанция до semantic road/path terrain; `0` — дорога. |
+| `structure_distance` | `0..9` | Дистанция до non-zero `structure_type`; `0` — structural footprint. |
+
+Все proximity grids используют 8-neighbor chamfer distance с ортогональным шагом
+`10` и диагональным `14`. Значения `0..8` являются полезной локальной дистанцией,
+`9` — насыщенный sentinel `9+`. Это уменьшает размер данных и не создаёт искусственных
+ромбических halos, характерных для Manhattan distance.
 
 `forest_depth` и `forest_distance` строятся от semantic terrain `tree_blocker`, а
 не от прореженного visual tree mask. Поэтому художественное thinning деревьев не
-разрушает экологический смысл лесного массива.
+разрушает экологический смысл лесного массива. `water_distance` и `road_distance`
+строятся от semantic terrain types, а `structure_distance` — от публичной
+`structure_type` geometry, включая крепость и руины.
 
 Конкретные PNG/спрайты должен выбирать consumer-side `FloraResolver`. Например,
 Vox3D может смешивать профиль лесной кромки с влажным профилем возле воды, не

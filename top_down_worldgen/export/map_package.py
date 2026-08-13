@@ -117,9 +117,15 @@ def write_map_package(
         movement_costs = _dict(map_data.get("movement_costs"))
     tile_legend = _dict(map_data.get("tile_legend"))
     terrain_rows = _terrain_rows(tile_grid, tile_legend)
+    structure_geometry = build_structure_geometry(
+        terrain_rows=terrain_rows,
+        fortress_plan=runtime_data.get("fortress_plan"),
+        ruin_sites=runtime_data.get("ruin_sites"),
+    )
     environment_context = build_environment_context(
         natural_geography=natural_geography,
         terrain_rows=terrain_rows,
+        structure_type_rows=structure_geometry.type_rows,
     )
     points = _extract_points(tile_grid)
     collision = _build_collision_layer(
@@ -221,11 +227,6 @@ def write_map_package(
     )
     final_elevation_rows = _integer_rows(
         _dict(runtime_grid_items.get("height_grid")).get("rows"),
-    )
-    structure_geometry = build_structure_geometry(
-        terrain_rows=terrain_rows,
-        fortress_plan=runtime_data.get("fortress_plan"),
-        ruin_sites=runtime_data.get("ruin_sites"),
     )
     structure_height = build_structure_height(
         terrain_rows=terrain_rows,

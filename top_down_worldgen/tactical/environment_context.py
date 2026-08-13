@@ -9,8 +9,33 @@ from .geography_guidance import terrain_profile_items
 
 MOISTURE_SCALE = 1_000
 FOREST_DEPTH_MAX = 4
-FOREST_DISTANCE_FAR = 9
+PROXIMITY_DISTANCE_FAR = 9
+PROXIMITY_MAX_EXACT = PROXIMITY_DISTANCE_FAR - 1
 TREE_TERRAIN = "tree_blocker"
+ROAD_TERRAINS = frozenset(
+    {
+        "old_overgrown_road",
+        "road",
+        "path",
+        "dirt_road",
+        "overgrown_road",
+    }
+)
+WATER_TERRAINS = frozenset(
+    {
+        "water",
+        "water_slow",
+        "shallow_water",
+        "deep_water",
+        "deep_water_blocker",
+        "standing_water",
+        "swamp",
+    }
+)
+
+_CHAMFER_ORTHOGONAL_COST = 10
+_CHAMFER_DIAGONAL_COST = 14
+_CHAMFER_FAR_COST = PROXIMITY_DISTANCE_FAR * _CHAMFER_ORTHOGONAL_COST
 
 REGION_PROFILE_NAMES: tuple[str, ...] = (
     "dense_forest",
@@ -43,6 +68,9 @@ class EnvironmentContextResult:
     slope_band_rows: list[list[int]]
     forest_depth_rows: list[list[int]]
     forest_distance_rows: list[list[int]]
+    water_distance_rows: list[list[int]]
+    road_distance_rows: list[list[int]]
+    structure_distance_rows: list[list[int]]
     summary: dict[str, Any]
 
     def to_payload(self, *, schema_version: str) -> dict[str, Any]:
@@ -61,9 +89,13 @@ class EnvironmentContextResult:
             "height": self.height,
             "rules": {
                 "forest_terrain": TREE_TERRAIN,
+                "road_terrains": sorted(ROAD_TERRAINS),
+                "water_terrains": sorted(WATER_TERRAINS),
+                "structure_source": "structure_type_nonzero",
                 "forest_depth_max": FOREST_DEPTH_MAX,
-                "forest_distance_far_value": FOREST_DISTANCE_FAR,
-                "forest_distance_metric": "8_neighbor_chamfer_10_14",
+                "proximity_max_exact_tiles": PROXIMITY_MAX_EXACT,
+                "proximity_far_value": PROXIMITY_DISTANCE_FAR,
+                "proximity_metric": "8_neighbor_chamfer_10_14",
             },
             "dictionaries": {
                 "region_profile": {
@@ -96,12 +128,18 @@ class EnvironmentContextResult:
                     "value_4_means": "4_or_more",
                     "rows": self.forest_depth_rows,
                 },
-                "forest_distance": {
-                    "format": "uint8_rows",
-                    "range": [0, FOREST_DISTANCE_FAR],
-                    "far_value": FOREST_DISTANCE_FAR,
-                    "rows": self.forest_distance_rows,
-                },
+                "forest_distance": _distance_grid_payload(
+                    self.forest_distance_rows,
+                ),
+                "water_distance": _distance_grid_payload(
+                    self.water_distance_rows,
+                ),
+                "road_distance": _distance_grid_payload(
+                    self.road_distance_rows,
+                ),
+                "structure_distance": _distance_grid_payload(
+                    self.structure_distance_rows,
+                ),
             },
             "summary": self.summary,
         }
@@ -111,12 +149,15 @@ def build_environment_context(
     *,
     natural_geography: NaturalGeographyModel,
     terrain_rows: list[list[str]],
+    structure_type_rows: list[list[int]],
 ) -> EnvironmentContextResult:
     """Build deterministic ecological context from existing world semantics.
 
     Args:
         natural_geography: Natural geography produced before terrain placement.
         terrain_rows: Final semantic terrain rows from the public map package.
+        structure_type_rows: Final semantic structure-type grid where zero means
+            no structure.
 
     Returns:
         Derived environment-context grids and diagnostics.
@@ -127,6 +168,12 @@ def build_environment_context(
     width = natural_geography.width
     height = natural_geography.height
     _validate_terrain_rows(terrain_rows, width=width, height=height)
+    _validate_integer_rows(
+        structure_type_rows,
+        width=width,
+        height=height,
+        name="structure_type",
+    )
     natural_geography.validate_for(
         width=width,
         height=height,
@@ -142,6 +189,9 @@ def build_environment_context(
     region_profile_rows = _region_profile_rows(natural_geography)
     forest_depth_rows = build_forest_depth_rows(terrain_rows)
     forest_distance_rows = build_forest_distance_rows(terrain_rows)
+    water_distance_rows = build_water_distance_rows(terrain_rows)
+    road_distance_rows = build_road_distance_rows(terrain_rows)
+    structure_distance_rows = build_structure_distance_rows(structure_type_rows)
 
     return EnvironmentContextResult(
         width=width,
@@ -151,11 +201,17 @@ def build_environment_context(
         slope_band_rows=slope_band_rows,
         forest_depth_rows=forest_depth_rows,
         forest_distance_rows=forest_distance_rows,
+        water_distance_rows=water_distance_rows,
+        road_distance_rows=road_distance_rows,
+        structure_distance_rows=structure_distance_rows,
         summary=_build_summary(
             moisture_rows=moisture_rows,
             region_profile_rows=region_profile_rows,
             slope_band_rows=slope_band_rows,
             forest_depth_rows=forest_depth_rows,
+            water_distance_rows=water_distance_rows,
+            road_distance_rows=road_distance_rows,
+            structure_distance_rows=structure_distance_rows,
         ),
     )
 
@@ -188,14 +244,13 @@ def build_forest_depth_rows(terrain_rows: list[list[str]]) -> list[list[int]]:
         x, y = frontier[index]
         index += 1
         depth = depths[y][x]
-        if depth >= FOREST_DEPTH_MAX:
-            continue
+        next_depth = min(FOREST_DEPTH_MAX, depth + 1)
         for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
             if not (0 <= nx < width and 0 <= ny < height):
                 continue
             if terrain_rows[ny][nx] != TREE_TERRAIN or depths[ny][nx] != 0:
                 continue
-            depths[ny][nx] = depth + 1
+            depths[ny][nx] = next_depth
             frontier.append((nx, ny))
     return depths
 
@@ -210,15 +265,105 @@ def build_forest_distance_rows(terrain_rows: list[list[str]]) -> list[list[int]]
         Tile-distance rows where forest is zero and nine means nine or more
         tiles away, using a two-pass 8-neighbor chamfer transform.
     """
-    height = len(terrain_rows)
-    width = len(terrain_rows[0]) if height else 0
+    return _build_proximity_distance_rows(
+        [[terrain == TREE_TERRAIN for terrain in row] for row in terrain_rows]
+    )
+
+
+def build_water_distance_rows(terrain_rows: list[list[str]]) -> list[list[int]]:
+    """Return approximate distance from every tile to semantic water.
+
+    Args:
+        terrain_rows: Rectangular semantic terrain rows.
+
+    Returns:
+        Tile-distance rows where water is zero and nine means nine or more
+        tiles away.
+    """
+    return _build_proximity_distance_rows(
+        [[is_water_terrain(terrain) for terrain in row] for row in terrain_rows]
+    )
+
+
+def build_road_distance_rows(terrain_rows: list[list[str]]) -> list[list[int]]:
+    """Return approximate distance from every tile to semantic roads.
+
+    Args:
+        terrain_rows: Rectangular semantic terrain rows.
+
+    Returns:
+        Tile-distance rows where road is zero and nine means nine or more
+        tiles away.
+    """
+    return _build_proximity_distance_rows(
+        [[is_road_terrain(terrain) for terrain in row] for row in terrain_rows]
+    )
+
+
+def build_structure_distance_rows(
+    structure_type_rows: list[list[int]],
+) -> list[list[int]]:
+    """Return approximate distance to semantic structural occupancy.
+
+    Args:
+        structure_type_rows: Rectangular structure-type rows where zero means
+            no structural tile.
+
+    Returns:
+        Tile-distance rows where structural tiles are zero and nine means nine
+        or more tiles away.
+    """
+    return _build_proximity_distance_rows(
+        [[value != 0 for value in row] for row in structure_type_rows]
+    )
+
+
+def is_road_terrain(terrain: object) -> bool:
+    """Return whether a semantic terrain type represents a road.
+
+    Args:
+        terrain: Semantic terrain value.
+
+    Returns:
+        True when the value belongs to the public road terrain family.
+    """
+    return isinstance(terrain, str) and terrain in ROAD_TERRAINS
+
+
+def is_water_terrain(terrain: object) -> bool:
+    """Return whether a semantic terrain type represents standing water.
+
+    Args:
+        terrain: Semantic terrain value.
+
+    Returns:
+        True when the value belongs to the public water terrain family.
+    """
+    return isinstance(terrain, str) and terrain in WATER_TERRAINS
+
+
+def _distance_grid_payload(rows: list[list[int]]) -> dict[str, Any]:
+    return {
+        "format": "uint8_rows",
+        "range": [0, PROXIMITY_DISTANCE_FAR],
+        "far_value": PROXIMITY_DISTANCE_FAR,
+        "rows": rows,
+    }
+
+
+def _build_proximity_distance_rows(
+    source_rows: list[list[bool]],
+) -> list[list[int]]:
+    height = len(source_rows)
+    width = len(source_rows[0]) if height else 0
     if width == 0 or height == 0:
         return []
+    if any(len(row) != width for row in source_rows):
+        raise ValueError("Proximity source rows must be rectangular")
 
-    far_cost = FOREST_DISTANCE_FAR * 10
     distances = [
-        [0 if terrain == TREE_TERRAIN else far_cost for terrain in row]
-        for row in terrain_rows
+        [0 if is_source else _CHAMFER_FAR_COST for is_source in row]
+        for row in source_rows
     ]
 
     for y in range(height):
@@ -227,10 +372,30 @@ def build_forest_distance_rows(terrain_rows: list[list[str]]) -> list[list[int]]
                 continue
             distances[y][x] = min(
                 distances[y][x],
-                _chamfer_neighbor_cost(distances, x=x - 1, y=y, extra=10),
-                _chamfer_neighbor_cost(distances, x=x, y=y - 1, extra=10),
-                _chamfer_neighbor_cost(distances, x=x - 1, y=y - 1, extra=14),
-                _chamfer_neighbor_cost(distances, x=x + 1, y=y - 1, extra=14),
+                _chamfer_neighbor_cost(
+                    distances,
+                    x=x - 1,
+                    y=y,
+                    extra=_CHAMFER_ORTHOGONAL_COST,
+                ),
+                _chamfer_neighbor_cost(
+                    distances,
+                    x=x,
+                    y=y - 1,
+                    extra=_CHAMFER_ORTHOGONAL_COST,
+                ),
+                _chamfer_neighbor_cost(
+                    distances,
+                    x=x - 1,
+                    y=y - 1,
+                    extra=_CHAMFER_DIAGONAL_COST,
+                ),
+                _chamfer_neighbor_cost(
+                    distances,
+                    x=x + 1,
+                    y=y - 1,
+                    extra=_CHAMFER_DIAGONAL_COST,
+                ),
             )
 
     for y in range(height - 1, -1, -1):
@@ -239,14 +404,41 @@ def build_forest_distance_rows(terrain_rows: list[list[str]]) -> list[list[int]]
                 continue
             distances[y][x] = min(
                 distances[y][x],
-                _chamfer_neighbor_cost(distances, x=x + 1, y=y, extra=10),
-                _chamfer_neighbor_cost(distances, x=x, y=y + 1, extra=10),
-                _chamfer_neighbor_cost(distances, x=x + 1, y=y + 1, extra=14),
-                _chamfer_neighbor_cost(distances, x=x - 1, y=y + 1, extra=14),
+                _chamfer_neighbor_cost(
+                    distances,
+                    x=x + 1,
+                    y=y,
+                    extra=_CHAMFER_ORTHOGONAL_COST,
+                ),
+                _chamfer_neighbor_cost(
+                    distances,
+                    x=x,
+                    y=y + 1,
+                    extra=_CHAMFER_ORTHOGONAL_COST,
+                ),
+                _chamfer_neighbor_cost(
+                    distances,
+                    x=x + 1,
+                    y=y + 1,
+                    extra=_CHAMFER_DIAGONAL_COST,
+                ),
+                _chamfer_neighbor_cost(
+                    distances,
+                    x=x - 1,
+                    y=y + 1,
+                    extra=_CHAMFER_DIAGONAL_COST,
+                ),
             )
 
     return [
-        [min(FOREST_DISTANCE_FAR, (cost + 5) // 10) for cost in row]
+        [
+            min(
+                PROXIMITY_DISTANCE_FAR,
+                (cost + (_CHAMFER_ORTHOGONAL_COST // 2))
+                // _CHAMFER_ORTHOGONAL_COST,
+            )
+            for cost in row
+        ]
         for row in distances
     ]
 
@@ -291,6 +483,9 @@ def _build_summary(
     region_profile_rows: list[list[int]],
     slope_band_rows: list[list[int]],
     forest_depth_rows: list[list[int]],
+    water_distance_rows: list[list[int]],
+    road_distance_rows: list[list[int]],
+    structure_distance_rows: list[list[int]],
 ) -> dict[str, Any]:
     moisture_counts = Counter(
         "dry" if value < 330 else "balanced" if value < 660 else "wet"
@@ -319,7 +514,19 @@ def _build_summary(
             "edge_tiles": forest_counts.get(1, 0),
             "deep_tiles": forest_counts.get(FOREST_DEPTH_MAX, 0),
         },
+        "proximity": {
+            "tiles_near_water_4": _count_within(water_distance_rows, 4),
+            "tiles_near_roads_4": _count_within(road_distance_rows, 4),
+            "tiles_near_structures_5": _count_within(
+                structure_distance_rows,
+                5,
+            ),
+        },
     }
+
+
+def _count_within(rows: list[list[int]], maximum: int) -> int:
+    return sum(value <= maximum for row in rows for value in row)
 
 
 def _touches_non_forest(
@@ -346,10 +553,10 @@ def _chamfer_neighbor_cost(
     extra: int,
 ) -> int:
     if y < 0 or y >= len(rows):
-        return FOREST_DISTANCE_FAR * 10
+        return _CHAMFER_FAR_COST
     if x < 0 or x >= len(rows[y]):
-        return FOREST_DISTANCE_FAR * 10
-    return min(FOREST_DISTANCE_FAR * 10, rows[y][x] + extra)
+        return _CHAMFER_FAR_COST
+    return min(_CHAMFER_FAR_COST, rows[y][x] + extra)
 
 
 def _validate_terrain_rows(
@@ -363,3 +570,23 @@ def _validate_terrain_rows(
             "Terrain rows do not match natural geography dimensions: "
             f"expected={width}x{height}"
         )
+
+
+def _validate_integer_rows(
+    rows: list[list[int]],
+    *,
+    width: int,
+    height: int,
+    name: str,
+) -> None:
+    if len(rows) != height or any(len(row) != width for row in rows):
+        raise ValueError(
+            f"{name} rows do not match natural geography dimensions: "
+            f"expected={width}x{height}"
+        )
+    if any(
+        not isinstance(value, int) or isinstance(value, bool)
+        for row in rows
+        for value in row
+    ):
+        raise ValueError(f"{name} rows must contain integer values")

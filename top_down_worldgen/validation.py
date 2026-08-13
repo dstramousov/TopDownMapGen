@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .manifest import VALIDATION_REPORT_SCHEMA_VERSION
+from .tactical.environment_context import is_road_terrain, is_water_terrain
 from .tactical.places import (
     MAX_PLACES,
     MIN_PLACES,
@@ -578,6 +579,9 @@ def _load_package_context(outputs: OutputPaths) -> dict[str, Any] | None:
             "environment_context": _read_json_object(
                 package_dir / str(layers.get("environment_context")),
             ),
+            "structure_type": _read_json_object(
+                package_dir / str(layers.get("structure_type")),
+            ),
             "start_goal": _read_json_object(package_dir / str(layers.get("start_goal"))),
             "markers": _read_json_object(package_dir / str(map_index.get("markers"))),
             "runtime_grids": _read_json_object(
@@ -640,6 +644,7 @@ def _package_files_have_schema_versions(package: dict[str, Any]) -> bool:
         "movement_costs",
         "elevation",
         "environment_context",
+        "structure_type",
         "start_goal",
         "markers",
         "runtime_grids",
@@ -678,6 +683,7 @@ def _package_dimensions_match_layers(
             "collision",
             "elevation",
             "environment_context",
+            "structure_type",
             "start_goal",
         )
     )
@@ -708,6 +714,9 @@ def _package_environment_context_valid(
         "slope_band": (0, 3),
         "forest_depth": (0, 4),
         "forest_distance": (0, 9),
+        "water_distance": (0, 9),
+        "road_distance": (0, 9),
+        "structure_distance": (0, 9),
     }
     for grid_name, (minimum, maximum) in required_ranges.items():
         grid = _json_object(grids.get(grid_name))
@@ -740,29 +749,72 @@ def _package_environment_context_valid(
         return False
 
     terrain_rows = _json_object(package.get("terrain")).get("rows")
+    structure_rows = _json_object(package.get("structure_type")).get("rows")
     forest_depth_rows = _json_object(grids.get("forest_depth")).get("rows")
     forest_distance_rows = _json_object(grids.get("forest_distance")).get("rows")
-    if not (
-        isinstance(terrain_rows, list)
-        and isinstance(forest_depth_rows, list)
-        and isinstance(forest_distance_rows, list)
+    water_distance_rows = _json_object(grids.get("water_distance")).get("rows")
+    road_distance_rows = _json_object(grids.get("road_distance")).get("rows")
+    structure_distance_rows = _json_object(grids.get("structure_distance")).get("rows")
+    if not all(
+        isinstance(rows, list)
+        for rows in (
+            terrain_rows,
+            structure_rows,
+            forest_depth_rows,
+            forest_distance_rows,
+            water_distance_rows,
+            road_distance_rows,
+            structure_distance_rows,
+        )
     ):
         return False
+    if len(terrain_rows) != height or any(
+        not isinstance(row, list) or len(row) != width
+        for row in terrain_rows
+    ):
+        return False
+    if not _integer_grid_matches(
+        structure_rows,
+        width=width,
+        height=height,
+        minimum=0,
+        maximum=255,
+    ):
+        return False
+
     for y in range(height):
         terrain_row = terrain_rows[y]
+        structure_row = structure_rows[y]
         depth_row = forest_depth_rows[y]
-        distance_row = forest_distance_rows[y]
-        if not (
-            isinstance(terrain_row, list)
-            and isinstance(depth_row, list)
-            and isinstance(distance_row, list)
+        forest_distance_row = forest_distance_rows[y]
+        water_distance_row = water_distance_rows[y]
+        road_distance_row = road_distance_rows[y]
+        structure_distance_row = structure_distance_rows[y]
+        if not all(
+            isinstance(row, list)
+            for row in (
+                terrain_row,
+                structure_row,
+                depth_row,
+                forest_distance_row,
+                water_distance_row,
+                road_distance_row,
+                structure_distance_row,
+            )
         ):
             return False
         for x in range(width):
-            is_forest = terrain_row[x] == "tree_blocker"
+            terrain = terrain_row[x]
+            is_forest = terrain == "tree_blocker"
             if (depth_row[x] > 0) != is_forest:
                 return False
-            if (distance_row[x] == 0) != is_forest:
+            if (forest_distance_row[x] == 0) != is_forest:
+                return False
+            if (water_distance_row[x] == 0) != is_water_terrain(terrain):
+                return False
+            if (road_distance_row[x] == 0) != is_road_terrain(terrain):
+                return False
+            if (structure_distance_row[x] == 0) != (structure_row[x] != 0):
                 return False
     return True
 

@@ -6,7 +6,7 @@ from top_down_worldgen.config import PublicConfig, SUPPORTED_ELEVATION_STYLES
 
 def test_package_version() -> None:
     """Ensure package exposes the current version."""
-    assert __version__ == "0.0.151"
+    assert __version__ == "0.0.153"
 
 
 def test_default_config_can_be_loaded() -> None:

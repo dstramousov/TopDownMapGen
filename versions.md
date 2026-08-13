@@ -1305,3 +1305,22 @@
 - `map.json` обновлён до `map-package-map-v31`, generation manifest — до `generation-manifest-v60`, validation report — до `validation-report-v36`.
 - Добавлены строгая валидация Environment Context, unit/regression tests и документация для map-package consumers.
 - Версия проекта поднята до `0.0.151`.
+
+
+## v0.0.151 -> v0.0.152
+
+- Environment Context расширен локальными `water_distance`, `road_distance` и `structure_distance` с насыщением `9 = 9+`.
+- Все proximity grids используют общий deterministic 8-neighbor chamfer transform; `forest_distance` переведён на тот же общий builder без изменения публичной шкалы.
+- `structure_distance` строится от финального `structure_type`, поэтому учитывает крепость, руины и другие semantic structures, а не только legacy terrain blockers.
+- Схема Environment Context обновлена до `environment-context-layer-v2`, generation manifest — до `generation-manifest-v61`, validation report — до `validation-report-v37`.
+- Валидация проверяет новые grids, их размеры/диапазоны и точное совпадение нулевой дистанции с semantic water/road/structure sources.
+- Версия проекта поднята до `0.0.152`.
+
+
+## v0.0.152 -> v0.0.153
+
+- Исправлен `forest_depth` для крупных лесных массивов: значение `4` теперь означает `4+` и распространяется по всей глубокой внутренней части леса вместо обрыва обхода на четвёртом слое.
+- Устранена невозможная комбинация, при которой semantic `tree_blocker` имел `forest_distance = 0`, но `forest_depth = 0`.
+- Поведение существующего forest-edge thinning сохранено: глубина `4` по-прежнему означает внутренний лес без дополнительного прореживания.
+- Добавлен регрессионный тест на большой связный лес, проверяющий отсутствие нулевой глубины внутри semantic forest.
+- Версия проекта поднята до `0.0.153`.
