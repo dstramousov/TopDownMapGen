@@ -29,6 +29,14 @@ REGION_COLORS = {
     "open_plain": (126, 158, 88, 255),
     "alpine": (205, 211, 207, 255),
 }
+FLORA_REGION_COLORS = {
+    "dry_grassland": (190, 157, 76, 255),
+    "open_meadow": (139, 170, 84, 255),
+    "lush_meadow": (91, 153, 74, 255),
+    "scrubland": (122, 130, 67, 255),
+    "wet_meadow": (76, 146, 111, 255),
+    "marshland": (52, 119, 116, 255),
+}
 SLOPE_COLORS = {
     "flat": (91, 147, 77, 255),
     "gentle": (184, 181, 92, 255),
@@ -46,7 +54,7 @@ FLORA_COLORS = {
     "water_core": (47, 102, 151, 255),
     "road_core": (151, 124, 73, 255),
     "structure_core": (110, 92, 116, 255),
-    "meadow": (137, 166, 86, 255),
+    **FLORA_REGION_COLORS,
     "forest_edge": (94, 143, 67, 255),
     "deep_forest": (35, 79, 46, 255),
     "riparian_wetland": (70, 139, 139, 255),
@@ -58,7 +66,12 @@ FLORA_LABELS = {
     "water_core": "water core (non-flora)",
     "road_core": "road core (non-flora)",
     "structure_core": "structure core (non-flora)",
-    "meadow": "MEADOW",
+    "dry_grassland": "DRY_GRASSLAND",
+    "open_meadow": "OPEN_MEADOW",
+    "lush_meadow": "LUSH_MEADOW",
+    "scrubland": "SCRUBLAND",
+    "wet_meadow": "WET_MEADOW",
+    "marshland": "MARSHLAND",
     "forest_edge": "FOREST_EDGE",
     "deep_forest": "DEEP_FOREST",
     "riparian_wetland": "RIPARIAN_WETLAND",
@@ -106,6 +119,7 @@ def render_environment_previews(
 
     moisture = _grid(grids, "moisture", width, height)
     region = _grid(grids, "region_profile", width, height)
+    flora_region = _grid(grids, "flora_region", width, height)
     slope = _grid(grids, "slope_band", width, height)
     forest_depth = _grid(grids, "forest_depth", width, height)
     forest_distance = _grid(grids, "forest_distance", width, height)
@@ -113,6 +127,7 @@ def render_environment_previews(
     road_distance = _grid(grids, "road_distance", width, height)
     structure_distance = _grid(grids, "structure_distance", width, height)
     region_names = _code_dictionary(dictionaries, "region_profile")
+    flora_region_names = _code_dictionary(dictionaries, "flora_region")
     slope_names = _code_dictionary(dictionaries, "slope_band")
 
     outputs = [
@@ -147,6 +162,30 @@ def render_environment_previews(
                 for code in sorted(region_names)
             ],
             "Macro-region terrain guidance profile",
+        ),
+        _render(
+            flora_region,
+            target / "environment_flora_region.png",
+            cell_size_px,
+            "Environment Context — flora region",
+            lambda value: FLORA_REGION_COLORS.get(
+                flora_region_names.get(value, ""),
+                UNKNOWN_COLOR,
+            ),
+            [
+                (
+                    flora_region_names[code],
+                    FLORA_REGION_COLORS.get(
+                        flora_region_names[code],
+                        UNKNOWN_COLOR,
+                    ),
+                )
+                for code in sorted(flora_region_names)
+            ],
+            (
+                "Broad ground ecology from region profile + moisture; "
+                "independent from forest occupancy"
+            ),
         ),
         _render(
             slope,
@@ -202,6 +241,10 @@ def render_environment_previews(
             _dominant_flora_label(
                 moisture=moisture[y][x],
                 region_profile=region_names.get(region[y][x], "open_plain"),
+                flora_region=flora_region_names.get(
+                    flora_region[y][x],
+                    "open_meadow",
+                ),
                 slope=slope[y][x],
                 forest_depth=forest_depth[y][x],
                 forest_distance=forest_distance[y][x],
@@ -231,6 +274,7 @@ def _dominant_flora_label(
     *,
     moisture: int,
     region_profile: str,
+    flora_region: str,
     slope: int,
     forest_depth: int,
     forest_distance: int,
@@ -247,7 +291,7 @@ def _dominant_flora_label(
         return "road_core"
 
     scores = {
-        "meadow": _meadow_score(region_profile, forest_depth),
+        flora_region: 0.55 if forest_depth == 0 else 0.18,
         "forest_edge": max(
             {1: 1.00, 2: 0.82, 3: 0.35}.get(forest_depth, 0.0),
             {1: 0.68, 2: 0.45, 3: 0.22}.get(forest_distance, 0.0),
@@ -278,24 +322,9 @@ def _dominant_flora_label(
         "deep_forest",
         "forest_edge",
         "dry_upland",
-        "meadow",
+        flora_region,
     )
     return max(priority, key=lambda name: (scores[name], -priority.index(name)))
-
-
-def _meadow_score(region_profile: str, forest_depth: int) -> float:
-    """Return a debug meadow influence score."""
-    if forest_depth > 0:
-        return 0.0
-    return {
-        "open_plain": 0.85,
-        "open_plateau": 0.55,
-        "woodland": 0.40,
-        "wet_lowland": 0.30,
-        "upland": 0.28,
-        "dense_forest": 0.12,
-        "alpine": 0.10,
-    }.get(region_profile, 0.30)
 
 
 def _riparian_score(

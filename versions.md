@@ -1353,3 +1353,14 @@
 - Consumer guide фиксирует визуальный инвариант forest blockers: каждая blocked `tree_blocker` клетка должна иметь визуально читаемый blocking anchor даже на редкой лесной кромке.
 - Generation manifest schema обновлена до `generation-manifest-v62`.
 - Версия проекта поднята до `0.0.156`.
+
+
+## v0.0.156 -> v0.0.157
+
+- В `Environment Context` добавлен новый независимый `flora_region`, который описывает широкий экологический характер растительности без выбора конкретных `PlantsXXX`.
+- `flora_region` детерминированно строится из уже существующих `region_profile + moisture` и даёт `dry_grassland`, `open_meadow`, `lush_meadow`, `scrubland`, `wet_meadow`, `marshland`; raw elevation grid напрямую не используется.
+- На `super_flatland (-1/0/+1)` новый слой позволяет получать богатую равнинную экологию без фальшивых `upland/alpine` биомов; лес, вода, дороги и структуры остаются независимыми context signals.
+- Добавлен debug-preview `environment_flora_region.png`; сводный `environment_flora_context_preview.png` теперь использует flora region как базовую открытую экологию и накладывает forest/riparian/rocky/disturbed influences.
+- Environment Context schema обновлена до `environment-context-layer-v3`, validation report — до `validation-report-v38`, generation manifest — до `generation-manifest-v63`.
+- Валидация проверяет новый grid, его dictionary codes и размеры; документация consumer/map package обновлена.
+- Версия проекта поднята до `0.0.157`.

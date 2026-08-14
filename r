@@ -124,6 +124,6 @@ run_stage "3D-местность и проходимость" \
 
 print_summary
 printf '  общее время: %d с\n' "$((SECONDS - TOTAL_STARTED))"
-printf '  preview: 33 файла в output/ и output/geography_3d_preview/\n'
+printf '  preview: 34 файла в output/ и output/geography_3d_preview/\n'
 
 open output/

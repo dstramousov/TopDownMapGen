@@ -20,10 +20,11 @@ def test_environment_context_preview_writes_all_debug_images(tmp_path: Path) -> 
 
     outputs = render_environment_previews(output_dir, cell_size_px=3)
 
-    assert len(outputs) == 9
+    assert len(outputs) == 10
     assert {path.name for path in outputs} == {
         "environment_moisture.png",
         "environment_region_profile.png",
+        "environment_flora_region.png",
         "environment_slope.png",
         "environment_forest_depth.png",
         "environment_forest_distance.png",
@@ -44,6 +45,7 @@ def test_dominant_flora_preview_exposes_expected_contexts() -> None:
     common = {
         "moisture": 500,
         "region_profile": "open_plain",
+        "flora_region": "open_meadow",
         "slope": 0,
         "forest_depth": 0,
         "forest_distance": 9,
@@ -52,7 +54,10 @@ def test_dominant_flora_preview_exposes_expected_contexts() -> None:
         "structure_distance": 9,
     }
 
-    assert dominant(**common) == "meadow"
+    assert dominant(**common) == "open_meadow"
+    assert dominant(**{**common, "flora_region": "dry_grassland"}) == (
+        "dry_grassland"
+    )
     assert dominant(**{**common, "forest_depth": 1, "forest_distance": 0}) == (
         "forest_edge"
     )
@@ -94,7 +99,7 @@ def test_environment_context_preview_cli_reports_success(tmp_path: Path) -> None
         check=True,
     )
 
-    assert "Environment Context preview создан: 9 файлов" in result.stderr
+    assert "Environment Context preview создан: 10 файлов" in result.stderr
     assert (output_dir / "environment_flora_context_preview.png").is_file()
 
 
@@ -128,7 +133,7 @@ def _write_minimal_environment_package(tmp_path: Path) -> Path:
     _write_json(
         layers_dir / "environment_context.json",
         {
-            "schema_version": "environment-context-layer-v2",
+            "schema_version": "environment-context-layer-v3",
             "kind": "environment_context",
             "width": 4,
             "height": 3,
@@ -141,6 +146,14 @@ def _write_minimal_environment_package(tmp_path: Path) -> Path:
                     "4": "open_plateau",
                     "5": "open_plain",
                     "6": "alpine",
+                },
+                "flora_region": {
+                    "0": "dry_grassland",
+                    "1": "open_meadow",
+                    "2": "lush_meadow",
+                    "3": "scrubland",
+                    "4": "wet_meadow",
+                    "5": "marshland",
                 },
                 "slope_band": {
                     "0": "flat",
@@ -162,6 +175,13 @@ def _write_minimal_environment_package(tmp_path: Path) -> Path:
                         [3, 5, 2, 5],
                         [1, 0, 5, 5],
                         [5, 5, 5, 5],
+                    ]
+                },
+                "flora_region": {
+                    "rows": [
+                        [0, 1, 4, 4],
+                        [3, 2, 1, 1],
+                        [1, 1, 1, 1],
                     ]
                 },
                 "slope_band": {

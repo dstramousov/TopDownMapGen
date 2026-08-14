@@ -58,7 +58,7 @@ unit: tile
 Текущая schema:
 
 ```text
-environment-context-layer-v2
+environment-context-layer-v3
 ```
 
 Основные grids:
@@ -67,6 +67,7 @@ environment-context-layer-v2
 |---|---:|---|
 | `moisture` | `0..1000` | Непрерывная влажность из natural geography. |
 | `region_profile` | dictionary code | Крупный профиль региона: `dense_forest`, `woodland`, `wet_lowland`, `upland`, `open_plateau`, `open_plain`, `alpine`. |
+| `flora_region` | dictionary code | Широкий экологический характер растительности: `dry_grassland`, `open_meadow`, `lush_meadow`, `scrubland`, `wet_meadow`, `marshland`. |
 | `slope_band` | `0..3` | `flat`, `gentle`, `steep`, `cliff`. |
 | `forest_depth` | `0..4` | Глубина внутри semantic forest; `4` означает четыре тайла и глубже. |
 | `forest_distance` | `0..9` | Локальная дистанция до semantic forest; `9` означает девять тайлов и дальше. |
@@ -84,6 +85,14 @@ environment-context-layer-v2
 разрушает экологический смысл лесного массива. `water_distance` и `road_distance`
 строятся от semantic terrain types, а `structure_distance` — от публичной
 `structure_type` geometry, включая крепость и руины.
+
+`flora_region` — отдельный производный сигнал для разнообразия растительности,
+особенно на картах с бедным elevation вроде `super_flatland (-1/0/+1)`. Он строится
+детерминированно из уже существующих `region_profile + moisture` и не читает raw
+elevation grid напрямую. Поэтому равнинная карта может честно различать сухую
+степную зону, обычный/сочный/влажный луг, кустарниковую область и marshland, не
+притворяясь горной или alpine-картой. Лес, вода, дороги и структуры по-прежнему
+задаются независимыми semantic/context signals и накладываются поверх flora region.
 
 Конкретные PNG/спрайты должен выбирать consumer-side `FloraResolver`. Например,
 Vox3D может смешивать профиль лесной кромки с влажным профилем возле воды, не
@@ -179,12 +188,13 @@ negative level != water
 
 ## Environment Context debug preview
 
-Стандартный development-run `./r` дополнительно создаёт в `output/` девять
+Стандартный development-run `./r` дополнительно создаёт в `output/` десять
 диагностических PNG по публичному `layers/environment_context.json`:
 
 ```text
 environment_moisture.png
 environment_region_profile.png
+environment_flora_region.png
 environment_slope.png
 environment_forest_depth.png
 environment_forest_distance.png
@@ -194,14 +204,16 @@ environment_structure_distance.png
 environment_flora_context_preview.png
 ```
 
-Первые восемь изображений являются прямой визуализацией соответствующих public
+Первые девять изображений являются прямой визуализацией соответствующих public
 grids. Distance-preview показывают пояса `0..8` и отдельное значение `9+`, что
 позволяет глазами проверять форму proximity-halo вокруг леса, воды, дорог и
 структур.
 
 `environment_flora_context_preview.png` — **только диагностическая интерпретация**.
-Она показывает доминирующее визуальное влияние (`MEADOW`, `FOREST_EDGE`,
-`DEEP_FOREST`, `RIPARIAN_WETLAND`, `DRY_UPLAND`, `ROCKY_RUGGED`, `DISTURBED`) и
+Она показывает доминирующее визуальное влияние. На открытой земле базой служат
+`DRY_GRASSLAND`, `OPEN_MEADOW`, `LUSH_MEADOW`, `SCRUBLAND`, `WET_MEADOW` и
+`MARSHLAND`; поверх них могут доминировать `FOREST_EDGE`, `DEEP_FOREST`,
+`RIPARIAN_WETLAND`, `DRY_UPLAND`, `ROCKY_RUGGED` и `DISTURBED`. Preview
 не является новым authoritative biome layer, не экспортируется в map package и
 не выбирает конкретные flora assets.
 

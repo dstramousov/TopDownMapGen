@@ -5,14 +5,65 @@ from top_down_worldgen.tactical.elevation import (
     build_natural_geography_model,
 )
 from top_down_worldgen.tactical.environment_context import (
+    FLORA_REGION_CODES,
+    FLORA_REGION_NAMES,
     REGION_PROFILE_NAMES,
     build_environment_context,
+    build_flora_region_rows,
     build_forest_depth_rows,
     build_forest_distance_rows,
     build_road_distance_rows,
     build_structure_distance_rows,
     build_water_distance_rows,
 )
+
+
+def test_flora_regions_enrich_flat_profiles_without_fake_upland() -> None:
+    """Ensure flat-compatible ecology varies from moisture and region profile."""
+    open_plain = REGION_PROFILE_NAMES.index("open_plain")
+    woodland = REGION_PROFILE_NAMES.index("woodland")
+    wet_lowland = REGION_PROFILE_NAMES.index("wet_lowland")
+
+    rows = build_flora_region_rows(
+        moisture_rows=[
+            [100, 350, 560, 760],
+            [120, 400, 760, 500],
+            [250, 500, 800, 300],
+        ],
+        region_profile_rows=[
+            [open_plain, open_plain, open_plain, open_plain],
+            [woodland, woodland, woodland, woodland],
+            [wet_lowland, wet_lowland, wet_lowland, wet_lowland],
+        ],
+    )
+
+    names = [
+        [FLORA_REGION_NAMES[value] for value in row]
+        for row in rows
+    ]
+    assert names[0] == [
+        "dry_grassland",
+        "open_meadow",
+        "lush_meadow",
+        "wet_meadow",
+    ]
+    assert names[1] == [
+        "scrubland",
+        "lush_meadow",
+        "wet_meadow",
+        "lush_meadow",
+    ]
+    assert names[2] == [
+        "lush_meadow",
+        "wet_meadow",
+        "marshland",
+        "lush_meadow",
+    ]
+    assert all(
+        value in FLORA_REGION_CODES.values()
+        for row in rows
+        for value in row
+    )
 
 
 def test_forest_depth_preserves_semantic_edge_and_deep_forest() -> None:
@@ -117,6 +168,11 @@ def test_environment_context_is_deterministic_and_uses_existing_geography() -> N
     assert all(
         0 <= value < len(REGION_PROFILE_NAMES)
         for row in first.region_profile_rows
+        for value in row
+    )
+    assert all(
+        0 <= value < len(FLORA_REGION_NAMES)
+        for row in first.flora_region_rows
         for value in row
     )
     assert all(

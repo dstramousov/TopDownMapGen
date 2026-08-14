@@ -53,11 +53,17 @@ render/object_render_hints.json
 layers/environment_context.json
 ```
 
-Этот слой даёт moisture, крупный region profile, slope, глубину внутри леса и
-локальные proximity grids до леса, воды, дорог и structural geometry. Значение `0`
-означает нахождение на semantic source, `9` — расстояние `9+` тайлов. Он не содержит
-конкретных texture/sprite IDs: сопоставление environmental signals с арт-каталогом
-остаётся задачей renderer-а.
+Этот слой даёт moisture, крупный region profile, независимый `flora_region`, slope,
+глубину внутри леса и локальные proximity grids до леса, воды, дорог и structural
+geometry. Значение `0` означает нахождение на semantic source, `9` — расстояние
+`9+` тайлов. Он не содержит конкретных texture/sprite IDs: сопоставление
+environmental signals с арт-каталогом остаётся задачей renderer-а.
+
+`flora_region` особенно полезен на `super_flatland`: даже при elevation только
+`-1/0/+1` consumer получает крупные зоны `dry_grassland`, `open_meadow`,
+`lush_meadow`, `scrubland`, `wet_meadow`, `marshland`. Это не фальшивые высотные
+биомы: настоящий upland/alpine смысл остаётся в `region_profile`/elevation, а
+`flora_region` описывает характер растительности равнинной земли.
 
 ### Визуальная честность forest blockers
 

@@ -49,6 +49,17 @@ REGION_PROFILE_NAMES: tuple[str, ...] = (
 REGION_PROFILE_CODES = {
     name: index for index, name in enumerate(REGION_PROFILE_NAMES)
 }
+FLORA_REGION_NAMES: tuple[str, ...] = (
+    "dry_grassland",
+    "open_meadow",
+    "lush_meadow",
+    "scrubland",
+    "wet_meadow",
+    "marshland",
+)
+FLORA_REGION_CODES = {
+    name: index for index, name in enumerate(FLORA_REGION_NAMES)
+}
 SLOPE_BAND_NAMES = {
     0: "flat",
     1: "gentle",
@@ -65,6 +76,7 @@ class EnvironmentContextResult:
     height: int
     moisture_rows: list[list[int]]
     region_profile_rows: list[list[int]]
+    flora_region_rows: list[list[int]]
     slope_band_rows: list[list[int]]
     forest_depth_rows: list[list[int]]
     forest_distance_rows: list[list[int]]
@@ -96,11 +108,16 @@ class EnvironmentContextResult:
                 "proximity_max_exact_tiles": PROXIMITY_MAX_EXACT,
                 "proximity_far_value": PROXIMITY_DISTANCE_FAR,
                 "proximity_metric": "8_neighbor_chamfer_10_14",
+                "flora_region_derivation": "region_profile_plus_moisture_v1",
             },
             "dictionaries": {
                 "region_profile": {
                     str(code): name
                     for name, code in REGION_PROFILE_CODES.items()
+                },
+                "flora_region": {
+                    str(code): name
+                    for name, code in FLORA_REGION_CODES.items()
                 },
                 "slope_band": {
                     str(code): name for code, name in SLOPE_BAND_NAMES.items()
@@ -116,6 +133,10 @@ class EnvironmentContextResult:
                 "region_profile": {
                     "format": "uint8_rows",
                     "rows": self.region_profile_rows,
+                },
+                "flora_region": {
+                    "format": "uint8_rows",
+                    "rows": self.flora_region_rows,
                 },
                 "slope_band": {
                     "format": "uint8_rows",
@@ -187,6 +208,10 @@ def build_environment_context(
         for row in natural_geography.slope_rows
     ]
     region_profile_rows = _region_profile_rows(natural_geography)
+    flora_region_rows = build_flora_region_rows(
+        moisture_rows=moisture_rows,
+        region_profile_rows=region_profile_rows,
+    )
     forest_depth_rows = build_forest_depth_rows(terrain_rows)
     forest_distance_rows = build_forest_distance_rows(terrain_rows)
     water_distance_rows = build_water_distance_rows(terrain_rows)
@@ -198,6 +223,7 @@ def build_environment_context(
         height=height,
         moisture_rows=moisture_rows,
         region_profile_rows=region_profile_rows,
+        flora_region_rows=flora_region_rows,
         slope_band_rows=slope_band_rows,
         forest_depth_rows=forest_depth_rows,
         forest_distance_rows=forest_distance_rows,
@@ -207,6 +233,7 @@ def build_environment_context(
         summary=_build_summary(
             moisture_rows=moisture_rows,
             region_profile_rows=region_profile_rows,
+            flora_region_rows=flora_region_rows,
             slope_band_rows=slope_band_rows,
             forest_depth_rows=forest_depth_rows,
             water_distance_rows=water_distance_rows,
@@ -467,6 +494,100 @@ def _region_profile_rows(model: NaturalGeographyModel) -> list[list[int]]:
     return rows
 
 
+def build_flora_region_rows(
+    *,
+    moisture_rows: list[list[int]],
+    region_profile_rows: list[list[int]],
+) -> list[list[int]]:
+    """Build broad flora regions without reading the elevation grid directly.
+
+    The field intentionally describes the ecological character of the ground,
+    not whether a tile is forest, water, road, or structure. Those semantics
+    remain independent Environment Context signals and may be layered on top
+    by consumers such as a FloraResolver.
+
+    Args:
+        moisture_rows: Quantized public moisture values in the 0..1000 range.
+        region_profile_rows: Public terrain-guidance profile codes.
+
+    Returns:
+        Flora-region codes aligned with the source grids.
+
+    Raises:
+        ValueError: If source grids are malformed or contain unsupported codes.
+    """
+    height = len(moisture_rows)
+    width = len(moisture_rows[0]) if height else 0
+    _validate_integer_rows(
+        moisture_rows,
+        width=width,
+        height=height,
+        name="moisture",
+    )
+    _validate_integer_rows(
+        region_profile_rows,
+        width=width,
+        height=height,
+        name="region_profile",
+    )
+
+    rows: list[list[int]] = []
+    for y in range(height):
+        output_row: list[int] = []
+        for x in range(width):
+            moisture = moisture_rows[y][x]
+            if not 0 <= moisture <= MOISTURE_SCALE:
+                raise ValueError(
+                    "Moisture value is outside public 0..1000 range: "
+                    f"x={x}, y={y}, value={moisture}"
+                )
+            profile_code = region_profile_rows[y][x]
+            if not 0 <= profile_code < len(REGION_PROFILE_NAMES):
+                raise ValueError(
+                    "Region profile code is out of range while building flora region: "
+                    f"x={x}, y={y}, code={profile_code}"
+                )
+            profile = REGION_PROFILE_NAMES[profile_code]
+            output_row.append(_flora_region_code(profile, moisture))
+        rows.append(output_row)
+    return rows
+
+
+def _flora_region_code(region_profile: str, moisture: int) -> int:
+    """Return one broad flora-region code for a profile and moisture value."""
+    if region_profile == "wet_lowland":
+        if moisture >= 720:
+            return FLORA_REGION_CODES["marshland"]
+        if moisture >= 430:
+            return FLORA_REGION_CODES["wet_meadow"]
+        return FLORA_REGION_CODES["lush_meadow"]
+
+    if region_profile in {"dense_forest", "woodland"}:
+        if moisture < 260:
+            return FLORA_REGION_CODES["scrubland"]
+        if moisture >= 660:
+            return FLORA_REGION_CODES["wet_meadow"]
+        return FLORA_REGION_CODES["lush_meadow"]
+
+    if region_profile in {"upland", "open_plateau", "alpine"}:
+        if moisture < 300:
+            return FLORA_REGION_CODES["dry_grassland"]
+        if moisture < 560:
+            return FLORA_REGION_CODES["open_meadow"]
+        return FLORA_REGION_CODES["lush_meadow"]
+
+    if region_profile == "open_plain":
+        if moisture < 240:
+            return FLORA_REGION_CODES["dry_grassland"]
+        if moisture < 480:
+            return FLORA_REGION_CODES["open_meadow"]
+        if moisture < 680:
+            return FLORA_REGION_CODES["lush_meadow"]
+        return FLORA_REGION_CODES["wet_meadow"]
+
+    raise ValueError(f"Unsupported region profile for flora region: {region_profile!r}")
+
+
 def _quantize_moisture_rows(rows: list[list[float]]) -> list[list[int]]:
     return [
         [
@@ -481,6 +602,7 @@ def _build_summary(
     *,
     moisture_rows: list[list[int]],
     region_profile_rows: list[list[int]],
+    flora_region_rows: list[list[int]],
     slope_band_rows: list[list[int]],
     forest_depth_rows: list[list[int]],
     water_distance_rows: list[list[int]],
@@ -497,6 +619,11 @@ def _build_summary(
         for row in region_profile_rows
         for value in row
     )
+    flora_region_counts = Counter(
+        FLORA_REGION_NAMES[value]
+        for row in flora_region_rows
+        for value in row
+    )
     slope_counts = Counter(
         SLOPE_BAND_NAMES[value]
         for row in slope_band_rows
@@ -508,6 +635,7 @@ def _build_summary(
         "tiles": total,
         "moisture_tiles": dict(sorted(moisture_counts.items())),
         "region_profile_tiles": dict(sorted(region_counts.items())),
+        "flora_region_tiles": dict(sorted(flora_region_counts.items())),
         "slope_band_tiles": dict(sorted(slope_counts.items())),
         "forest": {
             "tiles": total - forest_counts.get(0, 0),

@@ -1,5 +1,5 @@
 {
-  "seed": "random",
+  "seed": 10957997767733518317,
   "map_width_tiles": 128,
   "map_height_tiles": 128,
   "chunk_width_tiles": 16,
@@ -33,7 +33,7 @@
     "puddle_reed_density": 0.2
   },
   "fortress": {
-    "enabled": true,
+    "enabled": false,
     "size": "medium",
     "archetype": "island"
   },

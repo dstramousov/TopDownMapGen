@@ -172,11 +172,13 @@ def test_write_map_package_creates_structured_outputs(tmp_path: Path) -> None:
     assert movement["costs_by_type"]["grass"] == 1
     assert collision["format"] == "boolean_rows"
     assert collision["rows"] == ["00", "00"]
-    assert environment_context["schema_version"] == "environment-context-layer-v2"
+    assert environment_context["schema_version"] == "environment-context-layer-v3"
     assert environment_context["kind"] == "environment_context"
     assert environment_context["width"] == 2
     assert environment_context["height"] == 2
     assert environment_context["grids"]["moisture"]["scale"] == 1000
+    assert "flora_region" in environment_context["dictionaries"]
+    assert len(environment_context["grids"]["flora_region"]["rows"]) == 2
     assert environment_context["grids"]["forest_depth"]["rows"] == [[0, 0], [0, 0]]
     assert environment_context["grids"]["forest_distance"]["rows"] == [[9, 9], [9, 9]]
     assert environment_context["grids"]["water_distance"]["rows"] == [[9, 9], [9, 9]]

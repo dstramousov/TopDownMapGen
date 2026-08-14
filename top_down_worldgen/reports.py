@@ -669,6 +669,7 @@ def _build_debug_files(*, outputs: OutputPaths, render_enabled: bool) -> dict[st
         "slope_preview": outputs.output_dir / "slope_preview.png",
         "environment_moisture": outputs.output_dir / "environment_moisture.png",
         "environment_region_profile": outputs.output_dir / "environment_region_profile.png",
+        "environment_flora_region": outputs.output_dir / "environment_flora_region.png",
         "environment_slope": outputs.output_dir / "environment_slope.png",
         "environment_forest_depth": outputs.output_dir / "environment_forest_depth.png",
         "environment_forest_distance": outputs.output_dir / "environment_forest_distance.png",

@@ -711,6 +711,7 @@ def _package_environment_context_valid(
     required_ranges = {
         "moisture": (0, 1000),
         "region_profile": (0, 255),
+        "flora_region": (0, 255),
         "slope_band": (0, 3),
         "forest_depth": (0, 4),
         "forest_distance": (0, 9),
@@ -732,17 +733,33 @@ def _package_environment_context_valid(
 
     dictionaries = _json_object(context.get("dictionaries"))
     region_dictionary = _json_object(dictionaries.get("region_profile"))
+    flora_region_dictionary = _json_object(dictionaries.get("flora_region"))
     valid_region_codes = {
         int(key)
         for key in region_dictionary
         if isinstance(key, str) and key.isdigit()
     }
     region_rows = _json_object(grids.get("region_profile")).get("rows")
+    valid_flora_region_codes = {
+        int(key)
+        for key in flora_region_dictionary
+        if isinstance(key, str) and key.isdigit()
+    }
+    flora_region_rows = _json_object(grids.get("flora_region")).get("rows")
     if not valid_region_codes or not isinstance(region_rows, list):
         return False
     if any(
         value not in valid_region_codes
         for row in region_rows
+        if isinstance(row, list)
+        for value in row
+    ):
+        return False
+    if not valid_flora_region_codes or not isinstance(flora_region_rows, list):
+        return False
+    if any(
+        value not in valid_flora_region_codes
+        for row in flora_region_rows
         if isinstance(row, list)
         for value in row
     ):
