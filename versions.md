@@ -1343,3 +1343,13 @@
 - `environment_flora_context_preview.png` является только debug-интерпретацией и не создаёт нового authoritative biome layer и не выбирает `PlantsXXX`.
 - Debug-файлы добавлены в world summary, документация map package дополнена правилами использования preview.
 - Версия проекта поднята до `0.0.155`.
+
+
+## v0.0.155 -> v0.0.156
+
+- Исправлена финальная диагностика `render/vegetation_visual.json`: summary теперь относится к тем же reconciled `rows`, которые реально экспортируются в map package.
+- Отдельно сохраняются thinning-stage counters, число восстановленных collision reconciliation деревьев и финальное число visible tree blockers; schema обновлена до `vegetation-visual-report-v7`.
+- Добавлена строгая проверка арифметики `after_thinning + restored == final`, чтобы подобное расхождение больше не могло тихо попасть в отчёт.
+- Consumer guide фиксирует визуальный инвариант forest blockers: каждая blocked `tree_blocker` клетка должна иметь визуально читаемый blocking anchor даже на редкой лесной кромке.
+- Generation manifest schema обновлена до `generation-manifest-v62`.
+- Версия проекта поднята до `0.0.156`.

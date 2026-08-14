@@ -1,5 +1,6 @@
 from top_down_worldgen.tactical.vegetation_visual import (
     build_visual_vegetation,
+    finalize_vegetation_visual_report,
     reconcile_tree_collision,
 )
 
@@ -174,6 +175,43 @@ def test_reconcile_tree_collision_restores_isolated_highland_tree() -> None:
     assert result.report["summary"]["rejected_as_visible_tree"] == 1
     assert result.report["summary"]["rejected_as_rock"] == 0
     assert result.report["summary"]["artificial_rock_blockers_created"] == 0
+
+
+def test_finalized_visual_report_matches_reconciled_rows() -> None:
+    report = {
+        "schema_version": "vegetation-visual-report-v7",
+        "kind": "vegetation_visual",
+        "summary": {
+            "report_stage": "after_thinning",
+            "tree_tiles_before": 1,
+            "tree_tiles_after_thinning": 0,
+            "tree_tiles_after": 0,
+            "tree_tiles_removed": 1,
+            "removed_percent": 100.0,
+        },
+        "rows": ["....", "...."],
+    }
+    collision = reconcile_tree_collision(
+        rows=["T#..", "####"],
+        visual_rows=["....", "...."],
+        elevation_rows=[[18, 0, 0, 0], [0, 0, 0, 0]],
+    )
+
+    finalized = finalize_vegetation_visual_report(
+        report=report,
+        visual_rows=collision.visual_rows,
+        collision_report=collision.report,
+    )
+
+    summary = finalized["summary"]
+    assert finalized["rows"] == ["T...", "...."]
+    assert summary["report_stage"] == "final_after_collision_reconciliation"
+    assert summary["tree_tiles_after_thinning"] == 0
+    assert summary["tree_tiles_restored_after_collision_reconciliation"] == 1
+    assert summary["tree_tiles_after"] == 1
+    assert summary["tree_tiles_final"] == 1
+    assert summary["tree_tiles_removed_final"] == 0
+    assert summary["removed_final_percent"] == 0.0
 
 
 def test_visual_vegetation_distinguishes_shore_and_puddle_reeds() -> None:

@@ -100,6 +100,7 @@ from .tactical.start_goal import (
 )
 from .tactical.vegetation_visual import (
     build_visual_vegetation,
+    finalize_vegetation_visual_report,
     reconcile_tree_collision,
 )
 from .tactical.objectives import ObjectiveProfileSelector
@@ -509,9 +510,13 @@ class WorldgenPipeline:
                     elevation_rows=elevation_rows,
                 )
             rows = vegetation_collision.rows
-            vegetation_visual.report["rows"] = vegetation_collision.visual_rows
+            vegetation_visual_report = finalize_vegetation_visual_report(
+                report=vegetation_visual.report,
+                visual_rows=vegetation_collision.visual_rows,
+                collision_report=vegetation_collision.report,
+            )
             runtime_data = attach_tile_grid(runtime_data, rows)
-            runtime_data["vegetation_visual"] = vegetation_visual.report
+            runtime_data["vegetation_visual"] = vegetation_visual_report
             runtime_data["vegetation_collision_reconciliation"] = vegetation_collision.report
             debug_data["vegetation_collision_reconciliation"] = vegetation_collision.report
 

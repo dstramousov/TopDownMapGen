@@ -210,3 +210,36 @@ Renderer можно запустить отдельно:
 ```bash
 python3 examples/render_environment_context_previews.py output --cell-size 4
 ```
+
+## Vegetation visual diagnostics
+
+`render/vegetation_visual.json` содержит финальную visual vegetation mask и
+диагностику thinning/reconciliation. Текущая schema:
+
+```text
+vegetation-visual-report-v7
+```
+
+Начиная с `v7`, summary явно разделяет два этапа:
+
+```text
+tree_tiles_before
+tree_tiles_after_thinning
+tree_tiles_removed_by_thinning
+tree_tiles_restored_after_collision_reconciliation
+tree_tiles_final
+tree_tiles_removed_final
+```
+
+Поля совместимости `tree_tiles_after`, `tree_tiles_removed` и `removed_percent`
+в **финальном exported report** относятся к финальным `rows`, то есть уже после
+`reconcile_tree_collision()`. `report_stage` должен иметь значение:
+
+```text
+final_after_collision_reconciliation
+```
+
+Это важно: collision reconciliation может вернуть часть скрытых деревьев обратно
+как visible tree blockers, если открытие этих клеток создаёт изолированные или
+непригодные traversal-компоненты. Поэтому thinning-stage число деревьев не обязано
+совпадать с количеством `T` в финальных `rows`.

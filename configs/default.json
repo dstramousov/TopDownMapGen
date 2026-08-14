@@ -1,7 +1,7 @@
 {
   "seed": "random",
-  "map_width_tiles": 256,
-  "map_height_tiles": 256,
+  "map_width_tiles": 128,
+  "map_height_tiles": 128,
   "chunk_width_tiles": 16,
   "chunk_height_tiles": 16,
   "biome_profile": "forest_ruins",
@@ -26,7 +26,7 @@
   },
   "_comment_elevation": "super_flatland | flatland | rolling_hills | normal | rugged | mountainous | plateau",
   "elevation": {
-    "style": "normal"
+    "style": "super_flatland"
   },
   "hydrology": {
     "shore_reed_density": 0.16,

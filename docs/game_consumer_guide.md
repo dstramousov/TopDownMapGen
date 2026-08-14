@@ -59,6 +59,26 @@ layers/environment_context.json
 конкретных texture/sprite IDs: сопоставление environmental signals с арт-каталогом
 остаётся задачей renderer-а.
 
+### Визуальная честность forest blockers
+
+`tree_blocker` остаётся gameplay blocker уже на внешней кромке semantic forest.
+Поэтому renderer/FloraResolver не должен превращать blocked forest cell в визуально
+пустую травяную клетку.
+
+Практический consumer-side инвариант:
+
+```text
+terrain == tree_blocker && collision == blocked
+    -> визуально должен присутствовать blocking anchor
+```
+
+На `forest_depth = 1` таким anchor не обязательно является большое взрослое дерево.
+Это может быть молодое дерево, плотный куст/подлесок или композиция нескольких
+растений, но игрок должен по картинке понимать, почему клетка непроходима.
+
+Это правило относится к визуальной интерпретации collision и не требует добавлять
+конкретные flora asset IDs в TopDownMapGen.
+
 `height_grid` не обязан означать настоящую 3D-геометрию. Это gameplay elevation contract. Renderer может использовать его как высоту колонны, как tint, как shadow layer или как сортировочный bias.
 
 ## Water and low ground

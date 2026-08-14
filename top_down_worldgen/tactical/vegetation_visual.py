@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections import deque
+from copy import deepcopy
 from dataclasses import dataclass
 from hashlib import blake2b
-from collections import deque
 from typing import Any
 
 from .environment_context import build_forest_depth_rows
@@ -163,7 +164,7 @@ def build_visual_vegetation(
         output_rows.append("".join(output_row))
 
     report = {
-        "schema_version": "vegetation-visual-report-v6",
+        "schema_version": "vegetation-visual-report-v7",
         "kind": "vegetation_visual",
         "rules": {
             "tree_terrain": TREE_TERRAIN,
@@ -186,7 +187,13 @@ def build_visual_vegetation(
             },
         },
         "summary": {
+            "report_stage": "after_thinning",
             "tree_tiles_before": tree_before,
+            "tree_tiles_after_thinning": tree_after,
+            "tree_tiles_removed_by_thinning": tree_before - tree_after,
+            "removed_by_thinning_percent": _percent(
+                tree_before - tree_after, tree_before
+            ),
             "tree_tiles_after": tree_after,
             "tree_tiles_removed": tree_before - tree_after,
             "removed_percent": _percent(tree_before - tree_after, tree_before),
@@ -220,6 +227,77 @@ def build_visual_vegetation(
     }
     return VegetationVisualResult(rows=output_rows, report=report)
 
+
+def finalize_vegetation_visual_report(
+    *,
+    report: dict[str, Any],
+    visual_rows: list[str],
+    collision_report: dict[str, Any],
+) -> dict[str, Any]:
+    """Finalize vegetation diagnostics after collision reconciliation.
+
+    Args:
+        report: Thinning-stage vegetation visual report.
+        visual_rows: Final visual vegetation rows after collision reconciliation.
+        collision_report: Collision reconciliation report for the same rows.
+
+    Returns:
+        Finalized vegetation visual report whose summary matches ``visual_rows``.
+
+    Raises:
+        ValueError: If report counters disagree with the final visual rows.
+    """
+    output = deepcopy(report)
+    summary = output.get("summary")
+    if not isinstance(summary, dict):
+        raise ValueError("vegetation visual report does not contain a summary")
+
+    tree_before = _required_non_negative_int(summary, "tree_tiles_before")
+    tree_after_thinning = _required_non_negative_int(
+        summary,
+        "tree_tiles_after_thinning",
+        fallback_key="tree_tiles_after",
+    )
+    collision_summary = collision_report.get("summary")
+    if not isinstance(collision_summary, dict):
+        raise ValueError("vegetation collision report does not contain a summary")
+    restored = _required_non_negative_int(
+        collision_summary,
+        "rejected_as_visible_tree",
+    )
+
+    final_tree_tiles = sum(row.count(TREE_VISIBLE_CODE) for row in visual_rows)
+    expected_final_tree_tiles = tree_after_thinning + restored
+    if final_tree_tiles != expected_final_tree_tiles:
+        raise ValueError(
+            "final vegetation tree count does not match thinning plus restored trees"
+        )
+    if final_tree_tiles > tree_before:
+        raise ValueError("final vegetation tree count exceeds original forest tiles")
+
+    removed_by_thinning = tree_before - tree_after_thinning
+    removed_final = tree_before - final_tree_tiles
+    summary.update(
+        {
+            "report_stage": "final_after_collision_reconciliation",
+            "tree_tiles_after_thinning": tree_after_thinning,
+            "tree_tiles_removed_by_thinning": removed_by_thinning,
+            "removed_by_thinning_percent": _percent(
+                removed_by_thinning,
+                tree_before,
+            ),
+            "tree_tiles_restored_after_collision_reconciliation": restored,
+            "tree_tiles_after": final_tree_tiles,
+            "tree_tiles_final": final_tree_tiles,
+            "tree_tiles_removed": removed_final,
+            "tree_tiles_removed_final": removed_final,
+            "removed_percent": _percent(removed_final, tree_before),
+            "removed_final_percent": _percent(removed_final, tree_before),
+        }
+    )
+    output["schema_version"] = "vegetation-visual-report-v7"
+    output["rows"] = list(visual_rows)
+    return output
 
 
 def reconcile_tree_collision(
@@ -348,6 +426,37 @@ def _tree_removal_reason(
     if slope > 1:
         return "slope"
     return "forest_edge"
+
+
+def _required_non_negative_int(
+    values: dict[str, Any],
+    key: str,
+    *,
+    fallback_key: str | None = None,
+) -> int:
+    """Return one required non-negative integer diagnostic value.
+
+    Args:
+        values: Diagnostic mapping.
+        key: Preferred key.
+        fallback_key: Optional compatibility key.
+
+    Returns:
+        Validated integer value.
+
+    Raises:
+        ValueError: If the value is missing, boolean, non-integer, or negative.
+    """
+    actual_key = key
+    value = values.get(key)
+    if value is None and fallback_key is not None:
+        actual_key = fallback_key
+        value = values.get(fallback_key)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(
+            f"vegetation diagnostic {actual_key!r} must be a non-negative integer"
+        )
+    return value
 
 
 def _reclaimed_bush_probability(
